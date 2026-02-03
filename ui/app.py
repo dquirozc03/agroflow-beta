@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from PIL import ImageGrab, Image  # pillow
 
-API_URL = "http://127.0.0.1:8000/api/v1"
+API_URL = "https://logicapture-beta.onrender.com/api/v1"
 
 st.set_page_config(page_title="LogiCapture - Registro Operativo", layout="wide")
 st.title("📦 LogiCapture – Registro Operativo")
