@@ -1,0 +1,48 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# Environment variables (NUNCA subir claves)
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Streamlit
+# =========================
+.streamlit/
+
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+
+# =========================
+# Databases / caches locales
+# =========================
+*.sqlite3
+*.db
+
+# =========================
+# UI envs (redundante pero explícito)
+# =========================
+ui/.env
+ui/.env.local
+ui/.env.*.local
