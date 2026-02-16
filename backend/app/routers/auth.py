@@ -39,24 +39,48 @@ class RestablecerPasswordBody(BaseModel):
     nueva_password: str
 
 
+MAX_INTENTOS_LOGIN = 3
+
+
 # ========== Endpoints ==========
 @router.post("/login", response_model=LoginResponse)
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
-    """Login real: valida usuario/contraseña contra la BD y devuelve JWT. Rate limit por IP."""
+    """Login real: valida usuario/contraseña contra la BD. Máximo 3 intentos, luego bloqueo."""
     try:
         login_rate_limit(request)
     except HTTPException:
         raise
     except Exception:
-        pass  # Si falla el rate limit, permitir intentar login igual
+        pass
     usuario = (payload.usuario or "").strip()
     if not usuario:
         raise HTTPException(status_code=400, detail="Usuario requerido")
     user = db.query(Usuario).filter(Usuario.usuario == usuario).first()
     if not user or not user.activo:
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    if getattr(user, "bloqueado", False):
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail="Cuenta bloqueada por múltiples intentos fallidos. Contacte al administrador.",
+        )
     if not verify_password(payload.password or "", user.password_hash):
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+        intentos = getattr(user, "intentos_fallidos", 0) + 1
+        user.intentos_fallidos = intentos
+        if intentos >= MAX_INTENTOS_LOGIN:
+            user.bloqueado = True
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail="Cuenta bloqueada tras 3 intentos fallidos. Contacte al administrador.",
+            )
+        db.commit()
+        raise HTTPException(
+            status_code=401,
+            detail=f"Usuario o contraseña incorrectos. Intentos restantes: {MAX_INTENTOS_LOGIN - intentos}",
+        )
+    user.intentos_fallidos = 0
+    user.bloqueado = False
+    db.commit()
     token = create_access_token(usuario=user.usuario, rol=user.rol, user_id=user.id)
     return LoginResponse(
         access_token=token,
@@ -96,5 +120,25 @@ def restablecer_password(
     if len(pwd) < 6:
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
     user.password_hash = hash_password(pwd)
+    user.intentos_fallidos = 0
+    user.bloqueado = False
     db.commit()
     return {"ok": True, "mensaje": "Contraseña actualizada"}
+
+
+@router.patch("/usuarios/{usuario}/desbloquear")
+def desbloquear_usuario(
+    usuario: str,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    """Desbloquea una cuenta. Solo administrador."""
+    if current_user.rol != "administrador":
+        raise HTTPException(status_code=403, detail="Solo un administrador puede desbloquear cuentas")
+    user = db.query(Usuario).filter(Usuario.usuario == usuario.strip()).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user.intentos_fallidos = 0
+    user.bloqueado = False
+    db.commit()
+    return {"ok": True, "mensaje": "Usuario desbloqueado"}

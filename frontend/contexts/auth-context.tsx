@@ -137,8 +137,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(u);
               saveStoredUser(u);
               return { ok: true };
-            } catch {
-              return { ok: false, error: "Credenciales incorrectas. Revisa usuario y contraseña." };
+            } catch (retryErr: unknown) {
+              const retryMsg = String((retryErr as any)?.body?.detail ?? (retryErr as Error)?.message ?? "");
+              const retryStatus = (retryErr as any)?.status;
+              if (retryStatus === 423) {
+                return { ok: false, error: retryMsg || "Cuenta bloqueada. Contacte al administrador." };
+              }
+              return { ok: false, error: retryMsg.includes("Intentos restantes") ? retryMsg : "Credenciales incorrectas. Revisa usuario y contraseña." };
             }
           }
           return {
@@ -147,10 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
         const msg = String((e as any)?.body?.detail ?? (e as Error)?.message ?? "");
+        const status = (e as any)?.status;
+        if (status === 423) {
+          return { ok: false, error: msg || "Cuenta bloqueada. Contacte al administrador." };
+        }
         const text =
-          msg.toLowerCase().includes("usuario o contraseña") || msg.toLowerCase().includes("incorrectos")
+          (msg.includes("Intentos restantes") ? msg : null) ??
+          (msg.toLowerCase().includes("usuario o contraseña") || msg.toLowerCase().includes("incorrectos")
             ? "Credenciales incorrectas. Revisa tu usuario y contraseña e intenta de nuevo."
-            : msg || "Credenciales incorrectas. Revisa tu usuario y contraseña e intenta de nuevo.";
+            : msg || "Credenciales incorrectas. Revisa tu usuario y contraseña e intenta de nuevo.");
         return { ok: false, error: text };
       }
     },
