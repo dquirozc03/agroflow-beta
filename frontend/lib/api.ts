@@ -128,6 +128,14 @@ export async function apiMe(): Promise<MeResponse> {
   return request<MeResponse>("/auth/me", { method: "GET" });
 }
 
+/** Desbloquea un usuario (solo administrador). */
+export async function apiDesbloquearUsuario(usuario: string): Promise<{ ok: boolean; mensaje: string }> {
+  return request<{ ok: boolean; mensaje: string }>(
+    `/auth/usuarios/${encodeURIComponent(usuario)}/desbloquear`,
+    { method: "PATCH" }
+  );
+}
+
 // ======================
 // Chat (consultas en lenguaje natural)
 // ======================
