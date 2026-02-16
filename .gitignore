@@ -1,5 +1,5 @@
 # =========================
-# Python
+# Python (Backend)
 # =========================
 __pycache__/
 *.pyc
@@ -19,13 +19,26 @@ ENV/
 # Environment variables (NUNCA subir claves)
 # =========================
 .env
-.env.local
-.env.*.local
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
 
 # =========================
-# Streamlit
+# Databases / caches locales
 # =========================
-.streamlit/
+*.sqlite3
+*.db
+
+# =========================
+# Next.js / React (Frontend)
+# =========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
 
 # =========================
 # OS / Editor
@@ -35,14 +48,6 @@ Thumbs.db
 .vscode/
 
 # =========================
-# Databases / caches locales
+# Misc
 # =========================
-*.sqlite3
-*.db
-
-# =========================
-# UI envs (redundante pero explícito)
-# =========================
-ui/.env
-ui/.env.local
-ui/.env.*.local
+*.lock
