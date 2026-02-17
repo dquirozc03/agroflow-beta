@@ -37,7 +37,12 @@ class VehiculoCrear(BaseModel):
     placas: str = Field(..., max_length=50, examples=["ABC123/XYZ987"])
 
     marca: Optional[str] = Field(None, max_length=50, examples=["VOLVO"])
-    cert_vehicular: Optional[str] = Field(None, max_length=80, examples=["CERT-001"])
+    
+    cert_tracto: Optional[str] = Field(None, max_length=50, examples=["C-TRACTO-001"])
+    cert_carreta: Optional[str] = Field(None, max_length=50, examples=["C-CARRETA-001"])
+    # Opcional: se puede enviar concatenado o se autogenera
+    cert_vehicular: Optional[str] = Field(None, max_length=100, examples=["C-TRACTO/C-CARRETA"])
+    
     transportista_id: Optional[int] = Field(None, description="Transportista asociado al vehículo")
 
     # Medidas en METROS (m)
@@ -64,6 +69,9 @@ class VehiculoRespuesta(BaseModel):
     placa_carreta: Optional[str]
     placas: str
     marca: Optional[str]
+    
+    cert_tracto: Optional[str]
+    cert_carreta: Optional[str]
     cert_vehicular: Optional[str]
 
     largo_tracto: float
