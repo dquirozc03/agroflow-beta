@@ -114,7 +114,7 @@ function LoginForm() {
                   placeholder="usuario"
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value)}
-                  className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base transition-colors focus:bg-white"
+                  className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base text-slate-900 transition-colors focus:bg-white"
                   autoComplete="username"
                   autoFocus
                   disabled={loading}
@@ -133,7 +133,7 @@ function LoginForm() {
                   placeholder="********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base transition-colors focus:bg-white"
+                  className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base text-slate-900 transition-colors focus:bg-white"
                   autoComplete="current-password"
                   disabled={loading}
                 />
