@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -39,7 +39,7 @@ function loadBandejaFromStorage(): SapRow[] {
   }
 }
 
-export default function Page() {
+function AgroFlowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -48,9 +48,9 @@ export default function Page() {
   const tabFromUrl = searchParams?.get("tab");
   const validTab =
     tabFromUrl === "dashboard" ||
-    tabFromUrl === "captura" ||
-    tabFromUrl === "bandeja" ||
-    tabFromUrl === "historial"
+      tabFromUrl === "captura" ||
+      tabFromUrl === "bandeja" ||
+      tabFromUrl === "historial"
       ? tabFromUrl
       : null;
   const defaultTab = validTab ?? "dashboard";
@@ -191,101 +191,101 @@ export default function Page() {
                 </TabsList>
               </div>
 
-            {/* CAPTURA — solo para roles con acceso */}
-            {showCapturaBandeja && (
-            <TabsContent value="captura" className="mt-0 flex-1 min-h-0 overflow-auto">
-                {/*
+              {/* CAPTURA — solo para roles con acceso */}
+              {showCapturaBandeja && (
+                <TabsContent value="captura" className="mt-0 flex-1 min-h-0 overflow-auto">
+                  {/*
                   ✅ Layout tipo ERP:
                   - Más ancho útil (sin sentirse “pegado” a los bordes)
                   - Mejor aprovechamiento vertical
                 */}
-              <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
-                  <div className="mb-4 flex flex-col gap-1">
-                    <div className="text-lg font-semibold text-card-foreground">
-                      Captura operativa
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Registra embarques, valida unicidad y prepara datos para la bandeja SAP.
-                    </div>
-                  </div>
-
-                  {/* ✅ “Shell” tipo sistema */}
-                  <div className="rounded-2xl border border-border bg-background shadow-sm">
-                    <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_600px]">
-                      {/* Columna principal */}
-                      <div className="min-w-0 space-y-4">
-                        <CardEmbarque
-                          form={form}
-                          setForm={setForm}
-                          refsLocked={refsLocked}
-                          setRefsLocked={setRefsLocked}
-                        />
-
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                          <CardOperacion form={form} setForm={setForm} />
-                          <CardUnicidad form={form} setForm={setForm} />
-                        </div>
+                  <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
+                    <div className="mb-4 flex flex-col gap-1">
+                      <div className="text-lg font-semibold text-card-foreground">
+                        Captura operativa
                       </div>
+                      <div className="text-sm text-muted-foreground">
+                        Registra embarques, valida unicidad y prepara datos para la bandeja SAP.
+                      </div>
+                    </div>
 
-                      {/* Columna lateral: OCR + Acción (poco espacio entre ellos) */}
-                      <div className="space-y-3">
-                        <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
-                        <div className="sticky top-2">
-                          <CardAccion
+                    {/* ✅ “Shell” tipo sistema */}
+                    <div className="rounded-2xl border border-border bg-background shadow-sm">
+                      <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_600px]">
+                        {/* Columna principal */}
+                        <div className="min-w-0 space-y-4">
+                          <CardEmbarque
                             form={form}
-                            registroId={registroId}
-                            setRegistroId={setRegistroId}
-                            onSapRow={handleSapRow}
-                            onNuevoRegistro={handleNuevoRegistro}
+                            setForm={setForm}
+                            refsLocked={refsLocked}
+                            setRefsLocked={setRefsLocked}
                           />
+
+                          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                            <CardOperacion form={form} setForm={setForm} />
+                            <CardUnicidad form={form} setForm={setForm} />
+                          </div>
+                        </div>
+
+                        {/* Columna lateral: OCR + Acción (poco espacio entre ellos) */}
+                        <div className="space-y-3">
+                          <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
+                          <div className="sticky top-2">
+                            <CardAccion
+                              form={form}
+                              registroId={registroId}
+                              setRegistroId={setRegistroId}
+                              onSapRow={handleSapRow}
+                              onNuevoRegistro={handleNuevoRegistro}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
+
+                    <div className="h-6" />
                   </div>
+                </TabsContent>
+              )}
 
-                  <div className="h-6" />
-                </div>
-            </TabsContent>
-            )}
-
-            {/* BANDEJA — solo para roles con acceso */}
-            {showCapturaBandeja && (
-            <TabsContent value="bandeja" className="mt-0">
-              <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
-                <div className="mb-4">
-                  <div className="text-lg font-semibold text-card-foreground">Bandeja SAP</div>
-                  <div className="text-sm text-muted-foreground">
-                    Registros guardados en el navegador; se mantienen al refrescar. Listos para exportar y cargar en SAP.
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
-                  <BandejaSap className="w-full" rows={sapRows} setRows={setSapRows} />
-                </div>
-              </div>
-            </TabsContent>
-            )}
-
-            {/* HISTORIAL — todos los roles */}
-            <TabsContent value="historial" className="mt-0 flex-1 overflow-hidden">
-              <div className="flex h-full min-w-0 flex-col overflow-auto">
-                <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
-                  <div className="mb-4">
-                    <div className="text-lg font-semibold text-card-foreground">
-                      Historial de registros
+              {/* BANDEJA — solo para roles con acceso */}
+              {showCapturaBandeja && (
+                <TabsContent value="bandeja" className="mt-0">
+                  <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
+                    <div className="mb-4">
+                      <div className="text-lg font-semibold text-card-foreground">Bandeja SAP</div>
+                      <div className="text-sm text-muted-foreground">
+                        Registros guardados en el navegador; se mantienen al refrescar. Listos para exportar y cargar en SAP.
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Todo lo registrado; mostrado por páginas. Añade filas a la Bandeja SAP si necesitas reexportar.
+
+                    <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
+                      <BandejaSap className="w-full" rows={sapRows} setRows={setSapRows} />
                     </div>
                   </div>
+                </TabsContent>
+              )}
 
-                  <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
-                    <HistorialRegistros onAddSapRow={handleSapRow} bandejaIds={bandejaIds} />
+              {/* HISTORIAL — todos los roles */}
+              <TabsContent value="historial" className="mt-0 flex-1 overflow-hidden">
+                <div className="flex h-full min-w-0 flex-col overflow-auto">
+                  <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
+                    <div className="mb-4">
+                      <div className="text-lg font-semibold text-card-foreground">
+                        Historial de registros
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Todo lo registrado; mostrado por páginas. Añade filas a la Bandeja SAP si necesitas reexportar.
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
+                      <HistorialRegistros onAddSapRow={handleSapRow} bandejaIds={bandejaIds} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+            </Tabs>
           ) : null}
         </main>
 
@@ -293,5 +293,13 @@ export default function Page() {
         <ChatWidget />
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center text-muted-foreground">Cargando aplicación...</div>}>
+      <AgroFlowContent />
+    </Suspense>
   );
 }

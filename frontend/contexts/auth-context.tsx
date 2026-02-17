@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const tryAuth = () =>
+    const tryAuth = (): Promise<void> =>
       apiMe()
         .then((me) => {
           const u: AuthUser = {
