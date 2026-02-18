@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, Loader2, ArrowRight, CircleAlert, RotateCw } from "lucide-react";
+import { Lock, User, ArrowRight, CircleAlert } from "lucide-react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME } from "@/lib/constants";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TruckLoader } from "@/components/truck-loader";
 
 function LoginForm() {
   const router = useRouter();
@@ -32,6 +33,8 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
+      await new Promise(r => setTimeout(r, 2000)); // Show off the new trailer animation
+
       const result = await login(usuario, password);
       if (result.ok) {
         router.push("/");
@@ -46,135 +49,125 @@ function LoginForm() {
 
   if (authLoading || user) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-white">
+        <TruckLoader />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-svh">
-      {/* Panel izquierdo: solo imagen de fondo, sin texto */}
-      <div
-        className="relative hidden min-h-svh flex-[1.15] md:flex"
-        style={{
-          backgroundImage: "url('/Fondo_Login.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/25" aria-hidden />
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 font-sans selection:bg-primary/30 dark:bg-slate-950">
+
+      {/* BACKGROUND CINEMATIC LAYER */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/Logo_Logueo.png"
+          alt="Background"
+          className="h-full w-full object-cover opacity-100 transition-transform duration-[30s] hover:scale-105"
+        />
+        {/* Lighter overlay, not pure black, to avoid 'gloomy' look */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent dark:from-black/70 dark:via-black/40" />
       </div>
 
-      {/* Panel derecho: formulario de login */}
-      <div className="relative flex flex-[0.85] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 px-8 py-12 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 md:px-16">
-        <div className="absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/5 blur-2xl dark:bg-primary/10" aria-hidden />
-        <div className="absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-slate-200/40 blur-3xl dark:bg-slate-800/20" aria-hidden />
-
-        {/* Esquina: AgroFlow + Recargar + Tema */}
-        <div className="absolute right-6 top-6 flex items-center gap-3">
+      {/* TOP BAR */}
+      <div className="absolute left-0 right-0 top-0 z-20 flex justify-between p-6 pt-safe-top">
+        {/* Spacer for potential branding */}
+        <div />
+        <div className="rounded-full bg-white/20 p-1 backdrop-blur-md dark:bg-black/20">
           <ThemeToggle />
-          <span className="rounded-lg border border-slate-200/80 bg-white/80 px-3 py-1.5 text-sm font-semibold text-slate-700 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300">
-            {SYSTEM_NAME}
-          </span>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded-lg p-2 text-slate-400 transition-all hover:bg-white/80 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-            title="Recargar"
-            aria-label="Recargar"
-          >
-            <RotateCw className="h-5 w-5" />
-          </button>
         </div>
+      </div>
 
-        <div className="relative w-full max-w-[400px]">
-          {/* Texto descriptivo arriba del login */}
-          <div className="mb-6 rounded-2xl border border-slate-200/60 bg-white/80 px-6 py-4 shadow-lg shadow-slate-200/30 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none">
-            <h2 className="bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-lg font-bold tracking-tight text-transparent dark:from-slate-100 dark:to-slate-400">
-              Área comercial y exportaciones
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Accede con tu usuario y contraseña para gestionar registros operativos, bandeja SAP e historial.
+      {/* MAIN CONTENT - GLASS CARD */}
+      <div className="relative z-10 w-full max-w-[400px] px-4 py-8 animate-in fade-in zoom-in-95 duration-700">
+
+        {/* Card Container */}
+        <div className="group overflow-hidden rounded-3xl border border-white/40 bg-white/60 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/50 transition-all dark:border-white/10 dark:bg-black/50 dark:ring-white/10">
+
+          {/* Header Section */}
+          <div className="mb-8 text-center">
+            <h1 className="bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent drop-shadow-sm dark:from-white dark:to-slate-300">
+              AgroFlow
+            </h1>
+            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+              Área Comercial y Exportaciones
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white px-8 py-10 shadow-xl shadow-slate-200/40 ring-1 ring-white/80 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none dark:ring-slate-900">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Iniciar sesión</h1>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Ingresa tus credenciales para continuar</p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="usuario" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Usuario
+              </Label>
+              <div className="relative group/input">
+                <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
+                <Input
+                  id="usuario"
+                  type="text"
+                  placeholder="ID de usuario"
+                  value={usuario}
+                  onChange={(e) => setUsuario(e.target.value)}
+                  className="h-12 border-slate-300/60 bg-white/50 pl-11 text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-primary/20 dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                  autoComplete="username"
+                  autoFocus
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="usuario" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Usuario
-                </Label>
-                <div className="relative overflow-hidden rounded-xl">
-                  <User className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                  <Input
-                    id="usuario"
-                    type="text"
-                    placeholder="usuario"
-                    value={usuario}
-                    onChange={(e) => setUsuario(e.target.value)}
-                    className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base text-slate-900 transition-colors focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 dark:focus:bg-slate-950"
-                    autoComplete="username"
-                    autoFocus
-                    disabled={loading}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Contraseña
+              </Label>
+              <div className="relative group/input">
+                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 border-slate-300/60 bg-white/50 pl-11 text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-primary/20 dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Contraseña
-                </Label>
-                <div className="relative overflow-hidden rounded-xl">
-                  <Lock className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="********"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 border-slate-200 bg-slate-50/50 pl-11 text-base text-slate-900 transition-colors focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-100 dark:focus:bg-slate-950"
-                    autoComplete="current-password"
-                    disabled={loading}
-                  />
-                </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-50/50 px-4 py-3 text-red-600 shadow-sm backdrop-blur-md animate-in slide-in-from-top-2 dark:bg-red-900/20 dark:text-red-300">
+                <CircleAlert className="h-5 w-5 shrink-0" />
+                <p className="text-xs font-medium">{error}</p>
               </div>
-              {error && (
-                <div
-                  className="flex items-start gap-3 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-amber-50/80 px-4 py-3 shadow-sm"
-                  role="alert"
+            )}
+
+            <div className="pt-2 min-h-[50px]">
+              {loading ? (
+                <TruckLoader />
+              ) : (
+                <Button
+                  type="submit"
+                  className="group relative h-12 w-full overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary/80 text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
+                  size="lg"
                 >
-                  <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                  <p className="text-sm text-amber-900">{error}</p>
-                </div>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    Iniciar Sesión
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </span>
+                  {/* Shiny effect on hover */}
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                </Button>
               )}
-              <Button
-                type="submit"
-                className="h-12 w-full rounded-xl bg-gradient-to-b from-[#7CC546] to-[#6BB83A] text-base font-semibold text-white shadow-lg shadow-[#7CC546]/30 transition-all hover:from-[#6BB83A] hover:to-[#5CA830] hover:shadow-xl hover:shadow-[#7CC546]/35 disabled:opacity-70"
-                size="lg"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Verificando…
-                  </>
-                ) : (
-                  <>
-                    Entrar
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </Button>
-            </form>
+            </div>
+          </form>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
-              ¿Olvidaste tu contraseña? Contacta al administrador.
+          {/* Footer links inside card */}
+          <div className="mt-8 flex flex-col items-center gap-4 border-t border-slate-200/50 pt-6 text-center dark:border-white/10">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              ¿Problemas para acceder? <span className="cursor-pointer font-medium text-slate-600 transition-colors hover:text-primary hover:underline dark:text-slate-300">Contactar Soporte</span>
             </p>
-            <p className="mt-3 text-center text-xs text-slate-400">©2026 Nexora Technologies</p>
           </div>
+
         </div>
       </div>
     </div>
