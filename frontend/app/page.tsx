@@ -140,14 +140,15 @@ function AgroFlowContent() {
   }, [pendingCount]);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <AppSidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
         <AppHeader />
 
         {/* Contenido principal + footer fijo abajo */}
-        <main className="flex min-w-0 flex-1 flex-col bg-muted/20">
+        {/* Contenido principal + footer fijo abajo */}
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-gradient-to-br from-slate-50 via-slate-50/50 to-slate-100/50 dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950/50 pb-16">
           {isDashboard ? (
             /* Solo Dashboard: sin pestañas */
             <div className="mt-0 flex-1 min-h-0 overflow-auto">
@@ -156,25 +157,25 @@ function AgroFlowContent() {
           ) : isLogiCapture ? (
             /* LogiCapture: solo pestañas Captura, Bandeja, Historial (sin Dashboard) */
             <Tabs value={defaultTab} onValueChange={setTab} className="flex h-full flex-col">
-              <div className="border-b border-border bg-card/90 backdrop-blur px-6 pt-2">
+              <div className="border-b border-border/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md px-6 pt-2 sticky top-0 z-30 supports-[backdrop-filter]:bg-background/60">
                 <TabsList className="bg-transparent">
                   {showCapturaBandeja && (
                     <>
                       <TabsTrigger
                         value="captura"
-                        className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-300"
                       >
                         <ClipboardList className="h-4 w-4" />
                         Captura
                       </TabsTrigger>
                       <TabsTrigger
                         value="bandeja"
-                        className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-300"
                       >
                         <TableProperties className="h-4 w-4" />
                         {tabLabelBandeja}
                         {pendingCount > 0 && (
-                          <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                          <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground animate-pulse">
                             {pendingCount}
                           </span>
                         )}
@@ -183,7 +184,7 @@ function AgroFlowContent() {
                   )}
                   <TabsTrigger
                     value="historial"
-                    className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                    className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-300"
                   >
                     <History className="h-4 w-4" />
                     Historial
@@ -193,44 +194,52 @@ function AgroFlowContent() {
 
               {/* CAPTURA — solo para roles con acceso */}
               {showCapturaBandeja && (
-                <TabsContent value="captura" className="mt-0 flex-1 min-h-0 overflow-auto">
+                <TabsContent value="captura" className="mt-0 flex-1 min-h-0 overflow-auto focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {/*
                   ✅ Layout tipo ERP:
-                  - Más ancho útil (sin sentirse “pegado” a los bordes)
+                  - Más ancho útil (sin sentirse "pegado" a los bordes)
                   - Mejor aprovechamiento vertical
                 */}
                   <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
                     <div className="mb-4 flex flex-col gap-1">
-                      <div className="text-lg font-semibold text-card-foreground">
+                      <div className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                         Captura operativa
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
                         Registra embarques, valida unicidad y prepara datos para la bandeja SAP.
                       </div>
                     </div>
 
-                    {/* ✅ “Shell” tipo sistema */}
-                    <div className="rounded-2xl border border-border bg-background shadow-sm">
-                      <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_600px]">
+                    {/* ✅ "Shell" tipo sistema */}
+                    <div className="rounded-2xl border border-border/60 bg-background/50 backdrop-blur-sm shadow-sm">
+                      <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_450px]">
                         {/* Columna principal */}
                         <div className="min-w-0 space-y-4">
-                          <CardEmbarque
-                            form={form}
-                            setForm={setForm}
-                            refsLocked={refsLocked}
-                            setRefsLocked={setRefsLocked}
-                          />
+                          <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                            <CardEmbarque
+                              form={form}
+                              setForm={setForm}
+                              refsLocked={refsLocked}
+                              setRefsLocked={setRefsLocked}
+                            />
+                          </div>
 
                           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                            <CardOperacion form={form} setForm={setForm} />
-                            <CardUnicidad form={form} setForm={setForm} />
+                            <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                              <CardOperacion form={form} setForm={setForm} />
+                            </div>
+                            <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                              <CardUnicidad form={form} setForm={setForm} />
+                            </div>
                           </div>
                         </div>
 
                         {/* Columna lateral: OCR + Acción (poco espacio entre ellos) */}
                         <div className="space-y-3">
-                          <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
-                          <div className="sticky top-2">
+                          <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                            <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
+                          </div>
+                          <div className="sticky top-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 z-20">
                             <CardAccion
                               form={form}
                               registroId={registroId}
@@ -250,16 +259,16 @@ function AgroFlowContent() {
 
               {/* BANDEJA — solo para roles con acceso */}
               {showCapturaBandeja && (
-                <TabsContent value="bandeja" className="mt-0">
+                <TabsContent value="bandeja" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
                     <div className="mb-4">
-                      <div className="text-lg font-semibold text-card-foreground">Bandeja SAP</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Bandeja SAP</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
                         Registros guardados en el navegador; se mantienen al refrescar. Listos para exportar y cargar en SAP.
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
+                    <div className="rounded-2xl border border-border/60 bg-background/50 backdrop-blur-sm p-3 shadow-lg transition-all duration-300 md:p-4 hover:shadow-xl">
                       <BandejaSap className="w-full" rows={sapRows} setRows={setSapRows} />
                     </div>
                   </div>

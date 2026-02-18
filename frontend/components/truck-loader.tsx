@@ -31,7 +31,7 @@ export function TruckLoader() {
             </div>
 
             {/* Loading Text Below */}
-            <span className="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+            <span className="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400">
                 Verificando Credenciales...
             </span>
 

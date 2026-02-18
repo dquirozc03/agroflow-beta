@@ -35,6 +35,14 @@ export function BackendStatusProvider({ children }: { children: React.ReactNode 
         return true;
       }
 
+      // If we are in development, maybe the backend is just slow or proxy is warming up.
+      // But we shouldn't block indefinitely if we can't confirm.
+      if (process.env.NODE_ENV === 'development' && attempt > 5) {
+        console.warn("Backend sleeping check timed out in dev, forcing online to unblock UI");
+        setStatus("online");
+        return true;
+      }
+
       const delay = Math.min(
         INITIAL_DELAY_MS + attempt * 1500,
         MAX_DELAY_MS

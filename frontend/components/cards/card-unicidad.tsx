@@ -119,7 +119,7 @@ export function CardUnicidad({ form, setForm }: Props) {
       <CardContent className="grid gap-6">
         {/* Precintos fields */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_aduana" className="text-xs text-muted-foreground">
               PS_ADUANA
             </Label>
@@ -132,11 +132,10 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_aduana: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="PS Aduana"
               className="mt-1 font-mono"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_operador" className="text-xs text-muted-foreground">
               PS_OPERADOR
             </Label>
@@ -149,13 +148,12 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_operador: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="** si no trae"
               className="mt-1 font-mono"
             />
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="senasa" className="text-xs text-muted-foreground">
               SENASA
             </Label>
@@ -168,11 +166,10 @@ export function CardUnicidad({ form, setForm }: Props) {
                   senasa: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="* si no trae"
               className="mt-1 font-mono"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_linea" className="text-xs text-muted-foreground">
               PS_LINEA
             </Label>
@@ -185,7 +182,6 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_linea: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="PS Linea"
               className="mt-1 font-mono"
             />
           </div>

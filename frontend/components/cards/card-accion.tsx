@@ -134,9 +134,9 @@ export function CardAccion({
         termografos: termografos || null,
         ps_beta: ps_beta || null,
         ps_aduana: txt(form.ps_aduana) || null,
-        ps_operador: txt(form.ps_operador) || "**",
+        ps_operador: txt(form.ps_operador) || "***",
 
-        senasa: txt(form.senasa) || "*",
+        senasa: txt(form.senasa) || "***",
         ps_linea: txt(form.ps_linea) || null,
       };
 

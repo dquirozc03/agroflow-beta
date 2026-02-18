@@ -106,6 +106,10 @@ def construir_items_unicos(payload: RegistroCrear, senasa_ps_linea_norm: str | N
         v = normalizar(valor)
         if not v:
             return
+        # IGNORAR ASTERISCOS (ej: *, **, ***, ****) en validación de unicidad
+        if set(v) == {'*'}:
+            return
+
         vigente = tipo in TIPOS_VIGENTES
         items.append((tipo, v, vigente))
 
