@@ -49,8 +49,11 @@ function LoginForm() {
 
   if (authLoading || user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-white">
-        <TruckLoader />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <p className="text-sm font-medium text-slate-500 animate-pulse">Verificando sesión...</p>
+        </div>
       </div>
     );
   }
