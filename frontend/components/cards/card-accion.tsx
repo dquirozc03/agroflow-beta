@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Send, RefreshCw, Lock, CircleAlert, FilePlus2 } from "lucide-react";
+import { Loader2, Send, RefreshCw, Lock, CircleAlert, FilePlus2, CheckCircle2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import type { FormState, SemaforoStatus, SapRow } from "@/lib/types";
-import { createRegistro, getRegistroSap, cerrarRegistro } from "@/lib/api";
+import { createRegistro, getRegistroSap } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import {
@@ -103,7 +103,6 @@ export function CardAccion({
 }: Props) {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingSap, setLoadingSap] = useState(false);
-  const [loadingClose, setLoadingClose] = useState(false);
 
   const [confirmNuevoOpen, setConfirmNuevoOpen] = useState(false);
   const [duplicates, setDuplicates] = useState<Array<{ tipo: string; valor: string }> | null>(null);
@@ -186,20 +185,7 @@ export function CardAccion({
     }
   };
 
-  const handleClose = async () => {
-    if (!registroId) return;
-    setLoadingClose(true);
 
-    try {
-      await cerrarRegistro(registroId);
-      toast.success("Registro cerrado");
-      setRegistroId(null);
-    } catch {
-      toast.error("Error al cerrar registro");
-    } finally {
-      setLoadingClose(false);
-    }
-  };
 
   return (
     <Card>
@@ -253,7 +239,7 @@ export function CardAccion({
           <Button
             onClick={handleCreate}
             disabled={status === "rojo" || loadingCreate || !!registroId}
-            className="min-h-9"
+            className="min-h-9 flex-1 min-w-[180px]"
           >
             {loadingCreate ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
             Crear registro
@@ -265,7 +251,7 @@ export function CardAccion({
                 variant="default"
                 onClick={() => setConfirmNuevoOpen(true)}
                 disabled={loadingCreate || loadingSap || loadingClose}
-                className="min-h-9 min-w-[180px]"
+                className="min-h-9 flex-1 min-w-[140px]"
               >
                 <FilePlus2 className="mr-1.5 h-4 w-4" />
                 Nuevo registro
@@ -274,7 +260,7 @@ export function CardAccion({
                 variant="secondary"
                 onClick={handleRetrieveSap}
                 disabled={loadingSap}
-                className="min-h-9 min-w-[180px]"
+                className="min-h-9 flex-1 min-w-[140px]"
               >
                 {loadingSap ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -282,20 +268,6 @@ export function CardAccion({
                   <RefreshCw className="mr-1.5 h-4 w-4" />
                 )}
                 Actualizar bandeja
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                disabled={loadingClose}
-                className="min-h-9 min-w-[180px]"
-                title="Cerrar registro. El contenedor (AWB) se libera al cerrar; si no cierras, se libera solo tras 1 mes y 5 días."
-              >
-                {loadingClose ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Lock className="mr-1.5 h-4 w-4" />
-                )}
-                Cerrar
               </Button>
             </>
           )}

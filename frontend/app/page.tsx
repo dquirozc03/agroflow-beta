@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/app-header";
 import { AppFooter } from "@/components/app-footer";
 import { useAuth } from "@/contexts/auth-context";
 import { canSeeCapturaAndBandeja } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 import { CardEmbarque } from "@/components/cards/card-embarque";
 import { CardOcr } from "@/components/cards/card-ocr";
@@ -194,7 +195,7 @@ function AgroFlowContent() {
 
               {/* CAPTURA — solo para roles con acceso */}
               {showCapturaBandeja && (
-                <TabsContent value="captura" className="mt-0 flex-1 min-h-0 overflow-auto focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className={cn("flex-1 min-h-0 overflow-auto focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500", defaultTab !== "captura" && "hidden")}>
                   {/*
                   ✅ Layout tipo ERP:
                   - Más ancho útil (sin sentirse "pegado" a los bordes)
@@ -254,12 +255,12 @@ function AgroFlowContent() {
 
                     <div className="h-6" />
                   </div>
-                </TabsContent>
+                </div>
               )}
 
               {/* BANDEJA — solo para roles con acceso */}
               {showCapturaBandeja && (
-                <TabsContent value="bandeja" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500", defaultTab !== "bandeja" && "hidden")}>
                   <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
                     <div className="mb-4">
                       <div className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Bandeja SAP</div>
@@ -272,11 +273,11 @@ function AgroFlowContent() {
                       <BandejaSap className="w-full" rows={sapRows} setRows={setSapRows} />
                     </div>
                   </div>
-                </TabsContent>
+                </div>
               )}
 
               {/* HISTORIAL — todos los roles */}
-              <TabsContent value="historial" className="mt-0 flex-1 overflow-hidden">
+              <div className={cn("flex-1 overflow-hidden", defaultTab !== "historial" && "hidden")}>
                 <div className="flex h-full min-w-0 flex-col overflow-auto">
                   <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
                     <div className="mb-4">
@@ -293,7 +294,7 @@ function AgroFlowContent() {
                     </div>
                   </div>
                 </div>
-              </TabsContent>
+              </div>
             </Tabs>
           ) : null}
         </main>

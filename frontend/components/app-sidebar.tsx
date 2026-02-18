@@ -96,7 +96,7 @@ export function AppSidebar() {
               "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
               mod.active
                 ? "bg-gradient-to-r from-primary/15 to-transparent text-primary shadow-sm ring-1 ring-primary/20"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-slate-400 hover:bg-slate-800 hover:text-white",
               mod.soon && "cursor-not-allowed opacity-50 grayscale"
             )}
             onClick={(e) => {
@@ -106,10 +106,10 @@ export function AppSidebar() {
             {/* Active Indicator Bar */}
             {mod.active && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)]" />}
 
-            <mod.icon className={cn("h-5 w-5 shrink-0 transition-transform group-hover:scale-110", mod.active ? "text-green-400" : "text-slate-400 group-hover:text-slate-100")} />
+            <mod.icon className={cn("h-5 w-5 shrink-0 transition-transform group-hover:scale-110", mod.active ? "text-green-400" : "text-slate-400 group-hover:text-white")} />
 
             {!collapsed && (
-              <span className={cn("flex flex-1 items-center justify-between", mod.active ? "text-white font-semibold" : "text-slate-400 group-hover:text-slate-100")}>
+              <span className={cn("flex flex-1 items-center justify-between", mod.active ? "text-white font-semibold" : "text-slate-400 group-hover:text-white")}>
                 {mod.name}
                 {mod.soon && (
                   <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
