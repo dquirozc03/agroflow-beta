@@ -66,6 +66,22 @@ async def get_current_user(
     return user
 
 
+
+def require_role(allowed_roles: list[str]):
+    """
+    Retorna una dependencia que valida si el usuario tiene uno de los roles permitidos.
+    """
+    def role_checker(current_user: Usuario = Depends(get_current_user)):
+        if current_user.rol and current_user.rol.lower() not in [r.lower() for r in allowed_roles]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene permisos suficientes para realizar esta acción.",
+            )
+        return current_user
+
+    return role_checker
+
+
 # Tipo para inyectar en rutas
 CurrentUser = Annotated[Usuario, Depends(get_current_user)]
 OptionalUser = Annotated[Usuario | None, Depends(get_current_user_optional)]

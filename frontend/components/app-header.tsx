@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { checkApiHealth } from "@/lib/api";
 import { useBackendStatus } from "@/contexts/backend-status-context";
-import { Wifi, WifiOff, Boxes, LogOut, User, Moon, Sun } from "lucide-react";
+import { Wifi, WifiOff, Boxes, LogOut, User, Moon, Sun, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME, MODULE_LOGICAPTURE, ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/lib/constants";
@@ -15,7 +15,11 @@ const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export function AppHeader() {
+interface Props {
+  onOpenScanner?: () => void;
+}
+
+export function AppHeader({ onOpenScanner }: Props) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { isWaking, wakeBackend } = useBackendStatus();
@@ -70,6 +74,18 @@ export function AppHeader() {
 
       {/* DERECHA */}
       <div className="flex items-center gap-4">
+        {onOpenScanner && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenScanner}
+            className="hidden sm:flex gap-1.5 border-dashed border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+          >
+            <Smartphone className="h-4 w-4" />
+            Vincular Celular
+          </Button>
+        )}
+
         <ThemeToggle />
         {user && (
           <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5">

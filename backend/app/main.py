@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import settings
-from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat
+from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, auditoria, scanner
 
 # Valor por defecto del JWT (solo desarrollo). En producción debe definirse JWT_SECRET en env.
 _DEV_JWT_SECRET = "dev-secret-cambiar-en-produccion"
@@ -67,6 +67,8 @@ app.include_router(referencias.router)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(auditoria.router)
+app.include_router(scanner.router)
 
 # =========================
 # Health checks

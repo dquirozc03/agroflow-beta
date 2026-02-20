@@ -9,9 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  ShieldAlert,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { SYSTEM_NAME, MODULE_LOGICAPTURE } from "@/lib/constants";
+import { SYSTEM_NAME, MODULE_LOGICAPTURE, canSeeAuditoria } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 
 export function AppSidebar() {
@@ -39,6 +40,14 @@ export function AppSidebar() {
         soon: false,
       },
       {
+        name: "Auditoría",
+        icon: ShieldAlert,
+        href: "/auditoria",
+        active: pathname === "/auditoria",
+        soon: false,
+        hidden: !canSeeAuditoria(user?.rol ?? ""),
+      },
+      {
         name: "Configuración",
         icon: Settings,
         href: "#",
@@ -46,7 +55,7 @@ export function AppSidebar() {
         soon: true,
       },
     ],
-    [pathname, tab, isLogiCapture]
+    [pathname, tab, isLogiCapture, user]
   );
 
   const [collapsed, setCollapsed] = useState(false);
@@ -88,7 +97,7 @@ export function AppSidebar() {
       <nav className="flex-1 space-y-2 p-4">
         {!collapsed && <p className="px-2 text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Menu Principal</p>}
 
-        {modules.map((mod) => (
+        {modules.filter(m => !m.hidden).map((mod) => (
           <a
             key={mod.name}
             href={mod.href}

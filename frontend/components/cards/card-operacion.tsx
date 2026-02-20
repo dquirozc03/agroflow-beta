@@ -141,6 +141,12 @@ export function CardOperacion({ form, setForm }: Props) {
             id="dni"
             value={form.dni}
             onChange={(e) => setForm((prev) => ({ ...prev, dni: e.target.value }))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                document.getElementById("placas_tracto")?.focus();
+              }
+            }}
             placeholder="Escanear DNI"
             className="h-9 font-mono"
           />
@@ -158,6 +164,12 @@ export function CardOperacion({ form, setForm }: Props) {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, placas_tracto: e.target.value.toUpperCase() }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("placas_carreta")?.focus();
+                }
+              }}
               placeholder="Placa tracto"
               className="mt-1 h-9 font-mono"
             />
@@ -172,6 +184,13 @@ export function CardOperacion({ form, setForm }: Props) {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, placas_carreta: e.target.value.toUpperCase() }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  // Siguiente: PS_ADUANA en la siguiente tarjeta (CardUnicidad)
+                  document.getElementById("ps_aduana")?.focus();
+                }
+              }}
               placeholder="Placa carreta"
               className="mt-1 h-9 font-mono"
             />

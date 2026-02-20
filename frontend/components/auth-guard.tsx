@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { WakingOverlay } from "@/components/waking-overlay";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/scanner"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();

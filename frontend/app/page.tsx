@@ -16,6 +16,7 @@ import { CardUnicidad } from "@/components/cards/card-unicidad";
 import { CardAccion } from "@/components/cards/card-accion";
 import { BandejaSap } from "@/components/bandeja-sap";
 import { HistorialRegistros } from "@/components/historial-registros";
+import { ScannerModal } from "@/components/scanner-modal";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide-react";
@@ -140,12 +141,53 @@ function AgroFlowContent() {
     return pendingCount > 0 ? `Bandeja SAP (${pendingCount})` : "Bandeja SAP";
   }, [pendingCount]);
 
+  // Scanner Logic
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleScan = useCallback((data: string) => {
+    const val = data.trim().toUpperCase();
+    if (!val) return;
+
+    // Lógica inteligente de enrutado
+    // 1. Si parece DNI (8 dígitos numéricos), forzar al DNI
+    if (/^\d{8}$/.test(val)) {
+      setForm((prev) => ({ ...prev, dni: val }));
+      toast.info(`DNI Escaneado: ${val}`);
+      // Auto-focus al siguiente (Placa check) no es trivial sin refs, 
+      // pero el usuario verá el dato llenarse.
+      return;
+    }
+
+    // 2. Si parece Contenedor/AWB (4 letras + 7 numeros? o similar) -> AWB
+    // Por ahora simple: Si el campo AWB está vacío, probar ahí? No, precintos es más común.
+
+    // 3. Por defecto: Agregar a PS_BETA_ITEMS (Precintos múltiples)
+    // Evitar duplicados
+    setForm((prev) => {
+      if (prev.ps_beta_items.includes(val)) {
+        toast.warning("Precinto duplicado (ya está en lista)");
+        return prev;
+      }
+      toast.success(`Precinto agregado: ${val}`);
+      return {
+        ...prev,
+        ps_beta_items: [...prev.ps_beta_items, val],
+      };
+    });
+  }, []);
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <AppSidebar />
 
+      <ScannerModal
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleScan}
+      />
+
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <AppHeader />
+        <AppHeader onOpenScanner={() => setScannerOpen(true)} />
 
         {/* Contenido principal + footer fijo abajo */}
         {/* Contenido principal + footer fijo abajo */}

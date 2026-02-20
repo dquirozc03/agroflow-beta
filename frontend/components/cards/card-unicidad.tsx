@@ -15,15 +15,8 @@ interface Props {
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
 }
 
-function ScannerGroup({
-  label,
-  items,
-  maxItems,
-  onAdd,
-  onClear,
-  resultLabel,
-  resultValue,
-}: {
+interface ScannerGroupProps {
+  id?: string;
   label: string;
   items: string[];
   maxItems?: number;
@@ -31,7 +24,18 @@ function ScannerGroup({
   onClear: () => void;
   resultLabel: string;
   resultValue: string;
-}) {
+}
+
+function ScannerGroup({
+  id,
+  label,
+  items,
+  maxItems,
+  onAdd,
+  onClear,
+  resultLabel,
+  resultValue,
+}: ScannerGroupProps) {
   const [input, setInput] = useState("");
 
   const handleAdd = () => {
@@ -51,9 +55,10 @@ function ScannerGroup({
 
   return (
     <div className="grid gap-2">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-2">
         <Input
+          id={id}
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           onKeyDown={(e) => {
@@ -132,6 +137,12 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_aduana: e.target.value.toUpperCase(),
                 }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("ps_operador")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
@@ -148,6 +159,12 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_operador: e.target.value.toUpperCase(),
                 }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("senasa")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
@@ -166,6 +183,12 @@ export function CardUnicidad({ form, setForm }: Props) {
                   senasa: e.target.value.toUpperCase(),
                 }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("ps_linea")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
@@ -182,6 +205,13 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_linea: e.target.value.toUpperCase(),
                 }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  // Saltar al primer input de precintos múltiples
+                  document.getElementById("scanner_ps_beta")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
@@ -192,7 +222,8 @@ export function CardUnicidad({ form, setForm }: Props) {
 
         {/* Scanner groups */}
         <ScannerGroup
-          label="PS BETA"
+          id="scanner_ps_beta"
+          label="PS BETA (Múltiples)"
           items={form.ps_beta_items}
           maxItems={4}
           onAdd={(val) =>
@@ -209,7 +240,8 @@ export function CardUnicidad({ form, setForm }: Props) {
         />
 
         <ScannerGroup
-          label="Termografos"
+          id="scanner_termografos"
+          label="Termografos (Múltiples)"
           items={form.termografos_items}
           onAdd={(val) =>
             setForm((prev) => ({

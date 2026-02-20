@@ -493,3 +493,31 @@ export async function searchTransportistas(
     method: "GET",
   });
 }
+// ======================
+// AUDITORÍA
+// Backend real: GET /api/v1/auditoria
+// ======================
+export type AuditLog = {
+  id: number;
+  registro_id: number;
+  accion: string;
+  motivo?: string | null;
+  usuario?: string | null;
+  creado_en: string; // ISO date
+  antes?: any;
+  despues?: any;
+};
+
+export async function getAuditLogs(params?: {
+  limit?: number;
+  offset?: number;
+  usuario?: string;
+  accion?: string;
+}): Promise<AuditLog[]> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.usuario) qs.set("usuario", params.usuario);
+  if (params?.accion) qs.set("accion", params.accion);
+
+  return request<AuditLog[]>(`/auditoria?${qs.toString()}`, { method: "GET" });
+}

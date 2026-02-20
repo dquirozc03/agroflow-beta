@@ -250,7 +250,7 @@ export function CardAccion({
               <Button
                 variant="default"
                 onClick={() => setConfirmNuevoOpen(true)}
-                disabled={loadingCreate || loadingSap || loadingClose}
+                disabled={loadingCreate || loadingSap}
                 className="min-h-9 flex-1 min-w-[140px]"
               >
                 <FilePlus2 className="mr-1.5 h-4 w-4" />
