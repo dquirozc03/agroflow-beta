@@ -19,9 +19,10 @@ import { KeyRound, ShieldAlert, Loader2 } from "lucide-react";
 interface ChangePasswordModalProps {
     isOpen: boolean;
     onSuccess: () => void;
+    onCancel?: () => void;
 }
 
-export function ChangePasswordModal({ isOpen, onSuccess }: ChangePasswordModalProps) {
+export function ChangePasswordModal({ isOpen, onSuccess, onCancel }: ChangePasswordModalProps) {
     const [passwordActual, setPasswordActual] = useState("");
     const [nuevaPassword, setNuevaPassword] = useState("");
     const [confirmarPassword, setConfirmarPassword] = useState("");
@@ -54,7 +55,9 @@ export function ChangePasswordModal({ isOpen, onSuccess }: ChangePasswordModalPr
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={() => { }}>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            if (!open && onCancel) onCancel();
+        }}>
             <DialogContent className="sm:max-w-[425px] border-none shadow-2xl dark:bg-slate-900">
                 <DialogHeader className="space-y-3">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/30">

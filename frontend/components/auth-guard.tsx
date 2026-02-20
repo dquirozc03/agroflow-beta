@@ -38,17 +38,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Intercepción: Si el usuario requiere cambio de password
   if (user?.requiere_cambio_password) {
     return (
-      <div className="h-screen w-full bg-slate-900">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-900">
         <ChangePasswordModal
           isOpen={true}
           onSuccess={() => {
             // Recargar la página para limpiar el estado y el flag
             window.location.reload();
           }}
+          onCancel={() => {
+            logout();
+          }}
         />
-        <div className="opacity-10 pointer-events-none select-none">
-          {children}
-        </div>
       </div>
     );
   }
