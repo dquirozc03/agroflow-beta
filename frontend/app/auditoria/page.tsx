@@ -75,8 +75,11 @@ export default function AuditoriaPage() {
         try {
             const data = await getAuditLogs();
             setLogs(data);
-        } catch {
-            toast.error("Error al cargar auditoría");
+        } catch (e: any) {
+            console.error("Audit load error:", e);
+            const msg = e.message || "Error desconocido";
+            const status = e.status ? `(${e.status})` : "";
+            toast.error(`Error al cargar auditoría ${status}: ${msg}`);
         } finally {
             setLoading(false);
         }

@@ -40,5 +40,5 @@ export function canAnularRegistros(role: UserRole | string): boolean {
 }
 
 export function canSeeAuditoria(role: UserRole | string): boolean {
-  return role === "administrador" || role === "gerencia";
+  return role === "administrador" || role === "gerencia" || role === "supervisor_facturacion";
 }
