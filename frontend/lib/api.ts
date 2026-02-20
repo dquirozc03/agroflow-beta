@@ -41,15 +41,11 @@ export class ApiError extends Error {
 export function isBackendUnreachable(e: unknown): boolean {
   if (e instanceof ApiError) {
     if (e.status === 502 || e.status === 503) return true;
-    if (e.status === 500) {
-      const msg = String(e.body?.detail ?? e.message ?? "").toLowerCase();
-      if (msg.includes("internal server error") || msg.includes("no se pudo conectar")) return true;
-    }
   }
   if (e instanceof TypeError && (e.message?.includes("fetch") || e.message?.includes("Failed to fetch")))
     return true;
-  const msg = String((e as Error)?.message ?? "");
-  return msg.includes("fetch") || msg.includes("Failed") || msg.includes("network") || msg === "";
+  const msg = String((e as Error)?.message ?? "").toLowerCase();
+  return msg.includes("failed to fetch") || msg.includes("network error") || msg.includes("load failed");
 }
 
 async function parseBody(res: Response) {
