@@ -64,6 +64,7 @@ class UsuarioResponse(BaseModel):
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     rol: Optional[str] = None
+    usuario: Optional[str] = None
 
 
 class RestablecerPasswordBody(BaseModel):
@@ -164,6 +165,14 @@ def actualizar_usuario(
         user.nombre = payload.nombre.strip()
     if payload.rol is not None:
         user.rol = payload.rol.strip()
+    if payload.usuario is not None:
+        new_usuario = payload.usuario.strip()
+        if new_usuario != user.usuario:
+            # Verificar si el nuevo ID ya está en uso
+            existente = db.query(Usuario).filter(Usuario.usuario == new_usuario).first()
+            if existente:
+                raise HTTPException(status_code=400, detail="El ID de usuario ya está en uso por otro colaborador")
+            user.usuario = new_usuario
         
     db.commit()
     db.refresh(user)

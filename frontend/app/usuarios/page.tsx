@@ -68,6 +68,7 @@ function UsuariosContent() {
     // Edit User State
     const [editingUser, setEditingUser] = useState<Usuario | null>(null);
     const [editNombre, setEditNombre] = useState("");
+    const [editUsuario, setEditUsuario] = useState("");
     const [editRol, setEditRol] = useState("");
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -111,7 +112,11 @@ function UsuariosContent() {
         e.preventDefault();
         if (!editingUser) return;
         try {
-            await apiUpdateUser(editingUser.id, { nombre: editNombre, rol: editRol });
+            await apiUpdateUser(editingUser.id, {
+                nombre: editNombre,
+                rol: editRol,
+                usuario: editUsuario
+            });
             toast.success("Usuario actualizado correctamente");
             setIsEditModalOpen(false);
             fetchUsers();
@@ -307,6 +312,7 @@ function UsuariosContent() {
                                                             <DropdownMenuItem className="gap-2" onClick={() => {
                                                                 setEditingUser(u);
                                                                 setEditNombre(u.nombre);
+                                                                setEditUsuario(u.usuario);
                                                                 setEditRol(u.rol);
                                                                 setIsEditModalOpen(true);
                                                             }}>
@@ -349,6 +355,10 @@ function UsuariosContent() {
                         <div className="space-y-2">
                             <Label>Nombre Completo</Label>
                             <Input value={editNombre} onChange={(e) => setEditNombre(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>ID de Usuario (Login)</Label>
+                            <Input value={editUsuario} onChange={(e) => setEditUsuario(e.target.value)} required />
                         </div>
                         <div className="space-y-2">
                             <Label>Rol del Sistema</Label>
