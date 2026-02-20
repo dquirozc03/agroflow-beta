@@ -139,9 +139,13 @@ function AuditoriaContent() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ALL">Todas las acciones</SelectItem>
-                                    <SelectItem value="CREAR">Creación</SelectItem>
-                                    <SelectItem value="ACTUALIZAR">Edición</SelectItem>
-                                    <SelectItem value="ANULAR">Anulaciones</SelectItem>
+                                    <SelectItem value="CREAR">Creación Registro</SelectItem>
+                                    <SelectItem value="EDITAR">Edición Registro</SelectItem>
+                                    <SelectItem value="ANULAR">Anulación Registro</SelectItem>
+                                    <SelectItem value="PROCESAR">Procesado SAP</SelectItem>
+                                    <SelectItem value="USUARIO_CREAR">Nuevo Colaborador</SelectItem>
+                                    <SelectItem value="USUARIO_EDITAR">Edición Colaborador</SelectItem>
+                                    <SelectItem value="USUARIO_PASSWORD_RESET">Reset Clave</SelectItem>
                                     <SelectItem value="LOGIN">Accesos</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -189,7 +193,7 @@ function AuditoriaContent() {
                                             <Card className="border-0 shadow-md ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-lg hover:ring-slate-300 dark:hover:ring-slate-700">
                                                 <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
                                                     <div className="flex items-center gap-2">
-                                                        <Badge variant="secondary" className="font-mono text-xs uppercase">
+                                                        <Badge variant="secondary" className="font-mono text-[10px] uppercase">
                                                             {log.accion}
                                                         </Badge>
                                                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -213,7 +217,7 @@ function AuditoriaContent() {
                                                         </div>
                                                     )}
                                                     <div className="mt-2 text-[10px] text-slate-400 font-mono">
-                                                        ID Evento: #{log.id} • Registro Ref: #{log.registro_id}
+                                                        ID Evento: #{log.id} {log.registro_id ? `• Registro Ref: #${log.registro_id}` : ""}
                                                     </div>
                                                 </CardContent>
                                             </Card>
@@ -241,34 +245,67 @@ export default function AuditoriaPage() {
 }
 
 function getActionColor(action: string) {
+    if (action.startsWith("USUARIO_")) return "text-indigo-500 ring-indigo-100 dark:ring-indigo-900";
+
     switch (action) {
         case "ANULAR": return "text-red-500 ring-red-100 dark:ring-red-900";
         case "CREAR": return "text-emerald-500 ring-emerald-100 dark:ring-emerald-900";
+        case "EDITAR": return "text-blue-500 ring-blue-100 dark:ring-blue-900";
         case "ACTUALIZAR": return "text-blue-500 ring-blue-100 dark:ring-blue-900";
+        case "PROCESAR": return "text-amber-500 ring-amber-100 dark:ring-amber-900";
         case "LOGIN": return "text-purple-500 ring-purple-100 dark:ring-purple-900";
         default: return "text-slate-500 ring-slate-100 dark:ring-slate-800";
     }
 }
 
 function getActionIcon(action: string) {
+    if (action.startsWith("USUARIO_")) return <UserCog className="h-5 w-5" />;
+
     switch (action) {
         case "ANULAR": return <ShieldAlert className="h-5 w-5" />;
         case "CREAR": return <FilePlus2 className="h-5 w-5" />;
+        case "EDITAR": return <FileText className="h-5 w-5" />;
         case "ACTUALIZAR": return <FileText className="h-5 w-5" />;
+        case "PROCESAR": return <CheckCircle2 className="h-5 w-5" />;
         case "LOGIN": return <User className="h-5 w-5" />;
         default: return <FileText className="h-5 w-5" />;
     }
 }
 
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, UserCog } from "lucide-react";
 
 function renderLogDetails(log: AuditLog) {
-    if (log.accion === 'ANULAR') {
-        return <span className="font-medium text-red-600 dark:text-red-400">Anuló el registro #{log.registro_id}</span>;
+    const action = log.accion;
+
+    if (action === 'ANULAR') {
+        return <span className="font-medium text-red-600 dark:text-red-400">Anuló el registro operativo #{log.registro_id}</span>;
     }
-    if (log.accion === 'CREAR') {
-        return <span>Creó un nuevo registro operativo.</span>;
+    if (action === 'CREAR') {
+        return <span className="font-medium text-emerald-600 dark:text-emerald-400">Creó un nuevo registro operativo.</span>;
+    }
+    if (action === 'EDITAR' || action === 'ACTUALIZAR') {
+        return <span>Actualizó datos en el registro operativo #{log.registro_id}.</span>;
+    }
+    if (action === 'PROCESAR') {
+        return <span className="font-medium text-amber-600 dark:text-amber-400">Finalizó y procesó el registro #{log.registro_id} para SAP.</span>;
     }
 
-    return <span>Realizó una operación en el sistema.</span>;
+    if (action === 'USUARIO_CREAR') {
+        return <span>Creó la cuenta del nuevo colaborador: <strong className="text-indigo-600 dark:text-indigo-400">{log.despues?.usuario}</strong></span>;
+    }
+    if (action === 'USUARIO_EDITAR') {
+        return <span>Editó los datos del colaborador <strong className="text-indigo-600 dark:text-indigo-400">{log.despues?.usuario}</strong>.</span>;
+    }
+    if (action === 'USUARIO_PASSWORD_RESET') {
+        return <span>Restableció la contraseña del colaborador <strong className="text-indigo-600 dark:text-indigo-400">{log.despues?.usuario}</strong>.</span>;
+    }
+    if (action === 'USUARIO_CAMBIAR_PASSWORD') {
+        return <span>Actualizó su propia contraseña de acceso.</span>;
+    }
+    if (action === 'USUARIO_ESTADO') {
+        const activo = log.despues?.activo;
+        return <span>{activo ? 'Activó' : 'Desactivó'} la cuenta del colaborador <strong className="text-indigo-600 dark:text-indigo-400">{log.despues?.usuario}</strong>.</span>;
+    }
+
+    return <span>Realizó una acción de {action.toLowerCase()} en el sistema.</span>;
 }
