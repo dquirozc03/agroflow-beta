@@ -74,12 +74,17 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
                                 includeMargin
                                 className="rounded-lg"
                             />
-                            {status === "connected" && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-[2px] dark:bg-black/90">
+                            {status === "linked" ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-[2px] dark:bg-black/90 rounded-xl">
                                     <div className="flex flex-col items-center gap-2 text-emerald-600 dark:text-emerald-400 animate-in zoom-in duration-300">
                                         <Check className="h-12 w-12" />
                                         <span className="font-bold text-lg">¡Conectado!</span>
                                     </div>
+                                </div>
+                            ) : status === "connected" && (
+                                <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                                    <Loader2 className="h-2 w-2 animate-spin" />
+                                    Esperando celular...
                                 </div>
                             )}
                         </div>

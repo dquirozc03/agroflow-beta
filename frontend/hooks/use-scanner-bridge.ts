@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { getStoredToken } from "@/lib/api";
 
-type ScannerStatus = "disconnected" | "connecting" | "connected";
+type ScannerStatus = "disconnected" | "connecting" | "connected" | "linked";
 
 export function useScannerBridge(
     sessionId: string | null,
@@ -49,9 +49,15 @@ export function useScannerBridge(
 
             ws.onmessage = (event) => {
                 const data = event.data;
-                if (data) {
-                    onScanRef.current(data);
+                if (!data) return;
+
+                if (data === "__LINKED__") {
+                    setStatus("linked");
+                    toast.success("¡Dispositivo vinculado!");
+                    return;
                 }
+
+                onScanRef.current(data);
             };
 
             ws.onclose = () => {

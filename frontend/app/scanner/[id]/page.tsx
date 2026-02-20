@@ -115,6 +115,22 @@ export default function ScannerMobilePage({ params }: Props) {
         };
     }, []);
 
+    // Enviar señal de vínculo al PC al entrar
+    useEffect(() => {
+        const sendLinkSignal = async () => {
+            try {
+                await fetch(`/api/v1/scanner/push/${params.id}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: "__LINKED__" }),
+                });
+            } catch (e) {
+                console.error("Failed to send link signal", e);
+            }
+        };
+        sendLinkSignal();
+    }, [params.id]);
+
     const handleScan = async (text: string) => {
         const now = Date.now();
         // Cooldown de 5 segundos para el mismo código
