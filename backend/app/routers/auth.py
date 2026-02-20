@@ -214,7 +214,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         usuario=user.usuario,
         nombre=user.nombre,
         rol=user.rol,
-        requiere_cambio_password=user.requiere_cambio_password,
+        requiere_cambio_password=getattr(user, "requiere_cambio_password", False),
     )
 
 
