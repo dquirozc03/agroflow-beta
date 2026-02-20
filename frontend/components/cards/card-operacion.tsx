@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  justScannedId?: string | null;
 }
 
 function prettyEstado(v?: string | null) {
@@ -65,7 +66,7 @@ function buildPlacas(tracto: string, carreta: string): string {
   return `${t}/${c}`;
 }
 
-export const CardOperacion = React.memo(function CardOperacion({ form, setForm }: Props) {
+export const CardOperacion = React.memo(function CardOperacion({ form, setForm, justScannedId }: Props) {
   const [placasLoading, setPlacasLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [carretaAlerta, setCarretaAlerta] = useState<{
@@ -148,7 +149,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm }
               }
             }}
             placeholder="Escanear DNI"
-            className="h-9 font-mono"
+            className={cn("h-9 font-mono", justScannedId === "dni" && "animate-scan-flash")}
           />
         </div>
 
@@ -171,7 +172,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm }
                 }
               }}
               placeholder="Placa tracto"
-              className="mt-1 h-9 font-mono"
+              className={cn("mt-1 h-9 font-mono", justScannedId === "placas_tracto" && "animate-scan-flash")}
             />
           </div>
           <div className="min-w-0 max-w-full">
@@ -192,7 +193,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm }
                 }
               }}
               placeholder="Placa carreta"
-              className="mt-1 h-9 font-mono"
+              className={cn("mt-1 h-9 font-mono", justScannedId === "placas_carreta" && "animate-scan-flash")}
             />
           </div>
         </div>

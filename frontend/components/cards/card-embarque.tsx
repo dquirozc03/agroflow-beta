@@ -17,9 +17,10 @@ interface Props {
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   refsLocked: boolean;
   setRefsLocked: (v: boolean) => void;
+  justScannedId?: string | null;
 }
 
-export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props) {
+export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked, justScannedId }: Props) {
   const [loading, setLoading] = useState(false);
   const [refStatus, setRefStatus] = useState<"idle" | "ok" | "fail">("idle");
 

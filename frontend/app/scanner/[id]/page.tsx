@@ -16,8 +16,40 @@ interface Props {
 export default function ScannerMobilePage({ params }: Props) {
     const [lastResult, setLastResult] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
+    const [flash, setFlash] = useState(false);
+    const lastScanTime = useRef<number>(0);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const router = useRouter();
+
+    // Audio context for beeps
+    const playSound = (type: "success" | "error") => {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if (type === "success") {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            } else {
+                osc.type = "square";
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            }
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        } catch (e) {
+            console.warn("Audio feedback error:", e);
+        }
+    };
 
     useEffect(() => {
         // Flag to prevent double init in strict mode
@@ -84,13 +116,19 @@ export default function ScannerMobilePage({ params }: Props) {
     }, []);
 
     const handleScan = async (text: string) => {
-        // Evitar dobles lecturas muy rápidas del mismo código
-        if (text === lastResult && sending) return;
+        const now = Date.now();
+        // Cooldown de 5 segundos para el mismo código
+        if (text === lastResult && now - lastScanTime.current < 5000) return;
 
         // Feedback visual/sonoro
         navigator.vibrate?.(200);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 500);
+        playSound("success");
+
         setLastResult(text);
         setSending(true);
+        lastScanTime.current = now;
 
         try {
             const res = await fetch(`/api/v1/scanner/push/${params.id}`, {
@@ -102,9 +140,11 @@ export default function ScannerMobilePage({ params }: Props) {
             if (res.ok) {
                 toast.success(`Enviado: ${text}`);
             } else {
+                playSound("error");
                 toast.error("Error enviando al PC");
             }
         } catch {
+            playSound("error");
             toast.error("Error de conexión");
         } finally {
             // Pequeño delay para no saturar
@@ -128,6 +168,8 @@ export default function ScannerMobilePage({ params }: Props) {
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+                {/* Flash overlay */}
+                <div className={`absolute inset-0 z-50 pointer-events-none transition-colors duration-300 ${flash ? 'bg-emerald-500/40' : 'bg-transparent'}`} />
 
                 {/* Lector */}
                 <div id="reader" className="w-full max-w-md overflow-hidden rounded-xl border-2 border-emerald-500/50 shadow-2xl bg-black" />

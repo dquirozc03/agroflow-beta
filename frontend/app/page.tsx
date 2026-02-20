@@ -158,6 +158,7 @@ function AgroFlowContent() {
 
   // Scanner Logic
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [justScannedId, setJustScannedId] = useState<string | null>(null);
 
   const handleScan = useCallback((data: string) => {
     const val = data.trim().toUpperCase();
@@ -170,6 +171,8 @@ function AgroFlowContent() {
         // 1. Si hay un campo enfocado, intentar insertar ahí
         if (fieldId && fieldId in prev && !Array.isArray(prev[fieldId as keyof FormState])) {
           toast.info(`Insertado en ${fieldId}: ${val}`);
+          setJustScannedId(fieldId);
+          setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, [fieldId]: val };
         }
 
@@ -177,6 +180,8 @@ function AgroFlowContent() {
         // Si parece DNI (8 dígitos numéricos), forzar al DNI
         if (/^\d{8}$/.test(val)) {
           toast.info(`DNI Escaneado: ${val}`);
+          setJustScannedId("dni");
+          setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, dni: val };
         }
 
@@ -186,6 +191,9 @@ function AgroFlowContent() {
           return prev;
         }
         toast.success(`Precinto agregado: ${val}`);
+        // Para items múltiples, flasheamos el input del scanner correspondiente
+        setJustScannedId("scanner_ps_beta");
+        setTimeout(() => setJustScannedId(null), 1000);
         return {
           ...prev,
           ps_beta_items: [...prev.ps_beta_items, val],
@@ -288,15 +296,16 @@ function AgroFlowContent() {
                               setForm={setForm}
                               refsLocked={refsLocked}
                               setRefsLocked={setRefsLocked}
+                              justScannedId={justScannedId}
                             />
                           </div>
 
                           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                             <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                              <CardOperacion form={form} setForm={setForm} />
+                              <CardOperacion form={form} setForm={setForm} justScannedId={justScannedId} />
                             </div>
                             <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                              <CardUnicidad form={form} setForm={setForm} />
+                              <CardUnicidad form={form} setForm={setForm} justScannedId={justScannedId} />
                             </div>
                           </div>
                         </div>

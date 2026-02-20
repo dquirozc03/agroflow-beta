@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { FormState } from "@/lib/types";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 interface Props {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  justScannedId?: string | null;
 }
 
 interface ScannerGroupProps {
@@ -24,6 +26,7 @@ interface ScannerGroupProps {
   onClear: () => void;
   resultLabel: string;
   resultValue: string;
+  isFlashing?: boolean;
 }
 
 function ScannerGroup({
@@ -35,6 +38,7 @@ function ScannerGroup({
   onClear,
   resultLabel,
   resultValue,
+  isFlashing,
 }: ScannerGroupProps) {
   const [input, setInput] = useState("");
 
@@ -68,7 +72,7 @@ function ScannerGroup({
             }
           }}
           placeholder="Escanear y agregar"
-          className="font-mono"
+          className={cn("font-mono", isFlashing && "animate-scan-flash")}
         />
         <Button
           variant="secondary"
@@ -112,7 +116,7 @@ function ScannerGroup({
   );
 }
 
-export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm }: Props) {
+export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm, justScannedId }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -237,6 +241,7 @@ export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm }: 
           }
           resultLabel="PS_BETA"
           resultValue={form.ps_beta_items.join("/")}
+          isFlashing={justScannedId === "scanner_ps_beta"}
         />
 
         <ScannerGroup
