@@ -32,8 +32,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Ruta protegida sin usuario ni carga en curso → redirigir (evitar flash)
-  if (!user && !isLoading) return null;
+  // Ruta protegida: Si está cargando o no hay usuario, no renderizar children (evita flash)
+  if (isLoading) return null;
+  if (!user) return null;
 
   // Intercepción: Si el usuario requiere cambio de password
   if (user?.requiere_cambio_password) {

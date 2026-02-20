@@ -7,7 +7,6 @@ import { Lock, User, ArrowRight, CircleAlert } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TruckLoader } from "@/components/truck-loader";
@@ -38,7 +37,7 @@ AuthHeader.displayName = "AuthHeader";
 
 function LoginForm() {
   const router = useRouter();
-  const { user, isLoading: authLoading, login } = useAuth();
+  const { user, isLoading: authLoading, login, logout } = useAuth();
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -47,10 +46,16 @@ function LoginForm() {
   useEffect(() => {
     if (authLoading) return;
     if (user) {
+      // Si el usuario llega al login pero requiere cambio de pass, lo deslogeamos
+      // Esto rompe el bucle si presionó "atrás" desde el modal de cambio.
+      if (user.requiere_cambio_password) {
+        logout();
+        return;
+      }
       router.replace("/");
       router.refresh();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, logout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,13 +123,13 @@ function LoginForm() {
               </Label>
               <div className="relative group/input">
                 <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                <Input
+                <input
                   id="usuario"
                   type="text"
                   placeholder="ID de usuario"
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value)}
-                  className="h-12 border-slate-300/60 bg-white/50 pl-11 text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-primary/20 dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                  className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
                   autoComplete="username"
                   autoFocus
                   disabled={loading}
@@ -138,13 +143,13 @@ function LoginForm() {
               </Label>
               <div className="relative group/input">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                <Input
+                <input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 border-slate-300/60 bg-white/50 pl-11 text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-primary/20 dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                  className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
                   autoComplete="current-password"
                   disabled={loading}
                 />
