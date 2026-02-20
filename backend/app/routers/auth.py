@@ -133,6 +133,7 @@ def crear_usuario(
         },
         usuario=current_user.usuario
     )
+    db.commit()
     
     return nuevo
 
@@ -167,6 +168,7 @@ def toggle_usuario_status(
         despues={"usuario": user.usuario, "activo": user.activo},
         usuario=current_user.usuario
     )
+    db.commit()
     
     return {"ok": True, "mensaje": f"Usuario {estado} correctamente"}
 
@@ -220,6 +222,7 @@ def actualizar_usuario(
         },
         usuario=current_user.usuario
     )
+    db.commit()
     
     return user
 
@@ -313,6 +316,7 @@ def restablecer_password_v2(
         despues={"usuario": user.usuario, "requiere_cambio_password": True},
         usuario=current_user.usuario
     )
+    db.commit()
     
     return {"ok": True, "mensaje": f"Contraseña de {user.usuario} actualizada. Se requerirá cambio al iniciar sesión."}
 
@@ -344,6 +348,7 @@ def cambiar_password_propia(
         despues={"usuario": current_user.usuario, "requiere_cambio_password": False},
         usuario=current_user.usuario
     )
+    db.commit()
     
     return {"ok": True, "mensaje": "Tu contraseña ha sido actualizada correctamente"}
 

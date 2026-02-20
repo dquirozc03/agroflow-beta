@@ -168,8 +168,8 @@ function UsuariosContent() {
                                     <Users className="h-4 w-4 text-slate-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{users.length}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Colaboradores registrados</p>
+                                    <div className="text-2xl font-bold">{users.filter(u => u.activo).length}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Colaboradores activos</p>
                                 </CardContent>
                             </Card>
                             <Card className="border-none bg-white/50 shadow-md backdrop-blur-sm dark:bg-slate-900/50">
@@ -178,8 +178,8 @@ function UsuariosContent() {
                                     <ShieldCheck className="h-4 w-4 text-primary" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{users.filter(u => u.rol === 'administrador').length}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Con acceso total</p>
+                                    <div className="text-2xl font-bold">{users.filter(u => u.rol === 'administrador' && u.activo).length}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Habilitados con acceso total</p>
                                 </CardContent>
                             </Card>
                             <Card className="border-none bg-white/50 shadow-md backdrop-blur-sm dark:bg-slate-900/50">
