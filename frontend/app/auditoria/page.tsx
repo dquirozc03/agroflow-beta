@@ -40,6 +40,18 @@ import { getAuditLogs, type AuditLog } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// Helper para formatear fechas de forma segura
+function safeFormat(dateStr: string | undefined | null, pattern: string) {
+    if (!dateStr) return "---";
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "---";
+        return format(d, pattern, { locale: es });
+    } catch {
+        return "---";
+    }
+}
+
 export default function AuditoriaPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
@@ -154,10 +166,10 @@ export default function AuditoriaPage() {
                                         {/* Date Bubble (Desktop) */}
                                         <div className="hidden md:block w-24 text-right pr-6 mt-1.5">
                                             <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                                {format(new Date(log.creado_en), "HH:mm")}
+                                                {safeFormat(log.creado_en, "HH:mm")}
                                             </p>
                                             <p className="text-[10px] text-slate-500 uppercase tracking-wider">
-                                                {format(new Date(log.creado_en), "dd MMM")}
+                                                {safeFormat(log.creado_en, "dd MMM")}
                                             </p>
                                         </div>
 
@@ -182,7 +194,7 @@ export default function AuditoriaPage() {
                                                         </span>
                                                     </div>
                                                     <span className="text-[10px] text-muted-foreground md:hidden">
-                                                        {format(new Date(log.creado_en), "dd/MM HH:mm")}
+                                                        {safeFormat(log.creado_en, "dd/MM HH:mm")}
                                                     </span>
                                                 </CardHeader>
                                                 <CardContent className="px-4 pb-4">

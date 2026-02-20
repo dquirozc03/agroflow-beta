@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1/auditoria", tags=["Auditoría"])
 class AuditLogResponse(BaseModel):
     id: int
     registro_id: int
-    accion: string
+    accion: str
     motivo: Optional[str] = None
     usuario: Optional[str] = None
     creado_en: datetime

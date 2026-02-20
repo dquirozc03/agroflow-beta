@@ -88,9 +88,14 @@ export function AppHeader({ onOpenScanner }: Props) {
 
         <ThemeToggle />
         {user && (
-          <div className="hidden lg:flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 min-w-0 max-w-[200px]">
-            <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="text-sm text-foreground/90 truncate">{user.nombre}</span>
+          <div className="hidden lg:flex flex-col items-start gap-0 rounded-lg border border-border/60 bg-muted/40 px-3 py-1 min-w-0 max-w-[220px]">
+            <div className="flex items-center gap-2 w-full">
+              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground/90 truncate">{user.nombre}</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground pl-5 uppercase tracking-wider">
+              {ROLE_LABELS[user.rol as UserRole]}
+            </span>
           </div>
         )}
         <Button
