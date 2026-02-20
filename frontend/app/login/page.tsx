@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TruckLoader } from "@/components/truck-loader";
+import { apiUpdateOwnPassword } from "@/lib/api";
+import { toast } from "sonner";
 
 // Memoized background to prevent re-renders on input
 const AuthBackground = memo(() => (
@@ -40,17 +42,19 @@ function LoginForm() {
   const { user, isLoading: authLoading, login, logout } = useAuth();
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
     if (user) {
-      // Si el usuario requiere cambio, NO lo redirigimos automáticamente a / desde aquí,
-      // para evitar bucles. El handleSubmit se encarga de enviarlo a / tras el login.
-      // Si ya está logueado pero entra a /login, simplemente lo dejamos ver el form.
-      if (user.requiere_cambio_password) return;
-
+      if (user.requiere_cambio_password) {
+        setShowChangePassword(true);
+        return;
+      }
       router.replace("/");
       router.refresh();
     }
@@ -58,6 +62,10 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (showChangePassword) {
+      handleUpdatePassword();
+      return;
+    }
     if (!usuario || !password) {
       setError("Por favor complete todos los campos");
       return;
@@ -65,20 +73,45 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      // Small artificial delay for visual polish (trailer animation)
-      await new Promise(r => setTimeout(r, 1500));
-
+      await new Promise(r => setTimeout(r, 1000));
       const result = await login(usuario, password);
       if (result.ok) {
-        router.push("/");
-        router.refresh();
+        // El useEffect se encargará de detectar si requiere_cambio_password es true
+        // y mostrar el formulario correspondiente o redirigir al dashboard.
       } else {
         setError(result.error ?? "Error al iniciar sesión");
       }
     } finally {
-      if (router) { // Check if still mounted
-        setLoading(false);
-      }
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      setError("Complete los campos de contraseña");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await apiUpdateOwnPassword({ nueva_password: newPassword });
+      toast.success("Contraseña actualizada correctamente");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Error al actualizar contraseña");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,52 +141,90 @@ function LoginForm() {
           {/* Header Section */}
           <div className="mb-8 text-center">
             <h1 className="bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent drop-shadow-sm dark:from-white dark:to-slate-300">
-              {SYSTEM_NAME}
+              {showChangePassword ? "Actualizar Contraseña" : SYSTEM_NAME}
             </h1>
             <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-              Área Comercial y Exportaciones
+              {showChangePassword ? "Para tu seguridad, debes cambiar tu clave temporal." : "Área Comercial y Exportaciones"}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="usuario" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Usuario
-              </Label>
-              <div className="relative group/input">
-                <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                <input
-                  id="usuario"
-                  type="text"
-                  placeholder="ID de usuario"
-                  value={usuario}
-                  onChange={(e) => setUsuario(e.target.value)}
-                  className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
-                  autoComplete="username"
-                  autoFocus
-                  disabled={loading}
-                />
-              </div>
-            </div>
+            {!showChangePassword ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="usuario" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Usuario
+                  </Label>
+                  <div className="relative group/input">
+                    <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
+                    <input
+                      id="usuario"
+                      type="text"
+                      placeholder="ID de usuario"
+                      value={usuario}
+                      onChange={(e) => setUsuario(e.target.value)}
+                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                      autoComplete="username"
+                      autoFocus
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Contraseña
-              </Label>
-              <div className="relative group/input">
-                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
-                  autoComplete="current-password"
-                  disabled={loading}
-                />
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Contraseña
+                  </Label>
+                  <div className="relative group/input">
+                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
+                    <input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
+                      autoComplete="current-password"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nueva Contraseña</Label>
+                  <div className="relative group/input">
+                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="newPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white"
+                      disabled={loading}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
+                  <div className="relative group/input">
+                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {error && (
               <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-50/50 px-4 py-3 text-red-600 shadow-sm backdrop-blur-md animate-in slide-in-from-top-2 dark:bg-red-900/20 dark:text-red-300">
@@ -172,7 +243,7 @@ function LoginForm() {
                   size="lg"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    Iniciar Sesión
+                    {showChangePassword ? "Actualizar y Continuar" : "Iniciar Sesión"}
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </span>
                   {/* Shiny effect on hover */}
@@ -184,9 +255,19 @@ function LoginForm() {
 
           {/* Footer links inside card */}
           <div className="mt-8 flex flex-col items-center gap-4 border-t border-slate-200/50 pt-6 text-center dark:border-white/10">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              ¿Problemas para acceder? <span className="cursor-pointer font-medium text-slate-600 transition-colors hover:text-primary hover:underline dark:text-slate-300">Contactar Soporte</span>
-            </p>
+            {showChangePassword ? (
+              <button
+                onClick={() => logout()}
+                className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                type="button"
+              >
+                Cerrar sesión y volver al inicio
+              </button>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                ¿Problemas para acceder? <span className="cursor-pointer font-medium text-slate-600 transition-colors hover:text-primary hover:underline dark:text-slate-300">Contactar Soporte</span>
+              </p>
+            )}
           </div>
 
         </div>
