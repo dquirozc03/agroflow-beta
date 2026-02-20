@@ -89,10 +89,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await parseBody(res);
-    const msg =
-      (typeof body === "string" && body) ||
-      body?.detail ||
-      `API error ${res.status} ${res.statusText}`;
+    let msg = `Error ${res.status}: ${res.statusText}`;
+
+    if (typeof body === "string" && body) {
+      msg = body;
+    } else if (body?.detail) {
+      if (Array.isArray(body.detail)) {
+        // Manejar errores de validación de FastAPI (422)
+        msg = body.detail[0]?.msg || JSON.stringify(body.detail);
+      } else {
+        msg = body.detail;
+      }
+    }
+
     throw new ApiError(msg, res.status, body);
   }
 

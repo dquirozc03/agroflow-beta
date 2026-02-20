@@ -103,7 +103,10 @@ function LoginForm() {
     setLoading(true);
     setError("");
     try {
-      await apiUpdateOwnPassword({ nueva_password: newPassword });
+      await apiUpdateOwnPassword({
+        password_actual: password,
+        nueva_password: newPassword
+      });
       toast.success("Contraseña actualizada correctamente");
       setTimeout(() => {
         window.location.href = "/";

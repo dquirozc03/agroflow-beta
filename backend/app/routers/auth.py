@@ -72,7 +72,7 @@ class RestablecerPasswordBody(BaseModel):
 
 
 class CambiarPasswordPropiaBody(BaseModel):
-    password_actual: str
+    password_actual: Optional[str] = None
     nueva_password: str
 
 
@@ -269,8 +269,9 @@ def cambiar_password_propia(
     db: Session = Depends(get_db),
 ):
     """Permite al usuario cambiar su propia contraseña."""
-    if not verify_password(body.password_actual, current_user.password_hash):
-        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    if not current_user.requiere_cambio_password:
+        if not body.password_actual or not verify_password(body.password_actual, current_user.password_hash):
+            raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
     
     pwd = body.nueva_password.strip()
     if len(pwd) < 6:
