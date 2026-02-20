@@ -28,7 +28,7 @@ class LoginResponse(BaseModel):
     usuario: str
     nombre: str
     rol: str
-    requiere_cambio_password: bool
+    requiere_cambio_password: Optional[bool] = False
 
 
 class MeResponse(BaseModel):
@@ -36,7 +36,7 @@ class MeResponse(BaseModel):
     usuario: str
     nombre: str
     rol: str
-    requiere_cambio_password: bool
+    requiere_cambio_password: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -55,7 +55,7 @@ class UsuarioResponse(BaseModel):
     nombre: str
     rol: str
     activo: bool
-    requiere_cambio_password: bool
+    requiere_cambio_password: Optional[bool] = False
 
     class Config:
         from_attributes = True

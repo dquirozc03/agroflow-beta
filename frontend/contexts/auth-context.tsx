@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             usuario: me.usuario,
             nombre: me.nombre,
             rol: me.rol as UserRole,
-            requiere_cambio_password: me.requiere_cambio_password,
+            requiere_cambio_password: !!me.requiere_cambio_password,
           };
           setUser(u);
           saveStoredUser(u);
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           usuario: res.usuario,
           nombre: res.nombre,
           rol: res.rol as UserRole,
-          requiere_cambio_password: res.requiere_cambio_password,
+          requiere_cambio_password: !!res.requiere_cambio_password,
         };
         setUser(u);
         saveStoredUser(u);
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 usuario: res.usuario,
                 nombre: res.nombre,
                 rol: res.rol as UserRole,
-                requiere_cambio_password: res.requiere_cambio_password,
+                requiere_cambio_password: !!res.requiere_cambio_password,
               };
               setUser(u);
               saveStoredUser(u);
@@ -147,7 +147,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (retryStatus === 423) {
                 return { ok: false, error: retryMsg || "Cuenta bloqueada. Contacte al administrador." };
               }
-              return { ok: false, error: retryMsg.includes("Intentos restantes") ? retryMsg : "Credenciales incorrectas. Revisa usuario y contraseña." };
+              if (retryStatus === 401) {
+                return { ok: false, error: retryMsg.includes("Intentos restantes") ? retryMsg : "Credenciales incorrectas. Revisa usuario y contraseña." };
+              }
+              return { ok: false, error: retryMsg || "Error al iniciar sesión después del reintento." };
             }
           }
           return {

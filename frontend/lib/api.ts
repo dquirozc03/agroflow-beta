@@ -49,6 +49,8 @@ export function isBackendUnreachable(e: unknown): boolean {
   if (e instanceof TypeError && (e.message?.includes("fetch") || e.message?.includes("Failed to fetch")))
     return true;
   const msg = String((e as Error)?.message ?? "");
+  // Si es un ApiError con un mensaje vacío, NO reintentar a menos que sea 500/502/503 (handled above)
+  if (e instanceof ApiError && msg === "") return false;
   return msg.includes("fetch") || msg.includes("Failed") || msg.includes("network") || msg === "";
 }
 
@@ -115,7 +117,7 @@ export type LoginResponse = {
   usuario: string;
   nombre: string;
   rol: string;
-  requiere_cambio_password: boolean;
+  requiere_cambio_password?: boolean;
 };
 
 export type MeResponse = {
@@ -123,7 +125,7 @@ export type MeResponse = {
   usuario: string;
   nombre: string;
   rol: string;
-  requiere_cambio_password: boolean;
+  requiere_cambio_password?: boolean;
 };
 
 export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
