@@ -36,6 +36,9 @@ class MeResponse(BaseModel):
     nombre: str
     rol: str
 
+    class Config:
+        from_attributes = True
+
 
 class UsuarioCreate(BaseModel):
     usuario: str
@@ -178,11 +181,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 @router.get("/me", response_model=MeResponse)
 def me(current_user: CurrentUser):
     """Devuelve el usuario actual (token válido)."""
-    return MeResponse(
-        usuario=current_user.usuario,
-        nombre=current_user.nombre,
-        rol=current_user.rol,
-    )
+    return current_user
 
 
 @router.patch("/usuarios/{usuario}/password")
