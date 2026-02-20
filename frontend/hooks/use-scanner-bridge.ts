@@ -15,16 +15,21 @@ export function useScannerBridge(
         if (!sessionId) return;
 
         // Conectar WebSocket
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        // Ajustar si backend está en otro puerto/host (en dev es localhost:8000)
-        // Pero si usamos next rewrite /api -> backend, el WS quizás necesite URL directa.
-        // Asumiremos que /api/v1/scanner/ws/... esta mapeado o usamos la URL del backend directa.
-        // Para simplificar local: localhost:8000
-        // EN PRODUCCION: Usar URL relativa o configurada.
+        // Detectar URL del backend
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-        // HACK LOCAL: Asumir puerto 8000 si estamos en localhost:3000
-        const backendHost = "localhost:8000";
-        const url = `ws://${backendHost}/api/v1/scanner/ws/${sessionId}`;
+        // Construir URL del WebSocket
+        let wsUrl = backendUrl.replace(/^http/, "ws"); // http -> ws, https -> wss
+        if (!wsUrl.startsWith("ws")) {
+            // Si por alguna razón no tiene protocolo, asumir ws:// o wss:// según ubicación window
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            wsUrl = `${protocol}//${backendUrl}`;
+        }
+
+        // Asegurarse de que no termine en slash
+        wsUrl = wsUrl.replace(/\/$/, "");
+
+        const url = `${wsUrl}/api/v1/scanner/ws/${sessionId}`;
 
         setStatus("connecting");
         const ws = new WebSocket(url);

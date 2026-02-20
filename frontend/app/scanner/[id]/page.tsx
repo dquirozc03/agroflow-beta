@@ -37,10 +37,18 @@ export default function ScannerMobilePage({ params }: Props) {
                 const scanner = new Html5QrcodeScanner(
                     elementId,
                     {
-                        fps: 5,
-                        qrbox: { width: 250, height: 250 },
-                        // supportedScanTypes: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128],
-                        // showTorchButtonIfSupported: true, // Comentado por si acaso causa issues en versiones viejas
+                        fps: 15,
+                        qrbox: { width: 300, height: 200 },
+                        formatsToSupport: [
+                            Html5QrcodeSupportedFormats.QR_CODE,
+                            Html5QrcodeSupportedFormats.CODE_128,
+                            Html5QrcodeSupportedFormats.CODE_39,
+                            Html5QrcodeSupportedFormats.EAN_13,
+                            Html5QrcodeSupportedFormats.UPC_A,
+                            Html5QrcodeSupportedFormats.PDF_417
+                        ],
+                        useBarCodeDetectorIfSupported: true,
+                        showTorchButtonIfSupported: true,
                         aspectRatio: 1.0,
                     },
                     false
