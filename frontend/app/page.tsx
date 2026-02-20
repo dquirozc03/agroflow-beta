@@ -159,27 +159,33 @@ function AgroFlowContent() {
   // Scanner Logic
   const [scannerOpen, setScannerOpen] = useState(false);
   const [justScannedId, setJustScannedId] = useState<string | null>(null);
+  const lastScanRef = useRef<{ val: string; time: number }>({ val: "", time: 0 });
 
   const handleScan = useCallback((data: string) => {
     const val = data.trim().toUpperCase();
     if (!val) return;
 
+    // 🛡️ DEDUPLICACIÓN PC: No alertar lo mismo en menos de 2 segundos
+    const now = Date.now();
+    if (val === lastScanRef.current.val && now - lastScanRef.current.time < 2000) return;
+    lastScanRef.current = { val, time: now };
+
     startTransition(() => {
       setForm((prev) => {
         const fieldId = lastFocusedId.current;
+        const toastId = `pc-scan-${val}`; // ID único para deduplicar toasts en sonner
 
         // 1. Si hay un campo enfocado, intentar insertar ahí
         if (fieldId && fieldId in prev && !Array.isArray(prev[fieldId as keyof FormState])) {
-          toast.info(`Insertado en ${fieldId}: ${val}`);
+          toast.info(`Insertado en ${fieldId}: ${val}`, { id: toastId });
           setJustScannedId(fieldId);
           setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, [fieldId]: val };
         }
 
         // 2. Si no hay foco o el campo no es directo (ej: items), usar lógica inteligente
-        // Si parece DNI (8 dígitos numéricos), forzar al DNI
         if (/^\d{8}$/.test(val)) {
-          toast.info(`DNI Escaneado: ${val}`);
+          toast.info(`DNI Escaneado: ${val}`, { id: toastId });
           setJustScannedId("dni");
           setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, dni: val };
@@ -187,10 +193,10 @@ function AgroFlowContent() {
 
         // 3. Por defecto u otros casos: Agregar a PS_BETA_ITEMS (Precintos múltiples)
         if (prev.ps_beta_items.includes(val)) {
-          toast.warning("Precinto duplicado (ya está en lista)");
+          toast.warning("Precinto duplicado", { id: `dup-${val}` });
           return prev;
         }
-        toast.success(`Precinto agregado: ${val}`);
+        toast.success(`Precinto agregado: ${val}`, { id: toastId });
         // Para items múltiples, flasheamos el input del scanner correspondiente
         setJustScannedId("scanner_ps_beta");
         setTimeout(() => setJustScannedId(null), 1000);

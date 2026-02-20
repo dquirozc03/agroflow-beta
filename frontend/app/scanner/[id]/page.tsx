@@ -17,6 +17,8 @@ export default function ScannerMobilePage({ params }: Props) {
     const [lastResult, setLastResult] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
     const [flash, setFlash] = useState(false);
+    const lastResultRef = useRef<string | null>(null);
+    const isSendingRef = useRef(false);
     const lastScanTime = useRef<number>(0);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const router = useRouter();
@@ -133,8 +135,10 @@ export default function ScannerMobilePage({ params }: Props) {
 
     const handleScan = async (text: string) => {
         const now = Date.now();
-        // Cooldown de 5 segundos para el mismo código
-        if (text === lastResult && now - lastScanTime.current < 5000) return;
+
+        // 🛡️ CONTROL REFORZADO DE DUPLICADOS (Sincrónico con Refs)
+        if (text === lastResultRef.current && now - lastScanTime.current < 5000) return;
+        if (isSendingRef.current && text === lastResultRef.current) return;
 
         // Feedback visual/sonoro
         navigator.vibrate?.(200);
@@ -142,9 +146,15 @@ export default function ScannerMobilePage({ params }: Props) {
         setTimeout(() => setFlash(false), 500);
         playSound("success");
 
+        lastResultRef.current = text;
         setLastResult(text);
+
+        isSendingRef.current = true;
         setSending(true);
+
         lastScanTime.current = now;
+
+        const toastId = `mob-scan-${text}`;
 
         try {
             const res = await fetch(`/api/v1/scanner/push/${params.id}`, {
@@ -154,33 +164,38 @@ export default function ScannerMobilePage({ params }: Props) {
             });
 
             if (res.ok) {
-                toast.success(`Enviado: ${text}`);
+                toast.success(`Enviado: ${text}`, { id: toastId });
             } else {
                 playSound("error");
-                toast.error("Error enviando al PC");
+                toast.error("Error enviando al PC", { id: `err-${text}` });
             }
         } catch {
             playSound("error");
-            toast.error("Error de conexión");
+            toast.error("Error de conexión", { id: "conn-err" });
         } finally {
-            // Pequeño delay para no saturar
-            setTimeout(() => setSending(false), 1000);
+            // Permitir volver a enviar después de un pequeño respiro (para UI)
+            setTimeout(() => {
+                setSending(false);
+                isSendingRef.current = false;
+            }, 1000);
         }
     };
 
     return (
-        <div className="flex flex-col h-screen bg-black text-white">
-            <div className="p-4 flex items-center justify-between border-b border-white/10 bg-slate-900">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-white">
-                    <ArrowLeft className="h-6 w-6" />
-                </Button>
-                <div className="flex flex-col items-center">
-                    <span className="font-bold text-lg">AgroFlow Scanner</span>
-                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                        <Wifi className="h-3 w-3" /> Conectado a PC
-                    </span>
+        <div className="flex flex-col h-screen bg-black text-white px-safe">
+            <div className="pt-[env(safe-area-inset-top)] bg-slate-900 border-b border-white/10 shrink-0">
+                <div className="p-4 flex items-center justify-between">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-white shrink-0">
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <div className="flex flex-col items-center min-w-0 px-2">
+                        <span className="font-bold text-base truncate">AgroFlow Scanner</span>
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                            <Wifi className="h-3 w-3" /> Conectado a PC
+                        </span>
+                    </div>
+                    <div className="w-10" /> {/* Spacer */}
                 </div>
-                <div className="w-8" /> {/* Spacer */}
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center p-4 relative overflow-hidden">
