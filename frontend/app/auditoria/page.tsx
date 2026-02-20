@@ -146,6 +146,7 @@ function AuditoriaContent() {
                                     <SelectItem value="USUARIO_CREAR">Nuevo Colaborador</SelectItem>
                                     <SelectItem value="USUARIO_EDITAR">Edición Colaborador</SelectItem>
                                     <SelectItem value="USUARIO_PASSWORD_RESET">Reset Clave</SelectItem>
+                                    <SelectItem value="USUARIO_ESTADO">Activar/Desactivar</SelectItem>
                                     <SelectItem value="LOGIN">Accesos</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -225,6 +226,21 @@ function AuditoriaContent() {
                                     </div>
                                 ))
                             )}
+
+                            {!loading && filteredLogs.length > 0 && (
+                                <div className="relative flex items-center md:items-start group pt-4">
+                                    <div className="hidden md:block w-24 pr-6 mt-1.5" />
+                                    <div className="absolute left-0 h-10 w-10 flex items-center justify-center rounded-full border-4 border-slate-50 bg-slate-100 shadow-sm z-10 md:left-28 dark:border-slate-950 dark:bg-slate-900">
+                                        <CheckCircle2 className="h-5 w-5 text-slate-400" />
+                                    </div>
+                                    <div className="ml-14 flex-1 md:ml-44">
+                                        <p className="text-xs font-medium text-slate-400 py-3">Final del historial visible</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Espaciador final para que el footer no tape la última tarjeta */}
+                            <div className="h-24 w-full" />
                         </div>
 
                     </div>
