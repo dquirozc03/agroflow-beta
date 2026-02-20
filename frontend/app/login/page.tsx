@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User, ArrowRight, CircleAlert } from "lucide-react";
 
@@ -11,6 +11,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TruckLoader } from "@/components/truck-loader";
+
+// Memoized background to prevent re-renders on input
+const AuthBackground = memo(() => (
+  <div className="absolute inset-0 z-0 pointer-events-none">
+    <img
+      src="/Logo_Logueo.png"
+      alt="Background"
+      className="h-full w-full object-cover opacity-100 transition-transform duration-[30s]"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent dark:from-black/70 dark:via-black/40" />
+  </div>
+));
+AuthBackground.displayName = "AuthBackground";
+
+// Memoized header
+const AuthHeader = memo(() => (
+  <div className="absolute left-0 right-0 top-0 z-20 flex justify-between p-6 pt-safe-top">
+    <div />
+    <div className="rounded-full bg-white/20 p-1 backdrop-blur-md dark:bg-black/20">
+      <ThemeToggle />
+    </div>
+  </div>
+));
+AuthHeader.displayName = "AuthHeader";
 
 function LoginForm() {
   const router = useRouter();
@@ -30,10 +54,15 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuario || !password) {
+      setError("Por favor complete todos los campos");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 2000)); // Show off the new trailer animation
+      // Small artificial delay for visual polish (trailer animation)
+      await new Promise(r => setTimeout(r, 1500));
 
       const result = await login(usuario, password);
       if (result.ok) {
@@ -43,7 +72,9 @@ function LoginForm() {
         setError(result.error ?? "Error al iniciar sesión");
       }
     } finally {
-      setLoading(false);
+      if (router) { // Check if still mounted
+        setLoading(false);
+      }
     }
   };
 
@@ -61,25 +92,8 @@ function LoginForm() {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 font-sans selection:bg-primary/30 dark:bg-slate-950">
 
-      {/* BACKGROUND CINEMATIC LAYER */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/Logo_Logueo.png"
-          alt="Background"
-          className="h-full w-full object-cover opacity-100 transition-transform duration-[30s] hover:scale-105"
-        />
-        {/* Lighter overlay, not pure black, to avoid 'gloomy' look */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent dark:from-black/70 dark:via-black/40" />
-      </div>
-
-      {/* TOP BAR */}
-      <div className="absolute left-0 right-0 top-0 z-20 flex justify-between p-6 pt-safe-top">
-        {/* Spacer for potential branding */}
-        <div />
-        <div className="rounded-full bg-white/20 p-1 backdrop-blur-md dark:bg-black/20">
-          <ThemeToggle />
-        </div>
-      </div>
+      <AuthBackground />
+      <AuthHeader />
 
       {/* MAIN CONTENT - GLASS CARD */}
       <div className="relative z-10 w-full max-w-[400px] px-4 py-8 animate-in fade-in zoom-in-95 duration-700">
@@ -90,7 +104,7 @@ function LoginForm() {
           {/* Header Section */}
           <div className="mb-8 text-center">
             <h1 className="bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent drop-shadow-sm dark:from-white dark:to-slate-300">
-              AgroFlow
+              {SYSTEM_NAME}
             </h1>
             <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
               Área Comercial y Exportaciones

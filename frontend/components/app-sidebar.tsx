@@ -10,9 +10,10 @@ import {
   ChevronRight,
   LogOut,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { SYSTEM_NAME, MODULE_LOGICAPTURE, canSeeAuditoria } from "@/lib/constants";
+import { SYSTEM_NAME, MODULE_LOGICAPTURE, canSeeAuditoria, canManageUsers } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 
 export function AppSidebar() {
@@ -46,6 +47,14 @@ export function AppSidebar() {
         active: pathname === "/auditoria",
         soon: false,
         hidden: !canSeeAuditoria(user?.rol ?? ""),
+      },
+      {
+        name: "Usuarios",
+        icon: Users,
+        href: "/usuarios",
+        active: pathname === "/usuarios",
+        soon: false,
+        hidden: !canManageUsers(user?.rol ?? ""),
       },
       {
         name: "Configuración",

@@ -30,9 +30,28 @@ class LoginResponse(BaseModel):
 
 
 class MeResponse(BaseModel):
+    id: Optional[int] = None
     usuario: str
     nombre: str
     rol: str
+
+
+class UsuarioCreate(BaseModel):
+    usuario: str
+    nombre: str
+    password: str
+    rol: str
+
+
+class UsuarioResponse(BaseModel):
+    id: int
+    usuario: str
+    nombre: str
+    rol: str
+    activo: bool
+
+    class Config:
+        from_attributes = True
 
 
 class RestablecerPasswordBody(BaseModel):
@@ -43,6 +62,71 @@ MAX_INTENTOS_LOGIN = 3
 
 
 # ========== Endpoints ==========
+@router.get("/usuarios", response_model=list[UsuarioResponse])
+def listar_usuarios(
+    current_user: CurrentUser,
+    db: Session = Depends(get_db)
+):
+    """Lista todos los usuarios. Solo administradores."""
+    if current_user.rol != "administrador":
+        raise HTTPException(status_code=403, detail="No tiene permisos para listar usuarios")
+    
+    return db.query(Usuario).order_by(Usuario.nombre).all()
+
+
+@router.post("/usuarios", response_model=UsuarioResponse)
+def crear_usuario(
+    payload: UsuarioCreate,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db)
+):
+    """Crea un nuevo usuario. Solo administradores."""
+    if current_user.rol != "administrador":
+        raise HTTPException(status_code=403, detail="Solo un administrador puede crear usuarios")
+    
+    # Verificar si ya existe
+    existente = db.query(Usuario).filter(Usuario.usuario == payload.usuario.strip()).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya está en uso")
+    
+    nuevo = Usuario(
+        usuario=payload.usuario.strip(),
+        nombre=payload.nombre.strip(),
+        rol=payload.rol.strip(),
+        password_hash=hash_password(payload.password),
+        activo=True
+    )
+    
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return nuevo
+
+
+@router.delete("/usuarios/{usuario_id}")
+def toggle_usuario_status(
+    usuario_id: int,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db)
+):
+    """Activa/Desactiva un usuario. Solo administradores."""
+    if current_user.rol != "administrador":
+        raise HTTPException(status_code=403, detail="Solo un administrador puede modificar usuarios")
+    
+    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+    
+    user.activo = not user.activo
+    db.commit()
+    
+    estado = "activado" if user.activo else "desactivado"
+    return {"ok": True, "mensaje": f"Usuario {estado} correctamente"}
+
+
 @router.post("/login", response_model=LoginResponse)
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     """Login real: valida usuario/contraseña contra la BD. Máximo 3 intentos, luego bloqueo."""

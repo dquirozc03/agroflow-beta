@@ -137,6 +137,36 @@ export async function apiDesbloquearUsuario(usuario: string): Promise<{ ok: bool
 }
 
 // ======================
+// GESTIÓN DE USUARIOS
+// ======================
+export type Usuario = {
+  id: number;
+  usuario: string;
+  nombre: string;
+  rol: string;
+  activo: boolean;
+};
+
+export type UsuarioCreate = {
+  usuario: string;
+  nombre: string;
+  rol: string;
+  password: string;
+};
+
+export async function listUsers(): Promise<Usuario[]> {
+  return request<Usuario[]>("/auth/usuarios", { method: "GET" });
+}
+
+export async function createUser(payload: UsuarioCreate): Promise<Usuario> {
+  return json<Usuario>("/auth/usuarios", payload, "POST");
+}
+
+export async function toggleUserStatus(usuarioId: number): Promise<{ ok: boolean; mensaje: string }> {
+  return request<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${usuarioId}`, { method: "DELETE" });
+}
+
+// ======================
 // Chat (consultas en lenguaje natural)
 // ======================
 export async function chatPregunta(pregunta: string): Promise<{ respuesta: string }> {
