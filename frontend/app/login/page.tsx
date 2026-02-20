@@ -2,7 +2,7 @@
 
 import { useState, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, ArrowRight, CircleAlert } from "lucide-react";
+import { Lock, User, ArrowRight, ArrowLeft, CircleAlert } from "lucide-react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME } from "@/lib/constants";
@@ -113,6 +113,16 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoBack = () => {
+    logout();
+    setShowChangePassword(false);
+    setUsuario("");
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setError("");
   };
 
   if (authLoading || (user && !user.requiere_cambio_password)) {
@@ -257,11 +267,12 @@ function LoginForm() {
           <div className="mt-8 flex flex-col items-center gap-4 border-t border-slate-200/50 pt-6 text-center dark:border-white/10">
             {showChangePassword ? (
               <button
-                onClick={() => logout()}
-                className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                onClick={handleGoBack}
+                className="group flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 transition-all hover:text-primary dark:text-slate-400 dark:hover:text-white"
                 type="button"
               >
-                Cerrar sesión y volver al inicio
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                Regresar
               </button>
             ) : (
               <p className="text-xs text-slate-500 dark:text-slate-400">
