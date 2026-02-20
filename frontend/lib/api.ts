@@ -135,6 +135,14 @@ export async function apiUpdateOwnPassword(payload: any): Promise<{ ok: boolean;
   return await json<{ ok: boolean; mensaje: string }>("/auth/cambiar-password-propia", payload, "POST");
 }
 
+export async function apiUpdateUser(id: number, payload: any): Promise<Usuario> {
+  return await json<Usuario>(`/auth/usuarios/${id}`, payload, "PATCH");
+}
+
+export async function apiResetUserPassword(id: number, nueva: string): Promise<{ ok: boolean; mensaje: string }> {
+  return await json<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${id}/password-reset`, { nueva_password: nueva }, "PATCH");
+}
+
 export async function apiMe(): Promise<MeResponse> {
   return request<MeResponse>("/auth/me", { method: "GET" });
 }

@@ -61,6 +61,11 @@ class UsuarioResponse(BaseModel):
         from_attributes = True
 
 
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    rol: Optional[str] = None
+
+
 class RestablecerPasswordBody(BaseModel):
     nueva_password: str
 
@@ -140,6 +145,31 @@ def toggle_usuario_status(
     return {"ok": True, "mensaje": f"Usuario {estado} correctamente"}
 
 
+@router.patch("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+def actualizar_usuario(
+    usuario_id: int,
+    payload: UsuarioUpdate,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db)
+):
+    """Actualiza datos básicos de un usuario (nombre, rol). Solo administradores."""
+    if current_user.rol != "administrador":
+        raise HTTPException(status_code=403, detail="No tienes permisos para editar usuarios")
+    
+    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if payload.nombre is not None:
+        user.nombre = payload.nombre.strip()
+    if payload.rol is not None:
+        user.rol = payload.rol.strip()
+        
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @router.post("/login", response_model=LoginResponse)
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     """Login real: valida usuario/contraseña contra la BD. Máximo 3 intentos, luego bloqueo."""
@@ -194,31 +224,33 @@ def me(current_user: CurrentUser):
     return current_user
 
 
-@router.patch("/usuarios/{usuario}/password")
-def restablecer_password(
-    usuario: str,
+@router.patch("/usuarios/{usuario_id}/password-reset")
+def restablecer_password_v2(
+    usuario_id: int,
     body: RestablecerPasswordBody,
     current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     """
-    Restablece la contraseña de un usuario. Solo administrador puede hacerlo.
-    Para recuperar contraseña: contactar a un administrador.
+    Restablece la contraseña de un usuario usando su ID. Solo administrador.
     """
     if current_user.rol != "administrador":
         raise HTTPException(status_code=403, detail="Solo un administrador puede restablecer contraseñas")
-    user = db.query(Usuario).filter(Usuario.usuario == usuario.strip()).first()
+    
+    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
     pwd = (body.nueva_password or "").strip()
     if len(pwd) < 6:
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
     user.password_hash = hash_password(pwd)
     user.intentos_fallidos = 0
     user.bloqueado = False
     user.requiere_cambio_password = True
     db.commit()
-    return {"ok": True, "mensaje": "Contraseña actualizada y se requerirá cambio al iniciar sesión"}
+    return {"ok": True, "mensaje": f"Contraseña de {user.usuario} actualizada. Se requerirá cambio al iniciar sesión."}
 
 
 @router.post("/cambiar-password-propia")

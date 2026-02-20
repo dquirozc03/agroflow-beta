@@ -10,7 +10,10 @@ import {
     UserMinus,
     UserCheck,
     Shield,
-    RefreshCw
+    RefreshCw,
+    Pencil,
+    Key,
+    UserCircle
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -19,6 +22,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Table,
     TableBody,
@@ -35,7 +54,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { listUsers, toggleUserStatus, Usuario } from "@/lib/api";
+import { listUsers, toggleUserStatus, apiUpdateUser, apiResetUserPassword, Usuario } from "@/lib/api";
 import { ROLE_LABELS, UserRole } from "@/lib/constants";
 import { toast } from "sonner";
 import { UserCreateDialog } from "@/components/user-create-dialog";
@@ -45,6 +64,17 @@ function UsuariosContent() {
     const [users, setUsers] = useState<Usuario[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Edit User State
+    const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+    const [editNombre, setEditNombre] = useState("");
+    const [editRol, setEditRol] = useState("");
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    // Reset Password State
+    const [resettingUser, setResettingUser] = useState<Usuario | null>(null);
+    const [nuevaPassword, setNuevaPassword] = useState("");
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -76,6 +106,35 @@ function UsuariosContent() {
         u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.usuario.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleEditUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingUser) return;
+        try {
+            await apiUpdateUser(editingUser.id, { nombre: editNombre, rol: editRol });
+            toast.success("Usuario actualizado correctamente");
+            setIsEditModalOpen(false);
+            fetchUsers();
+        } catch (error: any) {
+            toast.error(error.message || "Error al actualizar usuario");
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!resettingUser) return;
+        if (nuevaPassword.length < 6) {
+            return toast.error("La contraseña debe tener al menos 6 caracteres");
+        }
+        try {
+            await apiResetUserPassword(resettingUser.id, nuevaPassword);
+            toast.success(`Contraseña de ${resettingUser.usuario} restablecida`);
+            setIsResetModalOpen(false);
+            setNuevaPassword("");
+        } catch (error: any) {
+            toast.error(error.message || "Error al restablecer contraseña");
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
@@ -245,9 +304,26 @@ function UsuariosContent() {
                                                                     </>
                                                                 )}
                                                             </DropdownMenuItem>
+                                                            <DropdownMenuItem className="gap-2" onClick={() => {
+                                                                setEditingUser(u);
+                                                                setEditNombre(u.nombre);
+                                                                setEditRol(u.rol);
+                                                                setIsEditModalOpen(true);
+                                                            }}>
+                                                                <Pencil className="h-4 w-4 text-blue-500" />
+                                                                <span>Editar Usuario</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="gap-2" onClick={() => {
+                                                                setResettingUser(u);
+                                                                setIsResetModalOpen(true);
+                                                            }}>
+                                                                <Key className="h-4 w-4 text-amber-500" />
+                                                                <span>Restablecer Clave</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
                                                             <DropdownMenuItem className="gap-2 cursor-not-allowed opacity-50">
                                                                 <Shield className="h-4 w-4" />
-                                                                <span>Editar permisos</span>
+                                                                <span>Permisos Avanzados</span>
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -261,6 +337,69 @@ function UsuariosContent() {
                     </div>
                 </main>
             </div>
+
+            {/* MODAL EDITAR USUARIO */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Colaborador</DialogTitle>
+                        <DialogDescription>Modifica los datos básicos o el rol del usuario.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditUser} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label>Nombre Completo</Label>
+                            <Input value={editNombre} onChange={(e) => setEditNombre(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Rol del Sistema</Label>
+                            <Select value={editRol} onValueChange={setEditRol}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(ROLE_LABELS).map(([val, label]) => (
+                                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                            <Button type="submit">Guardar Cambios</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* MODAL RESTABLECER CLAVE */}
+            <Dialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Restablecer Contraseña</DialogTitle>
+                        <DialogDescription>
+                            Establece una clave temporal para @{resettingUser?.usuario}.
+                            El usuario deberá cambiarla obligatoriamente la próxima vez que entre.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleResetPassword} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label>Nueva Contraseña Temporal</Label>
+                            <Input
+                                type="password"
+                                placeholder="Mínimo 6 caracteres"
+                                value={nuevaPassword}
+                                onChange={(e) => setNuevaPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsResetModalOpen(false)}>Cancelar</Button>
+                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Restablecer Ahora</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
