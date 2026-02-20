@@ -28,6 +28,7 @@ class LoginResponse(BaseModel):
     usuario: str
     nombre: str
     rol: str
+    requiere_cambio_password: bool
 
 
 class MeResponse(BaseModel):
@@ -35,6 +36,7 @@ class MeResponse(BaseModel):
     usuario: str
     nombre: str
     rol: str
+    requiere_cambio_password: bool
 
     class Config:
         from_attributes = True
@@ -53,12 +55,18 @@ class UsuarioResponse(BaseModel):
     nombre: str
     rol: str
     activo: bool
+    requiere_cambio_password: bool
 
     class Config:
         from_attributes = True
 
 
 class RestablecerPasswordBody(BaseModel):
+    nueva_password: str
+
+
+class CambiarPasswordPropiaBody(BaseModel):
+    password_actual: str
     nueva_password: str
 
 
@@ -98,7 +106,8 @@ def crear_usuario(
         nombre=payload.nombre.strip(),
         rol=payload.rol.strip(),
         password_hash=hash_password(payload.password),
-        activo=True
+        activo=True,
+        requiere_cambio_password=True
     )
     
     db.add(nuevo)
@@ -175,6 +184,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         usuario=user.usuario,
         nombre=user.nombre,
         rol=user.rol,
+        requiere_cambio_password=user.requiere_cambio_password,
     )
 
 
@@ -206,8 +216,29 @@ def restablecer_password(
     user.password_hash = hash_password(pwd)
     user.intentos_fallidos = 0
     user.bloqueado = False
+    user.requiere_cambio_password = True
     db.commit()
-    return {"ok": True, "mensaje": "Contraseña actualizada"}
+    return {"ok": True, "mensaje": "Contraseña actualizada y se requerirá cambio al iniciar sesión"}
+
+
+@router.post("/cambiar-password-propia")
+def cambiar_password_propia(
+    body: CambiarPasswordPropiaBody,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    """Permite al usuario cambiar su propia contraseña."""
+    if not verify_password(body.password_actual, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    
+    pwd = body.nueva_password.strip()
+    if len(pwd) < 6:
+        raise HTTPException(status_code=400, detail="La nueva contraseña debe tener al menos 6 caracteres")
+    
+    current_user.password_hash = hash_password(pwd)
+    current_user.requiere_cambio_password = False
+    db.commit()
+    return {"ok": True, "mensaje": "Tu contraseña ha sido actualizada correctamente"}
 
 
 @router.patch("/usuarios/{usuario}/desbloquear")

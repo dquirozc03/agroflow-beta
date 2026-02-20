@@ -115,13 +115,24 @@ export type LoginResponse = {
   usuario: string;
   nombre: string;
   rol: string;
+  requiere_cambio_password: boolean;
 };
 
-export type MeResponse = { id?: number; usuario: string; nombre: string; rol: string };
+export type MeResponse = {
+  id?: number;
+  usuario: string;
+  nombre: string;
+  rol: string;
+  requiere_cambio_password: boolean;
+};
 
 export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
   const res = await json<LoginResponse>("/auth/login", { usuario, password }, "POST");
   return res;
+}
+
+export async function apiUpdateOwnPassword(payload: any): Promise<{ ok: boolean; mensaje: string }> {
+  return await json<{ ok: boolean; mensaje: string }>("/auth/cambiar-password-propia", payload, "POST");
 }
 
 export async function apiMe(): Promise<MeResponse> {

@@ -13,6 +13,7 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(200), nullable=False)
     rol: Mapped[str] = mapped_column(String(50), nullable=False)  # administrador | supervisor_facturacion | facturador | documentaria
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    requiere_cambio_password: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     intentos_fallidos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     bloqueado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     creado_en: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())

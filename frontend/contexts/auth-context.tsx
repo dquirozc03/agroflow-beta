@@ -18,6 +18,7 @@ type AuthUser = {
   usuario: string;
   nombre: string;
   rol: UserRole;
+  requiere_cambio_password: boolean;
 };
 
 type AuthState = {
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             usuario: me.usuario,
             nombre: me.nombre,
             rol: me.rol as UserRole,
+            requiere_cambio_password: me.requiere_cambio_password,
           };
           setUser(u);
           saveStoredUser(u);
@@ -118,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           usuario: res.usuario,
           nombre: res.nombre,
           rol: res.rol as UserRole,
+          requiere_cambio_password: res.requiere_cambio_password,
         };
         setUser(u);
         saveStoredUser(u);
@@ -133,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 usuario: res.usuario,
                 nombre: res.nombre,
                 rol: res.rol as UserRole,
+                requiere_cambio_password: res.requiere_cambio_password,
               };
               setUser(u);
               saveStoredUser(u);
