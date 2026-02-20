@@ -12,6 +12,7 @@ from app.dependencies.auth import (
     CurrentUser,
 )
 from app.utils.password import hash_password, verify_password
+from app.utils.audit import registrar_evento
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -119,6 +120,20 @@ def crear_usuario(
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
+
+    registrar_evento(
+        db,
+        registro_id=None,
+        accion="USUARIO_CREAR",
+        antes=None,
+        despues={
+            "usuario": nuevo.usuario,
+            "nombre": nuevo.nombre,
+            "rol": nuevo.rol
+        },
+        usuario=current_user.usuario
+    )
+    
     return nuevo
 
 
@@ -143,6 +158,16 @@ def toggle_usuario_status(
     db.commit()
     
     estado = "activado" if user.activo else "desactivado"
+    
+    registrar_evento(
+        db,
+        registro_id=None,
+        accion="USUARIO_ESTADO",
+        antes={"usuario": user.usuario, "activo": not user.activo},
+        despues={"usuario": user.usuario, "activo": user.activo},
+        usuario=current_user.usuario
+    )
+    
     return {"ok": True, "mensaje": f"Usuario {estado} correctamente"}
 
 
@@ -161,6 +186,12 @@ def actualizar_usuario(
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
+    antes = {
+        "nombre": user.nombre,
+        "rol": user.rol,
+        "usuario": user.usuario
+    }
+    
     if payload.nombre is not None:
         user.nombre = payload.nombre.strip()
     if payload.rol is not None:
@@ -176,6 +207,20 @@ def actualizar_usuario(
         
     db.commit()
     db.refresh(user)
+
+    registrar_evento(
+        db,
+        registro_id=None,
+        accion="USUARIO_EDITAR",
+        antes=antes,
+        despues={
+            "nombre": user.nombre,
+            "rol": user.rol,
+            "usuario": user.usuario
+        },
+        usuario=current_user.usuario
+    )
+    
     return user
 
 
@@ -259,6 +304,16 @@ def restablecer_password_v2(
     user.bloqueado = False
     user.requiere_cambio_password = True
     db.commit()
+
+    registrar_evento(
+        db,
+        registro_id=None,
+        accion="USUARIO_PASSWORD_RESET",
+        antes={"usuario": user.usuario},
+        despues={"usuario": user.usuario, "requiere_cambio_password": True},
+        usuario=current_user.usuario
+    )
+    
     return {"ok": True, "mensaje": f"Contraseña de {user.usuario} actualizada. Se requerirá cambio al iniciar sesión."}
 
 
@@ -280,6 +335,16 @@ def cambiar_password_propia(
     current_user.password_hash = hash_password(pwd)
     current_user.requiere_cambio_password = False
     db.commit()
+
+    registrar_evento(
+        db,
+        registro_id=None,
+        accion="USUARIO_CAMBIAR_PASSWORD",
+        antes={"usuario": current_user.usuario},
+        despues={"usuario": current_user.usuario, "requiere_cambio_password": False},
+        usuario=current_user.usuario
+    )
+    
     return {"ok": True, "mensaje": "Tu contraseña ha sido actualizada correctamente"}
 
 

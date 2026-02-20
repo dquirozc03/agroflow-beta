@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1/auditoria", tags=["Auditoría"])
 
 class AuditLogResponse(BaseModel):
     id: int
-    registro_id: int
+    registro_id: Optional[int] = None
     accion: str
     motivo: Optional[str] = None
     usuario: Optional[str] = None
@@ -36,6 +36,11 @@ def get_audit_logs(
     current_user: Usuario = Depends(require_role(["administrador", "gerencia", "supervisor_facturacion"]))
 ):
     q = db.query(RegistroEvento)
+
+    # REGLA DE PRIVACIDAD: Solo administradores ven temas de usuarios.
+    # Gerencia y Supervisor solo ven temas operativos.
+    if current_user.rol != "administrador":
+        q = q.filter(~RegistroEvento.accion.startswith("USUARIO_"))
 
     if usuario:
         q = q.filter(RegistroEvento.usuario.ilike(f"%{usuario}%"))

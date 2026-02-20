@@ -13,10 +13,10 @@ class RegistroEvento(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    registro_id: Mapped[int] = mapped_column(
+    registro_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("ope_registros.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 

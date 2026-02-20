@@ -23,6 +23,7 @@ from app.models.ref_booking_dam import RefBookingDam
 from app.schemas.operacion import RegistroCrear, RegistroRespuesta, FilaSapRespuesta
 from app.schemas.historial import RegistroListado, HistorialResponse
 from app.utils.unicidad import normalizar, dividir_por_slash, unir_por_slash
+from app.utils.audit import registrar_evento
 
 router = APIRouter(prefix="/api/v1/registros", tags=["Registros"])
 
@@ -48,25 +49,7 @@ DIAS_TRAVESIA_AWB = 35  # 1 mes y 5 días
 # ===============================
 # Helpers
 # ===============================
-def registrar_evento(
-    db: Session,
-    registro_id: int,
-    accion: str,
-    antes: dict | None = None,
-    despues: dict | None = None,
-    motivo: str | None = None,
-    usuario: str | None = "sistema",
-):
-    db.add(
-        RegistroEvento(
-            registro_id=registro_id,
-            accion=accion,
-            antes=antes,
-            despues=despues,
-            motivo=(motivo or None),
-            usuario=(usuario or None),
-        )
-    )
+# registrar_evento movido a app.utils.audit
 
 
 def construir_senasa_ps_linea(senasa: str | None, ps_linea: str | None) -> str | None:
@@ -273,7 +256,11 @@ def recrear_unicos_del_registro(db: Session, reg: RegistroOperativo):
 # CRUD / Dominio
 # ===============================
 @router.post("", response_model=RegistroRespuesta)
-def crear_registro(payload: RegistroCrear, db: Session = Depends(get_db)):
+def crear_registro(
+    payload: RegistroCrear, 
+    db: Session = Depends(get_db),
+    current_user: Usuario | None = Depends(get_current_user_optional)
+):
     chofer = db.query(Chofer).filter(Chofer.dni == payload.dni).first()
     if not chofer:
         raise HTTPException(status_code=404, detail="Chofer no encontrado por DNI")
@@ -375,7 +362,14 @@ def crear_registro(payload: RegistroCrear, db: Session = Depends(get_db)):
                 )
             )
 
-        registrar_evento(db, registro_id=reg.id, accion="CREAR", antes=None, despues=snapshot_registro(reg))
+        registrar_evento(
+            db, 
+            registro_id=reg.id, 
+            accion="CREAR", 
+            antes=None, 
+            despues=snapshot_registro(reg),
+            usuario=current_user.usuario if current_user else "sistema"
+        )
 
         db.commit()
         db.refresh(reg)
@@ -390,7 +384,11 @@ def crear_registro(payload: RegistroCrear, db: Session = Depends(get_db)):
 
 
 @router.post("/{registro_id}/cerrar")
-def cerrar_registro(registro_id: int, db: Session = Depends(get_db)):
+def cerrar_registro(
+    registro_id: int, 
+    db: Session = Depends(get_db),
+    current_user: Usuario | None = Depends(get_current_user_optional)
+):
     """
     Histórico (compatibilidad): “cerrar” == PROCESAR.
     """
@@ -421,7 +419,14 @@ def cerrar_registro(registro_id: int, db: Session = Depends(get_db)):
         synchronize_session=False,
     )
 
-    registrar_evento(db, registro_id=reg.id, accion="PROCESAR", antes=antes, despues=snapshot_registro(reg))
+    registrar_evento(
+        db, 
+        registro_id=reg.id, 
+        accion="PROCESAR", 
+        antes=antes, 
+        despues=snapshot_registro(reg),
+        usuario=current_user.usuario if current_user else "sistema"
+    )
 
     db.commit()
     return {"estado": "procesado", "awbs_liberados": True}
@@ -522,7 +527,12 @@ EDITABLES = {
 
 
 @router.patch("/{registro_id}/editar-campo")
-def editar_campo_registro(registro_id: int, payload: EditarCampoRequest, db: Session = Depends(get_db)):
+def editar_campo_registro(
+    registro_id: int, 
+    payload: EditarCampoRequest, 
+    db: Session = Depends(get_db),
+    current_user: Usuario | None = Depends(get_current_user_optional)
+):
     """
     ENDPOINT LEGADO (compatibilidad).
     Mantenerlo simple y limitado.
@@ -727,6 +737,7 @@ def editar_registro_controlado(
         antes=antes,
         despues=snapshot_registro(reg),
         motivo=(payload.motivo or None),
+        usuario=current_user.usuario if current_user else "sistema",
     )
 
     db.commit()
