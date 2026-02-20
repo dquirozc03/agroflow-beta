@@ -118,7 +118,7 @@ def crear_usuario(
     )
     
     db.add(nuevo)
-    db.commit()
+    # db.commit() <- Removido, se hace al final
     db.refresh(nuevo)
 
     registrar_evento(
@@ -156,7 +156,7 @@ def toggle_usuario_status(
         raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
     
     user.activo = not user.activo
-    db.commit()
+    # db.commit() <- Removido, se hace al final
     
     estado = "activado" if user.activo else "desactivado"
     
@@ -207,7 +207,7 @@ def actualizar_usuario(
                 raise HTTPException(status_code=400, detail="El ID de usuario ya está en uso por otro colaborador")
             user.usuario = new_usuario
         
-    db.commit()
+    # db.commit() <- Removido, se hace al final
     db.refresh(user)
 
     registrar_evento(
