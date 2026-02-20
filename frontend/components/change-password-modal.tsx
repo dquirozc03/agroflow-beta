@@ -132,15 +132,6 @@ export function ChangePasswordModal({ isOpen, onSuccess, onCancel }: ChangePassw
                                 "Guardar Contraseña y Continuar"
                             )}
                         </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="w-full text-slate-500 hover:text-red-600"
-                            onClick={onCancel}
-                            disabled={loading}
-                        >
-                            Cerrar Sesión y Volver
-                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

@@ -39,17 +39,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Intercepción: Si el usuario requiere cambio de password
   if (user?.requiere_cambio_password) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-900">
-        <ChangePasswordModal
-          isOpen={true}
-          onSuccess={() => {
-            // Recargar la página para limpiar el estado y el flag
-            window.location.reload();
-          }}
-          onCancel={() => {
-            logout();
-          }}
-        />
+      <div className="relative h-screen w-full overflow-hidden">
+        {/* Fondo del dashboard difuminado para efecto premium */}
+        <div className="absolute inset-0 z-0 opacity-50 blur-2xl grayscale-[0.3] pointer-events-none select-none">
+          {children}
+        </div>
+
+        {/* Overlay oscuro para legibilidad */}
+        <div className="absolute inset-0 z-10 bg-slate-950/40 backdrop-blur-[2px]" />
+
+        <div className="relative z-50 flex h-full items-center justify-center p-4">
+          <ChangePasswordModal
+            isOpen={true}
+            onSuccess={() => {
+              // Pequeño delay para que se vea el toast de éxito antes del reload
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }}
+            onCancel={() => {
+              logout();
+            }}
+          />
+        </div>
       </div>
     );
   }

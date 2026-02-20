@@ -46,16 +46,15 @@ function LoginForm() {
   useEffect(() => {
     if (authLoading) return;
     if (user) {
-      // Si el usuario llega al login pero requiere cambio de pass, lo deslogeamos
-      // Esto rompe el bucle si presionó "atrás" desde el modal de cambio.
-      if (user.requiere_cambio_password) {
-        logout();
-        return;
-      }
+      // Si el usuario requiere cambio, NO lo redirigimos automáticamente a / desde aquí,
+      // para evitar bucles. El handleSubmit se encarga de enviarlo a / tras el login.
+      // Si ya está logueado pero entra a /login, simplemente lo dejamos ver el form.
+      if (user.requiere_cambio_password) return;
+
       router.replace("/");
       router.refresh();
     }
-  }, [user, authLoading, router, logout]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +82,7 @@ function LoginForm() {
     }
   };
 
-  if (authLoading || user) {
+  if (authLoading || (user && !user.requiere_cambio_password)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
