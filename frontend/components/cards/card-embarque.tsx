@@ -19,7 +19,7 @@ interface Props {
   setRefsLocked: (v: boolean) => void;
 }
 
-export function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props) {
+export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props) {
   const [loading, setLoading] = useState(false);
   const [refStatus, setRefStatus] = useState<"idle" | "ok" | "fail">("idle");
 
@@ -150,4 +150,4 @@ export function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props
       </CardContent>
     </Card>
   );
-}
+});

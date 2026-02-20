@@ -112,7 +112,7 @@ function ScannerGroup({
   );
 }
 
-export function CardUnicidad({ form, setForm }: Props) {
+export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -262,4 +262,4 @@ export function CardUnicidad({ form, setForm }: Props) {
       </CardContent>
     </Card>
   );
-}
+});

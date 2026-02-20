@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,12 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
         }
     }, [customHost, sessionId]);
 
-    const { status } = useScannerBridge(sessionId, (data) => {
+    const onScanCallback = useCallback((data: string) => {
         toast.info(`Recibido: ${data}`);
         onScan(data);
-    });
+    }, [onScan]);
+
+    const { status } = useScannerBridge(sessionId, onScanCallback);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(scanUrl);

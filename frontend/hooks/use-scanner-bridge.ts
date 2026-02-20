@@ -10,57 +10,74 @@ export function useScannerBridge(
 ) {
     const [status, setStatus] = useState<ScannerStatus>("disconnected");
     const wsRef = useRef<WebSocket | null>(null);
+    const onScanRef = useRef(onScan);
+
+    // Actualizar la ref sin disparar el efecto
+    useEffect(() => {
+        onScanRef.current = onScan;
+    }, [onScan]);
 
     useEffect(() => {
         if (!sessionId) return;
 
-        // Conectar WebSocket
-        // Detectar URL del backend
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        let reconnectTimer: number | null = null;
+        let isCleaningUp = false;
 
-        // Construir URL del WebSocket
-        let wsUrl = backendUrl.replace(/^http/, "ws"); // http -> ws, https -> wss
-        if (!wsUrl.startsWith("ws")) {
-            // Si por alguna razón no tiene protocolo, asumir ws:// o wss:// según ubicación window
-            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-            wsUrl = `${protocol}//${backendUrl}`;
-        }
+        const connect = () => {
+            if (isCleaningUp) return;
 
-        // Asegurarse de que no termine en slash
-        wsUrl = wsUrl.replace(/\/$/, "");
-
-        const url = `${wsUrl}/api/v1/scanner/ws/${sessionId}`;
-
-        setStatus("connecting");
-        const ws = new WebSocket(url);
-
-        ws.onopen = () => {
-            setStatus("connected");
-            // toast.success("Puente de escáner conectado");
-        };
-
-        ws.onmessage = (event) => {
-            const data = event.data;
-            if (data) {
-                onScan(data);
+            // Conectar WebSocket
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            let wsUrl = backendUrl.replace(/^http/, "ws");
+            if (!wsUrl.startsWith("ws")) {
+                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+                wsUrl = `${protocol}//${backendUrl}`;
             }
+            wsUrl = wsUrl.replace(/\/$/, "");
+            const url = `${wsUrl}/api/v1/scanner/ws/${sessionId}`;
+
+            setStatus("connecting");
+            const ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                setStatus("connected");
+                if (reconnectTimer) {
+                    window.clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
+            };
+
+            ws.onmessage = (event) => {
+                const data = event.data;
+                if (data) {
+                    onScanRef.current(data);
+                }
+            };
+
+            ws.onclose = () => {
+                setStatus("disconnected");
+                // Reconectar después de 3 segundos si no estamos desmontando
+                if (!isCleaningUp) {
+                    reconnectTimer = window.setTimeout(connect, 3000);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error("WS Error", err);
+                ws.close();
+            };
+
+            wsRef.current = ws;
         };
 
-        ws.onclose = () => {
-            setStatus("disconnected");
-        };
-
-        ws.onerror = (err) => {
-            console.error("WS Error", err);
-            setStatus("disconnected");
-        };
-
-        wsRef.current = ws;
+        connect();
 
         return () => {
-            ws.close();
+            isCleaningUp = true;
+            if (reconnectTimer) window.clearTimeout(reconnectTimer);
+            if (wsRef.current) wsRef.current.close();
         };
-    }, [sessionId, onScan]);
+    }, [sessionId]); // onScan eliminado de aquí
 
     return { status };
 }

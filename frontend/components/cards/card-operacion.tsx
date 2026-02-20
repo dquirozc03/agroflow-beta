@@ -65,7 +65,7 @@ function buildPlacas(tracto: string, carreta: string): string {
   return `${t}/${c}`;
 }
 
-export function CardOperacion({ form, setForm }: Props) {
+export const CardOperacion = React.memo(function CardOperacion({ form, setForm }: Props) {
   const [placasLoading, setPlacasLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [carretaAlerta, setCarretaAlerta] = useState<{
@@ -261,4 +261,4 @@ export function CardOperacion({ form, setForm }: Props) {
       </CardContent>
     </Card>
   );
-}
+});
