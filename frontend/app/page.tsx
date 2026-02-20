@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback, Suspense } from "react";
+import { useMemo, useState, useEffect, useCallback, Suspense, useRef, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -67,11 +67,26 @@ function AgroFlowContent() {
   );
 
   const [form, setForm] = useState<FormState>(initialFormState);
+  const [isPending, startTransition] = useTransition();
   const [refsLocked, setRefsLocked] = useState(false);
   const [registroId, setRegistroId] = useState<number | null>(null);
   const [sapRows, setSapRows] = useState<SapRow[]>([]);
   const [formResetKey, setFormResetKey] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+
+  // Track cursor position
+  const lastFocusedId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT") {
+        lastFocusedId.current = target.id;
+      }
+    };
+    document.addEventListener("focusin", handleFocus);
+    return () => document.removeEventListener("focusin", handleFocus);
+  }, []);
 
   // Persistencia: restaurar bandeja al cargar
   useEffect(() => {
@@ -148,33 +163,42 @@ function AgroFlowContent() {
     const val = data.trim().toUpperCase();
     if (!val) return;
 
-    // Lógica inteligente de enrutado
-    // 1. Si parece DNI (8 dígitos numéricos), forzar al DNI
-    if (/^\d{8}$/.test(val)) {
-      setForm((prev) => ({ ...prev, dni: val }));
-      toast.info(`DNI Escaneado: ${val}`);
-      // Auto-focus al siguiente (Placa check) no es trivial sin refs, 
-      // pero el usuario verá el dato llenarse.
-      return;
-    }
+    startTransition(() => {
+      setForm((prev) => {
+        const fieldId = lastFocusedId.current;
 
-    // 2. Si parece Contenedor/AWB (4 letras + 7 numeros? o similar) -> AWB
-    // Por ahora simple: Si el campo AWB está vacío, probar ahí? No, precintos es más común.
+        // 1. Si hay un campo enfocado, intentar insertar ahí
+        if (fieldId && fieldId in prev && !Array.isArray(prev[fieldId as keyof FormState])) {
+          toast.info(`Insertado en ${fieldId}: ${val}`);
+          return { ...prev, [fieldId]: val };
+        }
 
-    // 3. Por defecto: Agregar a PS_BETA_ITEMS (Precintos múltiples)
-    // Evitar duplicados
-    setForm((prev) => {
-      if (prev.ps_beta_items.includes(val)) {
-        toast.warning("Precinto duplicado (ya está en lista)");
-        return prev;
-      }
-      toast.success(`Precinto agregado: ${val}`);
-      return {
-        ...prev,
-        ps_beta_items: [...prev.ps_beta_items, val],
-      };
+        // 2. Si no hay foco o el campo no es directo (ej: items), usar lógica inteligente
+        // Si parece DNI (8 dígitos numéricos), forzar al DNI
+        if (/^\d{8}$/.test(val)) {
+          toast.info(`DNI Escaneado: ${val}`);
+          return { ...prev, dni: val };
+        }
+
+        // 3. Por defecto u otros casos: Agregar a PS_BETA_ITEMS (Precintos múltiples)
+        if (prev.ps_beta_items.includes(val)) {
+          toast.warning("Precinto duplicado (ya está en lista)");
+          return prev;
+        }
+        toast.success(`Precinto agregado: ${val}`);
+        return {
+          ...prev,
+          ps_beta_items: [...prev.ps_beta_items, val],
+        };
+      });
     });
   }, []);
+
+  // Debug: Exponer handleScan para pruebas manuales
+  useEffect(() => {
+    (window as any).simulateScan = handleScan;
+    return () => { delete (window as any).simulateScan; };
+  }, [handleScan]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
