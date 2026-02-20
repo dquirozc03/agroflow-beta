@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import {
     Users,
     ShieldCheck,
@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
     Table,
     TableBody,
@@ -40,7 +41,7 @@ import { toast } from "sonner";
 import { UserCreateDialog } from "@/components/user-create-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function UsuariosPage() {
+function UsuariosContent() {
     const [users, setUsers] = useState<Usuario[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -264,4 +265,10 @@ export default function UsuariosPage() {
     );
 }
 
-const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
+export default function UsuariosPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center text-muted-foreground">Cargando gestión de usuarios...</div>}>
+            <UsuariosContent />
+        </Suspense>
+    );
+}

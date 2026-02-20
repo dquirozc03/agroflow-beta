@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -52,7 +52,7 @@ function safeFormat(dateStr: string | undefined | null, pattern: string) {
     }
 }
 
-export default function AuditoriaPage() {
+function AuditoriaContent() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
 
@@ -229,6 +229,14 @@ export default function AuditoriaPage() {
                 <AppFooter />
             </div>
         </div>
+    );
+}
+
+export default function AuditoriaPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center text-muted-foreground">Cargando auditoría...</div>}>
+            <AuditoriaContent />
+        </Suspense>
     );
 }
 
