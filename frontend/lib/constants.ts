@@ -36,3 +36,13 @@ export function canEditRegistros(role: UserRole): boolean {
 export function canAnularRegistros(role: UserRole): boolean {
   return role !== "documentaria";
 }
+
+/** Puede ver el módulo de Auditoría (Admin y Supervisor). */
+export function canSeeAuditoria(role: string): boolean {
+  return role === "administrador" || role === "supervisor_facturacion";
+}
+
+/** Puede gestionar usuarios (Solo Admin). */
+export function canManageUsers(role: string): boolean {
+  return role === "administrador";
+}

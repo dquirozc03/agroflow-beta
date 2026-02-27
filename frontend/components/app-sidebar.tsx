@@ -8,11 +8,15 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ShieldAlert,
+  Users,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { SYSTEM_NAME, MODULE_LOGICAPTURE } from "@/lib/constants";
+import { SYSTEM_NAME, MODULE_LOGICAPTURE, canSeeAuditoria, canManageUsers } from "@/lib/constants";
+import { useAuth } from "@/contexts/auth-context";
 
 export function AppSidebar() {
+  const { user } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams?.get("tab") ?? "";
@@ -35,7 +39,30 @@ export function AppSidebar() {
         soon: false,
       },
       {
-        name: "Configuracion",
+        name: "Auditoría",
+        icon: ShieldAlert,
+        href: "/auditoria",
+        active: pathname === "/auditoria",
+        soon: false,
+        hidden: !canSeeAuditoria(user?.rol ?? ""),
+      },
+      {
+        name: "Facturas Logísticas",
+        icon: Package,
+        href: "/logistica/facturas",
+        active: pathname === "/logistica/facturas",
+        soon: false,
+      },
+      {
+        name: "Usuarios",
+        icon: Users,
+        href: "/usuarios",
+        active: pathname === "/usuarios",
+        soon: false,
+        hidden: !canManageUsers(user?.rol ?? ""),
+      },
+      {
+        name: "Configuración",
         icon: Settings,
         href: "#",
         active: false,

@@ -8,8 +8,23 @@ class RefPosicionamiento(Base):
     __tablename__ = "ref_posicionamiento"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    booking: Mapped[str] = mapped_column(String(30), unique=True, index=True, nullable=False)
+    booking: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
 
+    naviera: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    nave: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pol: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pod: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    temperatura: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ventilacion: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    planta_llenado: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    hora_posicionamiento: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ac_option: Mapped[bool | None] = mapped_column(Integer, default=0, nullable=True)
+    ct_option: Mapped[bool | None] = mapped_column(Integer, default=0, nullable=True)
+    operador_logistico: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    cultivo: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    es_reprogramado: Mapped[bool | None] = mapped_column(Integer, default=0, nullable=True)
+
+    # Legacy fields (keeping for compatibility if they were used)
     o_beta: Mapped[str | None] = mapped_column(String(30), nullable=True)
     awb: Mapped[str | None] = mapped_column(String(30), nullable=True)
 

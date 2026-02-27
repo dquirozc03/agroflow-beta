@@ -493,3 +493,59 @@ export async function searchTransportistas(
     method: "GET",
   });
 }
+<<<<<<< Updated upstream
+=======
+// ======================
+// AUDITORÍA
+// Backend real: GET /api/v1/auditoria
+// ======================
+export type AuditLog = {
+  id: number;
+  registro_id: number;
+  accion: string;
+  motivo?: string | null;
+  usuario?: string | null;
+  creado_en: string; // ISO date
+  antes?: any;
+  despues?: any;
+};
+
+export async function getAuditLogs(params?: {
+  limit?: number;
+  offset?: number;
+  usuario?: string;
+  accion?: string;
+}): Promise<AuditLog[]> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.usuario) qs.set("usuario", params.usuario);
+  if (params?.accion) qs.set("accion", params.accion);
+
+  return request<AuditLog[]>(`/auditoria?${qs.toString()}`, { method: "GET" });
+}
+// ======================
+// AGROFLOW OPS
+// Backend real: GET /api/v1/agroflow/booking/{booking}
+// ======================
+export type AgroflowBookingData = {
+  booking: string;
+  naviera: string | null;
+  nave: string | null;
+  pol: string | null;
+  pod: string | null;
+  temperatura: string | null;
+  ventilacion: string | null;
+  planta_llenado: string | null;
+  hora_posicionamiento: string | null;
+  ac_option: boolean;
+  ct_option: boolean;
+  operador_logistico: string | null;
+  cultivo: string | null;
+  es_reprogramado: boolean;
+};
+
+export async function getAgroflowBooking(booking: string): Promise<AgroflowBookingData> {
+  const b = encodeURIComponent((booking || "").trim().toUpperCase());
+  return request<AgroflowBookingData>(`/agroflow/booking/${b}`, { method: "GET" });
+}
+>>>>>>> Stashed changes

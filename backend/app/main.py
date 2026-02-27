@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import settings
-from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat
+from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, auditoria, scanner, agroflow
+from app.services.sync_service import start_sync_service
+import threading
 
 # Valor por defecto del JWT (solo desarrollo). En producción debe definirse JWT_SECRET en env.
 _DEV_JWT_SECRET = "dev-secret-cambiar-en-produccion"
@@ -30,6 +32,8 @@ app = FastAPI(
 @app.on_event("startup")
 def startup():
     _validate_production_config()
+    # Inicia el servicio de sincronización de Excel en segundo plano
+    threading.Thread(target=start_sync_service, daemon=True).start()
 
 
 @app.get("/ping")
@@ -67,6 +71,9 @@ app.include_router(referencias.router)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(auditoria.router)
+app.include_router(scanner.router)
+app.include_router(agroflow.router)
 
 # =========================
 # Health checks
