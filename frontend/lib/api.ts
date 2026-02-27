@@ -71,8 +71,9 @@ async function parseBody(res: Response) {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  const url = `/api/v1${p}`;
+  // Asegurar que el path empiece con / y no termine con /
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const url = cleanPath.startsWith("/api/v1") ? cleanPath : `/api/v1${cleanPath}`;
   const token = getStoredToken();
   const headers = new Headers(options.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -606,4 +607,8 @@ export type AgroflowBookingData = {
 export async function getAgroflowBooking(booking: string): Promise<AgroflowBookingData> {
   const b = encodeURIComponent((booking || "").trim().toUpperCase());
   return request<AgroflowBookingData>(`/agroflow/booking/${b}`, { method: "GET" });
+}
+
+export async function getLogisticaFacturas(): Promise<any[]> {
+  return request<any[]>("agroflow/logistica/facturas", { method: "GET" });
 }

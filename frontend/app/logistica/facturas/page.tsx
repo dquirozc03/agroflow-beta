@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AppHeader } from "@/components/app-header"
+import { getLogisticaFacturas } from "@/lib/api"
 
 interface Factura {
     id: number
@@ -40,16 +41,13 @@ function FacturasLogisticasContent() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        fetchFacturas()
+        fetchInvoices()
     }, [])
 
-    const fetchFacturas = async () => {
+    const fetchInvoices = async () => {
         try {
             setLoading(true)
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
-            const res = await fetch(`${apiUrl}/api/v1/agroflow/logistica/facturas`)
-            if (!res.ok) throw new Error("Error al obtener las facturas")
-            const data = await res.json()
+            const data = await getLogisticaFacturas()
             setFacturas(data)
         } catch (err: any) {
             setError(err.message)
