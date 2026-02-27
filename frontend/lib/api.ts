@@ -1,5 +1,5 @@
 // frontend/lib/api.ts
-// Cliente API profesional para LogiCapture
+// Cliente API profesional para LogiCapture - Update: 2026-02-27 11:27
 // - Usa /api/v1/* (same-origin) y pasa por el gateway de Next (app/api/v1/[...path]/route.ts)
 // - Envía Authorization: Bearer <token> cuando hay sesión
 // - En 401 dispara onUnauthorized (logout)
