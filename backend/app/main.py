@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import settings
-from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, auditoria, scanner, agroflow
+from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, agroflow
 from app.services.sync_service import start_sync_service
 import threading
 
@@ -71,8 +71,6 @@ app.include_router(referencias.router)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(chat.router)
-app.include_router(auditoria.router)
-app.include_router(scanner.router)
 app.include_router(agroflow.router)
 
 # =========================
