@@ -133,10 +133,20 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
                 pass
 
         # Forma de Pago
-        # Puede estar en PaymentMeansID o ID de PaymentTerms
-        forma_pago = get_text(root, ".//cac:PaymentMeans/cbc:PaymentMeansCode") or \
-                    get_text(root, ".//cac:PaymentTerms/cbc:PaymentMeansID") or \
-                    get_text(root, ".//cac:PaymentTerms/cbc:ID") or "No Especificado"
+        # Estrategia: Buscar primero en PaymentTerms el que tenga ID "FormaPago" (UBL estándar Perú)
+        forma_pago = None
+        payment_terms_nodes = root.xpath(".//*[local-name()='PaymentTerms']", namespaces=ns)
+        for term in payment_terms_nodes:
+            term_id = get_text(term, ".//*[local-name()='ID']")
+            if term_id == "FormaPago":
+                forma_pago = get_text(term, ".//*[local-name()='PaymentMeansID']")
+                if forma_pago: break
+        
+        # Fallback si no se encontró con la estrategia anterior
+        if not forma_pago:
+            forma_pago = get_text(root, ".//cac:PaymentTerms/cbc:PaymentMeansID") or \
+                         get_text(root, ".//cac:PaymentTerms/cbc:ID") or \
+                         get_text(root, ".//cac:PaymentMeans/cbc:PaymentMeansCode") or "No Especificado"
 
         # Subtotal Factura (Valor de Venta Neto / Sin IGV)
         subtotal_str = get_text(root, ".//cac:LegalMonetaryTotal/cbc:LineExtensionAmount")
@@ -148,32 +158,31 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         # 5. Extracción de Contenedor / AWB (RegEx)
         contenedor = None
         
-        def normalizar_contenedor(texto):
-            if not texto: return None
-            # Prefijos que indican que es un BOOKING y NO un contenedor
+        def extraer_contenedores(texto):
+            if not texto: return []
+            contenedores_vistos = []
             BLACKLIST = ["EBKG", "BOOK", "BKG", "BK: ", "BK "]
             
-            # Buscar TODOS los posibles candidatos en el texto
             matches = re.finditer(r"([A-Z]{4})[^A-Z0-9]*([0-9]{6,7})", texto.upper())
-            
             for m in matches:
                 letras = m.group(1)
                 numeros = m.group(2)
-                
-                # Si el prefijo está en la blacklist, lo ignoramos y seguimos buscando
-                # También ignoramos si antes de las letras hay un "BK:" u "OT:" muy cerca
                 contexto_previo = texto.upper()[max(0, m.start()-5):m.start()]
+                
                 if letras in BLACKLIST or "BK" in contexto_previo or "OT" in contexto_previo:
                     continue
                 
-                # Si llegamos aquí, es probable que sea un contenedor real
+                res = None
                 if len(numeros) == 7:
-                    return f"{letras} {numeros[:6]}-{numeros[6]}"
+                    res = f"{letras} {numeros[:6]}-{numeros[6]}"
                 elif len(numeros) == 6:
                     match_extra = re.search(r"(\d{6})[^A-Z0-9]*([0-9]{1})", texto[m.start(2):])
                     if match_extra:
-                        return f"{letras} {match_extra.group(1)}-{match_extra.group(2)}"
-            return None
+                        res = f"{letras} {match_extra.group(1)}-{match_extra.group(2)}"
+                
+                if res and res not in contenedores_vistos:
+                    contenedores_vistos.append(res)
+            return contenedores_vistos
 
         # 1. Búsqueda por XPaths comunes (Agnóstico a Namespace)
         xpaths_busqueda = [
@@ -183,27 +192,30 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         ]
 
         print(f"DEBUG: Iniciando extracción de contenedor para {serie_correlativo}")
+        contenedores_finales = []
         for path in xpaths_busqueda:
             nodes = root.xpath(path)
             for node in nodes:
                 if node.text:
-                    contenedor = normalizar_contenedor(node.text)
-                    if contenedor: 
-                        print(f"DEBUG: Contenedor encontrado en {path}: {contenedor}")
-                        break
-            if contenedor: break
-
-        # 2. Búsqueda exhaustiva final
-        if not contenedor:
+                    encontrados = extraer_contenedores(node.text)
+                    for c in encontrados:
+                        if c not in contenedores_finales:
+                            contenedores_finales.append(c)
+        
+        # Búsqueda exhaustiva final
+        if not contenedores_finales:
             print("DEBUG: Iniciando búsqueda exhaustiva en todos los nodos de texto...")
             all_text_nodes = root.xpath("//text()")
             for text_val in all_text_nodes:
-                contenedor = normalizar_contenedor(str(text_val))
-                if contenedor: 
-                    print(f"DEBUG: Contenedor encontrado en búsqueda exhaustiva: {contenedor}")
-                    break
+                encontrados = extraer_contenedores(str(text_val))
+                for c in encontrados:
+                    if c not in contenedores_finales:
+                        contenedores_finales.append(c)
         
-        if not contenedor:
+        contenedor = ", ".join(contenedores_finales) if contenedores_finales else None
+        if contenedor:
+            print(f"DEBUG: Contenedores finales encontrados: {contenedor}")
+        else:
             print("DEBUG: No se pudo extraer ningún contenedor de este XML.")
 
         # Evitar Duplicados: Consultar si ya existe el comprobante del mismo proveedor
@@ -261,8 +273,24 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
             if es_servicio:
                 # Tomamos solo la primera parte si es muy larga o tiene saltos
                 serv_name = desc_clean.split('\n')[0].split(' - ')[0].strip()
-                if serv_name and serv_name not in servicios_encontrados:
-                    servicios_encontrados.append(serv_name)
+                
+                # Obtener Valores
+                vu_str = get_text(line, ".//cac:Price/cbc:PriceAmount")
+                vi_str = get_text(line, ".//cbc:LineExtensionAmount")
+                
+                try:
+                    v_unit = float(vu_str) if vu_str else 0.0
+                    v_item = float(vi_str) if vi_str else 0.0
+                except:
+                    v_unit = 0.0
+                    v_item = 0.0
+
+                # Formato detallado: Servicio (VU: 0.00 / VT: 0.00)
+                serv_detalle = f"{serv_name} (VU: {v_unit:,.2f} / VT: {v_item:,.2f})"
+                
+                # Lo añadimos al resumen (aquí sí permitimos duplicados si son servicios distintos 
+                # o el usuario quiere ver líneas separadas)
+                servicios_encontrados.append(serv_detalle)
                 
                 # La primera UM de un servicio real será la principal
                 if not um_principal:
