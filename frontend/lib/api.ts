@@ -49,6 +49,8 @@ export function isBackendUnreachable(e: unknown): boolean {
   if (e instanceof TypeError && (e.message?.includes("fetch") || e.message?.includes("Failed to fetch")))
     return true;
   const msg = String((e as Error)?.message ?? "");
+  // Si es un ApiError con un mensaje vacío, NO reintentar a menos que sea 500/502/503 (handled above)
+  if (e instanceof ApiError && msg === "") return false;
   return msg.includes("fetch") || msg.includes("Failed") || msg.includes("network") || msg === "";
 }
 
@@ -87,10 +89,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await parseBody(res);
-    const msg =
-      (typeof body === "string" && body) ||
-      body?.detail ||
-      `API error ${res.status} ${res.statusText}`;
+    let msg = `Error ${res.status}: ${res.statusText}`;
+
+    if (typeof body === "string" && body) {
+      msg = body;
+    } else if (body?.detail) {
+      if (Array.isArray(body.detail)) {
+        // Manejar errores de validación de FastAPI (422)
+        msg = body.detail[0]?.msg || JSON.stringify(body.detail);
+      } else {
+        msg = body.detail;
+      }
+    }
+
     throw new ApiError(msg, res.status, body);
   }
 
@@ -115,13 +126,32 @@ export type LoginResponse = {
   usuario: string;
   nombre: string;
   rol: string;
+  requiere_cambio_password?: boolean;
 };
 
-export type MeResponse = { usuario: string; nombre: string; rol: string };
+export type MeResponse = {
+  id?: number;
+  usuario: string;
+  nombre: string;
+  rol: string;
+  requiere_cambio_password?: boolean;
+};
 
 export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
   const res = await json<LoginResponse>("/auth/login", { usuario, password }, "POST");
   return res;
+}
+
+export async function apiUpdateOwnPassword(payload: any): Promise<{ ok: boolean; mensaje: string }> {
+  return await json<{ ok: boolean; mensaje: string }>("/auth/cambiar-password-propia", payload, "POST");
+}
+
+export async function apiUpdateUser(id: number, payload: any): Promise<Usuario> {
+  return await json<Usuario>(`/auth/usuarios/${id}`, payload, "PATCH");
+}
+
+export async function apiResetUserPassword(id: number, nueva: string): Promise<{ ok: boolean; mensaje: string }> {
+  return await json<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${id}/password-reset`, { nueva_password: nueva }, "PATCH");
 }
 
 export async function apiMe(): Promise<MeResponse> {
@@ -134,6 +164,36 @@ export async function apiDesbloquearUsuario(usuario: string): Promise<{ ok: bool
     `/auth/usuarios/${encodeURIComponent(usuario)}/desbloquear`,
     { method: "PATCH" }
   );
+}
+
+// ======================
+// GESTIÓN DE USUARIOS
+// ======================
+export type Usuario = {
+  id: number;
+  usuario: string;
+  nombre: string;
+  rol: string;
+  activo: boolean;
+};
+
+export type UsuarioCreate = {
+  usuario: string;
+  nombre: string;
+  rol: string;
+  password: string;
+};
+
+export async function listUsers(): Promise<Usuario[]> {
+  return request<Usuario[]>("/auth/usuarios", { method: "GET" });
+}
+
+export async function createUser(payload: UsuarioCreate): Promise<Usuario> {
+  return json<Usuario>("/auth/usuarios", payload, "POST");
+}
+
+export async function toggleUserStatus(usuarioId: number): Promise<{ ok: boolean; mensaje: string }> {
+  return request<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${usuarioId}`, { method: "DELETE" });
 }
 
 // ======================
@@ -493,8 +553,6 @@ export async function searchTransportistas(
     method: "GET",
   });
 }
-<<<<<<< Updated upstream
-=======
 // ======================
 // AUDITORÍA
 // Backend real: GET /api/v1/auditoria
@@ -523,6 +581,7 @@ export async function getAuditLogs(params?: {
 
   return request<AuditLog[]>(`/auditoria?${qs.toString()}`, { method: "GET" });
 }
+
 // ======================
 // AGROFLOW OPS
 // Backend real: GET /api/v1/agroflow/booking/{booking}
@@ -548,4 +607,3 @@ export async function getAgroflowBooking(booking: string): Promise<AgroflowBooki
   const b = encodeURIComponent((booking || "").trim().toUpperCase());
   return request<AgroflowBookingData>(`/agroflow/booking/${b}`, { method: "GET" });
 }
->>>>>>> Stashed changes

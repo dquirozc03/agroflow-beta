@@ -54,7 +54,13 @@ class Vehiculo(Base):
     placas: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
 
     marca: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    cert_vehicular: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    marca: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    
+    # Certificados separados (tracto / carreta)
+    cert_tracto: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    cert_carreta: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Concatenado (cert_tracto/cert_carreta o solo cert_tracto)
+    cert_vehicular: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Medidas OBLIGATORIAS en METROS (m)
     # Numeric(6, 2) permite hasta 9999.99 (sobrado) y 2 decimales.

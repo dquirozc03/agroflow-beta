@@ -344,12 +344,12 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   );
 
   const headBase =
-    "px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/60 text-center border-l border-border/40 first:border-l-0";
+    "px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/40 backdrop-blur-sm border-b border-border text-center whitespace-nowrap";
   const cellBase =
-    "px-3 py-2 align-top text-sm text-foreground/90 whitespace-pre-wrap break-words border-l border-border/40 first:border-l-0";
+    "px-3 py-2 align-middle text-sm text-foreground/90 whitespace-nowrap border-b border-border/40 transition-colors group-hover:bg-muted/50";
   const cellCenter = "text-center";
   const cellLeft = "text-left";
-  const cellMono = "font-mono text-xs text-foreground/80";
+  const cellMono = "font-mono text-xs text-foreground";
 
   const selectedDetail = selected ? toDetail(selected) : null;
   const showDetailDesktop = Boolean(selectedDetail);
@@ -391,26 +391,12 @@ export function BandejaSap({ rows, setRows, className }: Props) {
     [],
   );
 
-  // ✅ Por defecto: al montar, carga procesados de HOY.
-  useEffect(() => {
-    refreshProcesados(procesadosDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ✅ Cuando el usuario cambia la fecha de procesados, refrescamos automáticamente
+  // ✅ Cuando el usuario cambia la fecha de procesados O cambia de pestaña, refrescamos.
   useEffect(() => {
     if (tab === "procesados") {
       refreshProcesados(procesadosDate);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [procesadosDate, tab]);
-
-  // ✅ Cuando el usuario entra a la pestaña "Procesados", refrescamos si está vacío.
-  useEffect(() => {
-    if (tab === "procesados" && processedRows.length === 0 && !procesadosLoading) {
-      refreshProcesados(procesadosDate);
-    }
-  }, [tab, processedRows.length, procesadosLoading, procesadosDate, refreshProcesados]);
+  }, [procesadosDate, tab, refreshProcesados]);
 
   async function handleRefreshRow(row: SapRow, where: "pendientes" | "procesados") {
     const id = getId(row);

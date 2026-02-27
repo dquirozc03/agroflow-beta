@@ -1,4 +1,4 @@
-# BETA LogiCapture 1.0 (Nexo)
+# BETA LogiCapture 1.0 (AgroFlow)
 
 Sistema para el área comercial y exportaciones: registro operativo, bandeja SAP e historial. Incluye login real (JWT), roles y auditoría.
 

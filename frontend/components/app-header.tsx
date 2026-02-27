@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { checkApiHealth } from "@/lib/api";
 import { useBackendStatus } from "@/contexts/backend-status-context";
-import { Wifi, WifiOff, Boxes, LogOut, User, Moon, Sun } from "lucide-react";
+import { Wifi, WifiOff, Boxes, LogOut, User, Moon, Sun, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME, MODULE_LOGICAPTURE, ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/lib/constants";
@@ -13,26 +13,13 @@ import { Button } from "@/components/ui/button";
 
 const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
 
-function ThemeToggle() {
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <span className="h-9 w-9" aria-hidden />;
-  const isDark = resolvedTheme === "dark";
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      title={isDark ? "Modo claro" : "Modo oscuro"}
-      aria-label={isDark ? "Usar modo claro" : "Usar modo oscuro"}
-    >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-    </button>
-  );
+import { ThemeToggle } from "@/components/theme-toggle";
+
+interface Props {
+  onOpenScanner?: () => void;
 }
 
-export function AppHeader() {
+export function AppHeader({ onOpenScanner }: Props) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { isWaking, wakeBackend } = useBackendStatus();
@@ -64,14 +51,14 @@ export function AppHeader() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
       {/* IZQUIERDA */}
-      <div className="flex min-w-0 items-center gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4 shrink-0">
         <img
           src="/Logo_Beta.png"
           alt="AgroFlow"
-          className="h-[3.5rem] w-auto object-contain"
+          className="h-8 sm:h-[3rem] w-auto object-contain"
         />
-        <div className="h-8 w-px bg-border" />
-        <div className="flex items-center gap-2">
+        <div className="hidden xs:block h-8 w-px bg-border" />
+        <div className="hidden md:flex items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground">
             {SYSTEM_NAME}
           </span>
@@ -87,13 +74,27 @@ export function AppHeader() {
 
       {/* DERECHA */}
       <div className="flex items-center gap-4">
+        {onOpenScanner && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenScanner}
+            className="flex gap-1.5 border-dashed border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+          >
+            <Smartphone className="h-4 w-4" />
+            <span className="hidden lg:inline text-xs font-semibold">Vincular Celular</span>
+          </Button>
+        )}
+
         <ThemeToggle />
         {user && (
-          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-foreground/90">{user.nombre}</span>
-            <span className="text-xs text-muted-foreground">
-              ({ROLE_LABELS[user.rol as UserRole]})
+          <div className="hidden lg:flex flex-col items-start gap-0 rounded-lg border border-border/60 bg-muted/40 px-3 py-1 min-w-0 max-w-[220px]">
+            <div className="flex items-center gap-2 w-full">
+              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground/90 truncate">{user.nombre}</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground pl-5 uppercase tracking-wider">
+              {ROLE_LABELS[user.rol as UserRole]}
             </span>
           </div>
         )}
@@ -115,22 +116,21 @@ export function AppHeader() {
         >
           {ENV}
         </span>
-        {/* Estado API */}
-        <div className="flex items-center">
+        <div className="hidden sm:flex items-center">
           {isWaking ? (
             <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-xs font-medium text-primary">Despertando…</span>
+              <span className="text-xs font-medium text-primary">…</span>
             </div>
           ) : apiOnline === null ? (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
               <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Verificando…</span>
+              <span className="text-xs text-muted-foreground">...</span>
             </div>
           ) : apiOnline ? (
             <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-1.5">
               <Wifi className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">API Online</span>
+              <span className="hidden xl:inline text-xs font-medium text-emerald-700 dark:text-emerald-300">API Online</span>
             </div>
           ) : (
             <button
@@ -140,7 +140,7 @@ export function AppHeader() {
               title="Reintentar conexión"
             >
               <WifiOff className="h-4 w-4" />
-              <span>Reintentar</span>
+              <span className="hidden xl:inline">Reintentar</span>
             </button>
           )}
         </div>

@@ -13,36 +13,38 @@ export type UserRole =
   | "administrador"
   | "supervisor_facturacion"
   | "facturador"
-  | "documentaria";
+  | "documentaria"
+  | "gerencia";
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   administrador: "Administrador",
   supervisor_facturacion: "Supervisor de facturación",
   facturador: "Facturador",
   documentaria: "Documentaría",
+  gerencia: "Gerencia",
 };
 
 /** Puede ver pestañas Captura y Bandeja SAP (no solo Historial). */
-export function canSeeCapturaAndBandeja(role: UserRole): boolean {
+export function canSeeCapturaAndBandeja(role: UserRole | string): boolean {
   return role !== "documentaria";
 }
 
 /** Puede editar registros procesados (backend exige admin/editor). */
-export function canEditRegistros(role: UserRole): boolean {
+export function canEditRegistros(role: UserRole | string): boolean {
   return role === "administrador" || role === "supervisor_facturacion";
 }
 
 /** Puede anular registros (facturadores sí, documentaria no usa Bandeja). */
-export function canAnularRegistros(role: UserRole): boolean {
+export function canAnularRegistros(role: UserRole | string): boolean {
   return role !== "documentaria";
 }
 
-/** Puede ver el módulo de Auditoría (Admin y Supervisor). */
-export function canSeeAuditoria(role: string): boolean {
-  return role === "administrador" || role === "supervisor_facturacion";
+/** Puede ver el módulo de Auditoría (Admin, Gerencia y Supervisor). */
+export function canSeeAuditoria(role: UserRole | string): boolean {
+  return role === "administrador" || role === "gerencia" || role === "supervisor_facturacion";
 }
 
 /** Puede gestionar usuarios (Solo Admin). */
-export function canManageUsers(role: string): boolean {
+export function canManageUsers(role: UserRole | string): boolean {
   return role === "administrador";
 }

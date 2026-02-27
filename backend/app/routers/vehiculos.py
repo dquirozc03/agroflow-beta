@@ -24,6 +24,18 @@ def crear_vehiculo(payload: VehiculoCrear, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Ya existe un vehículo con esas placas")
 
     data = payload.model_dump()
+    
+    # Lógica de certificados: si no viene cert_vehicular pero vienen individuales, concatenar
+    ct = (data.get("cert_tracto") or "").strip()
+    cc = (data.get("cert_carreta") or "").strip()
+    cv = (data.get("cert_vehicular") or "").strip()
+    
+    if not cv and (ct or cc):
+        if cc:
+            data["cert_vehicular"] = f"{ct}/{cc}"
+        else:
+            data["cert_vehicular"] = ct
+            
     veh = Vehiculo(**data)
 
     try:

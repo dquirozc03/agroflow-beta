@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { FormState } from "@/lib/types";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,17 +14,11 @@ import { toast } from "sonner";
 interface Props {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  justScannedId?: string | null;
 }
 
-function ScannerGroup({
-  label,
-  items,
-  maxItems,
-  onAdd,
-  onClear,
-  resultLabel,
-  resultValue,
-}: {
+interface ScannerGroupProps {
+  id?: string;
   label: string;
   items: string[];
   maxItems?: number;
@@ -31,7 +26,20 @@ function ScannerGroup({
   onClear: () => void;
   resultLabel: string;
   resultValue: string;
-}) {
+  isFlashing?: boolean;
+}
+
+function ScannerGroup({
+  id,
+  label,
+  items,
+  maxItems,
+  onAdd,
+  onClear,
+  resultLabel,
+  resultValue,
+  isFlashing,
+}: ScannerGroupProps) {
   const [input, setInput] = useState("");
 
   const handleAdd = () => {
@@ -51,9 +59,10 @@ function ScannerGroup({
 
   return (
     <div className="grid gap-2">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-2">
         <Input
+          id={id}
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           onKeyDown={(e) => {
@@ -63,7 +72,7 @@ function ScannerGroup({
             }
           }}
           placeholder="Escanear y agregar"
-          className="font-mono"
+          className={cn("font-mono", isFlashing && "animate-scan-flash")}
         />
         <Button
           variant="secondary"
@@ -107,7 +116,7 @@ function ScannerGroup({
   );
 }
 
-export function CardUnicidad({ form, setForm }: Props) {
+export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm, justScannedId }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -119,7 +128,7 @@ export function CardUnicidad({ form, setForm }: Props) {
       <CardContent className="grid gap-6">
         {/* Precintos fields */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_aduana" className="text-xs text-muted-foreground">
               PS_ADUANA
             </Label>
@@ -132,11 +141,16 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_aduana: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="PS Aduana"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("ps_operador")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_operador" className="text-xs text-muted-foreground">
               PS_OPERADOR
             </Label>
@@ -149,13 +163,18 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_operador: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="** si no trae"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("senasa")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="senasa" className="text-xs text-muted-foreground">
               SENASA
             </Label>
@@ -168,11 +187,16 @@ export function CardUnicidad({ form, setForm }: Props) {
                   senasa: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="* si no trae"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("ps_linea")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="ps_linea" className="text-xs text-muted-foreground">
               PS_LINEA
             </Label>
@@ -185,7 +209,13 @@ export function CardUnicidad({ form, setForm }: Props) {
                   ps_linea: e.target.value.toUpperCase(),
                 }))
               }
-              placeholder="PS Linea"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  // Saltar al primer input de precintos múltiples
+                  document.getElementById("scanner_ps_beta")?.focus();
+                }
+              }}
               className="mt-1 font-mono"
             />
           </div>
@@ -196,7 +226,8 @@ export function CardUnicidad({ form, setForm }: Props) {
 
         {/* Scanner groups */}
         <ScannerGroup
-          label="PS BETA"
+          id="scanner_ps_beta"
+          label="PS BETA (Múltiples)"
           items={form.ps_beta_items}
           maxItems={4}
           onAdd={(val) =>
@@ -210,10 +241,12 @@ export function CardUnicidad({ form, setForm }: Props) {
           }
           resultLabel="PS_BETA"
           resultValue={form.ps_beta_items.join("/")}
+          isFlashing={justScannedId === "scanner_ps_beta"}
         />
 
         <ScannerGroup
-          label="Termografos"
+          id="scanner_termografos"
+          label="Termografos (Múltiples)"
           items={form.termografos_items}
           onAdd={(val) =>
             setForm((prev) => ({
@@ -234,4 +267,4 @@ export function CardUnicidad({ form, setForm }: Props) {
       </CardContent>
     </Card>
   );
-}
+});

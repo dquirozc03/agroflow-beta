@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
+import { SessionTimeout } from "@/components/session-timeout";
 
 import "./globals.css";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
         <Providers>
           <AuthGuard>
             {children}
+            <SessionTimeout />
             <Toaster position="top-right" richColors />
           </AuthGuard>
         </Providers>

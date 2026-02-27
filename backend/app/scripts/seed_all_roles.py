@@ -21,6 +21,7 @@ USERS = [
     ("supervisor", "Supervisor Facturación", "supervisor_facturacion"),
     ("facturador", "Facturador", "facturador"),
     ("doc", "Documentaría", "documentaria"),
+    ("gerencia", "Gerencia General", "gerencia"),
 ]
 
 

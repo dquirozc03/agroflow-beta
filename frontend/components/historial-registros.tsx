@@ -23,6 +23,7 @@ import {
 import { Loader2, Plus, Search, ChevronLeft, ChevronRight, Check, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { EstadoBadge } from "@/components/estado-badge";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZES = [10, 25, 50, 100] as const;
 
@@ -203,20 +204,20 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="w-full overflow-x-auto">
           <div className="min-w-[1100px]">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="whitespace-nowrap">ID</TableHead>
-                  <TableHead className="whitespace-nowrap">FECHA</TableHead>
-                  <TableHead className="whitespace-nowrap">BOOKING</TableHead>
-                  <TableHead className="whitespace-nowrap">O/BETA</TableHead>
-                  <TableHead className="whitespace-nowrap">AWB</TableHead>
-                  <TableHead className="whitespace-nowrap">DAM</TableHead>
-                  <TableHead className="whitespace-nowrap">ESTADO</TableHead>
-                  <TableHead className="whitespace-nowrap text-right">Acción</TableHead>
+                <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ID</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">FECHA</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">BOOKING</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">O/BETA</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">AWB</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">DAM</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ESTADO</TableHead>
+                  <TableHead className="h-10 px-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acción</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -233,10 +234,6 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
                     const pendiente = isPendiente(r.estado);
                     const busy = addingId === r.id;
 
-                    // ✅ Reglas:
-                    // - Si ya está en bandeja: bloquear
-                    // - Si NO está pendiente: bloquear
-                    // - Si está cargando: bloquear
                     const disabled = busy || yaEnBandeja || !pendiente;
 
                     const label = yaEnBandeja
@@ -254,45 +251,43 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
                           : Plus;
 
                     return (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-mono">#{r.id}</TableCell>
-                        <TableCell className="whitespace-nowrap">
+                      <TableRow key={r.id} className="group border-b border-border/40 transition-colors hover:bg-muted/50">
+                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground">#{r.id}</TableCell>
+                        <TableCell className="px-3 py-2 text-sm text-foreground/90 whitespace-nowrap">
                           {String(r.fecha_registro).slice(0, 10)}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
                           {r.booking ?? "---"}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
                           {r.o_beta ?? "---"}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
                           {r.awb ?? "---"}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
                           {r.dam ?? "---"}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <EstadoBadge estado={r.estado ?? ""} className="w-[110px]" />
+                        <TableCell className="px-3 py-2">
+                          <EstadoBadge estado={r.estado ?? ""} className="w-[100px] shadow-sm transform scale-90 origin-left" />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="px-3 py-2 text-right">
                           <Button
-                            variant="secondary"
+                            variant={yaEnBandeja ? "outline" : "secondary"}
                             size="sm"
                             onClick={() => addToBandeja(r.id)}
                             disabled={disabled}
-                            title={
-                              yaEnBandeja
-                                ? "Este registro ya está en Bandeja SAP"
-                                : !pendiente
-                                  ? "Solo se pueden agregar registros en estado PENDIENTE"
-                                  : "Agregar a Bandeja SAP"
-                            }
+                            className={cn(
+                              "h-7 text-xs shadow-sm",
+                              yaEnBandeja && "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900",
+                              !pendiente && !yaEnBandeja && "opacity-50"
+                            )}
                           >
                             <Icon
                               className={
                                 busy
-                                  ? "mr-1 h-3.5 w-3.5 animate-spin"
-                                  : "mr-1 h-3.5 w-3.5"
+                                  ? "mr-1 h-3 w-3 animate-spin"
+                                  : "mr-1 h-3 w-3"
                               }
                             />
                             {label}
@@ -305,8 +300,11 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
 
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                      No hay registros en ese rango de fechas.
+                    <TableCell colSpan={8} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Search className="h-8 w-8 opacity-20" />
+                        <span className="text-sm">No se encontraron registros en este rango.</span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

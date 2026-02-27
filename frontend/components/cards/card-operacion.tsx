@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  justScannedId?: string | null;
 }
 
 function prettyEstado(v?: string | null) {
@@ -65,7 +66,7 @@ function buildPlacas(tracto: string, carreta: string): string {
   return `${t}/${c}`;
 }
 
-export function CardOperacion({ form, setForm }: Props) {
+export const CardOperacion = React.memo(function CardOperacion({ form, setForm, justScannedId }: Props) {
   const [placasLoading, setPlacasLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [carretaAlerta, setCarretaAlerta] = useState<{
@@ -141,8 +142,14 @@ export function CardOperacion({ form, setForm }: Props) {
             id="dni"
             value={form.dni}
             onChange={(e) => setForm((prev) => ({ ...prev, dni: e.target.value }))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                document.getElementById("placas_tracto")?.focus();
+              }
+            }}
             placeholder="Escanear DNI"
-            className="h-9 font-mono"
+            className={cn("h-9 font-mono", justScannedId === "dni" && "animate-scan-flash")}
           />
         </div>
 
@@ -158,8 +165,14 @@ export function CardOperacion({ form, setForm }: Props) {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, placas_tracto: e.target.value.toUpperCase() }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("placas_carreta")?.focus();
+                }
+              }}
               placeholder="Placa tracto"
-              className="mt-1 h-9 font-mono"
+              className={cn("mt-1 h-9 font-mono", justScannedId === "placas_tracto" && "animate-scan-flash")}
             />
           </div>
           <div className="min-w-0 max-w-full">
@@ -172,8 +185,15 @@ export function CardOperacion({ form, setForm }: Props) {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, placas_carreta: e.target.value.toUpperCase() }))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  // Siguiente: PS_ADUANA en la siguiente tarjeta (CardUnicidad)
+                  document.getElementById("ps_aduana")?.focus();
+                }
+              }}
               placeholder="Placa carreta"
-              className="mt-1 h-9 font-mono"
+              className={cn("mt-1 h-9 font-mono", justScannedId === "placas_carreta" && "animate-scan-flash")}
             />
           </div>
         </div>
@@ -242,4 +262,4 @@ export function CardOperacion({ form, setForm }: Props) {
       </CardContent>
     </Card>
   );
-}
+});

@@ -18,7 +18,7 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      text: "Hola. Puedes preguntar por ejemplo: ¿Cuántos embarques salieron hoy? ¿Cuántos registros hay pendientes?",
+      text: "👋 ¡Hola! Soy tu asistente de logística. Pregúntame sobre embarques, pendientes o estadísticas.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -27,7 +27,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [messages, open]);
 
   const send = async () => {
     const text = (input || "").trim();
@@ -41,7 +41,7 @@ export function ChatWidget() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: "No pude conectar con el servidor. Intenta de nuevo." },
+        { role: "assistant", text: "⚠️ Error de conexión. Intenta de nuevo." },
       ]);
     } finally {
       setLoading(false);
@@ -52,70 +52,101 @@ export function ChatWidget() {
     <>
       <Button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg"
+        className={cn(
+          "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-xl transition-all hover:scale-105 hover:shadow-2xl",
+          open ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
+        )}
         size="icon"
-        aria-label={open ? "Cerrar chat" : "Abrir chat"}
       >
-        <MessageCircle className="h-5 w-5" />
+        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-7 w-7" />}
       </Button>
 
-      {open && (
-        <div
-          className={cn(
-            "fixed bottom-20 right-6 z-50 flex w-[360px] max-w-[calc(100vw-3rem)] flex-col",
-            "rounded-xl border border-border bg-card shadow-xl"
-          )}
-        >
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <span className="text-sm font-medium">Consultas</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+      <div
+        className={cn(
+          "fixed bottom-24 right-6 z-50 flex w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl transition-all duration-300 origin-bottom-right",
+          open
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-4 opacity-0 scale-95 pointer-events-none"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 bg-gradient-to-r from-primary to-violet-600 px-4 py-4 text-primary-foreground">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+            <MessageCircle className="h-6 w-6" />
           </div>
-          <div
-            ref={scrollRef}
-            className="flex max-h-[320px] min-h-[200px] flex-col gap-3 overflow-y-auto p-3"
-          >
-            {messages.map((m, i) => (
+          <div>
+            <div className="font-semibold leading-none">Asistente Virtual</div>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-primary-foreground/80">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+              </span>
+              En línea
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div
+          ref={scrollRef}
+          className="flex h-[400px] flex-col gap-4 overflow-y-auto bg-muted/30 p-4"
+        >
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex w-full",
+                m.role === "user" ? "justify-end" : "justify-start"
+              )}
+            >
               <div
-                key={i}
                 className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                  "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                   m.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
+                    ? "rounded-br-sm bg-primary text-primary-foreground"
+                    : "rounded-bl-sm bg-white dark:bg-card border border-border"
                 )}
               >
                 {m.text}
               </div>
-            ))}
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Pensando…
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white dark:bg-card border border-border px-4 py-3 shadow-sm">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 delay-0"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 delay-150"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 delay-300"></span>
               </div>
-            )}
-          </div>
-          <form
-            className="flex gap-2 border-t border-border p-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-          >
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Pregunta sobre embarques, registros…"
-              className="flex-1"
-              disabled={loading}
-            />
-            <Button type="submit" size="icon" disabled={loading}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Footer */}
+        <form
+          className="flex gap-2 border-t border-border bg-background p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send();
+          }}
+        >
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Escribe tu consulta..."
+            className="flex-1 rounded-full border-muted-foreground/20 bg-muted/50 focus-visible:ring-primary/20"
+            disabled={loading}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={loading || !input.trim()}
+            className="rounded-full h-10 w-10 shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
     </>
   );
 }
