@@ -10,23 +10,20 @@ from app.database import SessionLocal
 def check_invoice():
     db = SessionLocal()
     try:
-        # Buscamos la factura específica de la imagen: F500-992682
-        factura_id = "F500-992682"
-        print(f"Buscando factura {factura_id} en la base de datos...")
-        
-        sql = text("SELECT id, proveedor_ruc, serie_correlativo, contenedor, creado_en FROM logistica_facturas WHERE serie_correlativo = :val")
-        row = db.execute(sql, {"val": factura_id}).fetchone()
-        
-        if row:
-            print(f"Factura encontrada!")
-            print(f"ID: {row.id}")
-            print(f"RUC: {row.proveedor_ruc}")
-            print(f"Serie: {row.serie_correlativo}")
-            print(f"Contenedor en BD: '{row.contenedor}'")
-            print(f"Creado en: {row.creado_en}")
-        else:
-            print("No se encontró la factura con ese número correlativo.")
+        # Buscamos la factura específica
+        invoice = db.execute(text("SELECT * FROM logistica_facturas WHERE serie_correlativo = 'F050-121762'")).fetchone()
+        if invoice:
+            print(f"Factura encontrada: {invoice.serie_correlativo}")
+            print(f"Forma Pago: {invoice.forma_pago}")
+            print(f"Contenedor: {invoice.contenedor}")
             
+            # Ver detalles
+            detalles = db.execute(text(f"SELECT descripcion FROM logistica_facturas_detalles WHERE factura_id = {invoice.id}")).fetchall()
+            print("Detalles (Resumen de servicios):")
+            for d in detalles:
+                print(f" - {d[0]}")
+        else:
+            print("No se encontró la factura F050-121762.")
     except Exception as e:
         print(f"Error: {e}")
     finally:
