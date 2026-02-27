@@ -140,7 +140,7 @@ function FacturasLogisticasContent() {
                                             <TableRow key={f.id} className="border-slate-100 dark:border-slate-800 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                                                 <TableCell className="px-4 py-4 min-w-[180px]">
                                                     <div className="font-bold text-slate-900 dark:text-white leading-tight">{f.proveedor_razon_social}</div>
-                                                    <div className="text-[10px] text-slate-500 font-mono">ID {f.proveedor_ruc}</div>
+                                                    <div className="text-[10px] text-slate-500 font-mono">RUC {f.proveedor_ruc}</div>
                                                 </TableCell>
                                                 <TableCell className="px-4 font-mono text-[11px] font-bold">{f.serie_correlativo}</TableCell>
                                                 <TableCell className="px-4">
@@ -153,7 +153,9 @@ function FacturasLogisticasContent() {
                                                         {f.unidad_medida || "ZZ"}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="px-4 text-center text-xs">{f.fecha_emision ? format(new Date(f.fecha_emision), "dd/MM") : "-"}</TableCell>
+                                                <TableCell className="px-4 text-center text-xs">
+                                                    {f.fecha_emision ? format(new Date(f.fecha_emision + 'T12:00:00'), "dd/MM/yyyy") : "-"}
+                                                </TableCell>
                                                 <TableCell className="px-4 text-[10px] text-slate-600 dark:text-slate-400 capitalize">{f.forma_pago?.toLowerCase() || "-"}</TableCell>
                                                 <TableCell className="px-4 text-right font-bold text-slate-900 dark:text-white">
                                                     <div className="text-[10px] text-muted-foreground mr-1 inline">{f.moneda}</div>

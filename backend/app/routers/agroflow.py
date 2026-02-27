@@ -145,25 +145,32 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         except ValueError:
             subtotal = 0.0
 
-        # 5. Extracción de Contenedor / AWB (RegEx) en cbc:Note y en Detalles
+        # 5. Extracción de Contenedor / AWB (RegEx)
         contenedor = None
         
-        def buscar_contenedor(texto):
+        def normalizar_contenedor(texto):
             if not texto: return None
-            match = re.search(r"[A-Za-z]{4}[0-9]{7}", texto)
-            return match.group(0).upper() if match else None
+            # Regex flexible: busca 4 letras, opcional guion/espacio, 7 números
+            match = re.search(r"([A-Za-z]{4})[- ]?([0-9]{6})[- ]?([0-9]{1})", texto)
+            if match:
+                # Formato estándar solicitado: XXXX 123456-7
+                letras = match.group(1).upper()
+                numeros_base = match.group(2)
+                digito_verif = match.group(3)
+                return f"{letras} {numeros_base}-{digito_verif}"
+            return None
 
-        # Buscar en Notas principales
+        # Buscar en Notas principales (cbc:Note)
         notes = root.xpath(".//cbc:Note", namespaces=ns)
         for note_node in notes:
-            contenedor = buscar_contenedor(note_node.text)
+            contenedor = normalizar_contenedor(note_node.text)
             if contenedor: break
 
         # Si no se encontró, buscar en las descripciones de los items
         if not contenedor:
             items_desc = root.xpath(".//cac:Item/cbc:Description", namespaces=ns)
             for desc_node in items_desc:
-                contenedor = buscar_contenedor(desc_node.text)
+                contenedor = normalizar_contenedor(desc_node.text)
                 if contenedor: break
 
         # Evitar Duplicados: Consultar si ya existe el comprobante del mismo proveedor
