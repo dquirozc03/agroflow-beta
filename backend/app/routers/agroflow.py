@@ -150,17 +150,27 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         
         def normalizar_contenedor(texto):
             if not texto: return None
-            # Regex Universal: 4 letras seguidas de 7 dígitos (con cualquier basura entre medio)
-            # Ejemplo: "BEAU-9705909", "BEAU 970590-9", "BEAU9705909"
-            match = re.search(r"([A-Z]{4})[^A-Z0-9]*([0-9]{6,7})", texto.upper())
-            if match:
-                letras = match.group(1)
-                numeros = match.group(2)
+            # Prefijos que indican que es un BOOKING y NO un contenedor
+            BLACKLIST = ["EBKG", "BOOK", "BKG", "BK: ", "BK "]
+            
+            # Buscar TODOS los posibles candidatos en el texto
+            matches = re.finditer(r"([A-Z]{4})[^A-Z0-9]*([0-9]{6,7})", texto.upper())
+            
+            for m in matches:
+                letras = m.group(1)
+                numeros = m.group(2)
+                
+                # Si el prefijo está en la blacklist, lo ignoramos y seguimos buscando
+                # También ignoramos si antes de las letras hay un "BK:" u "OT:" muy cerca
+                contexto_previo = texto.upper()[max(0, m.start()-5):m.start()]
+                if letras in BLACKLIST or "BK" in contexto_previo or "OT" in contexto_previo:
+                    continue
+                
+                # Si llegamos aquí, es probable que sea un contenedor real
                 if len(numeros) == 7:
                     return f"{letras} {numeros[:6]}-{numeros[6]}"
                 elif len(numeros) == 6:
-                    # Buscar el dígito extra que falte
-                    match_extra = re.search(r"(\d{6})[^A-Z0-9]*([0-9]{1})", texto[match.start(2):])
+                    match_extra = re.search(r"(\d{6})[^A-Z0-9]*([0-9]{1})", texto[m.start(2):])
                     if match_extra:
                         return f"{letras} {match_extra.group(1)}-{match_extra.group(2)}"
             return None
