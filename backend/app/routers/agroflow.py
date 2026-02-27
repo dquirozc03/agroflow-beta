@@ -150,28 +150,36 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         
         def normalizar_contenedor(texto):
             if not texto: return None
-            # Regex flexible: busca 4 letras, opcional guion/espacio, 7 números
-            match = re.search(r"([A-Za-z]{4})[- ]?([0-9]{6})[- ]?([0-9]{1})", texto)
+            # Regex más robusta: 4 letras seguidas de 7 dígitos (con posibles separadores intermedios)
+            # Ejemplo: BEAU9705909, BEAU-9705909, BEAU 970590-9, BEAU - 970590-9
+            match = re.search(r"([A-Z]{4})[^A-Z0-9]*([0-9]{6,7})", texto.upper())
             if match:
-                # Formato estándar solicitado: XXXX 123456-7
-                letras = match.group(1).upper()
-                numeros_base = match.group(2)
-                digito_verif = match.group(3)
-                return f"{letras} {numeros_base}-{digito_verif}"
+                letras = match.group(1)
+                numeros = match.group(2)
+                # Si tenemos 7 números, el último es el dígito verificador
+                if len(numeros) == 7:
+                    return f"{letras} {numeros[:6]}-{numeros[6]}"
+                # Si solo hay 6, intentamos buscar un dígito extra después de un posible separador
+                elif len(numeros) == 6:
+                    match_extra = re.search(r"(\d{6})[^A-Z0-9]*([0-9]{1})", texto[match.start(2):])
+                    if match_extra:
+                        return f"{letras} {match_extra.group(1)}-{match_extra.group(2)}"
             return None
 
-        # Buscar en Notas principales (cbc:Note)
-        notes = root.xpath(".//cbc:Note", namespaces=ns)
-        for note_node in notes:
-            contenedor = normalizar_contenedor(note_node.text)
-            if contenedor: break
+        # Lista de XPaths donde suele venir el contenedor
+        xpaths_busqueda = [
+            ".//cbc:Note",                                      # Observaciones
+            ".//cac:Item/cbc:Description",                      # Descripción de ítems
+            ".//cac:AdditionalDocumentReference/cbc:ID",         # Referencias adicionales
+            ".//cac:Shipment/cac:TransportHandlingUnit/cac:TransportEquipment/cbc:ID" # Estándar UBL
+        ]
 
-        # Si no se encontró, buscar en las descripciones de los items
-        if not contenedor:
-            items_desc = root.xpath(".//cac:Item/cbc:Description", namespaces=ns)
-            for desc_node in items_desc:
-                contenedor = normalizar_contenedor(desc_node.text)
+        for path in xpaths_busqueda:
+            nodes = root.xpath(path, namespaces=ns)
+            for node in nodes:
+                contenedor = normalizar_contenedor(node.text)
                 if contenedor: break
+            if contenedor: break
 
         # Evitar Duplicados: Consultar si ya existe el comprobante del mismo proveedor
         existing = db.query(FacturaLogistica).filter(
