@@ -150,36 +150,51 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         
         def normalizar_contenedor(texto):
             if not texto: return None
-            # Regex más robusta: 4 letras seguidas de 7 dígitos (con posibles separadores intermedios)
-            # Ejemplo: BEAU9705909, BEAU-9705909, BEAU 970590-9, BEAU - 970590-9
+            # Regex Universal: 4 letras seguidas de 7 dígitos (con cualquier basura entre medio)
+            # Ejemplo: "BEAU-9705909", "BEAU 970590-9", "BEAU9705909"
             match = re.search(r"([A-Z]{4})[^A-Z0-9]*([0-9]{6,7})", texto.upper())
             if match:
                 letras = match.group(1)
                 numeros = match.group(2)
-                # Si tenemos 7 números, el último es el dígito verificador
                 if len(numeros) == 7:
                     return f"{letras} {numeros[:6]}-{numeros[6]}"
-                # Si solo hay 6, intentamos buscar un dígito extra después de un posible separador
                 elif len(numeros) == 6:
+                    # Buscar el dígito extra que falte
                     match_extra = re.search(r"(\d{6})[^A-Z0-9]*([0-9]{1})", texto[match.start(2):])
                     if match_extra:
                         return f"{letras} {match_extra.group(1)}-{match_extra.group(2)}"
             return None
 
-        # Lista de XPaths donde suele venir el contenedor
+        # 1. Búsqueda por XPaths comunes (Agnóstico a Namespace)
         xpaths_busqueda = [
-            ".//cbc:Note",                                      # Observaciones
-            ".//cac:Item/cbc:Description",                      # Descripción de ítems
-            ".//cac:AdditionalDocumentReference/cbc:ID",         # Referencias adicionales
-            ".//cac:Shipment/cac:TransportHandlingUnit/cac:TransportEquipment/cbc:ID" # Estándar UBL
+            "//*[local-name()='Note']",
+            "//*[local-name()='Description']",
+            "//*[local-name()='ID' and not(parent::*[local-name()='PartyIdentification'])]",
         ]
 
+        print(f"DEBUG: Iniciando extracción de contenedor para {serie_correlativo}")
         for path in xpaths_busqueda:
-            nodes = root.xpath(path, namespaces=ns)
+            nodes = root.xpath(path)
             for node in nodes:
-                contenedor = normalizar_contenedor(node.text)
-                if contenedor: break
+                if node.text:
+                    contenedor = normalizar_contenedor(node.text)
+                    if contenedor: 
+                        print(f"DEBUG: Contenedor encontrado en {path}: {contenedor}")
+                        break
             if contenedor: break
+
+        # 2. Búsqueda exhaustiva final
+        if not contenedor:
+            print("DEBUG: Iniciando búsqueda exhaustiva en todos los nodos de texto...")
+            all_text_nodes = root.xpath("//text()")
+            for text_val in all_text_nodes:
+                contenedor = normalizar_contenedor(str(text_val))
+                if contenedor: 
+                    print(f"DEBUG: Contenedor encontrado en búsqueda exhaustiva: {contenedor}")
+                    break
+        
+        if not contenedor:
+            print("DEBUG: No se pudo extraer ningún contenedor de este XML.")
 
         # Evitar Duplicados: Consultar si ya existe el comprobante del mismo proveedor
         existing = db.query(FacturaLogistica).filter(
