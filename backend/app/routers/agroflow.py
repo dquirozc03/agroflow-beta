@@ -280,21 +280,3 @@ def get_logistica_facturas(db: Session = Depends(get_db)):
     facturas = db.query(FacturaLogistica).order_by(FacturaLogistica.creado_en.desc()).all()
     return facturas
 
-@router.post("/cleanup-database-INTERNAL")
-async def cleanup_database_internal(
-    token: str = Header(..., alias="X-Sync-Token"),
-    db: Session = Depends(get_db)
-):
-    """Endpoint TEMPORAL para limpiar la base de datos de desarrollo."""
-    if token != settings.SYNC_TOKEN:
-        raise HTTPException(status_code=403, detail="Token inválido")
-    
-    try:
-        from sqlalchemy import text
-        db.execute(text("TRUNCATE TABLE logistica_factura_detalles, logistica_facturas RESTART IDENTITY CASCADE"))
-        db.commit()
-        return {"status": "success", "message": "Base de datos de desarrollo limpiada"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
