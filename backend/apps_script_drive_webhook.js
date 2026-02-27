@@ -2,10 +2,10 @@
  * SCRIPT PARA GOOGLE DRIVE - FLUJO DE 4 CARPETAS (AGROFLOW)
  * 
  * ESTRUCTURA:
- * 1. 01_Entrada: Coloca aquí los XML nuevos.
+ * 1. 01_Entrada_XML: Coloca aquí los XML nuevos.
  * 2. 02_Procesados: Aquí irán los enviados con éxito al sistema.
- * 3. 03_Errores: Aquí irán los que fallen (error de red o datos inválidos).
- * 4. 04_CDRs: Aquí irán las respuestas de SUNAT (ApplicationResponse) que el sistema ignora.
+ * 3. 03_Errores_o_Advertencias: Aquí irán los que fallen (error de red o datos inválidos).
+ * 4. 04_Basura_CDRs: Aquí irán las respuestas de SUNAT (ApplicationResponse) que el sistema ignora.
  */
 
 const FOLDER_ENTRADA_ID = "ID_CARPETA_ENTRADA";
