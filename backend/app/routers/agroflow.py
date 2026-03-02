@@ -335,9 +335,51 @@ async def receive_invoice_webhook(request: Request, db: Session = Depends(get_db
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+from sqlalchemy.orm import joinedload
+
 @router.get("/logistica/facturas")
 def get_logistica_facturas(db: Session = Depends(get_db)):
-    """ Endpoint para consultar las facturas en el frontend """
-    facturas = db.query(FacturaLogistica).order_by(FacturaLogistica.creado_en.desc()).all()
-    return facturas
+    """ Endpoint para consultar las facturas en el frontend con desglose por filas de servicio """
+    facturas = db.query(FacturaLogistica).options(joinedload(FacturaLogistica.detalles)).order_by(FacturaLogistica.creado_en.desc()).all()
+    
+    filas = []
+    for f in facturas:
+        if not f.detalles:
+            # Caso base si no hay detalles (no debería pasar con el nuevo extractor)
+            filas.append({
+                "id": f.id,
+                "proveedor_ruc": f.proveedor_ruc,
+                "proveedor_razon_social": f.proveedor_razon_social,
+                "serie_correlativo": f.serie_correlativo,
+                "fecha_emision": f.fecha_emision.isoformat() if f.fecha_emision else None,
+                "moneda": f.moneda,
+                "forma_pago": f.forma_pago,
+                "subtotal": float(f.subtotal),
+                "contenedor": f.contenedor,
+                "advertencia": f.advertencia,
+                "descripcion": f.descripcion,
+                "unidad_medida": f.unidad_medida,
+                "valor_unitario": 0,
+                "valor_item": float(f.subtotal)
+            })
+        else:
+            for d in f.detalles:
+                filas.append({
+                    "id": f.id,
+                    "detalle_id": d.id,
+                    "proveedor_ruc": f.proveedor_ruc,
+                    "proveedor_razon_social": f.proveedor_razon_social,
+                    "serie_correlativo": f.serie_correlativo,
+                    "fecha_emision": f.fecha_emision.isoformat() if f.fecha_emision else None,
+                    "moneda": f.moneda,
+                    "forma_pago": f.forma_pago,
+                    "subtotal": float(f.subtotal), # Total de la factura completa
+                    "contenedor": f.contenedor,
+                    "advertencia": f.advertencia,
+                    "descripcion": d.descripcion,
+                    "unidad_medida": d.unidad_medida,
+                    "valor_unitario": float(d.valor_unitario),
+                    "valor_item": float(d.valor_item) # Valor de esta línea específica
+                })
+    return filas
 

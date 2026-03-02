@@ -22,6 +22,7 @@ import { getLogisticaFacturas } from "@/lib/api"
 
 interface Factura {
     id: number
+    detalle_id?: number
     proveedor_ruc: string
     proveedor_razon_social: string
     serie_correlativo: string
@@ -33,6 +34,8 @@ interface Factura {
     advertencia: string | null
     descripcion: string | null
     unidad_medida: string | null
+    valor_unitario: number
+    valor_item: number
 }
 
 function FacturasLogisticasContent() {
@@ -67,7 +70,9 @@ function FacturasLogisticasContent() {
             "Forma de Pago": f.forma_pago || "No especificado",
             "Descripción": f.descripcion || "Sin descripción",
             "U.M.": f.unidad_medida || "ZZ",
-            "Valor de Venta Neto": f.subtotal,
+            "V. Unitario": f.valor_unitario,
+            "Valor de Venta (Item)": f.valor_item,
+            "Total Factura": f.subtotal,
             "AWB / Contenedor": f.contenedor || "",
             "Advertencia Validaciones": f.advertencia || "Ninguna"
         }))
@@ -114,7 +119,8 @@ function FacturasLogisticasContent() {
                                         <TableHead className="px-6 text-center">UM</TableHead>
                                         <TableHead className="px-6 text-center">F. Emisión</TableHead>
                                         <TableHead className="px-6">Forma Pago</TableHead>
-                                        <TableHead className="px-6 text-right">Valor Venta</TableHead>
+                                        <TableHead className="px-6 text-right">V. Unitario</TableHead>
+                                        <TableHead className="px-6 text-right">V. Venta (Item)</TableHead>
                                         <TableHead className="px-6 text-center">AWB / Cont.</TableHead>
                                         <TableHead className="px-6 text-center">Estado</TableHead>
                                     </TableRow>
@@ -157,9 +163,12 @@ function FacturasLogisticasContent() {
                                                     {f.fecha_emision ? format(new Date(f.fecha_emision + 'T12:00:00'), "dd/MM/yyyy") : "-"}
                                                 </TableCell>
                                                 <TableCell className="px-4 text-[10px] text-slate-600 dark:text-slate-400 capitalize">{f.forma_pago?.toLowerCase() || "-"}</TableCell>
+                                                <TableCell className="px-4 text-right font-medium text-slate-600 dark:text-slate-400 text-[11px]">
+                                                    {Number(f.valor_unitario).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </TableCell>
                                                 <TableCell className="px-4 text-right font-bold text-slate-900 dark:text-white">
                                                     <div className="text-[10px] text-muted-foreground mr-1 inline">{f.moneda}</div>
-                                                    {Number(f.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    {Number(f.valor_item).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </TableCell>
                                                 <TableCell className="px-4 text-center">
                                                     {f.contenedor ? (
