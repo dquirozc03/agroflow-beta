@@ -10,8 +10,20 @@ router = APIRouter(prefix="/api/v1/ocr", tags=["OCR"])
 
 TipoOCR = Literal["DNI", "PS_BETA", "TERMOGRAFO", "BOOKING", "O_BETA", "AWB"]
 
-# Si en tu entorno tesseract no está en PATH, descomenta y ajusta:
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import shutil
+import platform
+
+# Configuración de Tesseract según el entorno
+def _setup_tesseract():
+    if platform.system() == "Windows":
+        # Intentar ruta común en Windows si no está en PATH
+        common_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        if not shutil.which("tesseract") and os.path.exists(common_path):
+            pytesseract.pytesseract.tesseract_cmd = common_path
+    # En Linux (Render con Docker), shutil.which("tesseract") lo encontrará en /usr/bin/tesseract
+
+import os
+_setup_tesseract()
 
 
 def _preprocess(img: Image.Image) -> Image.Image:
