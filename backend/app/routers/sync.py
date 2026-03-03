@@ -1,81 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
-from typing import List, Optional
-from sqlalchemy.orm import Session
+from typing import List, Optional, Union
 
-from app.database import get_db
-from app.configuracion import settings
-from app.models.ref_posicionamiento import RefPosicionamiento
-from app.models.ref_booking_dam import RefBookingDam
-
-
-router = APIRouter(prefix="/api/v1/sync", tags=["Sync"])
-
-
-def normalizar(v: str | None) -> str | None:
+def to_bool(v: any) -> bool:
+    if isinstance(v, bool):
+        return v
     if v is None:
-        return None
-    v = " ".join(v.strip().split()).upper()
-    return v or None
-
-
-def validar_token(x_sync_token: str | None):
-    if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
-        raise HTTPException(status_code=401, detail="Token de sync inválido")
-
-
-class DamItem(BaseModel):
-    booking: str
-    dam: str
-
-class PosicionamientoItem(BaseModel):
-    booking: str
-    etd: Optional[str] = None
-    eta: Optional[str] = None
-    week_eta: Optional[str] = None
-    dias_tt: Optional[int] = None
-    wk_debe_arribar: Optional[str] = None
-    
-    nave: Optional[str] = None
-    pol: Optional[str] = None
-    o_beta: Optional[str] = None
-    cliente: Optional[str] = None
-    pod: Optional[str] = None
-    po_number: Optional[str] = None
-    
-    aforo_planta: Optional[bool] = False
-    termog: Optional[str] = None
-    temperatura: Optional[str] = None
-    ventilacion: Optional[str] = None
-    flete: Optional[str] = None
-    operador_logistico: Optional[str] = None
-    naviera: Optional[str] = None
-
-    ac_option: Optional[bool] = False
-    ct_option: Optional[bool] = False
-
-    fecha_llenado: Optional[str] = None
-    hora_posicionamiento: Optional[str] = None
-    planta_llenado: Optional[str] = None
-    
-    cultivo: Optional[str] = None
-    tipo_caja: Optional[str] = None
-    etiqueta: Optional[str] = None
-    presentacion: Optional[str] = None
-    cj_kg: Optional[str] = None
-    total: Optional[str] = None
-
-    es_reprogramado: Optional[bool] = False
-    awb: Optional[str] = None
-
+        return False
+    s = str(v).upper().strip()
+    return s in ("SI", "S", "YES", "1", "TRUE", "VERDADERO")
 
 @router.post("/posicionamiento")
 def sync_posicionamiento(
-    items: List[PosicionamientoItem],
+    payload: Union[PosicionamientoItem, List[PosicionamientoItem]],
     db: Session = Depends(get_db),
     x_sync_token: str | None = Header(default=None),
 ):
     validar_token(x_sync_token)
+
+    # Convertir a lista si es un solo objeto
+    items = [payload] if isinstance(payload, PosicionamientoItem) else payload
 
     upserts = 0
     for it in items:
@@ -101,7 +45,7 @@ def sync_posicionamiento(
         row.pod = normalizar(it.pod)
         row.po_number = normalizar(it.po_number)
         
-        row.aforo_planta = 1 if it.aforo_planta else 0
+        row.aforo_planta = 1 if to_bool(it.aforo_planta) else 0
         row.termog = normalizar(it.termog)
         row.temperatura = normalizar(it.temperatura)
         row.ventilacion = normalizar(it.ventilacion)
@@ -109,8 +53,8 @@ def sync_posicionamiento(
         row.operador_logistico = normalizar(it.operador_logistico)
         row.naviera = normalizar(it.naviera)
 
-        row.ac_option = 1 if it.ac_option else 0
-        row.ct_option = 1 if it.ct_option else 0
+        row.ac_option = 1 if to_bool(it.ac_option) else 0
+        row.ct_option = 1 if to_bool(it.ct_option) else 0
 
         row.fecha_llenado = normalizar(it.fecha_llenado)
         row.hora_posicionamiento = normalizar(it.hora_posicionamiento)
@@ -123,7 +67,7 @@ def sync_posicionamiento(
         row.cj_kg = normalizar(it.cj_kg)
         row.total = normalizar(it.total)
 
-        row.es_reprogramado = 1 if it.es_reprogramado else 0
+        row.es_reprogramado = 1 if to_bool(it.es_reprogramado) else 0
         row.awb = normalizar(it.awb)
         
         upserts += 1
@@ -134,17 +78,18 @@ def sync_posicionamiento(
 
 @router.post("/dams")
 def sync_dams(
-    items: List[DamItem],
+    payload: Union[DamItem, List[DamItem]],
     db: Session = Depends(get_db),
     x_sync_token: str | None = Header(default=None),
 ):
     validar_token(x_sync_token)
 
+    # Convertir a lista si es un solo objeto
+    items = [payload] if isinstance(payload, DamItem) else payload
+
     upserts = 0
     for it in items:
         booking = normalizar(it.booking)
-        awb = normalizar(it.awb)
-        dam = normalizar(it.dam)
         if not booking:
             continue
 
@@ -153,8 +98,8 @@ def sync_dams(
             row = RefBookingDam(booking=booking)
             db.add(row)
             
-        row.awb = awb
-        row.dam = dam
+        row.awb = normalizar(it.awb)
+        row.dam = normalizar(it.dam)
         upserts += 1
 
     db.commit()
