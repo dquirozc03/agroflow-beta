@@ -68,10 +68,9 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
         total: (refs.total as string) || "",
         es_reprogramado: Boolean(refs.es_reprogramado),
 
-        // Lógica inteligente para termografos múltiples
-        termografos_items: (refs.termog as string)
-          ? (refs.termog as string).split(/[,\/]/).map(s => s.trim().toUpperCase()).filter(Boolean)
-          : prev.termografos_items,
+        // El campo termog de Excel es el TIPO, se guarda en form.termog
+        // No se debe autocompletar termografos_items ya que son IDs serializados
+        termog: (refs.termog as string) || "",
       }));
       setRefsLocked(true);
       setRefStatus("ok");
