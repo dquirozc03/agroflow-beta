@@ -30,21 +30,42 @@ class DamItem(BaseModel):
 
 class PosicionamientoItem(BaseModel):
     booking: str
-    naviera: Optional[str] = None
+    etd: Optional[str] = None
+    eta: Optional[str] = None
+    week_eta: Optional[str] = None
+    dias_tt: Optional[int] = None
+    wk_debe_arribar: Optional[str] = None
+    
     nave: Optional[str] = None
     pol: Optional[str] = None
+    o_beta: Optional[str] = None
+    cliente: Optional[str] = None
     pod: Optional[str] = None
+    po_number: Optional[str] = None
+    
+    aforo_planta: Optional[bool] = False
+    termog: Optional[str] = None
     temperatura: Optional[str] = None
     ventilacion: Optional[str] = None
-    planta_llenado: Optional[str] = None
-    hora_posicionamiento: Optional[str] = None
-    ac_option: Optional[int] = 0
-    ct_option: Optional[int] = 0
+    flete: Optional[str] = None
     operador_logistico: Optional[str] = None
+    naviera: Optional[str] = None
+
+    ac_option: Optional[bool] = False
+    ct_option: Optional[bool] = False
+
+    fecha_llenado: Optional[str] = None
+    hora_posicionamiento: Optional[str] = None
+    planta_llenado: Optional[str] = None
+    
     cultivo: Optional[str] = None
-    es_reprogramado: Optional[int] = 0
-    # Legacy
-    o_beta: Optional[str] = None
+    tipo_caja: Optional[str] = None
+    etiqueta: Optional[str] = None
+    presentacion: Optional[str] = None
+    cj_kg: Optional[str] = None
+    total: Optional[str] = None
+
+    es_reprogramado: Optional[bool] = False
     awb: Optional[str] = None
 
 
@@ -67,21 +88,42 @@ def sync_posicionamiento(
             row = RefPosicionamiento(booking=booking)
             db.add(row)
         
-        row.naviera = normalizar(it.naviera)
+        row.etd = normalizar(it.etd)
+        row.eta = normalizar(it.eta)
+        row.week_eta = normalizar(it.week_eta)
+        row.dias_tt = it.dias_tt
+        row.wk_debe_arribar = normalizar(it.wk_debe_arribar)
+        
         row.nave = normalizar(it.nave)
         row.pol = normalizar(it.pol)
+        row.o_beta = normalizar(it.o_beta)
+        row.cliente = normalizar(it.cliente)
         row.pod = normalizar(it.pod)
+        row.po_number = normalizar(it.po_number)
+        
+        row.aforo_planta = 1 if it.aforo_planta else 0
+        row.termog = normalizar(it.termog)
         row.temperatura = normalizar(it.temperatura)
         row.ventilacion = normalizar(it.ventilacion)
-        row.planta_llenado = normalizar(it.planta_llenado)
-        row.hora_posicionamiento = normalizar(it.hora_posicionamiento)
-        row.ac_option = it.ac_option
-        row.ct_option = it.ct_option
+        row.flete = normalizar(it.flete)
         row.operador_logistico = normalizar(it.operador_logistico)
+        row.naviera = normalizar(it.naviera)
+
+        row.ac_option = 1 if it.ac_option else 0
+        row.ct_option = 1 if it.ct_option else 0
+
+        row.fecha_llenado = normalizar(it.fecha_llenado)
+        row.hora_posicionamiento = normalizar(it.hora_posicionamiento)
+        row.planta_llenado = normalizar(it.planta_llenado)
+        
         row.cultivo = normalizar(it.cultivo)
-        row.es_reprogramado = it.es_reprogramado
-        # Legacy
-        row.o_beta = normalizar(it.o_beta)
+        row.tipo_caja = normalizar(it.tipo_caja)
+        row.etiqueta = normalizar(it.etiqueta)
+        row.presentacion = normalizar(it.presentacion)
+        row.cj_kg = normalizar(it.cj_kg)
+        row.total = normalizar(it.total)
+
+        row.es_reprogramado = 1 if it.es_reprogramado else 0
         row.awb = normalizar(it.awb)
         
         upserts += 1
@@ -101,15 +143,18 @@ def sync_dams(
     upserts = 0
     for it in items:
         booking = normalizar(it.booking)
+        awb = normalizar(it.awb)
         dam = normalizar(it.dam)
-        if not booking or not dam:
+        if not booking:
             continue
 
         row = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
-        if row:
-            row.dam = dam
-        else:
-            db.add(RefBookingDam(booking=booking, dam=dam))
+        if not row:
+            row = RefBookingDam(booking=booking)
+            db.add(row)
+            
+        row.awb = awb
+        row.dam = dam
         upserts += 1
 
     db.commit()

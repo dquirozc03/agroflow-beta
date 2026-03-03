@@ -38,6 +38,40 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
         o_beta: (refs.o_beta as string) || prev.o_beta,
         awb: (refs.awb as string) || prev.awb,
         dam: (refs.dam as string) || "",
+
+        // Autocompletado masivo (POSIC)
+        etd: (refs.etd as string) || "",
+        eta: (refs.eta as string) || "",
+        week_eta: (refs.week_eta as string) || "",
+        dias_tt: Number(refs.dias_tt) || 0,
+        wk_debe_arribar: (refs.wk_debe_arribar as string) || "",
+        nave: (refs.nave as string) || "",
+        pol: (refs.pol as string) || "",
+        cliente: (refs.cliente as string) || "",
+        pod: (refs.pod as string) || "",
+        po_number: (refs.po_number as string) || "",
+        aforo_planta: Boolean(refs.aforo_planta),
+        termog: (refs.termog as string) || "",
+        flete: (refs.flete as string) || "",
+        operador_logistico: (refs.operador_logistico as string) || "",
+        naviera: (refs.naviera as string) || "",
+        ac_option: Boolean(refs.ac_option),
+        ct_option: Boolean(refs.ct_option),
+        fecha_llenado: (refs.fecha_llenado as string) || "",
+        hora_posicionamiento: (refs.hora_posicionamiento as string) || "",
+        planta_llenado: (refs.planta_llenado as string) || "",
+        cultivo: (refs.cultivo as string) || "",
+        tipo_caja: (refs.tipo_caja as string) || "",
+        etiqueta: (refs.etiqueta as string) || "",
+        presentacion: (refs.presentacion as string) || "",
+        cj_kg: (refs.cj_kg as string) || "",
+        total: (refs.total as string) || "",
+        es_reprogramado: Boolean(refs.es_reprogramado),
+
+        // Lógica inteligente para termografos múltiples
+        termografos_items: (refs.termog as string)
+          ? (refs.termog as string).split(/[,\/]/).map(s => s.trim().toUpperCase()).filter(Boolean)
+          : prev.termografos_items,
       }));
       setRefsLocked(true);
       setRefStatus("ok");

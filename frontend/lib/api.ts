@@ -225,9 +225,38 @@ export async function checkApiHealth(): Promise<boolean> {
 // ======================
 export type BookingRefs = {
   booking: string;
-  o_beta: string | null;
-  awb: string | null;
-  dam: string | null;
+  etd?: string | null;
+  eta?: string | null;
+  week_eta?: string | null;
+  dias_tt?: number | null;
+  wk_debe_arribar?: string | null;
+  nave?: string | null;
+  pol?: string | null;
+  o_beta?: string | null;
+  cliente?: string | null;
+  pod?: string | null;
+  po_number?: string | null;
+  aforo_planta?: boolean | number | null;
+  termog?: string | null;
+  temperatura?: string | null;
+  ventilacion?: string | null;
+  flete?: string | null;
+  operador_logistico?: string | null;
+  naviera?: string | null;
+  ac_option?: boolean | number | null;
+  ct_option?: boolean | number | null;
+  fecha_llenado?: string | null;
+  hora_posicionamiento?: string | null;
+  planta_llenado?: string | null;
+  cultivo?: string | null;
+  tipo_caja?: string | null;
+  etiqueta?: string | null;
+  presentacion?: string | null;
+  cj_kg?: string | null;
+  total?: string | null;
+  es_reprogramado?: boolean | number | null;
+  awb?: string | null;
+  dam?: string | null;
 };
 
 export async function getBookingRefs(booking: string): Promise<BookingRefs> {

@@ -1,0 +1,185 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "booking": {
+                "type": "string"
+            },
+            "etd": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "eta": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "week_eta": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "dias_tt": {
+                "type": [
+                    "integer",
+                    "null"
+                ]
+            },
+            "wk_debe_arribar": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "nave": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "pol": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "o_beta": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "cliente": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "pod": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "po_number": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "aforo_planta": {
+                "type": "boolean"
+            },
+            "termog": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "temperatura": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "ventilacion": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "flete": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "operador_logistico": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "naviera": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "ac_option": {
+                "type": "boolean"
+            },
+            "ct_option": {
+                "type": "boolean"
+            },
+            "fecha_llenado": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "hora_posicionamiento": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "planta_llenado": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "cultivo": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "tipo_caja": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "etiqueta": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "presentacion": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "cj_kg": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "total": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "es_reprogramado": {
+                "type": "boolean"
+            },
+            "awb": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            }
+        }
+    }
+}
