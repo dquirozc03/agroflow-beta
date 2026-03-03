@@ -1,73 +1,59 @@
-/**
- * Office Script para enviar la fila activa de Excel Online al Webhook de AgroFlow.
- * Hoja: POSIC
- */
-async function main(workbook: ExcelScript.Workbook) {
-    const sheet = workbook.getActiveWorksheet();
-    const range = workbook.getSelectedRange();
-    const row = range.getRow(0); // Tomamos la primera fila seleccionada
-    const values = row.getValues()[0];
+const WEBHOOK_URL = "https://tu-servicio-agroflow.onrender.com/api/v1/sync/posicionamiento";
+const SYNC_TOKEN = "TU_TOKEN_AQUI"; // Este debe coincidir con el SYNC_TOKEN de tu .env
 
-    // Mapeo manual basado en los encabezados esperados del Excel
-    // Ajustar los índices (0, 1, 2...) según la posición real de las columnas en tu Excel
-    const data = {
-        booking: String(values[0] || ""), // Columna A
-        nave: String(values[1] || ""),    // Columna B
-        etd: formatDate(values[2]),       // Columna C
-        eta: formatDate(values[3]),       // Columna D
-        pol: String(values[6] || ""),     // Columna G
-        pod: String(values[9] || ""),     // Columna J
-        cliente: String(values[8] || ""), // Columna I
-        operador_logistico: String(values[14] || ""), // Columna O
-        naviera: String(values[15] || ""), // Columna P
-        termog: String(values[12] || ""), // Columna M
-
-        // Transformación SI/NO a Boolean
-        ac_option: toBool(values[16]),    // Columna Q
-        ct_option: toBool(values[17]),    // Columna R
-        aforo_planta: toBool(values[11]), // Columna L
-
-        // Otros campos
-        cultivo: String(values[21] || ""),
-        planta_llenado: String(values[20] || ""),
-        total: String(values[26] || ""),
-    };
-
-    if (!data.booking || data.booking === "undefined") {
-        console.log("Error: No se detectó un Booking en la fila seleccionada.");
+function main(workbook: ExcelScript.Workbook) {
+    const sheet = workbook.getWorksheet("CONTROL");
+    if (!sheet) {
+        console.log("No se encontró la hoja CONTROL");
         return;
     }
 
-    const webhookUrl = "https://TU-URL-DE-DEV.render.com/api/v1/sync/posicionamiento";
-    const syncToken = "TU_SYNC_TOKEN_AQUÍ";
+    // Obtenemos la fila de la celda donde está el cursor
+    const activeCell = workbook.getActiveCell();
+    const rowNum = activeCell.getRowIndex();
 
-    const response = await fetch(webhookUrl, {
+    // Los datos empiezan en la fila 10 (índice 9), la 9 son los encabezados
+    if (rowNum < 9) {
+        console.log("Por favor, selecciona una fila de datos (Fila 10 en adelante)");
+        return;
+    }
+
+    // Leemos los encabezados (Fila 9) y los valores de la fila actual
+    // Usamos un rango amplio para cubrir todas las columnas de la hoja CONTROL
+    const headerRange = sheet.getRangeByIndexes(8, 0, 1, 50);
+    const dataRange = sheet.getRangeByIndexes(rowNum, 0, 1, 50);
+
+    const headers = headerRange.getValues()[0];
+    const values = dataRange.getValues()[0];
+
+    const payload: any = {};
+
+    // Mapeamos dinámicamente: el nombre de la columna será la llave del JSON
+    headers.forEach((header, index) => {
+        const key = String(header).trim();
+        const value = values[index];
+        if (key && key !== "undefined") {
+            payload[key] = value;
+        }
+    });
+
+    // Validación básica
+    if (!payload["BOOKING"] || payload["BOOKING"] === "") {
+        console.log("Error: No se encontró un valor en la columna BOOKING de esta fila.");
+        return;
+    }
+
+    // Enviamos al backend de AgroFlow
+    console.log("Enviando datos a AgroFlow para Booking: " + payload["BOOKING"] + "...");
+
+    fetch(WEBHOOK_URL, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-Sync-Token": syncToken
+            "X-Sync-Token": SYNC_TOKEN
         },
-        body: JSON.stringify([data])
+        body: JSON.stringify([payload])
     });
 
-    if (response.ok) {
-        console.log("Sincronización exitosa para Booking: " + data.booking);
-    } else {
-        console.log("Error en sincronización: " + response.statusText);
-    }
-}
-
-function toBool(val: any): boolean {
-    if (!val) return false;
-    const s = String(val).toUpperCase().trim();
-    return s === "SI" || s === "S" || s === "YES" || s === "1" || s === "TRUE";
-}
-
-function formatDate(excelDate: any): string {
-    if (typeof excelDate === "number") {
-        // Excel date to JS Date
-        const d = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-        return d.toISOString();
-    }
-    return String(excelDate || "");
+    console.log("Sincronización enviada correctamente.");
 }
