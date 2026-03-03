@@ -10,20 +10,8 @@ router = APIRouter(prefix="/api/v1/ocr", tags=["OCR"])
 
 TipoOCR = Literal["DNI", "PS_BETA", "TERMOGRAFO", "BOOKING", "O_BETA", "AWB"]
 
-import shutil
-import platform
-
-# Configuración de Tesseract según el entorno
-def _setup_tesseract():
-    if platform.system() == "Windows":
-        # Intentar ruta común en Windows si no está en PATH
-        common_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-        if not shutil.which("tesseract") and os.path.exists(common_path):
-            pytesseract.pytesseract.tesseract_cmd = common_path
-    # En Linux (Render con Docker), shutil.which("tesseract") lo encontrará en /usr/bin/tesseract
-
-import os
-_setup_tesseract()
+# Si en tu entorno tesseract no está en PATH, descomenta y ajusta:
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 
 def _preprocess(img: Image.Image) -> Image.Image:
@@ -48,19 +36,39 @@ def _preprocess(img: Image.Image) -> Image.Image:
 
 def ocr_imagen_pil(img: Image.Image) -> str:
     """
-    OCR orientado a códigos.
+    OCR orientado a códigos con fallback a Cloud API si Tesseract no está disponible.
     """
     try:
         img = _preprocess(img)
         config = "--oem 3 --psm 6"
         return pytesseract.image_to_string(img, lang="eng", config=config) or ""
-    except pytesseract.TesseractNotFoundError:
-        raise HTTPException(
-            status_code=500,
-            detail="OCR no disponible: Tesseract no está instalado/configurado en el servidor."
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error OCR: {e}")
+    except (pytesseract.TesseractNotFoundError, Exception) as e:
+        # Fallback a OCR.space (Free API) para producción sin Docker
+        print(f"DEBUG: Tesseract falló o no está ({e}). Usando Fallback Cloud...")
+        try:
+            import requests
+            # Convertir PIL a bytes
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_bytes = buffered.getvalue()
+
+            response = requests.post(
+                "https://api.ocr.space/parse/image",
+                files={"image.png": img_bytes},
+                data={"apikey": "helloworld", "language": "eng", "isOverlayRequired": False},
+                timeout=10
+            )
+            result = response.json()
+            if result.get("IsErroredOnProcessing"):
+                raise Exception(result.get("ErrorMessage"))
+            
+            parsed_text = result.get("ParsedResults", [{}])[0].get("ParsedText", "")
+            return parsed_text
+        except Exception as cloud_e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"OCR no disponible localmente y falló el respaldo cloud: {cloud_e}"
+            )
 
 
 def _normalize(s: str) -> str:
