@@ -63,35 +63,6 @@ export interface FormState {
   awb: string;
   dam: string;
 
-  // Nuevos campos de posicionamiento (POSIC)
-  etd: string;
-  eta: string;
-  week_eta: string;
-  dias_tt: number;
-  wk_debe_arribar: string;
-  nave: string;
-  pol: string;
-  cliente: string;
-  pod: string;
-  po_number: string;
-  aforo_planta: boolean;
-  termog: string;
-  flete: string;
-  operador_logistico: string;
-  naviera: string;
-  ac_option: boolean;
-  ct_option: boolean;
-  fecha_llenado: string;
-  hora_posicionamiento: string;
-  planta_llenado: string;
-  cultivo: string;
-  tipo_caja: string;
-  etiqueta: string;
-  presentacion: string;
-  cj_kg: string;
-  total: string;
-  es_reprogramado: boolean;
-
   dni: string;
   placas_tracto: string;
   placas_carreta: string;
@@ -121,34 +92,6 @@ export const initialFormState: FormState = {
   o_beta: "",
   awb: "",
   dam: "",
-
-  etd: "",
-  eta: "",
-  week_eta: "",
-  dias_tt: 0,
-  wk_debe_arribar: "",
-  nave: "",
-  pol: "",
-  cliente: "",
-  pod: "",
-  po_number: "",
-  aforo_planta: false,
-  termog: "",
-  flete: "",
-  operador_logistico: "",
-  naviera: "",
-  ac_option: false,
-  ct_option: false,
-  fecha_llenado: "",
-  hora_posicionamiento: "",
-  planta_llenado: "",
-  cultivo: "",
-  tipo_caja: "",
-  etiqueta: "",
-  presentacion: "",
-  cj_kg: "",
-  total: "",
-  es_reprogramado: false,
 
   dni: "",
   placas_tracto: "",

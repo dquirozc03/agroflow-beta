@@ -244,38 +244,22 @@ export const CardUnicidad = React.memo(function CardUnicidad({ form, setForm, ju
           isFlashing={justScannedId === "scanner_ps_beta"}
         />
 
-        <div className="space-y-4">
-          <ScannerGroup
-            id="scanner_termografos"
-            label="Termografos (Múltiples)"
-            items={form.termografos_items}
-            onAdd={(val) =>
-              setForm((prev) => ({
-                ...prev,
-                termografos_items: [...prev.termografos_items, val],
-              }))
-            }
-            onClear={() =>
-              setForm((prev) => ({ ...prev, termografos_items: [] }))
-            }
-            resultLabel="TERMOGRAFOS"
-            resultValue={form.termografos_items.join("/")}
-          />
-
-          {form.termog && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-primary/70">
-                Referencia Excel (Tipo de Termógrafo)
-              </div>
-              <div className="mt-0.5 text-sm font-semibold text-primary">
-                {form.termog}
-              </div>
-              <p className="mt-1 text-[10px] text-muted-foreground leading-tight">
-                Instrucción: Utilice el tipo indicado arriba para el monitoreo de esta carga.
-              </p>
-            </div>
-          )}
-        </div>
+        <ScannerGroup
+          id="scanner_termografos"
+          label="Termografos (Múltiples)"
+          items={form.termografos_items}
+          onAdd={(val) =>
+            setForm((prev) => ({
+              ...prev,
+              termografos_items: [...prev.termografos_items, val],
+            }))
+          }
+          onClear={() =>
+            setForm((prev) => ({ ...prev, termografos_items: [] }))
+          }
+          resultLabel="TERMOGRAFOS"
+          resultValue={form.termografos_items.join("/")}
+        />
 
         <p className="text-xs italic text-muted-foreground">
           SENASA / PS_LINEA se calcula en backend.
