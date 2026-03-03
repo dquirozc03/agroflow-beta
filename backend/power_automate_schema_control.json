@@ -1,0 +1,176 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "BOOKING": {
+                "type": "string"
+            },
+            "Semaforización": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "O/BETA (STATUS FINAL)": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "PLANTA EMPACADORA": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "CULTIVO": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "BOOKING LIMPIO": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "NAVE": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "ETD (BOOKING)": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "ETA (BOOKING)": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "WEEK ETA (BOOKING)": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "DIAS TT (BOOKING)": {
+                "type": [
+                    "integer",
+                    "null"
+                ]
+            },
+            "ETD FINAL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "ETA FINAL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "WEEK ETA REAL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "DIAS TT REAL": {
+                "type": [
+                    "integer",
+                    "null"
+                ]
+            },
+            "WEEK DEBE ARRIBAR": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "POL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "O/BETA INICIAL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "O/BETA CAMBIO 1": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "MOTIVO CAMBIO 1": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "O/BETA CAMBIO 2": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "MOTIVO CAMBIO 2": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "AREA RESPONSABLE": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "DETALLE ADICIONAL": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "DEPOSITO VACIO": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "NRO CONTENEDOR": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "TIPO CONTENEDOR": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            },
+            "AWB": {
+                "type": [
+                    "string",
+                    "null"
+                ]
+            }
+        },
+        "required": [
+            "BOOKING"
+        ]
+    }
+}

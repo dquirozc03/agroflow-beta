@@ -35,9 +35,38 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
       const refs = await getBookingRefs(form.booking.trim());
       setForm((prev) => ({
         ...prev,
-        o_beta: (refs.o_beta as string) || prev.o_beta,
+        // Prioridad: Orden Beta Final
+        o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
         awb: (refs.awb as string) || prev.awb,
         dam: (refs.dam as string) || prev.dam,
+
+        // Data de CONTROL disponible en el estado
+        status_fcl: (refs.status_fcl as string) || "",
+        orden_beta_final: (refs.orden_beta_final as string) || "",
+        planta_empacadora: (refs.planta_empacadora as string) || "",
+        cultivo: (refs.cultivo as string) || "",
+        booking_limpio: (refs.booking_limpio as string) || "",
+        nave: (refs.nave as string) || "",
+        etd_booking: (refs.etd_booking as string) || "",
+        eta_booking: (refs.eta_booking as string) || "",
+        week_eta_booking: (refs.week_eta_booking as string) || "",
+        dias_tt_booking: Number(refs.dias_tt_booking) || 0,
+        etd_final: (refs.etd_final as string) || "",
+        eta_final: (refs.eta_final as string) || "",
+        week_eta_real: (refs.week_eta_real as string) || "",
+        dias_tt_real: Number(refs.dias_tt_real) || 0,
+        week_debe_arribar: (refs.week_debe_arribar as string) || "",
+        pol: (refs.pol as string) || "",
+        o_beta_inicial: (refs.o_beta_inicial as string) || "",
+        o_beta_cambio_1: (refs.o_beta_cambio_1 as string) || "",
+        motivo_cambio_1: (refs.motivo_cambio_1 as string) || "",
+        o_beta_cambio_2: (refs.o_beta_cambio_2 as string) || "",
+        motivo_cambio_2: (refs.motivo_cambio_2 as string) || "",
+        area_responsable: (refs.area_responsable as string) || "",
+        detalle_adicional: (refs.detalle_adicional as string) || "",
+        deposito_vacio: (refs.deposito_vacio as string) || "",
+        nro_contenedor: (refs.nro_contenedor as string) || "",
+        tipo_contenedor: (refs.tipo_contenedor as string) || "",
       }));
       setRefsLocked(true);
       setRefStatus("ok");

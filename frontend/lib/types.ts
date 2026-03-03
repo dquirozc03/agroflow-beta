@@ -63,6 +63,39 @@ export interface FormState {
   awb: string;
   dam: string;
 
+  // Campos CONTROL Sheet
+  status_fcl: string;
+  orden_beta_final: string;
+  planta_empacadora: string;
+  cultivo: string;
+
+  booking_limpio: string;
+  nave: string;
+
+  etd_booking: string;
+  eta_booking: string;
+  week_eta_booking: string;
+  dias_tt_booking: number;
+
+  etd_final: string;
+  eta_final: string;
+  week_eta_real: string;
+  dias_tt_real: number;
+  week_debe_arribar: string;
+  pol: string;
+
+  o_beta_inicial: string;
+  o_beta_cambio_1: string;
+  motivo_cambio_1: string;
+  o_beta_cambio_2: string;
+  motivo_cambio_2: string;
+  area_responsable: string;
+
+  detalle_adicional: string;
+  deposito_vacio: string;
+  nro_contenedor: string;
+  tipo_contenedor: string;
+
   dni: string;
   placas_tracto: string;
   placas_carreta: string;
@@ -92,6 +125,38 @@ export const initialFormState: FormState = {
   o_beta: "",
   awb: "",
   dam: "",
+
+  status_fcl: "",
+  orden_beta_final: "",
+  planta_empacadora: "",
+  cultivo: "",
+
+  booking_limpio: "",
+  nave: "",
+
+  etd_booking: "",
+  eta_booking: "",
+  week_eta_booking: "",
+  dias_tt_booking: 0,
+
+  etd_final: "",
+  eta_final: "",
+  week_eta_real: "",
+  dias_tt_real: 0,
+  week_debe_arribar: "",
+  pol: "",
+
+  o_beta_inicial: "",
+  o_beta_cambio_1: "",
+  motivo_cambio_1: "",
+  o_beta_cambio_2: "",
+  motivo_cambio_2: "",
+  area_responsable: "",
+
+  detalle_adicional: "",
+  deposito_vacio: "",
+  nro_contenedor: "",
+  tipo_contenedor: "",
 
   dni: "",
   placas_tracto: "",

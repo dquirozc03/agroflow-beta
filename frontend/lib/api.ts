@@ -225,36 +225,38 @@ export async function checkApiHealth(): Promise<boolean> {
 // ======================
 export type BookingRefs = {
   booking: string;
-  etd?: string | null;
-  eta?: string | null;
-  week_eta?: string | null;
-  dias_tt?: number | null;
-  wk_debe_arribar?: string | null;
-  nave?: string | null;
-  pol?: string | null;
-  o_beta?: string | null;
-  cliente?: string | null;
-  pod?: string | null;
-  po_number?: string | null;
-  aforo_planta?: boolean | number | null;
-  termog?: string | null;
-  temperatura?: string | null;
-  ventilacion?: string | null;
-  flete?: string | null;
-  operador_logistico?: string | null;
-  naviera?: string | null;
-  ac_option?: boolean | number | null;
-  ct_option?: boolean | number | null;
-  fecha_llenado?: string | null;
-  hora_posicionamiento?: string | null;
-  planta_llenado?: string | null;
+  status_fcl?: string | null;
+  orden_beta_final?: string | null;
+  planta_empacadora?: string | null;
   cultivo?: string | null;
-  tipo_caja?: string | null;
-  etiqueta?: string | null;
-  presentacion?: string | null;
-  cj_kg?: string | null;
-  total?: string | null;
-  es_reprogramado?: boolean | number | null;
+
+  booking_limpio?: string | null;
+  nave?: string | null;
+
+  etd_booking?: string | null;
+  eta_booking?: string | null;
+  week_eta_booking?: string | null;
+  dias_tt_booking?: number | null;
+
+  etd_final?: string | null;
+  eta_final?: string | null;
+  week_eta_real?: string | null;
+  dias_tt_real?: number | null;
+  week_debe_arribar?: string | null;
+  pol?: string | null;
+
+  o_beta_inicial?: string | null;
+  o_beta_cambio_1?: string | null;
+  motivo_cambio_1?: string | null;
+  o_beta_cambio_2?: string | null;
+  motivo_cambio_2?: string | null;
+  area_responsable?: string | null;
+
+  detalle_adicional?: string | null;
+  deposito_vacio?: string | null;
+  nro_contenedor?: string | null;
+  tipo_contenedor?: string | null;
+
   awb?: string | null;
   dam?: string | null;
 };
