@@ -19,7 +19,7 @@ def ref_por_booking(booking: str, db: Session = Depends(get_db)):
     if not pos and not dam_row:
         raise HTTPException(status_code=404, detail="Booking no encontrado en referencias")
 
-    # Si no hay posicionamiento pero sí DAM, devolvemos lo que hay
+    # Si no hay posicionamiento pero sí DAM, devolvemos lo básico
     if not pos:
         return {
             "booking": b,
@@ -27,40 +27,64 @@ def ref_por_booking(booking: str, db: Session = Depends(get_db)):
             "dam": dam_row.dam if dam_row else None,
         }
 
-    # Retornar objeto completo unificado
+    # Retornar objeto completo con los 45 campos (Nombres consistentes con el modelo)
     return {
         "booking": pos.booking,
-        "etd": pos.etd,
-        "eta": pos.eta,
-        "week_eta": pos.week_eta,
-        "dias_tt": pos.dias_tt,
-        "wk_debe_arribar": pos.wk_debe_arribar,
-        "nave": pos.nave,
-        "pol": pos.pol,
-        "o_beta": pos.o_beta,
-        "cliente": pos.cliente,
-        "pod": pos.pod,
-        "po_number": pos.po_number,
-        "aforo_planta": bool(pos.aforo_planta),
-        "termog": pos.termog,
-        "temperatura": pos.temperatura,
-        "ventilacion": pos.ventilacion,
-        "flete": pos.flete,
-        "operador_logistico": pos.operador_logistico,
-        "naviera": pos.naviera,
-        "ac_option": bool(pos.ac_option),
-        "ct_option": bool(pos.ct_option),
-        "fecha_llenado": pos.fecha_llenado,
-        "hora_posicionamiento": pos.hora_posicionamiento,
-        "planta_llenado": pos.planta_llenado,
+        "status_fcl": pos.status_fcl,
+        "status_beta_text": pos.status_beta_text,
+        "planta_empacadora": pos.planta_empacadora,
         "cultivo": pos.cultivo,
+        "nave": pos.nave,
+        
+        "etd_booking": pos.etd_booking,
+        "eta_booking": pos.eta_booking,
+        "week_eta_booking": pos.week_eta_booking,
+        "dias_tt_booking": pos.dias_tt_booking,
+        
+        "etd_final": pos.etd_final,
+        "eta_final": pos.eta_final,
+        "week_eta_real": pos.week_eta_real,
+        "dias_tt_real": pos.dias_tt_real,
+        "week_debe_arribar": pos.week_debe_arribar,
+        "pol": pos.pol,
+        
+        "o_beta_inicial": pos.o_beta_inicial,
+        "orden_beta_final": pos.orden_beta_final,
+        
+        "cliente": pos.cliente,
+        "recibidor": pos.recibidor,
+        "destino_pedido": pos.destino_pedido,
+        "po_number": pos.po_number,
+        "destino_booking": pos.destino_booking,
+        "pais_booking": pos.pais_booking,
+        
+        "nro_fcl": pos.nro_fcl,
+        "deposito_retiro": pos.deposito_retiro,
+        "operador": pos.operador,
+        "naviera": pos.naviera,
+        
+        "termoregistros": pos.termoregistros,
+        "ac_option": pos.ac_option,
+        "ct_option": pos.ct_option,
+        "ventilacion": pos.ventilacion,
+        "temperatura": pos.temperatura,
+        
+        "hora_solicitada_operador": pos.hora_solicitada_operador,
+        "fecha_real_llenado": pos.fecha_real_llenado,
+        "week_llenado": pos.week_llenado,
+        
+        "variedad": pos.variedad,
         "tipo_caja": pos.tipo_caja,
-        "etiqueta": pos.etiqueta,
+        "etiqueta_caja": pos.etiqueta_caja,
         "presentacion": pos.presentacion,
+        "calibre": pos.calibre,
         "cj_kg": pos.cj_kg,
-        "total": pos.total,
-        "es_reprogramado": bool(pos.es_reprogramado),
+        "total_unidades": pos.total_unidades,
+        
+        "incoterm": pos.incoterm,
+        "flete": pos.flete,
+        
         # Priorizar AWB de la tabla de DAMs si existe
-        "awb": dam_row.awb if dam_row and dam_row.awb else pos.awb,
+        "awb": dam_row.awb if dam_row and dam_row.awb else None,
         "dam": dam_row.dam if dam_row else None,
     }

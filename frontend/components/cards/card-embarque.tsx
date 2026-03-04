@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +19,7 @@ interface Props {
   justScannedId?: string | null;
 }
 
-export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked, justScannedId }: Props) {
+export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props) {
   const [loading, setLoading] = useState(false);
   const [refStatus, setRefStatus] = useState<"idle" | "ok" | "fail">("idle");
 
@@ -33,41 +32,70 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
     setRefStatus("idle");
     try {
       const refs = await getBookingRefs(form.booking.trim());
+
       setForm((prev) => ({
         ...prev,
-        // Prioridad: Orden Beta Final
+        // Sincronización con los 45 campos del modelo CONTROL
         o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
         awb: (refs.awb as string) || prev.awb,
         dam: (refs.dam as string) || prev.dam,
 
-        // Data de CONTROL disponible en el estado
+        // Metadatos operacionales (Disponibles en el estado para lógica de negocio)
         status_fcl: (refs.status_fcl as string) || "",
-        orden_beta_final: (refs.orden_beta_final as string) || "",
+        status_beta_text: (refs.status_beta_text as string) || "",
         planta_empacadora: (refs.planta_empacadora as string) || "",
         cultivo: (refs.cultivo as string) || "",
-        booking_limpio: (refs.booking_limpio as string) || "",
         nave: (refs.nave as string) || "",
+
         etd_booking: (refs.etd_booking as string) || "",
         eta_booking: (refs.eta_booking as string) || "",
         week_eta_booking: (refs.week_eta_booking as string) || "",
         dias_tt_booking: Number(refs.dias_tt_booking) || 0,
+
         etd_final: (refs.etd_final as string) || "",
         eta_final: (refs.eta_final as string) || "",
         week_eta_real: (refs.week_eta_real as string) || "",
         dias_tt_real: Number(refs.dias_tt_real) || 0,
         week_debe_arribar: (refs.week_debe_arribar as string) || "",
         pol: (refs.pol as string) || "",
+
         o_beta_inicial: (refs.o_beta_inicial as string) || "",
-        o_beta_cambio_1: (refs.o_beta_cambio_1 as string) || "",
-        motivo_cambio_1: (refs.motivo_cambio_1 as string) || "",
-        o_beta_cambio_2: (refs.o_beta_cambio_2 as string) || "",
-        motivo_cambio_2: (refs.motivo_cambio_2 as string) || "",
-        area_responsable: (refs.area_responsable as string) || "",
-        detalle_adicional: (refs.detalle_adicional as string) || "",
-        deposito_vacio: (refs.deposito_vacio as string) || "",
-        nro_contenedor: (refs.nro_contenedor as string) || "",
-        tipo_contenedor: (refs.tipo_contenedor as string) || "",
+        orden_beta_final: (refs.orden_beta_final as string) || "",
+
+        cliente: (refs.cliente as string) || "",
+        recibidor: (refs.recibidor as string) || "",
+        destino_pedido: (refs.destino_pedido as string) || "",
+        po_number: (refs.po_number as string) || "",
+        destino_booking: (refs.destino_booking as string) || "",
+        pais_booking: (refs.pais_booking as string) || "",
+
+        nro_fcl: (refs.nro_fcl as string) || "",
+        deposito_retiro: (refs.deposito_retiro as string) || "",
+        operador: (refs.operador as string) || "",
+        naviera: (refs.naviera as string) || "",
+
+        termoregistros: (refs.termoregistros as string) || "",
+        ac_option: (refs.ac_option as string) || "",
+        ct_option: (refs.ct_option as string) || "",
+        ventilacion: (refs.ventilacion as string) || "",
+        temperatura: (refs.temperatura as string) || "",
+
+        hora_solicitada_operador: (refs.hora_solicitada_operador as string) || "",
+        fecha_real_llenado: (refs.fecha_real_llenado as string) || "",
+        week_llenado: (refs.week_llenado as string) || "",
+
+        variedad: (refs.variedad as string) || "",
+        tipo_caja: (refs.tipo_caja as string) || "",
+        etiqueta_caja: (refs.etiqueta_caja as string) || "",
+        presentacion: (refs.presentacion as string) || "",
+        calibre: (refs.calibre as string) || "",
+        cj_kg: (refs.cj_kg as string) || "",
+        total_unidades: (refs.total_unidades as string) || "",
+
+        incoterm: (refs.incoterm as string) || "",
+        flete: (refs.flete as string) || "",
       }));
+
       setRefsLocked(true);
       setRefStatus("ok");
       toast.success("Datos de referencia cargados");
