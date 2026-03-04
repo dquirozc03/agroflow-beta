@@ -35,65 +35,11 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
 
       setForm((prev) => ({
         ...prev,
-        // Sincronización con los 45 campos del modelo CONTROL
+        // Solo extraemos Orden Beta Final, AWB y DAM para Logicapture
+        // (El resto de la data CONTROL se queda en la DB para otros módulos)
         o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
         awb: (refs.awb as string) || prev.awb,
         dam: (refs.dam as string) || prev.dam,
-
-        // Metadatos operacionales (Disponibles en el estado para lógica de negocio)
-        status_fcl: (refs.status_fcl as string) || "",
-        status_beta_text: (refs.status_beta_text as string) || "",
-        planta_empacadora: (refs.planta_empacadora as string) || "",
-        cultivo: (refs.cultivo as string) || "",
-        nave: (refs.nave as string) || "",
-
-        etd_booking: (refs.etd_booking as string) || "",
-        eta_booking: (refs.eta_booking as string) || "",
-        week_eta_booking: (refs.week_eta_booking as string) || "",
-        dias_tt_booking: Number(refs.dias_tt_booking) || 0,
-
-        etd_final: (refs.etd_final as string) || "",
-        eta_final: (refs.eta_final as string) || "",
-        week_eta_real: (refs.week_eta_real as string) || "",
-        dias_tt_real: Number(refs.dias_tt_real) || 0,
-        week_debe_arribar: (refs.week_debe_arribar as string) || "",
-        pol: (refs.pol as string) || "",
-
-        o_beta_inicial: (refs.o_beta_inicial as string) || "",
-        orden_beta_final: (refs.orden_beta_final as string) || "",
-
-        cliente: (refs.cliente as string) || "",
-        recibidor: (refs.recibidor as string) || "",
-        destino_pedido: (refs.destino_pedido as string) || "",
-        po_number: (refs.po_number as string) || "",
-        destino_booking: (refs.destino_booking as string) || "",
-        pais_booking: (refs.pais_booking as string) || "",
-
-        nro_fcl: (refs.nro_fcl as string) || "",
-        deposito_retiro: (refs.deposito_retiro as string) || "",
-        operador: (refs.operador as string) || "",
-        naviera: (refs.naviera as string) || "",
-
-        termoregistros: (refs.termoregistros as string) || "",
-        ac_option: (refs.ac_option as string) || "",
-        ct_option: (refs.ct_option as string) || "",
-        ventilacion: (refs.ventilacion as string) || "",
-        temperatura: (refs.temperatura as string) || "",
-
-        hora_solicitada_operador: (refs.hora_solicitada_operador as string) || "",
-        fecha_real_llenado: (refs.fecha_real_llenado as string) || "",
-        week_llenado: (refs.week_llenado as string) || "",
-
-        variedad: (refs.variedad as string) || "",
-        tipo_caja: (refs.tipo_caja as string) || "",
-        etiqueta_caja: (refs.etiqueta_caja as string) || "",
-        presentacion: (refs.presentacion as string) || "",
-        calibre: (refs.calibre as string) || "",
-        cj_kg: (refs.cj_kg as string) || "",
-        total_unidades: (refs.total_unidades as string) || "",
-
-        incoterm: (refs.incoterm as string) || "",
-        flete: (refs.flete as string) || "",
       }));
 
       setRefsLocked(true);
