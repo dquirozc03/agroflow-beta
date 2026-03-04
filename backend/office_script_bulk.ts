@@ -3,7 +3,7 @@
  * Envía los datos tal cual están en Excel para que el servidor los procese.
  */
 async function main(workbook: ExcelScript.Workbook) {
-    const TABLE_NAME = "TablaPosicionamiento";
+    const TABLE_NAME = "TablaControlPosicionamiento";
     const WEBHOOK_URL = "https://agroflow-beta.onrender.com/api/v1/sync/posicionamiento/raw";
     const SYNC_TOKEN = "dev_secret_token_2024";
 
