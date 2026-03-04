@@ -176,98 +176,126 @@ def sync_posicionamiento_raw(
     if not payload or len(payload) < 2:
         return {"ok": False, "detail": "Datos insuficientes"}
 
-    raw_headers = [str(h or "").strip().upper() for h in payload[0]]
-    headers = [" ".join(h.split()) for h in raw_headers]
+    # 1. Normalización de cabeceras (Fuzzy Matching)
+    import re
+    def fuzzy_key(h: str) -> str:
+        # Solo deja letras y números para un matching 100% seguro con Excel
+        return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
+
+    raw_headers = payload[0]
+    processed_headers = [fuzzy_key(h) for h in raw_headers]
     
     WHITELIST_MAP = {
-        "BOOKING": "booking",
-        "STATUS - FCL": "status_fcl",
-        "O/BETA (STATUS FINAL)": "status_beta_text",
-        "PLT. EMPACADORA": "planta_empacadora",
-        "CULTIVO": "cultivo",
-        "NAVE": "nave",
-        "ETD BOOKING": "etd_booking",
-        "ETA BOOKING": "eta_booking",
-        "WEEK ETA BOOKING": "week_eta_booking",
-        "DIAS TT. BOOKING": "dias_tt_booking",
-        "ETD FINAL": "etd_final",
-        "ETA FINAL": "eta_final",
-        "WEEK ETA REAL": "week_eta_real",
-        "DIAS TT. REAL": "dias_tt_real",
-        "WEEK DEBE ARRIBAR": "week_debe_arribar",
-        "POL": "pol",
-        "O/BETA INICIAL": "o_beta_inicial",
-        "O/BETA FINAL": "orden_beta_final",
-        "CLIENTE": "cliente",
-        "RECIBIDOR": "recibidor",
-        "DESTINO (PEDIDO)": "destino_pedido",
-        "PO": "po_number",
-        "DESTINO (BOOKING)": "destino_booking",
-        "PAIS (BOOKING)": "pais_booking",
-        "N° FCL": "nro_fcl",
-        "DEPOT DE RETIRO": "deposito_retiro",
-        "OPERADOR": "operador",
-        "NAVIERA": "naviera",
-        "TERMOREGISTROS": "termoregistros",
-        "AC": "ac_option",
-        "C/T": "ct_option",
-        "VENT": "ventilacion",
-        "T°": "temperatura",
-        "HORA SOLICITADA (OPERADOR)": "hora_solicitada_operador",
-        "FECHA REAL DE LLENADO": "fecha_real_llenado",
-        "WEEK LLENADO": "week_llenado",
-        "VARIEDAD": "variedad",
-        "TIPO DE CAJA": "tipo_caja",
-        "ETIQUETA CAJA": "etiqueta_caja",
-        "PRESENTACIÓN": "presentacion",
-        "CALIBRE": "calibre",
-        "CJ/KG": "cj_kg",
-        "TOTAL": "total_unidades",
-        "INCOTERM": "incoterm",
-        "FLETE": "flete"
+        fuzzy_key("BOOKING"): "booking",
+        fuzzy_key("STATUS - FCL"): "status_fcl",
+        fuzzy_key("O/BETA (STATUS FINAL)"): "status_beta_text",
+        fuzzy_key("PLT. EMPACADORA"): "planta_empacadora",
+        fuzzy_key("CULTIVO"): "cultivo",
+        fuzzy_key("NAVE"): "nave",
+        fuzzy_key("ETD BOOKING"): "etd_booking",
+        fuzzy_key("ETA BOOKING"): "eta_booking",
+        fuzzy_key("WEEK ETA BOOKING"): "week_eta_booking",
+        fuzzy_key("DIAS TT. BOOKING"): "dias_tt_booking",
+        fuzzy_key("ETD FINAL"): "etd_final",
+        fuzzy_key("ETA FINAL"): "eta_final",
+        fuzzy_key("WEEK ETA REAL"): "week_eta_real",
+        fuzzy_key("DIAS TT. REAL"): "dias_tt_real",
+        fuzzy_key("WEEK DEBE ARRIBAR"): "week_debe_arribar",
+        fuzzy_key("POL"): "pol",
+        fuzzy_key("O/BETA INICIAL"): "o_beta_inicial",
+        fuzzy_key("O/BETA FINAL"): "orden_beta_final",
+        fuzzy_key("CLIENTE"): "cliente",
+        fuzzy_key("RECIBIDOR"): "recibidor",
+        fuzzy_key("DESTINO (PEDIDO)"): "destino_pedido",
+        fuzzy_key("PO"): "po_number",
+        fuzzy_key("DESTINO (BOOKING)"): "destino_booking",
+        fuzzy_key("PAIS (BOOKING)"): "pais_booking",
+        fuzzy_key("N° FCL"): "nro_fcl",
+        fuzzy_key("DEPOT DE RETIRO"): "deposito_retiro",
+        fuzzy_key("OPERADOR"): "operador",
+        fuzzy_key("NAVIERA"): "naviera",
+        fuzzy_key("TERMOREGISTROS"): "termoregistros",
+        fuzzy_key("AC"): "ac_option",
+        fuzzy_key("C/T"): "ct_option",
+        fuzzy_key("VENT"): "ventilacion",
+        fuzzy_key("T°"): "temperatura",
+        fuzzy_key("HORA SOLICITADA (OPERADOR)"): "hora_solicitada_operador",
+        fuzzy_key("FECHA REAL DE LLENADO"): "fecha_real_llenado",
+        fuzzy_key("WEEK LLENADO"): "week_llenado",
+        fuzzy_key("VARIEDAD"): "variedad",
+        fuzzy_key("TIPO DE CAJA"): "tipo_caja",
+        fuzzy_key("ETIQUETA CAJA"): "etiqueta_caja",
+        fuzzy_key("PRESENTACIÓN"): "presentacion",
+        fuzzy_key("CALIBRE"): "calibre",
+        fuzzy_key("CJ/KG"): "cj_kg",
+        fuzzy_key("TOTAL"): "total_unidades",
+        fuzzy_key("INCOTERM"): "incoterm",
+        fuzzy_key("FLETE"): "flete"
     }
 
     col_indices = {}
-    for i, h in enumerate(headers):
+    matched_debug = {}
+    for i, h in enumerate(processed_headers):
         if h in WHITELIST_MAP:
             f = WHITELIST_MAP[h]
-            if f not in col_indices: col_indices[f] = i
+            if f not in col_indices: 
+                col_indices[f] = i
+                matched_debug[f] = raw_headers[i]
 
     if "booking" not in col_indices:
-        return {"ok": False, "detail": f"BOOKING no encontrado. Cabeceras: {headers}"}
+        return {
+            "ok": False, 
+            "detail": "No se encontró la columna BOOKING",
+            "headers_detected": processed_headers,
+            "raw_headers": raw_headers
+        }
 
     upserts = 0
+    errors = []
+    
+    # 3. Procesar filas
     for row_idx in range(1, len(payload)):
         row = payload[row_idx]
         if not row: continue
         
-        raw_booking = str(row[col_indices["booking"]] or "").strip()
-        # Limpiar sufijos sospechosos: si termina en AL o L y el resto son números/letras conocidos
-        import re
-        # Si termina en 'AL' o 'L' y lo que le precede parece un código de booking (letras + números)
-        clean_booking = re.sub(r'(AL|L)$', '', raw_booking) if len(raw_booking) > 5 else raw_booking
+        # Booking index
+        b_idx = col_indices["booking"]
+        val_booking = str(row[b_idx] or "").strip()
         
+        # Limpiar sufijos 'AL' o 'L' (Case-Insensitive)
+        clean_booking = re.sub(r'(AL|L)$', '', val_booking, flags=re.I)
         booking = normalizar(clean_booking)
-        if not booking or len(booking) < 3: continue
+        
+        if not booking or len(booking) < 3: 
+            continue
         
         db_row = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
         if not db_row:
             db_row = RefPosicionamiento(booking=booking)
             db.add(db_row)
         
+        # Mapear el resto de campos
         for field, idx in col_indices.items():
             if field == "booking": continue
             val = row[idx] if idx < len(row) else None
+            
             if field in ["dias_tt_booking", "dias_tt_real"]:
                 try:
-                    setattr(db_row, field, int(float(val)) if val is not None and str(val).strip() != "" else None)
+                    db_val = int(float(val)) if val not in [None, ""] else None
+                    setattr(db_row, field, db_val)
                 except: setattr(db_row, field, None)
             else:
-                setattr(db_row, field, normalizar(str(val)) if val is not None else None)
+                setattr(db_row, field, normalizar(str(val)) if val not in [None, ""] else None)
+        
         upserts += 1
 
     db.commit()
-    return {"ok": True, "upserts": upserts}
+    return {
+        "ok": True, 
+        "upserts": upserts, 
+        "matched_columns": len(col_indices),
+        "debug_columns": matched_debug
+    }
 
 @router.post("/dams")
 def sync_dams(
