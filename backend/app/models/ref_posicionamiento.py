@@ -16,7 +16,7 @@ class RefPosicionamiento(Base):
     
     # Operativo & Status
     status_fcl: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    orden_beta_final: Mapped[str | None] = mapped_column(String(50), nullable=True) # O/BETA (STATUS FINAL)
+    orden_beta_final: Mapped[str | None] = mapped_column(String(50), nullable=True) # O/BETA FINAL
     planta_empacadora: Mapped[str | None] = mapped_column(String(150), nullable=True)
     cultivo: Mapped[str | None] = mapped_column(String(100), nullable=True)
     

@@ -1,59 +1,60 @@
-const WEBHOOK_URL = "https://tu-servicio-agroflow.onrender.com/api/v1/sync/posicionamiento";
-const SYNC_TOKEN = "TU_TOKEN_AQUI"; // Este debe coincidir con el SYNC_TOKEN de tu .env
+/**
+ * Script Automático AgroFlow - CONTROL TOTAL (28 Columnas)
+ * Este script es invisible para el usuario y se ejecuta vía Power Automate.
+ */
+function main(
+    workbook: ExcelScript.Workbook,
+    booking: string, b_limpio: string, nave: string, status: string, beta_final: string,
+    planta: string, cultivo: string, etd_b: string, eta_b: string, wk_eta_b: string,
+    tt_b: number, etd_f: string, eta_f: string, wk_eta_r: string, tt_r: number,
+    wk_arribar: string, pol: string, beta_i: string, beta_c1: string, mot_c1: string,
+    beta_c2: string, mot_c2: string, area: string, det: string, dep: string,
+    nro_cont: string, tipo_cont: string, awb: string
+) {
+    const WEBHOOK_URL = "https://agroflow-beta.onrender.com/api/v1/sync/posicionamiento";
+    const SYNC_TOKEN = "beta_sync_2026";
 
-function main(workbook: ExcelScript.Workbook) {
-    const sheet = workbook.getWorksheet("CONTROL");
-    if (!sheet) {
-        console.log("No se encontró la hoja CONTROL");
-        return;
-    }
+    // Mapeamos EXACTAMENTE como lo espera el servidor
+    const payload = [{
+        "BOOKING": booking,
+        "BOOKING LIMPIO": b_limpio,
+        "NAVE": nave,
+        "Semaforización": status,
+        "O/BETA FINAL": beta_final, // CORREGIDO: Usando el campo con el valor real de la Beta
+        "PLANTA EMPACADORA": planta,
+        "CULTIVO": cultivo,
+        "ETD (BOOKING)": etd_b,
+        "ETA (BOOKING)": eta_b,
+        "WEEK ETA (BOOKING)": wk_eta_b,
+        "DIAS TT (BOOKING)": tt_b,
+        "ETD FINAL": etd_f,
+        "ETA FINAL": eta_f,
+        "WEEK ETA REAL": wk_eta_r,
+        "DIAS TT REAL": tt_r,
+        "WEEK DEBE ARRIBAR": wk_arribar,
+        "POL": pol,
+        "O/BETA INICIAL": beta_i,
+        "O/BETA CAMBIO 1": beta_c1,
+        "MOTIVO CAMBIO 1": mot_c1,
+        "O/BETA CAMBIO 2": beta_c2,
+        "MOTIVO CAMBIO 2": mot_c2,
+        "AREA RESPONSABLE": area,
+        "DETALLE ADICIONAL": det,
+        "DEPOSITO VACIO": dep,
+        "NRO CONTENEDOR": nro_cont,
+        "TIPO CONTENEDOR": tipo_cont,
+        "AWB": awb
+    }];
 
-    // Obtenemos la fila de la celda donde está el cursor
-    const activeCell = workbook.getActiveCell();
-    const rowNum = activeCell.getRowIndex();
-
-    // Los datos empiezan en la fila 10 (índice 9), la 9 son los encabezados
-    if (rowNum < 9) {
-        console.log("Por favor, selecciona una fila de datos (Fila 10 en adelante)");
-        return;
-    }
-
-    // Leemos los encabezados (Fila 9) y los valores de la fila actual
-    // Usamos un rango amplio para cubrir todas las columnas de la hoja CONTROL
-    const headerRange = sheet.getRangeByIndexes(8, 0, 1, 50);
-    const dataRange = sheet.getRangeByIndexes(rowNum, 0, 1, 50);
-
-    const headers = headerRange.getValues()[0];
-    const values = dataRange.getValues()[0];
-
-    const payload: any = {};
-
-    // Mapeamos dinámicamente: el nombre de la columna será la llave del JSON
-    headers.forEach((header, index) => {
-        const key = String(header).trim();
-        const value = values[index];
-        if (key && key !== "undefined") {
-            payload[key] = value;
-        }
-    });
-
-    // Validación básica
-    if (!payload["BOOKING"] || payload["BOOKING"] === "") {
-        console.log("Error: No se encontró un valor en la columna BOOKING de esta fila.");
-        return;
-    }
-
-    // Enviamos al backend de AgroFlow
-    console.log("Enviando datos a AgroFlow para Booking: " + payload["BOOKING"] + "...");
-
+    // Envío profesional a AgroFlow
     fetch(WEBHOOK_URL, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-Sync-Token": SYNC_TOKEN
         },
-        body: JSON.stringify([payload])
+        body: JSON.stringify(payload)
     });
 
-    console.log("Sincronización enviada correctamente.");
+    console.log("Sincronización automática completa enviada para: " + booking);
 }

@@ -38,7 +38,7 @@ from pydantic import BaseModel, Field
 class PosicionamientoItem(BaseModel):
     booking: str = Field(alias="BOOKING")
     status_fcl: Optional[str] = Field(None, alias="Semaforización")
-    orden_beta_final: Optional[str] = Field(None, alias="O/BETA (STATUS FINAL)")
+    orden_beta_final: Optional[str] = Field(None, alias="O/BETA FINAL")
     planta_empacadora: Optional[str] = Field(None, alias="PLANTA EMPACADORA")
     cultivo: Optional[str] = Field(None, alias="CULTIVO")
     
