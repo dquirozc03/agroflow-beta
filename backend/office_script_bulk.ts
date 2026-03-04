@@ -27,7 +27,7 @@ async function main(workbook: ExcelScript.Workbook) {
         const texts = range.getTexts();
 
         // Filtramos para quitar filas totalmente vacías
-        payload = texts.filter(row => row.some(cell => cell.trim() !== ""));
+        payload = texts.filter((row: string[]) => row.some((cell: string) => cell.trim() !== ""));
 
         if (payload.length > 0) {
             console.log("Datos leídos correctamente desde el rango de la hoja: " + sheet.getName());
