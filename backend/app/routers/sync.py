@@ -254,6 +254,7 @@ def sync_posicionamiento_raw(
     errors = []
     
     # 3. Procesar filas
+    first_row_received = payload[1] if len(payload) > 1 else None
     for row_idx in range(1, len(payload)):
         row = payload[row_idx]
         if not row: continue
@@ -262,8 +263,12 @@ def sync_posicionamiento_raw(
         b_idx = col_indices["booking"]
         val_booking = str(row[b_idx] or "").strip()
         
-        # Limpiar sufijos 'AL' o 'L' (Case-Insensitive)
-        clean_booking = re.sub(r'(AL|L)$', '', val_booking, flags=re.I)
+        # LIMPIEZA ULTRA AGRESIVA
+        # 1. Quitar cualquier cosa que no sea letra o número al final (espacios raros, saltos de línea)
+        clean_booking = re.sub(r'[^A-Z0-9]+$', '', val_booking, flags=re.I)
+        # 2. Quitar específicamente el sufijo L o AL si quedó (sin importar mayúsculas)
+        clean_booking = re.sub(r'(AL|L)$', '', clean_booking, flags=re.I)
+        
         booking = normalizar(clean_booking)
         
         if not booking or len(booking) < 3: 
@@ -293,9 +298,14 @@ def sync_posicionamiento_raw(
     return {
         "ok": True, 
         "upserts": upserts, 
-        "version": "v1.2-robust-sync",
+        "version": "v1.3-deep-debug",
         "matched_columns": len(col_indices),
-        "debug_columns": matched_debug
+        "debug": {
+            "first_row_received": first_row_received,
+            "matched_mapping": matched_debug,
+            "processed_headers": processed_headers,
+            "raw_headers": raw_headers
+        }
     }
 
 @router.post("/dams")
