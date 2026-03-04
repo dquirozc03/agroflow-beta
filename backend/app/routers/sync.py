@@ -293,6 +293,7 @@ def sync_posicionamiento_raw(
     return {
         "ok": True, 
         "upserts": upserts, 
+        "version": "v1.2-robust-sync",
         "matched_columns": len(col_indices),
         "debug_columns": matched_debug
     }
