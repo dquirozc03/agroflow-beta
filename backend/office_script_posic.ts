@@ -1,33 +1,42 @@
 /**
- * Script Automático AgroFlow - RELAY TOTAL (Universal)
- * Este script recibe la fila COMPLETA desde Power Automate como JSON 
- * y la reenvía a AgroFlow sin necesidad de mapear campo por campo.
+ * Script Automático AgroFlow - MÉTODO ANTI-ERROR (Sincrónico/Async)
+ * Esta versión usa 'await' para asegurar que los datos lleguen al servidor
+ * antes de que el script termine.
  */
-function main(workbook: ExcelScript.Workbook, jsonData: string) {
-    // 1. Configuración de Destino
+async function main(workbook: ExcelScript.Workbook, jsonData: string) {
     const WEBHOOK_URL = "https://agroflow-beta.onrender.com/api/v1/sync/posicionamiento";
-    const SYNC_TOKEN = "beta_sync_2026";
+    const SYNC_TOKEN = "dev_secret_token_2024";
+
+    if (!jsonData || jsonData.trim() === "") {
+        console.log("No hay datos para enviar");
+        return;
+    }
 
     try {
-        // 2. Procesamos el JSON recibido de Power Automate
-        const data = JSON.parse(jsonData);
+        // Si el texto no empieza con "[", lo rodeamos de corchetes para que sea una lista
+        const finalPayload = jsonData.trim().startsWith("[") ? jsonData : "[" + jsonData + "]";
 
-        // Si Power Automate manda un objeto único, lo metemos en una lista
-        // Si manda una lista, la usamos tal cual
-        const payload = Array.isArray(data) ? data : [data];
+        console.log("Enviando datos a AgroFlow...");
 
-        // 3. Enviamos a AgroFlow
-        fetch(WEBHOOK_URL, {
+        // IMPORTANTE: Agregamos 'await' y guardamos la respuesta
+        const response = await fetch(WEBHOOK_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "X-Sync-Token": SYNC_TOKEN
             },
-            body: JSON.stringify(payload)
+            body: finalPayload
         });
 
-        console.log("Relay exitoso para AgroFlow");
+        if (response.ok) {
+            const resJson = await response.json();
+            console.log("Sincronización exitosa: " + JSON.stringify(resJson));
+        } else {
+            const errText = await response.text();
+            console.log("Error del servidor: " + response.status + " - " + errText);
+        }
+
     } catch (e) {
-        console.log("Error al procesar el JSON: " + e.toString());
+        console.log("Error de red o de ejecución: " + e.toString());
     }
 }
