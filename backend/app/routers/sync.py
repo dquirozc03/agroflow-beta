@@ -166,6 +166,109 @@ def sync_posicionamiento(
     db.commit()
     return {"ok": True, "upserts": upserts}
 
+@router.post("/posicionamiento/raw")
+def sync_posicionamiento_raw(
+    payload: List[List[Union[str, int, float, None]]],
+    db: Session = Depends(get_db),
+    x_sync_token: str | None = Header(default=None),
+):
+    validar_token(x_sync_token)
+    if not payload or len(payload) < 2:
+        return {"ok": False, "detail": "Datos insuficientes"}
+
+    raw_headers = [str(h or "").strip().upper() for h in payload[0]]
+    headers = [" ".join(h.split()) for h in raw_headers]
+    
+    WHITELIST_MAP = {
+        "BOOKING": "booking",
+        "STATUS - FCL": "status_fcl",
+        "O/BETA (STATUS FINAL)": "status_beta_text",
+        "PLT. EMPACADORA": "planta_empacadora",
+        "CULTIVO": "cultivo",
+        "NAVE": "nave",
+        "ETD BOOKING": "etd_booking",
+        "ETA BOOKING": "eta_booking",
+        "WEEK ETA BOOKING": "week_eta_booking",
+        "DIAS TT. BOOKING": "dias_tt_booking",
+        "ETD FINAL": "etd_final",
+        "ETA FINAL": "eta_final",
+        "WEEK ETA REAL": "week_eta_real",
+        "DIAS TT. REAL": "dias_tt_real",
+        "WEEK DEBE ARRIBAR": "week_debe_arribar",
+        "POL": "pol",
+        "O/BETA INICIAL": "o_beta_inicial",
+        "O/BETA FINAL": "orden_beta_final",
+        "CLIENTE": "cliente",
+        "RECIBIDOR": "recibidor",
+        "DESTINO (PEDIDO)": "destino_pedido",
+        "PO": "po_number",
+        "DESTINO (BOOKING)": "destino_booking",
+        "PAIS (BOOKING)": "pais_booking",
+        "N° FCL": "nro_fcl",
+        "DEPOT DE RETIRO": "deposito_retiro",
+        "OPERADOR": "operador",
+        "NAVIERA": "naviera",
+        "TERMOREGISTROS": "termoregistros",
+        "AC": "ac_option",
+        "C/T": "ct_option",
+        "VENT": "ventilacion",
+        "T°": "temperatura",
+        "HORA SOLICITADA (OPERADOR)": "hora_solicitada_operador",
+        "FECHA REAL DE LLENADO": "fecha_real_llenado",
+        "WEEK LLENADO": "week_llenado",
+        "VARIEDAD": "variedad",
+        "TIPO DE CAJA": "tipo_caja",
+        "ETIQUETA CAJA": "etiqueta_caja",
+        "PRESENTACIÓN": "presentacion",
+        "CALIBRE": "calibre",
+        "CJ/KG": "cj_kg",
+        "TOTAL": "total_unidades",
+        "INCOTERM": "incoterm",
+        "FLETE": "flete"
+    }
+
+    col_indices = {}
+    for i, h in enumerate(headers):
+        if h in WHITELIST_MAP:
+            f = WHITELIST_MAP[h]
+            if f not in col_indices: col_indices[f] = i
+
+    if "booking" not in col_indices:
+        return {"ok": False, "detail": f"BOOKING no encontrado. Cabeceras: {headers}"}
+
+    upserts = 0
+    for row_idx in range(1, len(payload)):
+        row = payload[row_idx]
+        if not row: continue
+        
+        raw_booking = str(row[col_indices["booking"]] or "").strip()
+        # Limpiar sufijos sospechosos: si termina en AL o L y el resto son números/letras conocidos
+        import re
+        # Si termina en 'AL' o 'L' y lo que le precede parece un código de booking (letras + números)
+        clean_booking = re.sub(r'(AL|L)$', '', raw_booking) if len(raw_booking) > 5 else raw_booking
+        
+        booking = normalizar(clean_booking)
+        if not booking or len(booking) < 3: continue
+        
+        db_row = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
+        if not db_row:
+            db_row = RefPosicionamiento(booking=booking)
+            db.add(db_row)
+        
+        for field, idx in col_indices.items():
+            if field == "booking": continue
+            val = row[idx] if idx < len(row) else None
+            if field in ["dias_tt_booking", "dias_tt_real"]:
+                try:
+                    setattr(db_row, field, int(float(val)) if val is not None and str(val).strip() != "" else None)
+                except: setattr(db_row, field, None)
+            else:
+                setattr(db_row, field, normalizar(str(val)) if val is not None else None)
+        upserts += 1
+
+    db.commit()
+    return {"ok": True, "upserts": upserts}
+
 @router.post("/dams")
 def sync_dams(
     payload: Union[DamItem, List[DamItem]],
