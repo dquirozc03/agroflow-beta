@@ -18,13 +18,26 @@ class CatClienteIE(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     
-    # Campo para cruzar con el 'cliente' del posicionamiento
+    # Cruce principal
     nombre_comercial: Mapped[str] = mapped_column(String(200), index=True)
+    destino: Mapped[str | None] = mapped_column(String(200), index=True, nullable=True)
     cultivo: Mapped[str] = mapped_column(String(50), index=True) # Granada, Arandano, etc.
 
+    pais: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    
+    # Consignatario
+    eori_consignatario: Mapped[str | None] = mapped_column(String(100), nullable=True)
     consignatario_bl: Mapped[str | None] = mapped_column(Text, nullable=True)
+    datos_referenciales_consignatario: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # Notificante
+    eori_notify: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notificante_bl: Mapped[str | None] = mapped_column(Text, nullable=True)
+    datos_referenciales_notify: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    emision_bl: Mapped[str | None] = mapped_column(String(50), nullable=True)
     cliente_fito: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -32,3 +45,21 @@ class CatClienteIE(Base):
         onupdate=func.now(),
         nullable=False
     )
+
+class RegistroIE(Base):
+    """Historial de Instrucciones de Embarque generadas"""
+    __tablename__ = "ie_registros_historial"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    booking: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    o_beta: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    cultivo: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    cliente: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    
+    fecha_generacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    
+    creado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)

@@ -28,9 +28,17 @@ def sync_clientes_ie_raw(
         
         WHITELIST_MAP = {
             fuzzy_key("CLIENTE"): "nombre_comercial",
+            fuzzy_key("DESTINO"): "destino",
+            fuzzy_key("PAIS"): "pais",
+            fuzzy_key("EORI CONSIGNE"): "eori_consignatario",
             fuzzy_key("CONSIGNE BL"): "consignatario_bl",
+            fuzzy_key("Datos Referenciales CONSIGNE"): "datos_referenciales_consignatario",
+            fuzzy_key("EORI NOTIFY"): "eori_notify",
             fuzzy_key("NOTIFY BL"): "notificante_bl",
-            fuzzy_key("CLIENTE FITOSANITARIO"): "cliente_fito"
+            fuzzy_key("Datos Referenciales NOTIFY"): "datos_referenciales_notify",
+            fuzzy_key("EMISION BL"): "emision_bl",
+            fuzzy_key("CLIENTE DE FITOSANITARIO"): "cliente_fito",
+            fuzzy_key("OBSERVACIONES"): "observaciones",
         }
 
         col_indices = {}
@@ -46,28 +54,37 @@ def sync_clientes_ie_raw(
         upserts = 0
         for row_idx in range(1, len(payload)):
             row = payload[row_idx]
-            if not row or len(row) <= max(col_indices.values()): continue
+            if not row: continue
             
             # Nombre comercial (para cruzar con posicionamiento)
-            nombre = str(row[col_indices["nombre_comercial"]] or "").strip()
+            nombre = str(row[col_indices["nombre_comercial"]] or "").strip() if "nombre_comercial" in col_indices else ""
             if not nombre: continue
 
-            # Buscar o crear
+            # Destino (importante para duplicados con distintas direcciones)
+            destino = str(row[col_indices["destino"]] or "").strip() if "destino" in col_indices else ""
+
+            # Buscar o crear (Key: nombre + destino + cultivo)
             db_item = db.query(CatClienteIE).filter(
                 CatClienteIE.nombre_comercial == nombre,
+                CatClienteIE.destino == destino,
                 CatClienteIE.cultivo == cultivo
             ).first()
             
             if not db_item:
-                db_item = CatClienteIE(nombre_comercial=nombre, cultivo=cultivo)
+                db_item = CatClienteIE(nombre_comercial=nombre, destino=destino, cultivo=cultivo)
                 db.add(db_item)
 
-            if "consignatario_bl" in col_indices:
-                db_item.consignatario_bl = str(row[col_indices["consignatario_bl"]] or "").strip()
-            if "notificante_bl" in col_indices:
-                db_item.notificante_bl = str(row[col_indices["notificante_bl"]] or "").strip()
-            if "cliente_fito" in col_indices:
-                db_item.cliente_fito = str(row[col_indices["cliente_fito"]] or "").strip()
+            # Mapear todos los campos
+            if "pais" in col_indices: db_item.pais = str(row[col_indices["pais"]] or "").strip()
+            if "eori_consignatario" in col_indices: db_item.eori_consignatario = str(row[col_indices["eori_consignatario"]] or "").strip()
+            if "consignatario_bl" in col_indices: db_item.consignatario_bl = str(row[col_indices["consignatario_bl"]] or "").strip()
+            if "datos_referenciales_consignatario" in col_indices: db_item.datos_referenciales_consignatario = str(row[col_indices["datos_referenciales_consignatario"]] or "").strip()
+            if "eori_notify" in col_indices: db_item.eori_notify = str(row[col_indices["eori_notify"]] or "").strip()
+            if "notificante_bl" in col_indices: db_item.notificante_bl = str(row[col_indices["notificante_bl"]] or "").strip()
+            if "datos_referenciales_notify" in col_indices: db_item.datos_referenciales_notify = str(row[col_indices["datos_referenciales_notify"]] or "").strip()
+            if "emision_bl" in col_indices: db_item.emision_bl = str(row[col_indices["emision_bl"]] or "").strip()
+            if "cliente_fito" in col_indices: db_item.cliente_fito = str(row[col_indices["cliente_fito"]] or "").strip()
+            if "observaciones" in col_indices: db_item.observaciones = str(row[col_indices["observaciones"]] or "").strip()
 
             upserts += 1
 

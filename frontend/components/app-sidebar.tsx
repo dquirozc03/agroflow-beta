@@ -56,6 +56,13 @@ export function AppSidebar() {
         soon: false,
       },
       {
+        name: "Instrucciones de Embarque",
+        icon: Package,
+        href: "/ie",
+        active: pathname === "/ie",
+        soon: false,
+      },
+      {
         name: "Usuarios",
         icon: Users,
         href: "/usuarios",

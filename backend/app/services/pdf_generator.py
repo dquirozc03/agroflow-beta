@@ -15,11 +15,20 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     if not posic:
         raise ValueError(f"Booking {booking} no encontrado en Posicionamiento")
 
-    # Buscar cliente en CatClienteIE (Cruzando por nombre comercial y cultivo)
+    # Buscar cliente en CatClienteIE (Cruzando por nombre comercial, cultivo y DESTINO)
+    # Buscamos el match más cercano por destino o el que no tenga destino
     cliente_ie = db.query(CatClienteIE).filter(
         CatClienteIE.nombre_comercial == posic.cliente,
-        CatClienteIE.cultivo == posic.cultivo
+        CatClienteIE.cultivo == posic.cultivo,
+        CatClienteIE.destino == posic.destino_booking
     ).first()
+
+    # Fallback: si no hay match por destino, buscar el genérico (destino vacío)
+    if not cliente_ie:
+        cliente_ie = db.query(CatClienteIE).filter(
+            CatClienteIE.nombre_comercial == posic.cliente,
+            CatClienteIE.cultivo == posic.cultivo
+        ).first()
 
     # Buscar dirección de planta
     planta = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first() # Por ahora hardcoded a ICA según instrucción

@@ -643,3 +643,54 @@ export async function getAgroflowBooking(booking: string): Promise<AgroflowBooki
 export async function getLogisticaFacturas(): Promise<any[]> {
   return request<any[]>("agroflow/logistica/facturas", { method: "GET" });
 }
+// ======================
+// INSTRUCCIONES DE EMBARQUE (IE)
+// ======================
+export type IeSearchResult = {
+  booking: string;
+  cultivo: string;
+  cliente: string;
+  orden_beta: string;
+};
+
+export type IeHistoryRecord = {
+  id: number;
+  booking: string;
+  o_beta: string | null;
+  cultivo: string | null;
+  cliente: string | null;
+  fecha_generacion: string;
+  creado_por: string | null;
+};
+
+export type IeHistoryResponse = {
+  total: number;
+  page: number;
+  limit: number;
+  results: IeHistoryRecord[];
+};
+
+export async function searchIeBookings(q: string): Promise<IeSearchResult[]> {
+  const query = encodeURIComponent(q.trim());
+  return request<IeSearchResult[]>(`/ie/search?q=${query}`, { method: "GET" });
+}
+
+export async function getIeHistory(params: {
+  desde?: string;
+  hasta?: string;
+  page?: number;
+  limit?: number;
+}): Promise<IeHistoryResponse> {
+  const qs = new URLSearchParams();
+  if (params.desde) qs.set("start_date", params.desde);
+  if (params.hasta) qs.set("end_date", params.hasta);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+
+  return request<IeHistoryResponse>(`/ie/history?${qs.toString()}`, { method: "GET" });
+}
+
+export function getDownloadIeUrl(booking: string): string {
+  // Retorna la URL relativa para que el navegador inicie la descarga
+  return `/api/v1/ie/generate/${encodeURIComponent(booking)}`;
+}
