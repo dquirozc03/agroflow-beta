@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import settings
-from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, agroflow, auditoria, scanner
+from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, agroflow, auditoria, scanner, sync_ie, ie
 from app.services.sync_service import start_sync_service
 import threading
+from app.models.ie_models import CatPlanta
+from app.database import SessionLocal
 
 # Valor por defecto del JWT (solo desarrollo). En producción debe definirse JWT_SECRET en env.
 _DEV_JWT_SECRET = "dev-secret-cambiar-en-produccion"
@@ -34,6 +36,20 @@ def startup():
     _validate_production_config()
     # Inicia el servicio de sincronización de Excel en segundo plano
     threading.Thread(target=start_sync_service, daemon=True).start()
+    
+    # Semillar plantas iniciales
+    db = SessionLocal()
+    try:
+        planta_ica = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
+        if not planta_ica:
+            planta_ica = CatPlanta(
+                nombre="ICA", 
+                direccion="CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
+            )
+            db.add(planta_ica)
+            db.commit()
+    finally:
+        db.close()
 
 
 @app.get("/ping")
@@ -74,6 +90,8 @@ app.include_router(chat.router)
 app.include_router(agroflow.router)
 app.include_router(auditoria.router)
 app.include_router(scanner.router)
+app.include_router(sync_ie.router)
+app.include_router(ie.router)
 
 # =========================
 # Health checks
