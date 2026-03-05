@@ -7,6 +7,7 @@ from app.services.sync_service import start_sync_service
 import threading
 from app.models.ie_models import CatPlanta
 from app.database import SessionLocal
+import sqlalchemy
 
 # Valor por defecto del JWT (solo desarrollo). En producción debe definirse JWT_SECRET en env.
 _DEV_JWT_SECRET = "dev-secret-cambiar-en-produccion"
@@ -37,7 +38,7 @@ def startup():
     # Inicia el servicio de sincronización de Excel en segundo plano
     threading.Thread(target=start_sync_service, daemon=True).start()
     
-    # Semillar plantas iniciales
+    # Semillar plantas iniciales (con blindaje ante tablas faltantes)
     db = SessionLocal()
     try:
         planta_ica = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
@@ -48,6 +49,10 @@ def startup():
             )
             db.add(planta_ica)
             db.commit()
+    except sqlalchemy.exc.ProgrammingError:
+        print("⚠️ Tabla cat_plantas no existe aún. Omitiendo semillado inicial.")
+    except Exception as e:
+        print(f"⚠️ Error en semillado: {e}")
     finally:
         db.close()
 
