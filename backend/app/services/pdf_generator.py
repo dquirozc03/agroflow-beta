@@ -77,6 +77,11 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     peso_neto = total_unidades * peso_caja
     peso_bruto = peso_neto + (total_unidades * 0.4) # +0.4kg tara
 
+    # Pre-procesar fecha para mostrarla como 'DD/MM/YYYY - HH:MM'
+    fecha_text = str(posic.fecha_real_llenado or "").strip()
+    hora_text = str(posic.hora_solicitada_operador or "").strip()
+    fecha_hora_full = f"{fecha_text} - {hora_text}" if fecha_text and hora_text else (fecha_text or hora_text)
+
     # 3. Construir PDF
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -93,7 +98,7 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold')
     style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica')
     style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1)
-    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica-Bold')
+    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica-Bold', alignment=1) # Centrado por defecto para VB si se usa en celdas críticas
 
     elements = []
 
@@ -122,7 +127,7 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         [L("OPERADOR LOGISTICO"), VB(str(posic.operador or "").upper())],
         [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>PLANTA ICA</b><br/>{direccion_planta}", style_value)],
         # Fecha
-        [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='right'><b>{posic.fecha_real_llenado or ''}</b></div>", style_val_bold)],
+        [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
         # Consignatario
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{cliente_ie.consignatario_bl or ''}</b><br/>{('EORI: ' + cliente_ie.eori_consignatario) if cliente_ie and cliente_ie.eori_consignatario else ''}", style_value)],
         # Notificado
