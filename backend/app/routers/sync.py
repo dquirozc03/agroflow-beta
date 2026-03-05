@@ -441,7 +441,8 @@ def sync_asignacion_raw(
                 db_dam.ce_awb = cont_asignacion
                 db_dam.awb = cont_asignacion
                 if posic.nro_fcl and cont_asignacion:
-                    db_dam.alerta_discrepancia = (posic.nro_fcl != cont_asignacion)
+                    # Casting bool to int (1 or 0) for Postgres compatibility
+                    db_dam.alerta_discrepancia = int(posic.nro_fcl != cont_asignacion)
                 if not posic.nro_fcl and cont_asignacion:
                     posic.nro_fcl = cont_asignacion
 
@@ -451,4 +452,4 @@ def sync_asignacion_raw(
         return {"ok": True, "upserts": upserts}
     except Exception as e:
         db.rollback()
-        return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
+        return {"ok": False, "error": str(e)}

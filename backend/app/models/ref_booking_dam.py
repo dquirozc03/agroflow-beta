@@ -15,7 +15,7 @@ class RefBookingDam(Base):
     dam: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Flag para alertas web si los contenedores no coinciden
-    alerta_discrepancia: Mapped[bool] = mapped_column(Integer, server_default="0", default=False)
+    alerta_discrepancia: Mapped[int] = mapped_column(Integer, server_default="0", default=0)
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
