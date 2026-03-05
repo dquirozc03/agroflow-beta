@@ -15,20 +15,42 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     if not posic:
         raise ValueError(f"Booking {booking} no encontrado en Posicionamiento")
 
-    # Buscar cliente en CatClienteIE (Cruzando por nombre comercial, cultivo y DESTINO)
-    # Buscamos el match más cercano por destino o el que no tenga destino
-    cliente_ie = db.query(CatClienteIE).filter(
+    # Buscar cliente en CatClienteIE (Cruce inteligente por Destino/Ciudad)
+    clientes_posibles = db.query(CatClienteIE).filter(
         CatClienteIE.nombre_comercial == posic.cliente,
-        CatClienteIE.cultivo == posic.cultivo,
-        CatClienteIE.destino == posic.destino_booking
-    ).first()
+        CatClienteIE.cultivo == posic.cultivo
+    ).all()
 
-    # Fallback: si no hay match por destino, buscar el genérico (destino vacío)
-    if not cliente_ie:
-        cliente_ie = db.query(CatClienteIE).filter(
-            CatClienteIE.nombre_comercial == posic.cliente,
-            CatClienteIE.cultivo == posic.cultivo
-        ).first()
+    cliente_ie = None
+    booking_destino = str(posic.destino_booking or "").upper().strip()
+    booking_pais = str(posic.pais_booking or "").upper().strip()
+
+    if clientes_posibles:
+        # Prioridad 1: Match de ciudad específica dentro de paréntesis 
+        # Ej: "INGLATERRA (LONDRES, LIVERPOOL)" -> si booking es LIVERPOOL
+        for c in clientes_posibles:
+            curr_dest = (c.destino or "").upper()
+            if "(" in curr_dest and booking_destino in curr_dest:
+                cliente_ie = c
+                break
+        
+        # Prioridad 2: Match exacto de destino
+        if not cliente_ie:
+            for c in clientes_posibles:
+                if (c.destino or "").upper() == booking_destino:
+                    cliente_ie = c
+                    break
+        
+        # Prioridad 3: Match por País (cuando no hay ciudades en el Excel)
+        if not cliente_ie:
+            for c in clientes_posibles:
+                if (c.destino or "").upper() == booking_pais:
+                    cliente_ie = c
+                    break
+        
+        # Fallback Final: El primero encontrado
+        if not cliente_ie:
+            cliente_ie = clientes_posibles[0]
 
     # Buscar dirección de planta
     planta = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first() # Por ahora hardcoded a ICA según instrucción
