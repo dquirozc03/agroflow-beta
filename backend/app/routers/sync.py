@@ -340,131 +340,115 @@ def sync_asignacion_raw(
     if not payload or len(payload) < 2:
         return {"ok": False, "detail": "Datos insuficientes"}
 
-    # 1. Normalización de cabeceras (Fuzzy Matching)
-    import re
-    def fuzzy_key(h: str) -> str:
-        return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
+    try:
+        # 1. Normalización de cabeceras (Fuzzy Matching)
+        import re
+        import traceback
+        def fuzzy_key(h: str) -> str:
+            return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
 
-    raw_headers = payload[0]
-    processed_headers = [fuzzy_key(h) for h in raw_headers]
-    
-    WHITELIST_MAP = {
-        fuzzy_key("BOOKING"): "booking",
-        fuzzy_key("DAM"): "dam",
-        fuzzy_key("CONTENEDOR"): "contenedor",
-        fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista",
-        fuzzy_key("RUC"): "ruc",
-        fuzzy_key("CONDUCTOR"): "conductor",
-        fuzzy_key("PLACAS"): "placas"
-    }
-
-    col_indices = {}
-    for i, h in enumerate(processed_headers):
-        if h in WHITELIST_MAP:
-            f = WHITELIST_MAP[h]
-            if f not in col_indices: 
-                col_indices[f] = i
-
-    if "booking" not in col_indices:
-        return {"ok": False, "detail": "No se encontró la columna BOOKING"}
-
-    upserts = 0
-    results = []
-
-    for row_idx in range(1, len(payload)):
-        row = payload[row_idx]
-        if not row: continue
+        raw_headers = payload[0]
+        processed_headers = [fuzzy_key(h) for h in raw_headers]
         
-        # 1. Booking y RefBookingDam
-        b_idx = col_indices["booking"]
-        val_booking = str(row[b_idx] or "").strip()
-        # Limpieza básica de Booking
-        val_booking = re.sub(r'[^A-Z0-9]+$', '', val_booking, flags=re.I)
-        val_booking = re.sub(r'(AL|L)$', '', val_booking, flags=re.I)
-        booking = normalizar(val_booking)
-        
-        if not booking: continue
+        WHITELIST_MAP = {
+            fuzzy_key("BOOKING"): "booking",
+            fuzzy_key("DAM"): "dam",
+            fuzzy_key("CONTENEDOR"): "contenedor",
+            fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista",
+            fuzzy_key("RUC"): "ruc",
+            fuzzy_key("CONDUCTOR"): "conductor",
+            fuzzy_key("PLACAS"): "placas"
+        }
 
-        # Buscar o crear RefBookingDam (Ojo: FK a RefPosicionamiento)
-        # Aseguramos que exista en Posicionamiento primero para que el FK sea válido
-        posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
-        if not posic:
-            posic = RefPosicionamiento(booking=booking)
-            db.add(posic)
-            db.flush() # Necesitamos persistir para el FK de Dam
+        col_indices = {}
+        for i, h in enumerate(processed_headers):
+            if h in WHITELIST_MAP:
+                f = WHITELIST_MAP[h]
+                if f not in col_indices: 
+                    col_indices[f] = i
 
-        db_dam = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
-        if not db_dam:
-            db_dam = RefBookingDam(booking=booking)
-            db.add(db_dam)
+        if "booking" not in col_indices:
+            return {"ok": False, "detail": "No se encontró la columna BOOKING"}
 
-        # 2. Limpieza de DAM (Quitar ceros tras el 40-)
-        if "dam" in col_indices:
-            raw_dam = str(row[col_indices["dam"]] or "").strip()
-            # 046-2025-40-064854 -> 046-2025-40-64854
-            clean_dam = re.sub(r'(40-)0+', r'\1', raw_dam)
-            db_dam.dam = clean_dam
-
-        # 3. Transportista (Auto-registro por RUC)
-        t_id = None
-        if "ruc" in col_indices and "transportista" in col_indices:
-            ruc = str(row[col_indices["ruc"]] or "").strip()
-            nombre_t = str(row[col_indices["transportista"]] or "").strip()
-            if ruc:
-                t = db.query(Transportista).filter(Transportista.ruc == ruc).first()
-                if not t:
-                    t = Transportista(ruc=ruc, nombre_transportista=nombre_t, codigo_sap=f"AUTO-{ruc}")
-                    db.add(t)
-                    db.flush()
-                t_id = t.id
-
-        # 4. Placas (Separar Tracto/Carreta y Auto-registro)
-        if "placas" in col_indices:
-            raw_placas = str(row[col_indices["placas"]] or "").strip().upper()
-            # Normalizar: COW-857/D1Z-982 -> COW857/D1Z982
-            clean_placas = re.sub(r'[^A-Z0-9/]', '', raw_placas)
+        upserts = 0
+        for row_idx in range(1, len(payload)):
+            row = payload[row_idx]
+            if not row or len(row) <= max(col_indices.values()): continue
             
-            p_parts = clean_placas.split('/')
-            tracto = p_parts[0] if len(p_parts) > 0 else ""
-            carreta = p_parts[1] if len(p_parts) > 1 else None
-            
-            if tracto:
-                v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
-                if not v:
-                    # Crear vehículo con valores por defecto (luego el usuario los edita)
-                    v = Vehiculo(
-                        placas=clean_placas,
-                        placa_tracto=tracto,
-                        placa_carreta=carreta,
-                        transportista_id=t_id,
-                        largo_tracto=0, ancho_tracto=0, alto_tracto=0,
-                        largo_carreta=0, ancho_carreta=0, alto_carreta=0,
-                        configuracion_vehicular="T3/S3", # Defecto
-                        peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
-                    )
-                    db.add(v)
-                    db.flush()
+            # Booking
+            b_idx = col_indices["booking"]
+            val_booking = str(row[b_idx] or "").strip()
+            val_booking = re.sub(r'[^A-Z0-9]+$', '', val_booking, flags=re.I)
+            val_booking = re.sub(r'(AL|L)$', '', val_booking, flags=re.I)
+            booking = normalizar(val_booking)
+            if not booking: continue
 
-        # 5. Contenedor y Cross-Validation
-        if "contenedor" in col_indices:
-            cont_asignacion = normalizar(str(row[col_indices["contenedor"]] or "").strip())
-            db_dam.ce_awb = cont_asignacion # Guardar en nuevo campo
-            db_dam.awb = cont_asignacion    # También en awb (legado)
+            # Posicionamiento
+            posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
+            if not posic:
+                posic = RefPosicionamiento(booking=booking)
+                db.add(posic)
+                db.flush()
 
-            # Comparar con Posicionamiento
-            cont_posicionamiento = posic.nro_fcl
-            if cont_posicionamiento and cont_asignacion:
-                # Si ambos existen y son diferentes, marcar alerta
-                if cont_posicionamiento != cont_asignacion:
-                    db_dam.alerta_discrepancia = True
-                else:
-                    db_dam.alerta_discrepancia = False
-            
-            # Actualizar contenedor en posicionamiento si estaba vacío
-            if not cont_posicionamiento and cont_asignacion:
-                posic.nro_fcl = cont_asignacion
+            # DAM
+            db_dam = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
+            if not db_dam:
+                db_dam = RefBookingDam(booking=booking)
+                db.add(db_dam)
 
-        upserts += 1
+            # DAM Cleaning
+            if "dam" in col_indices:
+                raw_dam = str(row[col_indices["dam"]] or "").strip()
+                clean_dam = re.sub(r'(40-)0+', r'\1', raw_dam)
+                db_dam.dam = clean_dam
 
-    db.commit()
-    return {"ok": True, "upserts": upserts, "detail": "Asignación sincronizada correctamente"}
+            # Transportista
+            t_id = None
+            if "ruc" in col_indices and "transportista" in col_indices:
+                ruc = str(row[col_indices["ruc"]] or "").strip()
+                nombre_t = str(row[col_indices["transportista"]] or "").strip()
+                if ruc:
+                    t = db.query(Transportista).filter(Transportista.ruc == ruc).first()
+                    if not t:
+                        t = Transportista(ruc=ruc, nombre_transportista=nombre_t, codigo_sap=f"AUTO-{ruc[:20]}")
+                        db.add(t)
+                        db.flush()
+                    t_id = t.id
+
+            # Placas
+            if "placas" in col_indices:
+                raw_placas = str(row[col_indices["placas"]] or "").strip().upper()
+                clean_placas = re.sub(r'[^A-Z0-9/]', '', raw_placas)
+                p_parts = clean_placas.split('/')
+                tracto = p_parts[0] if len(p_parts) > 0 else ""
+                carreta = p_parts[1] if len(p_parts) > 1 else None
+                
+                if tracto:
+                    v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
+                    if not v:
+                        v = Vehiculo(
+                            placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
+                            transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
+                            largo_carreta=0, ancho_carreta=0, alto_carreta=0,
+                            configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
+                        )
+                        db.add(v)
+                        db.flush()
+
+            # Contenedor y Validacion
+            if "contenedor" in col_indices:
+                cont_asignacion = normalizar(str(row[col_indices["contenedor"]] or "").strip())
+                db_dam.ce_awb = cont_asignacion
+                db_dam.awb = cont_asignacion
+                if posic.nro_fcl and cont_asignacion:
+                    db_dam.alerta_discrepancia = (posic.nro_fcl != cont_asignacion)
+                if not posic.nro_fcl and cont_asignacion:
+                    posic.nro_fcl = cont_asignacion
+
+            upserts += 1
+
+        db.commit()
+        return {"ok": True, "upserts": upserts}
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e), "traceback": traceback.format_exc()}
