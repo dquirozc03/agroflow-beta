@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface OcrLog {
     type: "info" | "success" | "warning";
@@ -15,6 +16,10 @@ interface Props {
     confidence: number | null;
 }
 
+/**
+ * Monitor dinámico del procesamiento OCR.
+ * Muestra el progreso real, logs de la IA y el nivel de confianza.
+ */
 export function CardOcrStatus({ status, progress, logs, confidence }: Props) {
     return (
         <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -77,5 +82,3 @@ export function CardOcrStatus({ status, progress, logs, confidence }: Props) {
         </section>
     );
 }
-
-import { cn } from "@/lib/utils";
