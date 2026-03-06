@@ -146,9 +146,9 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
             elements.append(Spacer(1, 0.1*cm))
         else:
             elements.append(Paragraph(f"<b>COMPLEJO AGROINDUSTRIAL BETA S.A.</b>", style_title))
-            elements.append(Spacer(1, 0.3*cm))
+            elements.append(Spacer(1, 0.2*cm))
     except:
-        elements.append(Spacer(1, 0.5*cm))
+        elements.append(Spacer(1, 0.3*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): return Paragraph(str(txt or ""), style_value)
@@ -201,12 +201,15 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('BACKGROUND', (0,25), (1,26), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 1.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
+        # Aumentar cuadros de Consignatario (row 7) y Notificado (row 8)
+        ('TOPPADDING', (0,7), (1,8), 12),
+        ('BOTTOMPADDING', (0,7), (1,8), 12),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 0.15*cm))
+    elements.append(Spacer(1, 0.1*cm))
 
     # -- SECCIÓN FITO --
     data2 = [
@@ -229,8 +232,8 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('SPAN', (0,0), (1,0)),
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 1.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
     ])
     table2.setStyle(style2)
     elements.append(table2)
