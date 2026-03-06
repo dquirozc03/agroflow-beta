@@ -94,9 +94,9 @@ class PosicionamientoItem(BaseModel):
     variedad: Optional[str] = Field(None, alias="VARIEDAD")
     tipo_caja: Optional[str] = Field(None, alias="TIPO DE CAJA")
     etiqueta_caja: Optional[str] = Field(None, alias="ETIQUETA CAJA")
-    presentacion: Optional[str] = Field(None, alias="PRESENTACION")
+    presentacion: Optional[str] = Field(None, alias="PRESENTACIÓN")
     calibre: Optional[str] = Field(None, alias="CALIBRE")
-    cj_kg: Optional[str] = Field(None, alias="CJKG")
+    cj_kg: Optional[str] = Field(None, alias="CJ/KG")
     total_unidades: Optional[int] = Field(None, alias="TOTAL")
     
     # Logística
