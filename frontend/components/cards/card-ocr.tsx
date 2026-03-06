@@ -123,7 +123,7 @@ export function CardOcr({ form, setForm }: Props) {
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
         <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <span className="material-symbols-outlined text-primary notranslate">cloud_upload</span>
-          1. Carga de Documentos (OCR)
+          Carga de Documentos (OCR)
         </h3>
         <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
           <SelectTrigger className="w-32 h-8 text-[10px] font-bold uppercase tracking-wider">

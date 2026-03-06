@@ -199,9 +199,9 @@ export function CardAccion({
             {loadingCreate ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <span className="material-symbols-outlined mr-2 notranslate">task_alt</span>
+              <span className="material-symbols-outlined mr-2 notranslate">save</span>
             )}
-            Finalizar Captura
+            Finalizar Registro
           </Button>
         )}
         <AlertDialog open={confirmNuevoOpen} onOpenChange={setConfirmNuevoOpen}>

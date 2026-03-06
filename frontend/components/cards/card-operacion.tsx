@@ -157,14 +157,14 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
         <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <span className="material-symbols-outlined text-primary notranslate">lock_open</span>
-          3. Operación y Precintos
+          2. Operación y Precintos
         </h3>
         {form.transportista && (
           <Popover open={detailOpen} onOpenChange={setDetailOpen}>
             <PopoverTrigger asChild>
               <button className="text-[10px] font-bold text-slate-500 hover:text-primary flex items-center gap-1 transition-colors uppercase">
                 <span className="material-symbols-outlined text-sm notranslate">info</span>
-                Ver Transportista
+                Detalles SAP
               </button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64">
@@ -176,11 +176,11 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
 
       <div className="p-6 space-y-8">
         {/* Row 1: Operación Chofer y Vehículo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">DNI Scanner</label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 notranslate">person</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 notranslate font-semibold">person</span>
               <input
                 className={cn(
                   "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 pl-10 pr-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
@@ -220,6 +220,23 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
               value={form.placas_carreta}
               onChange={(e) => setForm(p => ({ ...p, placas_carreta: e.target.value.toUpperCase() }))}
             />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa Transportes</label>
+            <div className="relative">
+              <input
+                className={cn(
+                  "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-600 dark:text-slate-400 cursor-not-allowed font-bold text-sm truncate",
+                  form.transportista && "text-primary dark:text-primary"
+                )}
+                type="text"
+                readOnly
+                value={form.transportista?.nombre_transportista || "Esperando placas..."}
+              />
+              {form.transportista && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-sm notranslate">check_circle</span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -24,8 +24,10 @@ import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide
 import { DashboardContent } from "@/components/dashboard-content";
 import { ChatWidget } from "@/components/chat-widget";
 
+import { listRegistros } from "@/lib/api";
 import type { FormState, SapRow } from "@/lib/types";
 import { initialFormState } from "@/lib/types";
+import type { RegistroListado } from "@/lib/api";
 import { toast } from "sonner";
 
 const BANDEJA_STORAGE_KEY = "logi-capture-bandeja";
@@ -59,6 +61,21 @@ function AgroFlowContent() {
   const defaultTab = validTab ?? "dashboard";
   const isDashboard = defaultTab === "dashboard";
   const isLogiCapture = defaultTab === "captura" || defaultTab === "bandeja" || defaultTab === "historial";
+
+  const [recientes, setRecientes] = useState<RegistroListado[]>([]);
+
+  const fetchRecientes = useCallback(async () => {
+    try {
+      const res = await listRegistros({ limit: 3 });
+      setRecientes(res.items || []);
+    } catch {
+      // silencioso
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecientes();
+  }, [fetchRecientes]);
 
   const setTab = useCallback(
     (tab: string) => {
@@ -136,7 +153,9 @@ function AgroFlowContent() {
 
       return [...prev, row];
     });
-  }, []);
+    // Refrescar recientes tras cada inserción existosa
+    fetchRecientes();
+  }, [fetchRecientes]);
 
   /**
    * ✅ Flujo profesional:
@@ -285,14 +304,10 @@ function AgroFlowContent() {
                         <span className="material-symbols-outlined text-xs notranslate">chevron_right</span>
                         <span className="text-primary font-medium">LogicCapture</span>
                       </div>
-                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Nueva Entrada Operacional</h2>
+                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Nueva Captura</h2>
                       <p className="text-slate-500 mt-1">Gestión inteligente de datos de embarque.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Button variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-10 px-4 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-sm transition-all">
-                        <span className="material-symbols-outlined mr-2 text-lg notranslate">save</span>
-                        Guardar Borrador
-                      </Button>
                       <CardAccion
                         form={form}
                         registroId={registroId}
@@ -331,23 +346,55 @@ function AgroFlowContent() {
                         {/* Entradas Recientes Section (Manual Placeholder integration) */}
                         <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                           <div className="p-4 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
-                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Entradas Recientes</span>
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Registros Recientes</span>
                             <button onClick={() => setTab("historial")} className="text-xs text-primary font-bold hover:underline">Ver todas</button>
                           </div>
                           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {/* Aquí integraremos un mini listado del historial si se desea, por ahora mockups según HTML */}
-                            <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                  <span className="material-symbols-outlined text-lg notranslate">description</span>
+                            {recientes.length > 0 ? (
+                              recientes.map((reg) => (
+                                <div
+                                  key={reg.id}
+                                  className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                                  onClick={() => setTab("historial")}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                                      reg.estado === "procesado" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30" : "bg-primary/10 text-primary"
+                                    )}>
+                                      <span className="material-symbols-outlined text-lg notranslate">
+                                        {reg.estado === "procesado" ? "check_circle" : "inventory_2"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-none">
+                                        {reg.booking || "SIN BOOKING"}
+                                      </p>
+                                      <div className="flex items-center gap-1.5 mt-1.5">
+                                        <span className={cn(
+                                          "text-[9px] font-black uppercase px-1.5 py-0.5 rounded",
+                                          reg.estado === "procesado" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
+                                        )}>
+                                          {reg.estado}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400">
+                                          ID #{reg.id} • {new Date(reg.fecha_registro).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors notranslate">chevron_right</span>
                                 </div>
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">BK-772818-A</p>
-                                  <p className="text-[10px] text-slate-500">Último registro procesado con éxito</p>
+                              ))
+                            ) : (
+                              <div className="p-8 text-center bg-slate-50/30 dark:bg-transparent">
+                                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <span className="material-symbols-outlined text-slate-400 notranslate">history</span>
                                 </div>
+                                <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 italic">No hay registros recientes</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-tight mt-1">Los registros aparecerán aquí al finalizar capturas</p>
                               </div>
-                              <span className="material-symbols-outlined text-slate-300 notranslate">chevron_right</span>
-                            </div>
+                            )}
                           </div>
                         </section>
                       </div>
