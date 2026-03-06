@@ -8,10 +8,11 @@ import { toast } from "sonner";
 
 // Background Component following the new design
 const NewAuthBackground = memo(() => (
-  <div className="relative flex min-h-screen w-full flex-col justify-center items-center bg-dynamic">
+  <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+    <div className="bg-dynamic" />
     {/* Background Overlay for Depth */}
-    <div className="absolute inset-0 bg-gradient-to-tr from-[#08110a] via-[#08110a]/80 to-transparent pointer-events-none"></div>
-    <div className="absolute inset-0 animated-overlay pointer-events-none"></div>
+    <div className="absolute inset-0 bg-gradient-to-tr from-[#08110a] via-[#08110a]/80 to-transparent"></div>
+    <div className="absolute inset-0 animated-overlay"></div>
 
     {/* Header / Logo Area */}
     <div className="absolute top-8 left-8 z-10">
@@ -32,6 +33,7 @@ const NewAuthBackground = memo(() => (
   </div>
 ));
 NewAuthBackground.displayName = "NewAuthBackground";
+
 
 function LoginForm() {
   const router = useRouter();
@@ -143,7 +145,7 @@ function LoginForm() {
         {/* Branding/Slogan Section */}
         <div className="flex-1 text-center lg:text-left transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13ec5b]/10 border border-[#13ec5b]/20 mb-6">
-            <span className="material-symbols-outlined text-[#13ec5b] text-sm">auto_awesome</span>
+            <span className="material-symbols-outlined notranslate text-[#13ec5b] text-sm">auto_awesome</span>
             <span className="text-xs font-black uppercase tracking-[0.2em] hero-gradient">AgroFlow Next-Gen</span>
           </div>
           <h1 className="text-white tracking-tight text-5xl lg:text-7xl font-bold leading-[1.1] mb-6">
@@ -155,15 +157,15 @@ function LoginForm() {
           </p>
           <div className="mt-10 hidden lg:grid grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined text-[#a855f7] text-3xl">precision_manufacturing</span>
+              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">precision_manufacturing</span>
               <span className="text-white font-medium">Ops Inteligentes</span>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined text-[#a855f7] text-3xl">analytics</span>
+              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">analytics</span>
               <span className="text-white font-medium">Datos en Tiempo Real</span>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined text-[#a855f7] text-3xl">eco</span>
+              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">eco</span>
               <span className="text-white font-medium">Sostenibilidad</span>
             </div>
           </div>
@@ -189,7 +191,7 @@ function LoginForm() {
                   <div className="space-y-2">
                     <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">USUARIO</label>
                     <div className="relative group">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">person</span>
+                      <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">person</span>
                       <input
                         className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
                         placeholder="Ingresa tu usuario"
@@ -206,7 +208,7 @@ function LoginForm() {
                       <button type="button" className="text-[#a855f7] text-xs font-semibold hover:underline">¿Olvidaste tu contraseña?</button>
                     </div>
                     <div className="relative group">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
                       <input
                         className="w-full pl-12 pr-12 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
                         placeholder="••••••••"
@@ -218,7 +220,7 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-white transition-colors"
+                        className="material-symbols-outlined notranslate absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-white transition-colors"
                       >
                         {showPass ? "visibility_off" : "visibility"}
                       </button>
@@ -230,7 +232,7 @@ function LoginForm() {
                   <div className="space-y-2">
                     <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">NUEVA CONTRASEÑA</label>
                     <div className="relative group">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
                       <input
                         className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
                         placeholder="••••••••"
@@ -244,7 +246,7 @@ function LoginForm() {
                   <div className="space-y-2">
                     <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">CONFIRMAR CONTRASEÑA</label>
                     <div className="relative group">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
                       <input
                         className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
                         placeholder="••••••••"
@@ -260,7 +262,7 @@ function LoginForm() {
 
               {error && (
                 <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 animate-pulse">
-                  <span className="material-symbols-outlined text-sm">error</span>
+                  <span className="material-symbols-outlined notranslate text-sm">error</span>
                   {error}
                 </div>
               )}
@@ -280,7 +282,7 @@ function LoginForm() {
                 ) : (
                   <>
                     <span>{showChangePassword ? "Actualizar y Continuar" : "Ingresar al Tablero"}</span>
-                    <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <span className="material-symbols-outlined notranslate text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </>
                 )}
               </button>
@@ -292,7 +294,7 @@ function LoginForm() {
                   onClick={handleGoBack}
                   className="text-slate-400 text-sm flex items-center justify-center gap-1 mx-auto hover:text-white transition-colors"
                 >
-                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  <span className="material-symbols-outlined notranslate text-sm">arrow_back</span>
                   Regresar al inicio
                 </button>
               ) : (
