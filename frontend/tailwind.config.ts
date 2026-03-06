@@ -63,9 +63,11 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-public-sans)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-public-sans)', 'sans-serif'],
         mono: ['var(--font-jetbrains)', 'monospace'],
       },
+
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

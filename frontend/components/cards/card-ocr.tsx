@@ -4,9 +4,9 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ScanText, ClipboardPaste, ImageIcon, Upload, X } from "lucide-react";
+import { Loader2, ImageIcon, Upload, X } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,6 +19,7 @@ import {
 
 import type { FormState } from "@/lib/types";
 import { extractOcr } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface Props {
   form: FormState;
@@ -51,7 +52,7 @@ export function CardOcr({ form, setForm }: Props) {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  // Paste listener (imagen desde portapapeles)
+  // Paste listener
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -82,7 +83,7 @@ export function CardOcr({ form, setForm }: Props) {
     if (!v) return;
 
     if (tipo === "BOOKING") setForm((prev) => ({ ...prev, booking: v }));
-    else setForm((prev) => ({ ...prev, awb: v })); // AWB = contenedor
+    else setForm((prev) => ({ ...prev, awb: v }));
   };
 
   const handleExtract = async () => {
@@ -95,29 +96,14 @@ export function CardOcr({ form, setForm }: Props) {
 
     try {
       const data = await extractOcr(tipo, file);
-
-      const texto = (data?.texto ?? "").toString();
       const mejor = (data?.mejor_valor ?? "").toString().trim();
-      const candidatos = Array.isArray(data?.valores_detectados)
-        ? data.valores_detectados
-        : [];
-
+      const candidatos = Array.isArray(data?.valores_detectados) ? data.valores_detectados : [];
 
       if (!mejor && candidatos.length === 0) {
-        // Mensaje específico para tu “AWB=contenedor”
-        if (tipo === "AWB" && texto.trim().length > 0) {
-          toast.warning(
-            'No se detectó un contenedor válido. Formato esperado: "AAAA 123456-7" (ej: SEKU 942643-3).'
-          );
-        } else {
-          toast.warning(
-            "OCR completado, pero no se detectó ningún valor. Prueba con una imagen más nítida o recortada."
-          );
-        }
+        toast.warning("OCR completado, pero no se detectó ningún valor.");
         return;
       }
 
-      // Aplicación automática pro (sin pasos extra)
       if (mejor) {
         applyToForm(mejor);
         toast.success(`OCR aplicado a ${tipo}`);
@@ -126,56 +112,37 @@ export function CardOcr({ form, setForm }: Props) {
         toast.success(`OCR aplicado a ${tipo}`);
       }
     } catch (err: any) {
-      const detail = err?.body?.detail;
-      if (typeof detail === "string" && detail.trim()) toast.error(detail);
-      else toast.error("Error al extraer OCR");
+      toast.error("Error al extraer OCR");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold text-card-foreground">
-          <ScanText className="h-4 w-4 text-primary" />
-          OCR
-        </CardTitle>
-      </CardHeader>
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+        <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary notranslate">cloud_upload</span>
+          1. Carga de Documentos (OCR)
+        </h3>
+        <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
+          <SelectTrigger className="w-32 h-8 text-[10px] font-bold uppercase tracking-wider">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="BOOKING">BOOKING</SelectItem>
+            <SelectItem value="AWB">CONTENEDOR</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <CardContent className="grid gap-3">
-        <div className="flex items-end gap-3">
-          <div className="w-48">
-            <Label className="text-xs text-muted-foreground">Tipo</Label>
-            <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BOOKING">BOOKING</SelectItem>
-                <SelectItem value="AWB">AWB (Contenedor)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            size="sm"
-            onClick={handleExtract}
-            disabled={loading || !file}
-            className="ml-auto"
-          >
-            {loading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <ScanText className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Extraer con OCR
-          </Button>
-        </div>
-
+      <div className="p-6">
         <div
           onClick={() => !file && fileRef.current?.click()}
-          className="relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/10 transition-colors hover:bg-muted/20"
+          className={cn(
+            "border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center transition-all cursor-pointer group",
+            !file ? "hover:border-primary/50 hover:bg-primary/5" : "bg-slate-50 dark:bg-slate-800/50"
+          )}
         >
           <input
             ref={fileRef}
@@ -189,71 +156,66 @@ export function CardOcr({ form, setForm }: Props) {
           />
 
           {!file ? (
-            <div className="flex max-w-[420px] flex-col items-center gap-2 px-4 text-center">
-              <ImageIcon className="h-7 w-7 text-muted-foreground" />
-              <div className="text-base font-semibold text-card-foreground">
-                Arrastra o haz clic para subir una imagen
+            <>
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-primary text-3xl notranslate">upload_file</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ClipboardPaste className="h-4 w-4" />
-                o pega (Ctrl+V) una captura
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Tip: recorta al texto (BOOKING / contenedor) para mayor precisión.
-              </div>
-            </div>
+              <p className="text-slate-700 dark:text-slate-300 font-semibold">Arrastra manifiestos o facturas</p>
+              <p className="text-slate-500 text-sm mt-1">Soporta PDF, JPG, PNG (Máx 10MB)</p>
+              <button className="mt-4 text-primary font-bold text-sm hover:underline">O selecciona desde tu equipo</button>
+            </>
           ) : (
-            <div className="relative w-full p-3">
-              <div className="relative overflow-hidden rounded-lg border bg-background">
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+            <div className="relative">
+              {preview ? (
+                <div className="relative">
                   <img
                     src={preview}
-                    alt="Vista previa OCR"
-                    className="h-[260px] w-full object-contain sm:h-[320px]"
+                    alt="Preview"
+                    className="max-h-[300px] w-full object-contain rounded-lg border border-slate-200 dark:border-slate-700"
                   />
-                ) : (
-                  <div className="flex h-[260px] w-full items-center justify-center sm:h-[320px]">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                )}
-
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFile();
-                  }}
-                  title="Quitar imagen"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="mt-3 flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{file.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {(file.size / 1024).toFixed(0)} KB
-                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full shadow-lg"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFile();
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-8">
+                  <span className="material-symbols-outlined text-4xl text-slate-400 notranslate">description</span>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{file.name}</p>
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); clearFile(); }} className="text-slate-500">
+                    Cambiar archivo
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Tip UX para evitar confusión */}
-        {tipo === "AWB" && (
-          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-            Formato esperado:{" "}
-            <span className="font-mono">SEKU 942643-3</span> (4 letras + 6 dígitos
-            + guion + 1 dígito). Si viene pegado como{" "}
-            <span className="font-mono">SEKU9426433</span>, el sistema lo normaliza.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        <Button
+          className="w-full mt-6 bg-primary hover:bg-green-600 text-white font-bold h-12 rounded-xl transition-all shadow-lg shadow-green-100 dark:shadow-none"
+          onClick={handleExtract}
+          disabled={loading || !file}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Procesando...
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined mr-2 notranslate">psychology</span>
+              Extraer Información
+            </>
+          )}
+        </Button>
+      </div>
+    </section>
   );
 }

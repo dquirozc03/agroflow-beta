@@ -28,6 +28,7 @@ interface Props {
   setRegistroId: (id: number | null) => void;
   onSapRow: (row: SapRow) => void;
   onNuevoRegistro: () => void;
+  isHeaderVariant?: boolean;
 }
 
 function txt(v?: string | null) {
@@ -56,7 +57,7 @@ function computeSemaforo(form: FormState): {
   if (!form.transportista && !txt(form.codigo_sap)) missing.push("TRANSPORTISTA (ingrese placas)");
 
   // Unicidad
-  if (!form.ps_beta_items?.length) missing.push("PS_BETA");
+  if (!form.ps_beta_items?.length) missing.push("PS_BETA (Exportador)");
   if (!form.termografos_items?.length) missing.push("TERMÓGRAFOS");
   if (!txt(form.ps_aduana)) missing.push("PS_ADUANA");
   if (!txt(form.ps_operador)) missing.push("PS_OPERADOR");
@@ -100,6 +101,7 @@ export function CardAccion({
   setRegistroId,
   onSapRow,
   onNuevoRegistro,
+  isHeaderVariant,
 }: Props) {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingSap, setLoadingSap] = useState(false);
@@ -142,29 +144,22 @@ export function CardAccion({
       const res = await createRegistro(payload);
       setRegistroId(res.id);
 
-      // Bandeja SAP = vista para copiar/pegar (NO integración con SAP)
       try {
         const sap = await getRegistroSap(res.id);
         onSapRow({ registro_id: res.id, ...sap } as SapRow);
-        toast.success(`Registro agregado a Bandeja SAP (ID #${res.id}) — listo para copiar/pegar`);
+        toast.success(`Registro agregado a Bandeja SAP (ID #${res.id})`);
       } catch {
-        toast.info(
-          `Registro creado (ID #${res.id}). No se pudo armar la fila para la Bandeja. Usa “Actualizar” en la Bandeja SAP.`
-        );
+        toast.info(`Registro creado (ID #${res.id}).`);
       }
     } catch (err: unknown) {
       const error = err as any;
-
       if (error?.status === 409) {
         const dups = (error?.body?.detail?.duplicados ?? []) as Array<{ tipo: string; valor: string }>;
         setDuplicates(dups.length ? dups : null);
         toast.error("Conflicto de unicidad (duplicados)");
         return;
       }
-
-      const detail = error?.body?.detail;
-      if (typeof detail === "string" && detail.trim()) toast.error(detail);
-      else toast.error("Error al crear registro");
+      toast.error("Error al crear registro");
     } finally {
       setLoadingCreate(false);
     }
@@ -173,7 +168,6 @@ export function CardAccion({
   const handleRetrieveSap = async () => {
     if (!registroId) return;
     setLoadingSap(true);
-
     try {
       const sap = await getRegistroSap(registroId);
       onSapRow({ registro_id: registroId, ...sap } as SapRow);
@@ -185,126 +179,89 @@ export function CardAccion({
     }
   };
 
-
+  if (isHeaderVariant) {
+    return (
+      <div className="flex items-center gap-3">
+        {registroId ? (
+          <Button
+            className="bg-primary hover:bg-green-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg transition-all"
+            onClick={() => setConfirmNuevoOpen(true)}
+          >
+            <span className="material-symbols-outlined mr-2 notranslate">add_circle</span>
+            Siguiente Registro
+          </Button>
+        ) : (
+          <Button
+            className="bg-primary hover:bg-green-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg transition-all"
+            onClick={handleCreate}
+            disabled={status === "rojo" || loadingCreate}
+          >
+            {loadingCreate ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <span className="material-symbols-outlined mr-2 notranslate">task_alt</span>
+            )}
+            Finalizar Captura
+          </Button>
+        )}
+        <AlertDialog open={confirmNuevoOpen} onOpenChange={setConfirmNuevoOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Iniciar un nuevo registro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se limpiará el formulario para una nueva captura.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setConfirmNuevoOpen(false); onNuevoRegistro(); }}>
+                Sí, nuevo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-card-foreground">Acción</CardTitle>
-      </CardHeader>
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">Estado de Validación</h4>
+      </div>
 
-      <CardContent className="grid gap-4">
-        {/* Semáforo */}
-        <div className={cn("flex items-start gap-3 rounded-lg p-3 ring-1", colors.bg, colors.ring)}>
-          <div className="mt-0.5 flex gap-1.5">
-            <span className={cn("h-3 w-3 rounded-full", status === "rojo" ? "bg-destructive" : "bg-destructive/20")} />
-            <span className={cn("h-3 w-3 rounded-full", status === "amarillo" ? "bg-chart-3" : "bg-chart-3/20")} />
-            <span className={cn("h-3 w-3 rounded-full", status === "verde" ? "bg-accent" : "bg-accent/20")} />
-          </div>
-
-          <div className="flex-1">
-            <p className={cn("text-sm font-medium", colors.text)}>{colors.label}</p>
-
-            {missing.length > 0 && (
-              <p className="mt-0.5 text-xs text-muted-foreground">Críticos: {missing.join(", ")}</p>
-            )}
-
-            {warnings.length > 0 && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Recomendados: {warnings.join(", ")}
-              </p>
-            )}
-          </div>
+      {/* Semáforo */}
+      <div className={cn("flex items-start gap-4 rounded-xl p-4 border", status === "rojo" ? "border-red-100 bg-red-50 dark:bg-red-950/20" : status === "amarillo" ? "border-amber-100 bg-amber-50 dark:bg-amber-950/20" : "border-green-100 bg-green-50 dark:bg-green-950/20")}>
+        <div className="flex flex-col gap-1.5">
+          <span className={cn("h-2.5 w-2.5 rounded-full", status === "rojo" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-red-200 dark:bg-red-900/40")} />
+          <span className={cn("h-2.5 w-2.5 rounded-full", status === "amarillo" ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-amber-200 dark:bg-amber-900/40")} />
+          <span className={cn("h-2.5 w-2.5 rounded-full", status === "verde" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-green-200 dark:bg-green-900/40")} />
         </div>
-
-        {/* Duplicados */}
-        {duplicates && duplicates.length > 0 && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-destructive">
-              <CircleAlert className="h-4 w-4" />
-              Duplicados encontrados
-            </div>
-            <ul className="space-y-0.5">
-              {duplicates.map((d) => (
-                <li key={`${d.tipo}-${d.valor}`} className="font-mono text-xs text-destructive/80">
-                  {d.tipo}: {d.valor}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Botones — mismo tamaño cuando hay registro activo */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={handleCreate}
-            disabled={status === "rojo" || loadingCreate || !!registroId}
-            className="min-h-9 flex-1 min-w-[180px]"
-          >
-            {loadingCreate ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
-            Crear registro
-          </Button>
-
-          {registroId && (
-            <>
-              <Button
-                variant="default"
-                onClick={() => setConfirmNuevoOpen(true)}
-                disabled={loadingCreate || loadingSap}
-                className="min-h-9 flex-1 min-w-[140px]"
-              >
-                <FilePlus2 className="mr-1.5 h-4 w-4" />
-                Nuevo registro
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleRetrieveSap}
-                disabled={loadingSap}
-                className="min-h-9 flex-1 min-w-[140px]"
-              >
-                {loadingSap ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-1.5 h-4 w-4" />
-                )}
-                Actualizar bandeja
-              </Button>
-            </>
-          )}
+        <div className="flex-1 min-w-0">
+          <p className={cn("text-sm font-bold", status === "rojo" ? "text-red-700 dark:text-red-400" : status === "amarillo" ? "text-amber-700 dark:text-amber-400" : "text-green-700 dark:text-green-400")}>{colors.label}</p>
+          {missing.length > 0 && <p className="text-[11px] text-slate-500 mt-1 truncate">Pendiente: {missing[0]}...</p>}
         </div>
+      </div>
 
-        {registroId && (
-          <p className="text-xs text-muted-foreground">
-            Registro activo:{" "}
-            <span className="font-mono font-semibold text-card-foreground">#{registroId}</span>
+      {/* Duplicados Info */}
+      {duplicates && (
+        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg">
+          <p className="text-xs text-red-600 font-bold flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm notranslate">error</span>
+            Existen duplicados en la base de datos
           </p>
-        )}
-      </CardContent>
+        </div>
+      )}
 
-      {/* Confirmación: Nuevo registro */}
-      <AlertDialog open={confirmNuevoOpen} onOpenChange={setConfirmNuevoOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Iniciar un nuevo registro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esto limpiará todos los campos del formulario (incluye campos de solo lectura) para capturar un nuevo
-              embarque. La Bandeja SAP no se borrará.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmNuevoOpen(false);
-                setDuplicates(null);
-                onNuevoRegistro();
-              }}
-            >
-              Sí, nuevo registro
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Card>
+      {registroId && (
+        <div className="mt-6 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-green-500 notranslate">check_circle</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">ID #{registroId}</span>
+          </div>
+          <button onClick={handleRetrieveSap} className="text-[10px] font-bold text-primary hover:underline">ACTUALIZAR BANDEJA</button>
+        </div>
+      )}
+    </section>
   );
 }

@@ -1,6 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Public_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
@@ -9,10 +9,12 @@ import { SessionTimeout } from "@/components/session-timeout";
 import "./globals.css";
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const _publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-public-sans" });
 const _jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
 });
+
 
 export const metadata: Metadata = {
   title: "AgroFlow · Área comercial y exportaciones",

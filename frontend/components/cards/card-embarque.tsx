@@ -1,15 +1,13 @@
+// frontend/components/cards/card-embarque.tsx
+
 "use client";
 
-import React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Loader2, Search, CheckCircle2, XCircle } from "lucide-react";
-import type { FormState } from "@/lib/types";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { getBookingRefs } from "@/lib/api";
 import { toast } from "sonner";
+import type { FormState } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   form: FormState;
@@ -19,9 +17,14 @@ interface Props {
   justScannedId?: string | null;
 }
 
-export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, refsLocked, setRefsLocked }: Props) {
+export const CardEmbarque = React.memo(function CardEmbarque({
+  form,
+  setForm,
+  refsLocked,
+  setRefsLocked,
+  justScannedId
+}: Props) {
   const [loading, setLoading] = useState(false);
-  const [refStatus, setRefStatus] = useState<"idle" | "ok" | "fail">("idle");
 
   const handleAutocompletar = async () => {
     if (!form.booking.trim()) {
@@ -29,24 +32,17 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
       return;
     }
     setLoading(true);
-    setRefStatus("idle");
     try {
       const refs = await getBookingRefs(form.booking.trim());
-
       setForm((prev) => ({
         ...prev,
-        // Solo extraemos Orden Beta Final, AWB y DAM para Logicapture
-        // (El resto de la data CONTROL se queda en la DB para otros módulos)
         o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
         awb: (refs.awb as string) || prev.awb,
         dam: (refs.dam as string) || prev.dam,
       }));
-
       setRefsLocked(true);
-      setRefStatus("ok");
       toast.success("Datos de referencia cargados");
     } catch {
-      setRefStatus("fail");
       toast.error("No se encontraron referencias para este BOOKING");
     } finally {
       setLoading(false);
@@ -54,104 +50,88 @@ export const CardEmbarque = React.memo(function CardEmbarque({ form, setForm, re
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-card-foreground">
-            Embarque
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {refStatus === "ok" && (
-              <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">
-                <CheckCircle2 className="h-3 w-3" />
-                Refs OK
-              </span>
-            )}
-            {refStatus === "fail" && (
-              <span className="flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-medium text-destructive">
-                <XCircle className="h-3 w-3" />
-                Sin refs
-              </span>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <Label htmlFor="booking" className="text-xs text-muted-foreground">
-              BOOKING
-            </Label>
-            <Input
-              id="booking"
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+        <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary notranslate">local_shipping</span>
+          2. Datos de Embarque
+        </h3>
+        <button
+          onClick={handleAutocompletar}
+          disabled={loading || !form.booking.trim()}
+          className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-50 disabled:no-underline"
+        >
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span className="material-symbols-outlined text-sm notranslate">sync</span>}
+          AUTOCOMPLETAR REFS
+        </button>
+      </div>
+
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Booking */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Booking</label>
+          <div className="relative group">
+            <input
+              className={cn(
+                "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200",
+                justScannedId === "booking" && "ring-2 ring-primary bg-primary/5"
+              )}
+              type="text"
               value={form.booking}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, booking: e.target.value.toUpperCase() }))
-              }
-              placeholder="Ingrese booking"
-              className="mt-1 font-mono"
+              onChange={(e) => setForm(p => ({ ...p, booking: e.target.value.toUpperCase() }))}
+              placeholder="BK-XXXXXX"
             />
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleAutocompletar}
-            disabled={loading || !form.booking.trim()}
-            className="shrink-0"
-          >
-            {loading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Search className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Autocompletar
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <Label htmlFor="o_beta" className="text-xs text-muted-foreground">
-              O/BETA
-            </Label>
-            <Input
-              id="o_beta"
-              value={form.o_beta}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, o_beta: e.target.value.toUpperCase() }))
-              }
-              placeholder="O/BETA"
-              disabled={refsLocked}
-              className="mt-1 font-mono"
-            />
-          </div>
-          <div>
-            <Label htmlFor="awb" className="text-xs text-muted-foreground">
-              AWB
-            </Label>
-            <Input
-              id="awb"
-              value={form.awb}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, awb: e.target.value.toUpperCase() }))
-              }
-              placeholder="AWB"
-              className="mt-1 font-mono"
-            />
-          </div>
-          <div>
-            <Label htmlFor="dam" className="text-xs text-muted-foreground">
-              DAM
-            </Label>
-            <Input
-              id="dam"
-              value={form.dam}
-              readOnly
-              placeholder="Desde refs"
-              className="mt-1 bg-muted font-mono"
-            />
-          </div>
+        {/* O/Beta Code */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">O/Beta Code</label>
+          <input
+            className={cn(
+              "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200",
+              refsLocked && "opacity-70 cursor-not-allowed",
+              justScannedId === "o_beta" && "ring-2 ring-primary bg-primary/5"
+            )}
+            type="text"
+            value={form.o_beta}
+            onChange={(e) => setForm(p => ({ ...p, o_beta: e.target.value.toUpperCase() }))}
+            placeholder="Ingrese código"
+            disabled={refsLocked}
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        {/* AWB/BL Reference */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">AWB/BL Reference</label>
+          <input
+            className={cn(
+              "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200",
+              justScannedId === "awb" && "ring-2 ring-primary bg-primary/5"
+            )}
+            type="text"
+            value={form.awb}
+            onChange={(e) => setForm(p => ({ ...p, awb: e.target.value.toUpperCase() }))}
+            placeholder="Referencia BL"
+          />
+        </div>
+
+        {/* Número de DAM */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número de DAM</label>
+          <input
+            className={cn(
+              "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-500 dark:text-slate-400 cursor-not-allowed",
+              justScannedId === "dam" && "ring-2 ring-primary bg-primary/5"
+            )}
+            type="text"
+            value={form.dam}
+            readOnly
+            placeholder="000-000000"
+          />
+        </div>
+      </div>
+    </section>
   );
 });
+

@@ -11,14 +11,15 @@ import { cn } from "@/lib/utils";
 
 import { CardEmbarque } from "@/components/cards/card-embarque";
 import { CardOcr } from "@/components/cards/card-ocr";
+import { CardOcrStatus } from "@/components/cards/card-ocr-status";
 import { CardOperacion } from "@/components/cards/card-operacion";
-import { CardUnicidad } from "@/components/cards/card-unicidad";
 import { CardAccion } from "@/components/cards/card-accion";
 import { BandejaSap } from "@/components/bandeja-sap";
 import { HistorialRegistros } from "@/components/historial-registros";
 import { ScannerModal } from "@/components/scanner-modal";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide-react";
 import { DashboardContent } from "@/components/dashboard-content";
 import { ChatWidget } from "@/components/chat-widget";
@@ -229,7 +230,7 @@ function AgroFlowContent() {
 
         {/* Contenido principal + footer fijo abajo */}
         {/* Contenido principal + footer fijo abajo */}
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-gradient-to-br from-slate-50 via-slate-50/50 to-slate-100/50 dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950/50 pb-16">
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-[#f8fafd] dark:bg-[#0f172a] pb-16">
           {isDashboard ? (
             /* Solo Dashboard: sin pestañas */
             <div className="mt-0 flex-1 min-h-0 overflow-auto">
@@ -238,7 +239,7 @@ function AgroFlowContent() {
           ) : isLogiCapture ? (
             /* LogiCapture: solo pestañas Captura, Bandeja, Historial (sin Dashboard) */
             <Tabs value={defaultTab} onValueChange={setTab} className="flex h-full flex-col">
-              <div className="border-b border-border/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md px-6 pt-2 sticky top-0 z-30 supports-[backdrop-filter]:bg-background/60">
+              <div className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 pt-2 sticky top-0 z-30 supports-[backdrop-filter]:bg-background/60">
                 <TabsList className="bg-transparent">
                   {showCapturaBandeja && (
                     <>
@@ -276,65 +277,82 @@ function AgroFlowContent() {
               {/* CAPTURA — solo para roles con acceso */}
               {showCapturaBandeja && (
                 <div className={cn("flex-1 min-h-0 overflow-auto focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500", defaultTab !== "captura" && "hidden")}>
-                  {/*
-                  ✅ Layout tipo ERP:
-                  - Más ancho útil (sin sentirse "pegado" a los bordes)
-                  - Mejor aprovechamiento vertical
-                */}
-                  <div className="mx-auto w-full max-w-[1800px] p-4 md:p-6 2xl:max-w-[2000px]">
-                    <div className="mb-4 flex flex-col gap-1">
-                      <div className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                        Captura operativa
+                  {/* Top Header Section */}
+                  <header className="px-6 py-8 flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-[1800px] mx-auto w-full">
+                    <div>
+                      <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
+                        <span>Operaciones</span>
+                        <span className="material-symbols-outlined text-xs notranslate">chevron_right</span>
+                        <span className="text-primary font-medium">LogicCapture</span>
                       </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Registra embarques, valida unicidad y prepara datos para la bandeja SAP.
-                      </div>
+                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Nueva Entrada Operacional</h2>
+                      <p className="text-slate-500 mt-1">Gestión inteligente de manifiestos y datos de embarque con OCR.</p>
                     </div>
-
-                    {/* ✅ "Shell" tipo sistema */}
-                    <div className="rounded-2xl border border-border/60 bg-background/50 backdrop-blur-sm shadow-sm">
-                      <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_450px]">
-                        {/* Columna principal */}
-                        <div className="min-w-0 space-y-4">
-                          <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                            <CardEmbarque
-                              form={form}
-                              setForm={setForm}
-                              refsLocked={refsLocked}
-                              setRefsLocked={setRefsLocked}
-                              justScannedId={justScannedId}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                            <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                              <CardOperacion form={form} setForm={setForm} justScannedId={justScannedId} />
-                            </div>
-                            <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                              <CardUnicidad form={form} setForm={setForm} justScannedId={justScannedId} />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Columna lateral: OCR + Acción (poco espacio entre ellos) */}
-                        <div className="space-y-3">
-                          <div className="transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                            <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
-                          </div>
-                          <div className="sticky top-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 z-20">
-                            <CardAccion
-                              form={form}
-                              registroId={registroId}
-                              setRegistroId={setRegistroId}
-                              onSapRow={handleSapRow}
-                              onNuevoRegistro={handleNuevoRegistro}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-10 px-4 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-sm transition-all">
+                        <span className="material-symbols-outlined mr-2 text-lg notranslate">save</span>
+                        Guardar Borrador
+                      </Button>
+                      <CardAccion
+                        form={form}
+                        registroId={registroId}
+                        setRegistroId={setRegistroId}
+                        onSapRow={handleSapRow}
+                        onNuevoRegistro={handleNuevoRegistro}
+                        isHeaderVariant // Esto requerirá un pequeño ajuste en CardAccion para mostrarse como botón
+                      />
                     </div>
+                  </header>
 
-                    <div className="h-6" />
+                  <div className="mx-auto w-full max-w-[1800px] px-6 pb-12">
+                    <div className="grid grid-cols-12 gap-6">
+
+                      {/* Left Column: Intake & Insights (4 col) */}
+                      <div className="col-span-12 lg:col-span-4 space-y-6">
+                        <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
+                        <CardOcrStatus />
+                      </div>
+
+                      {/* Right Column: Form Data (8 col) */}
+                      <div className="col-span-12 lg:col-span-8 space-y-6">
+                        <CardEmbarque
+                          form={form}
+                          setForm={setForm}
+                          refsLocked={refsLocked}
+                          setRefsLocked={setRefsLocked}
+                          justScannedId={justScannedId}
+                        />
+                        <CardOperacion
+                          form={form}
+                          setForm={setForm}
+                          justScannedId={justScannedId}
+                        />
+
+                        {/* Entradas Recientes Section (Manual Placeholder integration) */}
+                        <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Entradas Recientes</span>
+                            <button onClick={() => setTab("historial")} className="text-xs text-primary font-bold hover:underline">Ver todas</button>
+                          </div>
+                          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {/* Aquí integraremos un mini listado del historial si se desea, por ahora mockups según HTML */}
+                            <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                  <span className="material-symbols-outlined text-lg notranslate">description</span>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">BK-772818-A</p>
+                                  <p className="text-[10px] text-slate-500">Último registro procesado con éxito</p>
+                                </div>
+                              </div>
+                              <span className="material-symbols-outlined text-slate-300 notranslate">chevron_right</span>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
               )}
