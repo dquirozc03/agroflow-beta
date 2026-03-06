@@ -17,6 +17,21 @@ def normalizar(v: str | None) -> str | None:
     v = " ".join(v.strip().split()).upper()
     return v or None
 
+def normalize_header(h: str) -> str:
+    """Remueve acentos y caracteres especiales para matching robusto"""
+    import re
+    if not h: return ""
+    h = str(h).upper().strip()
+    # Reemplazo manual de acentos comunes
+    repls = {"Á": "A", "É": "E", "Í": "I", "Ó": "O", "Ú": "U", "Ñ": "N"}
+    for k, v in repls.items():
+        h = h.replace(k, v)
+    # Solo dejar letras y números
+    return re.sub(r'[^A-Z0-9]', '', h)
+
+def fuzzy_key(h: str) -> str:
+    return normalize_header(h)
+
 def validar_token(x_sync_token: str | None):
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
         raise HTTPException(status_code=401, detail="Token de sync inválido")
@@ -79,10 +94,10 @@ class PosicionamientoItem(BaseModel):
     variedad: Optional[str] = Field(None, alias="VARIEDAD")
     tipo_caja: Optional[str] = Field(None, alias="TIPO DE CAJA")
     etiqueta_caja: Optional[str] = Field(None, alias="ETIQUETA CAJA")
-    presentacion: Optional[str] = Field(None, alias="PRESENTACIÓN")
+    presentacion: Optional[str] = Field(None, alias="PRESENTACION")
     calibre: Optional[str] = Field(None, alias="CALIBRE")
-    cj_kg: Optional[str] = Field(None, alias="CJ/KG")
-    total_unidades: Optional[str] = Field(None, alias="TOTAL")
+    cj_kg: Optional[str] = Field(None, alias="CJKG")
+    total_unidades: Optional[int] = Field(None, alias="TOTAL")
     
     # Logística
     incoterm: Optional[str] = Field(None, alias="INCOTERM")
@@ -177,11 +192,7 @@ def sync_posicionamiento_raw(
     if not payload or len(payload) < 2:
         return {"ok": False, "detail": "Datos insuficientes"}
 
-    # 1. Normalización de cabeceras (Fuzzy Matching)
-    import re
-    def fuzzy_key(h: str) -> str:
-        # Solo deja letras y números para un matching 100% seguro con Excel
-        return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
+    # 1. Normalización de cabeceras (Fuzzy Matching Global)
 
     raw_headers = payload[0]
     processed_headers = [fuzzy_key(h) for h in raw_headers]

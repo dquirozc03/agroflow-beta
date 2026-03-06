@@ -99,15 +99,29 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         total_unidades = int(re.sub(r'[^0-9]', '', str(posic.total_unidades or "0")))
     except: pass
 
-    # Extraer peso de la caja desde cj_kg (source of truth)
+    # Extraer peso de la caja (3.8 kg es el estándar para Granada)
     peso_caja = 3.8 
-    try:
-        raw_cj_kg = str(posic.cj_kg or "").upper()
-        match_peso = re.search(r'([0-9.]+)', raw_cj_kg)
-        if match_peso:
-            peso_caja = float(match_peso.group(1))
-    except:
-        pass
+    candidates = []
+    
+    # Revisar cj_kg y presentacion en busca de un peso razonable (ej: 3.8, 4.0, 4.5)
+    for source in [posic.cj_kg, posic.presentacion]:
+        if not source: continue
+        # Buscar números decimales primero (ej: 3.8)
+        matches = re.findall(r'([0-9]+\.[0-9]+)', str(source))
+        if not matches:
+            # Fallback a números enteros si no hay decimales
+            matches = re.findall(r'([0-9]+)', str(source))
+        
+        for m in matches:
+            try:
+                val = float(m)
+                if 2.0 <= val <= 10.0: # Rango razonable para cajas de fruta
+                    candidates.append(val)
+            except: pass
+
+    if candidates:
+        # Si hay varios, priorizamos el que se parezca más a 3.8 o el primero encontrado
+        peso_caja = candidates[0]
     
     # Formato solicitado: CAJA X.X KG
     presentacion = f"CAJA {peso_caja} KG"
