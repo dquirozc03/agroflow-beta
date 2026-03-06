@@ -266,10 +266,8 @@ function LoginForm() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 px-1">
-                <input className="w-4 h-4 rounded border-white/10 bg-[#08110a]/50 text-[#13ec5b] focus:ring-[#13ec5b]" id="remember" type="checkbox" />
-                <label className="text-slate-400 text-sm cursor-pointer" htmlFor="remember">Recordar este dispositivo</label>
-              </div>
+              <div className="pt-2"></div>
+
 
               <button
                 className="w-full bg-[#13ec5b] hover:bg-[#13ec5b]/90 text-[#08110a] font-bold py-4 rounded-xl shadow-lg shadow-[#13ec5b]/20 transition-all flex items-center justify-center gap-2 group glow-button disabled:opacity-50 disabled:cursor-not-allowed"
