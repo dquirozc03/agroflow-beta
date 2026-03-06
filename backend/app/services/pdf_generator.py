@@ -118,28 +118,28 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         pagesize=A4, 
         rightMargin=1.2*cm, 
         leftMargin=1.2*cm, 
-        topMargin=0.6*cm, 
-        bottomMargin=0.6*cm
+        topMargin=0.4*cm, 
+        bottomMargin=0.4*cm
     )
     styles = getSampleStyleSheet()
     
-    # Estilos de Párrafo (Ajustados para que quepa en una hoja)
-    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, fontName='Helvetica-Bold', leading=9)
+    # Estilos de Párrafo (Comprimidos al máximo para permitir logo grande)
+    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8)
     style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10)
     style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1)
     style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold', leading=10, alignment=1)
 
     elements = []
 
-    # -- LOGO --
+    # -- LOGO MÁS GRANDE --
     try:
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         logo_path = os.path.join(base_path, "assets", "logo_beta.png")
         if os.path.exists(logo_path):
-            img = Image(logo_path, width=4*cm, height=1.6*cm)
+            img = Image(logo_path, width=5.5*cm, height=2.2*cm)
             img.hAlign = 'LEFT'
             elements.append(img)
-            elements.append(Spacer(1, 0.2*cm))
+            elements.append(Spacer(1, 0.1*cm))
         else:
             elements.append(Paragraph(f"<b>COMPLEJO AGROINDUSTRIAL BETA S.A.</b>", style_title))
             elements.append(Spacer(1, 0.3*cm))
@@ -197,12 +197,12 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('BACKGROUND', (0,25), (1,26), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 0.2*cm))
+    elements.append(Spacer(1, 0.15*cm))
 
     # -- SECCIÓN FITO --
     data2 = [
@@ -225,8 +225,8 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('SPAN', (0,0), (1,0)),
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ])
     table2.setStyle(style2)
     elements.append(table2)
