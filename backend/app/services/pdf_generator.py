@@ -118,26 +118,35 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         pagesize=A4, 
         rightMargin=1.2*cm, 
         leftMargin=1.2*cm, 
-        topMargin=0.8*cm, 
-        bottomMargin=0.8*cm
+        topMargin=1.0*cm, 
+        bottomMargin=1.0*cm
     )
     styles = getSampleStyleSheet()
     
-    # Estilos de Párrafo (Reducidos ligeramente para que quepa en una hoja)
-    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7, fontName='Helvetica-Bold', leading=8)
-    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=8, fontName='Helvetica', leading=9)
-    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=10, fontName='Helvetica-Bold', alignment=1)
-    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=8, fontName='Helvetica-Bold', leading=9, alignment=1)
+    # Estilos de Párrafo (Aumentados para mejor legibilidad y para llenar espacio)
+    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica-Bold', leading=10)
+    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9.5, fontName='Helvetica', leading=11)
+    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=12, fontName='Helvetica-Bold', alignment=1)
+    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9.5, fontName='Helvetica-Bold', leading=11, alignment=1)
 
     elements = []
 
     # -- LOGO --
-    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "logo_beta.png")
-    if os.path.exists(logo_path):
-        img = Image(logo_path, width=3.5*cm, height=1.3*cm)
-        img.hAlign = 'LEFT'
-        elements.append(img)
-        elements.append(Spacer(1, 0.15*cm))
+    # Intentar obtener ruta absoluta robusta
+    try:
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        logo_path = os.path.join(base_path, "assets", "logo_beta.png")
+        if os.path.exists(logo_path):
+            img = Image(logo_path, width=5*cm, height=2*cm)
+            img.hAlign = 'LEFT'
+            elements.append(img)
+            elements.append(Spacer(1, 0.4*cm))
+        else:
+            # Fallback si no está en assets (buscar en la carpeta actual o padre)
+            elements.append(Paragraph(f"<b>COMPLEJO AGROINDUSTRIAL BETA S.A.</b>", style_title))
+            elements.append(Spacer(1, 0.4*cm))
+    except Exception as e:
+        elements.append(Spacer(1, 1*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): return Paragraph(str(txt or ""), style_value)
@@ -188,14 +197,14 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('BACKGROUND', (0,4), (1,4), BETA_ORANGE),
         ('BACKGROUND', (0,6), (1,6), BETA_ORANGE),
         ('BACKGROUND', (0,25), (1,26), BETA_ORANGE),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 0.2*cm))
+    elements.append(Spacer(1, 0.3*cm))
 
     # -- SECCIÓN FITO --
     data2 = [
@@ -217,9 +226,9 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('BACKGROUND', (0,0), (1,0), BETA_ORANGE),
         ('SPAN', (0,0), (1,0)),
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ])
     table2.setStyle(style2)
     elements.append(table2)
