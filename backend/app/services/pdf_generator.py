@@ -99,11 +99,14 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         total_unidades = int(re.sub(r'[^0-9]', '', str(posic.total_unidades or "0")))
     except: pass
 
-    presentacion = str(posic.presentacion or "").upper()
+    raw_presentacion = str(posic.presentacion or "").upper()
     peso_caja = 3.8 
-    match_peso = re.search(r'([0-9.]+)', presentacion)
+    match_peso = re.search(r'([0-9.]+)', raw_presentacion)
     if match_peso:
         peso_caja = float(match_peso.group(1))
+    
+    # Formato solicitado: CAJA X.X KG
+    presentacion = f"CAJA {peso_caja} KG"
 
     peso_neto = total_unidades * peso_caja
     peso_bruto = peso_neto + (total_unidades * 0.4)
