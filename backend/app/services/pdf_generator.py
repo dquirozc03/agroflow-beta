@@ -178,7 +178,7 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         [L("CANTIDAD DE CONTENEDORES"), V("01")],
         [L("PRODUCTO"), V("GRANADAS")],
         [L("VARIEDAD"), V(posic.variedad)],
-        [L("TEMPERATURA"), V(posic.temperatura)],
+        [L("TEMPERATURA"), V(f"{posic.temperatura or ''}°C" if posic.temperatura else "")],
         [L("VENTILACION"), V(posic.ventilacion)],
         [L("HUMEDAD"), V("OFF")],
         [L("ATMOSFERA CONTROLADA"), V("NO APLICA")],
