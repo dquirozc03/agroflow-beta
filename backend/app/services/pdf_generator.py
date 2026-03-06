@@ -60,24 +60,28 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     booking_pais = str(posic.pais_booking or "").upper().strip()
 
     if clientes_posibles:
-        # Prioridad 1: Match de ciudad específica dentro de paréntesis 
+        # Prioridad 1: Match de ciudad específica dentro de paréntesis
         for c in clientes_posibles:
             curr_dest = (c.destino or "").upper()
-            if "(" in curr_dest and booking_destino in curr_dest:
+            curr_pais = (c.pais or "").upper()
+            if ("(" in curr_dest and booking_destino in curr_dest) or \
+               ("(" in curr_pais and booking_destino in curr_pais):
                 cliente_ie = c
                 break
         
-        # Prioridad 2: Match exacto de destino
+        # Prioridad 2: Match exacto de destino o país con el destino del booking
         if not cliente_ie:
             for c in clientes_posibles:
-                if (c.destino or "").upper() == booking_destino:
+                if (c.destino or "").upper() == booking_destino or \
+                   (c.pais or "").upper() == booking_destino:
                     cliente_ie = c
                     break
         
-        # Prioridad 3: Match por País
+        # Prioridad 3: Match exacto de destino o país con el país del booking
         if not cliente_ie:
             for c in clientes_posibles:
-                if (c.destino or "").upper() == booking_pais:
+                if (c.destino or "").upper() == booking_pais or \
+                   (c.pais or "").upper() == booking_pais:
                     cliente_ie = c
                     break
         
