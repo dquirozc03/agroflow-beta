@@ -2,40 +2,36 @@
 
 import { useState, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, ArrowRight, ArrowLeft, CircleAlert } from "lucide-react";
-
 import { useAuth } from "@/contexts/auth-context";
-import { SYSTEM_NAME } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { TruckLoader } from "@/components/truck-loader";
 import { apiUpdateOwnPassword } from "@/lib/api";
 import { toast } from "sonner";
 
-// Memoized background to prevent re-renders on input
-const AuthBackground = memo(() => (
-  <div className="absolute inset-0 z-0 pointer-events-none">
-    <img
-      src="/Logo_Logueo.png"
-      alt="Background"
-      className="h-full w-full object-cover opacity-100 transition-transform duration-[30s]"
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent dark:from-black/70 dark:via-black/40" />
-  </div>
-));
-AuthBackground.displayName = "AuthBackground";
+// Background Component following the new design
+const NewAuthBackground = memo(() => (
+  <div className="relative flex min-h-screen w-full flex-col justify-center items-center bg-dynamic">
+    {/* Background Overlay for Depth */}
+    <div className="absolute inset-0 bg-gradient-to-tr from-[#08110a] via-[#08110a]/80 to-transparent pointer-events-none"></div>
+    <div className="absolute inset-0 animated-overlay pointer-events-none"></div>
 
-// Memoized header
-const AuthHeader = memo(() => (
-  <div className="absolute left-0 right-0 top-0 z-20 flex justify-between p-6 pt-safe-top">
-    <div />
-    <div className="rounded-full bg-white/20 p-1 backdrop-blur-md dark:bg-black/20">
-      <ThemeToggle />
+    {/* Header / Logo Area */}
+    <div className="absolute top-8 left-8 z-10">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 bg-[#13ec5b]/20 rounded-lg flex items-center justify-center border border-[#13ec5b]/30">
+          <img
+            alt="Logo"
+            className="w-8 h-8 object-contain"
+            src="/Logo_Beta.png"
+          />
+        </div>
+        <div>
+          <h2 className="text-white font-bold text-lg leading-none">BETA</h2>
+          <p className="text-[#13ec5b] text-xs font-medium tracking-widest uppercase">Agroindustrial</p>
+        </div>
+      </div>
     </div>
   </div>
 ));
-AuthHeader.displayName = "AuthHeader";
+NewAuthBackground.displayName = "NewAuthBackground";
 
 function LoginForm() {
   const router = useRouter();
@@ -47,6 +43,7 @@ function LoginForm() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -73,11 +70,9 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 1000));
       const result = await login(usuario, password);
       if (result.ok) {
-        // El useEffect se encargará de detectar si requiere_cambio_password es true
-        // y mostrar el formulario correspondiente o redirigir al dashboard.
+        // Redirection handled by useEffect
       } else {
         setError(result.error ?? "Error al iniciar sesión");
       }
@@ -130,9 +125,9 @@ function LoginForm() {
 
   if (authLoading || (user && !user.requiere_cambio_password)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#08110a]">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <div className="h-12 w-12 rounded-full border-4 border-[#13ec5b]/20 border-t-[#13ec5b] animate-spin" />
           <p className="text-sm font-medium text-slate-500 animate-pulse">Verificando sesión...</p>
         </div>
       </div>
@@ -140,151 +135,188 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 font-sans selection:bg-primary/30 dark:bg-slate-950">
+    <div className="font-display bg-[#f6f8f6] dark:bg-[#08110a] min-h-screen overflow-x-hidden relative flex flex-col justify-center items-center">
+      <NewAuthBackground />
 
-      <AuthBackground />
-      <AuthHeader />
-
-      {/* MAIN CONTENT - GLASS CARD */}
-      <div className="relative z-10 w-full max-w-[400px] px-4 py-8 animate-in fade-in zoom-in-95 duration-700">
-
-        {/* Card Container */}
-        <div className="group overflow-hidden rounded-3xl border border-white/40 bg-white/60 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/50 transition-all dark:border-white/10 dark:bg-black/50 dark:ring-white/10">
-
-          {/* Header Section */}
-          <div className="mb-8 text-center">
-            <h1 className="bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent drop-shadow-sm dark:from-white dark:to-slate-300">
-              {showChangePassword ? "Actualizar Contraseña" : SYSTEM_NAME}
-            </h1>
-            <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-              {showChangePassword ? "Para tu seguridad, debes cambiar tu clave temporal." : "Área Comercial y Exportaciones"}
-            </p>
+      {/* Main Content Container */}
+      <div className="relative z-20 w-full max-w-[1200px] px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-12">
+        {/* Branding/Slogan Section */}
+        <div className="flex-1 text-center lg:text-left transition-all duration-700 animate-in fade-in slide-in-from-left-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13ec5b]/10 border border-[#13ec5b]/20 mb-6">
+            <span className="material-symbols-outlined text-[#13ec5b] text-sm">auto_awesome</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] hero-gradient">AgroFlow Next-Gen</span>
           </div>
+          <h1 className="text-white tracking-tight text-5xl lg:text-7xl font-bold leading-[1.1] mb-6">
+            Optimizando <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#13ec5b] to-[#a855f7]">Nuestro Futuro.</span>
+          </h1>
+          <p className="text-slate-300 text-lg lg:text-xl font-normal max-w-lg mx-auto lg:mx-0 leading-relaxed">
+            Plataforma de gestión industrial avanzada para el crecimiento sostenible y la excelencia operacional.
+          </p>
+          <div className="mt-10 hidden lg:grid grid-cols-3 gap-6">
+            <div className="flex flex-col gap-2">
+              <span className="material-symbols-outlined text-[#a855f7] text-3xl">precision_manufacturing</span>
+              <span className="text-white font-medium">Ops Inteligentes</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="material-symbols-outlined text-[#a855f7] text-3xl">analytics</span>
+              <span className="text-white font-medium">Datos en Tiempo Real</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="material-symbols-outlined text-[#a855f7] text-3xl">eco</span>
+              <span className="text-white font-medium">Sostenibilidad</span>
+            </div>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {!showChangePassword ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="usuario" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Usuario
-                  </Label>
-                  <div className="relative group/input">
-                    <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                    <input
-                      id="usuario"
-                      type="text"
-                      placeholder="ID de usuario"
-                      value={usuario}
-                      onChange={(e) => setUsuario(e.target.value)}
-                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
-                      autoComplete="username"
-                      autoFocus
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
+        {/* Login Card */}
+        <div className="w-full max-w-[440px] transition-all duration-700 animate-in fade-in slide-in-from-right-8 delay-300">
+          <div className="glass-panel p-8 lg:p-10 rounded-3xl shadow-2xl">
+            <div className="mb-8">
+              <h3 className="text-white text-2xl font-bold mb-2 tracking-tight">
+                {showChangePassword ? "Actualizar Contraseña" : "Bienvenido de nuevo"}
+              </h3>
+              <p className="text-slate-400 text-sm">
+                {showChangePassword
+                  ? "Para tu seguridad, debes cambiar tu clave temporal."
+                  : "Por favor, ingresa tus credenciales para acceder al ERP"}
+              </p>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Contraseña
-                  </Label>
-                  <div className="relative group/input">
-                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-primary" />
-                    <input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-600 dark:focus:bg-black/40"
-                      autoComplete="current-password"
-                      disabled={loading}
-                    />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {!showChangePassword ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">USUARIO</label>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">person</span>
+                      <input
+                        className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
+                        placeholder="Ingresa tu usuario"
+                        type="text"
+                        value={usuario}
+                        onChange={(e) => setUsuario(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nueva Contraseña</Label>
-                  <div className="relative group/input">
-                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="newPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white"
-                      disabled={loading}
-                      autoFocus
-                    />
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">CONTRASEÑA</label>
+                      <button type="button" className="text-[#a855f7] text-xs font-semibold hover:underline">¿Olvidaste tu contraseña?</button>
+                    </div>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <input
+                        className="w-full pl-12 pr-12 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
+                        placeholder="••••••••"
+                        type={showPass ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-white transition-colors"
+                      >
+                        {showPass ? "visibility_off" : "visibility"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
-                  <div className="relative group/input">
-                    <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="flex h-12 w-full rounded-md border border-slate-300/60 bg-white/50 pl-11 text-sm transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-slate-700 dark:bg-black/20 dark:text-white"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {error && (
-              <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-50/50 px-4 py-3 text-red-600 shadow-sm backdrop-blur-md animate-in slide-in-from-top-2 dark:bg-red-900/20 dark:text-red-300">
-                <CircleAlert className="h-5 w-5 shrink-0" />
-                <p className="text-xs font-medium">{error}</p>
-              </div>
-            )}
-
-            <div className="pt-2 min-h-[50px]">
-              {loading ? (
-                <TruckLoader />
+                </>
               ) : (
-                <Button
-                  type="submit"
-                  className="group relative h-12 w-full overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary/80 text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
-                  size="lg"
+                <>
+                  <div className="space-y-2">
+                    <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">NUEVA CONTRASEÑA</label>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <input
+                        className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
+                        placeholder="••••••••"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">CONFIRMAR CONTRASEÑA</label>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
+                      <input
+                        className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
+                        placeholder="••••••••"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {error && (
+                <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 animate-pulse">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  {error}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 px-1">
+                <input className="w-4 h-4 rounded border-white/10 bg-[#08110a]/50 text-[#13ec5b] focus:ring-[#13ec5b]" id="remember" type="checkbox" />
+                <label className="text-slate-400 text-sm cursor-pointer" htmlFor="remember">Recordar este dispositivo</label>
+              </div>
+
+              <button
+                className="w-full bg-[#13ec5b] hover:bg-[#13ec5b]/90 text-[#08110a] font-bold py-4 rounded-xl shadow-lg shadow-[#13ec5b]/20 transition-all flex items-center justify-center gap-2 group glow-button disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="h-5 w-5 border-2 border-[#08110a]/30 border-t-[#08110a] rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>{showChangePassword ? "Actualizar y Continuar" : "Ingresar al Tablero"}</span>
+                    <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-8 pt-8 border-t border-white/5 text-center">
+              {showChangePassword ? (
+                <button
+                  onClick={handleGoBack}
+                  className="text-slate-400 text-sm flex items-center justify-center gap-1 mx-auto hover:text-white transition-colors"
                 >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {showChangePassword ? "Actualizar y Continuar" : "Iniciar Sesión"}
-                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </span>
-                  {/* Shiny effect on hover */}
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                </Button>
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  Regresar al inicio
+                </button>
+              ) : (
+                <p className="text-slate-500 text-sm">¿Nuevo en la plataforma? <button className="text-[#a855f7] font-bold hover:underline">Solicita acceso</button></p>
               )}
             </div>
-          </form>
-
-          {/* Footer links inside card */}
-          <div className="mt-8 flex flex-col items-center gap-4 border-t border-slate-200/50 pt-6 text-center dark:border-white/10">
-            {showChangePassword ? (
-              <button
-                onClick={handleGoBack}
-                className="group flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 transition-all hover:text-primary dark:text-slate-400 dark:hover:text-white"
-                type="button"
-              >
-                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                Regresar
-              </button>
-            ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                ¿Problemas para acceder? <span className="cursor-pointer font-medium text-slate-600 transition-colors hover:text-primary hover:underline dark:text-slate-300">Contactar Soporte</span>
-              </p>
-            )}
           </div>
 
+          {/* Subtle Footer info */}
+          <div className="mt-6 flex justify-between items-center px-4">
+            <p className="text-slate-500 text-[10px] uppercase tracking-tighter">© 2024 BETA AGROINDUSTRIAL</p>
+            <div className="flex gap-4">
+              <button className="text-slate-500 text-[10px] uppercase hover:text-white transition-colors">PRIVACIDAD</button>
+              <button className="text-slate-500 text-[10px] uppercase hover:text-white transition-colors">SOPORTE</button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Decorative Elements */}
+      <div className="absolute bottom-10 right-10 flex gap-2 z-10">
+        <div className="w-2 h-2 rounded-full bg-[#13ec5b] animate-pulse"></div>
+        <div className="w-2 h-2 rounded-full bg-white/20"></div>
+        <div className="w-2 h-2 rounded-full bg-white/20"></div>
       </div>
     </div>
   );
