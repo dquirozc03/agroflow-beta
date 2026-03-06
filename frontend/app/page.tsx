@@ -138,6 +138,44 @@ function AgroFlowContent() {
    * ✅ Set de IDs en bandeja (para bloquear duplicados desde Historial).
    * Ojo: usamos Number() por si registro_id viniera como string en algún punto.
    */
+  // ✅ Bitácora Reactiva: Monitoreo de campos manuales
+  useEffect(() => {
+    if (ocrStatus === "processing") return; // No interrumpir si el OCR está corriendo
+
+    const logs: { type: "info" | "success" | "warning"; message: string; subtext?: string }[] = [];
+
+    // 1. Validar Booking (Dato Maestro)
+    if (form.booking && form.booking.length > 3) {
+      logs.push({ type: "success", message: "Booking Detectado", subtext: form.booking });
+    } else if (form.booking) {
+      logs.push({ type: "warning", message: "Booking parcial", subtext: "Esperando código completo..." });
+    }
+
+    // 2. Validar DNI
+    if (form.dni && form.dni.length === 8) {
+      logs.push({ type: "success", message: "DNI Verificado", subtext: "Chofer identificado" });
+    } else if (form.dni && form.dni.length > 0) {
+      logs.push({ type: "info", message: "Ingresando DNI...", subtext: `${form.dni.length}/8 dígitos` });
+    }
+
+    // 3. Validar Placas
+    if (form.placas_tracto && form.placas_carreta) {
+      logs.push({ type: "success", message: "Vehículo Completo", subtext: `${form.placas_tracto} / ${form.placas_carreta}` });
+    } else if (form.placas_tracto) {
+      logs.push({ type: "info", message: "Placa Tractor lista", subtext: "Falta placa carreta" });
+    }
+
+    // 4. Validar DAM
+    if (form.dam && form.dam.length > 5) {
+      logs.push({ type: "success", message: "DAM Asignada", subtext: form.dam });
+    }
+
+    if (logs.length > 0) {
+      setOcrLogs(logs);
+      if (ocrStatus === "idle") setOcrProgress(Math.min(logs.length * 25, 100));
+    }
+  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, ocrStatus]);
+
   const bandejaIds = useMemo(() => {
     return new Set(sapRows.map((r) => Number(r.registro_id)));
   }, [sapRows]);

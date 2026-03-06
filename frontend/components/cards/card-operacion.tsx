@@ -223,18 +223,21 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa Transportes</label>
-            <div className="relative">
+            <div className="relative group/tp">
               <input
                 className={cn(
-                  "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-600 dark:text-slate-400 cursor-not-allowed font-bold text-sm truncate",
-                  form.transportista && "text-primary dark:text-primary"
+                  "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 pl-4 pr-10 outline-none text-slate-600 dark:text-slate-400 cursor-not-allowed font-bold text-sm truncate transition-all",
+                  form.transportista && "text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 ring-1 ring-emerald-500/20"
                 )}
                 type="text"
                 readOnly
+                title={form.transportista?.nombre_transportista || ""}
                 value={form.transportista?.nombre_transportista || "Esperando placas..."}
               />
               {form.transportista && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-sm notranslate">check_circle</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-emerald-500 text-lg notranslate animate-in zoom-in duration-300">
+                  check_circle
+                </span>
               )}
             </div>
           </div>

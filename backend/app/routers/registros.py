@@ -261,91 +261,92 @@ def crear_registro(
     db: Session = Depends(get_db),
     current_user: Usuario | None = Depends(get_current_user_optional)
 ):
-    chofer = db.query(Chofer).filter(Chofer.dni == payload.dni).first()
-    if not chofer:
-        raise HTTPException(status_code=404, detail="Chofer no encontrado por DNI")
-
-    # El transportista se determina por la placa TRACTO; ambas placas son obligatorias para registrar
-    placas_raw = (payload.placas or "").strip().upper()
-    parts = [p.strip() for p in placas_raw.split("/")] if placas_raw else []
-    tracto = parts[0] if len(parts) > 0 else ""
-    carreta = parts[1] if len(parts) > 1 else ""
-    if not tracto or not carreta:
-        raise HTTPException(
-            status_code=422,
-            detail="Debes enviar placa tracto y placa carreta (ambas obligatorias para registrar)",
-        )
-
-    vehiculo = (
-        db.query(Vehiculo)
-        .options(joinedload(Vehiculo.transportista))
-        .filter(Vehiculo.placa_tracto == tracto)
-        .first()
-    )
-    if not vehiculo:
-        raise HTTPException(status_code=404, detail="Vehículo no encontrado para esa placa tracto")
-
-    transportista = vehiculo.transportista
-    if not transportista:
-        raise HTTPException(
-            status_code=422,
-            detail="El vehículo no tiene transportista asociado. Asocia el transportista al vehículo en catálogos.",
-        )
-
-    # Autocompletar desde refs por booking
-    refs = obtener_refs_por_booking(db, payload.booking)
-    if refs["booking"]:
-        payload.booking = refs["booking"]
-        if not normalizar(payload.o_beta) and refs["o_beta"]:
-            payload.o_beta = refs["o_beta"]
-        if not normalizar(payload.awb) and refs["awb"]:
-            payload.awb = refs["awb"]
-        if hasattr(payload, "dam"):
-            if not normalizar(getattr(payload, "dam", None)) and refs["dam"]:
-                payload.dam = refs["dam"]
-
-    senasa_ps_linea = construir_senasa_ps_linea(payload.senasa, payload.ps_linea)
-    senasa_ps_linea_norm = normalizar(senasa_ps_linea)
-
-    o_beta_norm = normalizar(payload.o_beta)
-    booking_norm = normalizar(payload.booking)
-    awb_norm = normalizar(payload.awb)
-
-    termografos_norm = unir_por_slash(dividir_por_slash(payload.termografos))
-    ps_beta_norm = unir_por_slash(dividir_por_slash(payload.ps_beta))
-
-    ps_aduana_norm = normalizar(payload.ps_aduana)
-    ps_operador_norm = normalizar(payload.ps_operador)
-
-    senasa_norm = normalizar(payload.senasa)
-    ps_linea_norm = normalizar(payload.ps_linea)
-
-    dam_norm = normalizar(getattr(payload, "dam", None))
-
-    items_unicos = construir_items_unicos(payload, senasa_ps_linea_norm)
-    duplicados = validar_duplicados(db, items_unicos)
-    if duplicados:
-        raise HTTPException(status_code=409, detail={"duplicados": duplicados})
-
-    reg = RegistroOperativo(
-        o_beta=o_beta_norm,
-        booking=booking_norm,
-        awb=awb_norm,
-        chofer_id=chofer.id,
-        vehiculo_id=vehiculo.id,
-        transportista_id=transportista.id,
-        termografos=termografos_norm,
-        ps_beta=ps_beta_norm,
-        ps_aduana=ps_aduana_norm,
-        ps_operador=ps_operador_norm,
-        senasa=senasa_norm,
-        ps_linea=ps_linea_norm,
-        senasa_ps_linea=senasa_ps_linea_norm,
-        dam=dam_norm,
-        estado="pendiente",
-    )
-
     try:
+        chofer = db.query(Chofer).filter(Chofer.dni == payload.dni).first()
+        if not chofer:
+            raise HTTPException(status_code=404, detail="Chofer no encontrado por DNI")
+
+        # El transportista se determina por la placa TRACTO; ambas placas son obligatorias para registrar
+        placas_raw = (payload.placas or "").strip().upper()
+        parts = [p.strip() for p in placas_raw.split("/")] if placas_raw else []
+        tracto = parts[0] if len(parts) > 0 else ""
+        carreta = parts[1] if len(parts) > 1 else ""
+        
+        if not tracto or not carreta:
+            raise HTTPException(
+                status_code=422,
+                detail="Debes enviar placa tracto y placa carreta (ambas obligatorias para registrar)",
+            )
+
+        vehiculo = (
+            db.query(Vehiculo)
+            .options(joinedload(Vehiculo.transportista))
+            .filter(Vehiculo.placa_tracto == tracto)
+            .first()
+        )
+        if not vehiculo:
+            raise HTTPException(status_code=404, detail="Vehículo no encontrado para esa placa tracto")
+
+        transportista = vehiculo.transportista
+        if not transportista:
+            raise HTTPException(
+                status_code=422,
+                detail="El vehículo no tiene transportista asociado. Asocia el transportista al vehículo en catálogos.",
+            )
+
+        # Autocompletar desde refs por booking
+        refs = obtener_refs_por_booking(db, payload.booking)
+        if refs["booking"]:
+            payload.booking = refs["booking"]
+            if not normalizar(payload.o_beta) and refs["o_beta"]:
+                payload.o_beta = refs["o_beta"]
+            if not normalizar(payload.awb) and refs["awb"]:
+                payload.awb = refs["awb"]
+            if hasattr(payload, "dam"):
+                if not normalizar(getattr(payload, "dam", None)) and refs["dam"]:
+                    payload.dam = refs["dam"]
+
+        senasa_ps_linea = construir_senasa_ps_linea(payload.senasa, payload.ps_linea)
+        senasa_ps_linea_norm = normalizar(senasa_ps_linea)
+
+        o_beta_norm = normalizar(payload.o_beta)
+        booking_norm = normalizar(payload.booking)
+        awb_norm = normalizar(payload.awb)
+
+        termografos_norm = unir_por_slash(dividir_por_slash(payload.termografos))
+        ps_beta_norm = unir_por_slash(dividir_por_slash(payload.ps_beta))
+
+        ps_aduana_norm = normalizar(payload.ps_aduana)
+        ps_operador_norm = normalizar(payload.ps_operador)
+
+        senasa_norm = normalizar(payload.senasa)
+        ps_linea_norm = normalizar(payload.ps_linea)
+
+        dam_norm = normalizar(getattr(payload, "dam", None))
+
+        items_unicos = construir_items_unicos(payload, senasa_ps_linea_norm)
+        duplicados = validar_duplicados(db, items_unicos)
+        if duplicados:
+            raise HTTPException(status_code=409, detail={"duplicados": duplicados})
+
+        reg = RegistroOperativo(
+            o_beta=o_beta_norm,
+            booking=booking_norm,
+            awb=awb_norm,
+            chofer_id=chofer.id,
+            vehiculo_id=vehiculo.id,
+            transportista_id=transportista.id,
+            termografos=termografos_norm,
+            ps_beta=ps_beta_norm,
+            ps_aduana=ps_aduana_norm,
+            ps_operador=ps_operador_norm,
+            senasa=senasa_norm,
+            ps_linea=ps_linea_norm,
+            senasa_ps_linea=senasa_ps_linea_norm,
+            dam=dam_norm,
+            estado="pendiente",
+        )
+
         db.add(reg)
         db.flush()
 
@@ -375,12 +376,21 @@ def crear_registro(
         db.refresh(reg)
         return reg
 
+    except HTTPException:
+        # Re-lanzar excepciones HTTP propias
+        raise
     except IntegrityError:
         db.rollback()
+        # Intentar identificar duplicados nuevamente si el commit falló por integridad
+        items_unicos = construir_items_unicos(payload, normalizar(construir_senasa_ps_linea(payload.senasa, payload.ps_linea)))
         duplicados = validar_duplicados(db, items_unicos)
         if duplicados:
             raise HTTPException(status_code=409, detail={"duplicados": duplicados})
-        raise HTTPException(status_code=409, detail="Conflicto de unicidad.")
+        raise HTTPException(status_code=409, detail="Conflicto de integridad en la base de datos.")
+    except Exception as e:
+        db.rollback()
+        # Captura de error genérico para evitar 500 sin info
+        raise HTTPException(status_code=500, detail=f"Error interno al procesar el registro: {str(e)}")
 
 
 @router.post("/{registro_id}/cerrar")
