@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
 import { SessionTimeout } from "@/components/session-timeout";
 
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -41,7 +42,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-sans antialiased">
+      <body className={cn(
+        "min-h-screen bg-background font-sans antialiased selection:bg-primary/20",
+        _inter.variable,
+        _publicSans.variable,
+        _jetbrains.variable
+      )}>
         <Providers>
           <AuthGuard>
             {children}

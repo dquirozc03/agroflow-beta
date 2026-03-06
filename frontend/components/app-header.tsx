@@ -1,19 +1,19 @@
+// frontend/components/app-header.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { checkApiHealth } from "@/lib/api";
 import { useBackendStatus } from "@/contexts/backend-status-context";
-import { Wifi, WifiOff, Boxes, LogOut, User, Moon, Sun, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { SYSTEM_NAME, MODULE_LOGICAPTURE, ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
 
 const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
-
-import { ThemeToggle } from "@/components/theme-toggle";
 
 interface Props {
   onOpenScanner?: () => void;
@@ -33,15 +33,12 @@ export function AppHeader({ onOpenScanner }: Props) {
 
   useEffect(() => {
     let mounted = true;
-
     const check = async () => {
       const ok = await checkApiHealth();
       if (mounted) setApiOnline(ok);
     };
-
     check();
     const interval = setInterval(check, 15000);
-
     return () => {
       mounted = false;
       clearInterval(interval);
@@ -49,26 +46,20 @@ export function AppHeader({ onOpenScanner }: Props) {
   }, []);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+    <header className="flex h-20 items-center justify-between border-b border-slate-100 dark:border-white/5 bg-white dark:bg-[#0f172a]/50 backdrop-blur-md px-6 sticky top-0 z-40 transition-all">
       {/* IZQUIERDA */}
-      <div className="flex min-w-0 items-center gap-2 sm:gap-4 shrink-0">
-        <img
-          src="/Logo_Beta.png"
-          alt="AgroFlow"
-          className="h-8 sm:h-[3rem] w-auto object-contain"
-        />
-        <div className="hidden xs:block h-8 w-px bg-border" />
-        <div className="hidden md:flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            {SYSTEM_NAME}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
+          <img src="/Logo_Beta.png" alt="Beta" className="h-8 w-auto hover:opacity-80 transition-opacity" />
+          <div className="h-4 w-[1.5px] bg-slate-200 dark:bg-white/10 mx-1" />
+          <span className="text-[15px] font-bold text-slate-400 dark:text-slate-500 tracking-tight">AgroFlow</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10">
+          <span className="material-symbols-outlined text-[18px] text-primary notranslate">inventory_2</span>
+          <span className="text-[13px] font-black text-primary tracking-tight">
+            {MODULE_LOGICAPTURE}
           </span>
-          <span className="text-muted-foreground/60">·</span>
-          <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-1.5">
-            <Boxes className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">
-              {MODULE_LOGICAPTURE}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -79,70 +70,64 @@ export function AppHeader({ onOpenScanner }: Props) {
             variant="outline"
             size="sm"
             onClick={onOpenScanner}
-            className="flex gap-1.5 border-dashed border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+            className="hidden sm:flex h-10 gap-2 border-slate-200 dark:border-white/10 rounded-xl px-4 text-slate-600 dark:text-slate-300 font-bold text-xs hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
           >
-            <Smartphone className="h-4 w-4" />
-            <span className="hidden lg:inline text-xs font-semibold">Vincular Celular</span>
+            <span className="material-symbols-outlined text-[18px] notranslate">smartphone</span>
+            Vincular Celular
           </Button>
         )}
 
         <ThemeToggle />
+
         {user && (
-          <div className="hidden lg:flex flex-col items-start gap-0 rounded-lg border border-border/60 bg-muted/40 px-3 py-1 min-w-0 max-w-[220px]">
-            <div className="flex items-center gap-2 w-full">
-              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground/90 truncate">{user.nombre}</span>
+          <div className="flex items-center gap-3 pl-2 border-l border-slate-100 dark:border-white/5 ml-2">
+            <div className="hidden lg:flex flex-col items-end pr-1">
+              <span className="text-[13px] font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight">
+                {user.nombre}
+              </span>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 text-right">
+                {ROLE_LABELS[user.rol as UserRole]}
+              </span>
             </div>
-            <span className="text-[10px] text-muted-foreground pl-5 uppercase tracking-wider">
-              {ROLE_LABELS[user.rol as UserRole]}
-            </span>
+            <button className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/10 hover:border-primary/50 transition-all group">
+              <span className="material-symbols-outlined text-slate-500 group-hover:text-primary notranslate">person</span>
+            </button>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
+
+        <button
           onClick={handleLogout}
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-2 text-slate-400 hover:text-red-500 transition-colors font-bold text-xs uppercase tracking-wider ml-2"
         >
-          <LogOut className="h-4 w-4" />
-          Salir
-        </Button>
-        <span
-          className={
-            ENV === "PROD"
-              ? "rounded-md bg-accent/15 px-3 py-1 text-xs font-semibold text-accent"
-              : "rounded-md bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-          }
-        >
-          {ENV}
-        </span>
-        <div className="hidden sm:flex items-center">
-          {isWaking ? (
-            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-xs font-medium text-primary">…</span>
-            </div>
-          ) : apiOnline === null ? (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" />
-              <span className="text-xs text-muted-foreground">...</span>
-            </div>
-          ) : apiOnline ? (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-1.5">
-              <Wifi className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="hidden xl:inline text-xs font-medium text-emerald-700 dark:text-emerald-300">API Online</span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => wakeBackend()}
-              className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-              title="Reintentar conexión"
-            >
-              <WifiOff className="h-4 w-4" />
-              <span className="hidden xl:inline">Reintentar</span>
-            </button>
-          )}
+          <span className="material-symbols-outlined text-[18px] notranslate">logout</span>
+          <span className="hidden sm:inline">Salir</span>
+        </button>
+
+        <div className="flex items-center gap-2 ml-2">
+          <span className={cn(
+            "px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase",
+            ENV === "PROD" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" : "bg-primary/10 text-primary"
+          )}>
+            {ENV}
+          </span>
+
+          <div className="flex items-center">
+            {isWaking ? (
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+              </div>
+            ) : apiOnline ? (
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-500/10">
+                <span className="material-symbols-outlined text-[16px] text-emerald-600 dark:text-emerald-400 notranslate leading-none">wifi</span>
+                <span className="hidden xl:inline text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">API Online</span>
+              </div>
+            ) : (
+              <button onClick={() => wakeBackend()} className="flex items-center gap-2 bg-red-50 dark:bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-500/10 text-red-600">
+                <span className="material-symbols-outlined text-[16px] notranslate leading-none">wifi_off</span>
+                <span className="hidden xl:inline text-[10px] font-black uppercase tracking-wider">Desconectado</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>

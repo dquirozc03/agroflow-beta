@@ -286,7 +286,7 @@ function AgroFlowContent() {
                         <span className="text-primary font-medium">LogicCapture</span>
                       </div>
                       <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Nueva Entrada Operacional</h2>
-                      <p className="text-slate-500 mt-1">Gestión inteligente de manifiestos y datos de embarque con OCR.</p>
+                      <p className="text-slate-500 mt-1">Gestión inteligente de datos de embarque.</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <Button variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-10 px-4 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-sm transition-all">
