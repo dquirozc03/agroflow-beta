@@ -76,8 +76,8 @@ def obtener_refs_por_booking(db: Session, booking: str | None) -> dict:
 
     return {
         "booking": b,
-        "o_beta": normalizar(pos.o_beta) if pos and pos.o_beta else None,
-        "awb": normalizar(pos.awb) if pos and pos.awb else None,
+        "o_beta": normalizar(pos.orden_beta_final) if pos and pos.orden_beta_final else None,
+        "awb": normalizar(dam.awb) if dam and dam.awb else None,
         "dam": normalizar(dam.dam) if dam and dam.dam else None,
     }
 

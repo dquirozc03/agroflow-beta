@@ -60,9 +60,9 @@ function computeSemaforo(form: FormState): {
   if (!form.ps_beta_items?.length) missing.push("PS_BETA (Exportador)");
   if (!form.termografos_items?.length) missing.push("TERMÓGRAFOS");
   if (!txt(form.ps_aduana)) missing.push("PS_ADUANA");
-  if (!txt(form.ps_operador)) missing.push("PS_OPERADOR");
 
   // Recomendados
+  if (!txt(form.ps_operador)) warnings.push("OPERADOR LOG.");
   if (!txt(form.awb)) warnings.push("AWB");
   if (!txt(form.o_beta)) warnings.push("O/BETA");
 
