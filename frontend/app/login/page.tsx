@@ -146,14 +146,14 @@ function LoginForm() {
         <div className="flex-1 text-center lg:text-left transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13ec5b]/10 border border-[#13ec5b]/20 mb-6">
             <span className="material-symbols-outlined notranslate text-[#13ec5b] text-sm">auto_awesome</span>
-            <span className="text-xs font-black uppercase tracking-[0.2em] hero-gradient">AgroFlow Next-Gen</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] hero-gradient">AgroFlow</span>
           </div>
           <h1 className="text-white tracking-tight text-5xl lg:text-7xl font-bold leading-[1.1] mb-6">
             Optimizando <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#13ec5b] to-[#a855f7]">Nuestro Futuro.</span>
           </h1>
           <p className="text-slate-300 text-lg lg:text-xl font-normal max-w-lg mx-auto lg:mx-0 leading-relaxed">
-            Plataforma de gestión industrial avanzada para el crecimiento sostenible y la excelencia operacional.
+            Plataforma de gestión avanzada para el crecimiento sostenible y la excelencia operacional.
           </p>
           <div className="mt-10 hidden lg:grid grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
@@ -205,7 +205,6 @@ function LoginForm() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center px-1">
                       <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">CONTRASEÑA</label>
-                      <button type="button" className="text-[#a855f7] text-xs font-semibold hover:underline">¿Olvidaste tu contraseña?</button>
                     </div>
                     <div className="relative group">
                       <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">lock</span>
@@ -289,7 +288,7 @@ function LoginForm() {
             </form>
 
             <div className="mt-8 pt-8 border-t border-white/5 text-center">
-              {showChangePassword ? (
+              {showChangePassword && (
                 <button
                   onClick={handleGoBack}
                   className="text-slate-400 text-sm flex items-center justify-center gap-1 mx-auto hover:text-white transition-colors"
@@ -297,32 +296,28 @@ function LoginForm() {
                   <span className="material-symbols-outlined notranslate text-sm">arrow_back</span>
                   Regresar al inicio
                 </button>
-              ) : (
-                <p className="text-slate-500 text-sm">¿Nuevo en la plataforma? <button className="text-[#a855f7] font-bold hover:underline">Solicita acceso</button></p>
               )}
             </div>
           </div>
 
           {/* Subtle Footer info */}
           <div className="mt-6 flex justify-between items-center px-4">
-            <p className="text-slate-500 text-[10px] uppercase tracking-tighter">© 2024 BETA AGROINDUSTRIAL</p>
+            <p className="text-slate-500 text-[10px] uppercase tracking-tighter">© 2026 BETA S.A.C.</p>
             <div className="flex gap-4">
-              <button className="text-slate-500 text-[10px] uppercase hover:text-white transition-colors">PRIVACIDAD</button>
-              <button className="text-slate-500 text-[10px] uppercase hover:text-white transition-colors">SOPORTE</button>
+              <a
+                href="mailto:comercial.olmos2@beta.com.pe"
+                className="text-slate-500 text-[10px] uppercase hover:text-white transition-colors"
+              >
+                SOPORTE
+              </a>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Decorative Elements */}
-      <div className="absolute bottom-10 right-10 flex gap-2 z-10">
-        <div className="w-2 h-2 rounded-full bg-[#13ec5b] animate-pulse"></div>
-        <div className="w-2 h-2 rounded-full bg-white/20"></div>
-        <div className="w-2 h-2 rounded-full bg-white/20"></div>
-      </div>
     </div>
   );
 }
+
 
 export default function LoginPage() {
   return <LoginForm />;
