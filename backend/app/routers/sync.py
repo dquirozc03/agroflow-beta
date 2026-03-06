@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
+import re
 
 from app.database import get_db
 from app.configuracion import settings
@@ -19,7 +20,6 @@ def normalizar(v: str | None) -> str | None:
 
 def normalize_header(h: str) -> str:
     """Remueve acentos y caracteres especiales para matching robusto"""
-    import re
     if not h: return ""
     h = str(h).upper().strip()
     # Reemplazo manual de acentos comunes
