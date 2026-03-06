@@ -14,6 +14,35 @@ import re
 BETA_ORANGE = colors.Color(244/255, 145/255, 33/255) # #F49121
 BETA_GRAY = colors.Color(234/255, 234/255, 234/255) # #EAEAEA
 
+def format_to_numeric_date(date_str: str) -> str:
+    """Convierte fechas tipo '26-MAY' o '26/05' a '26/05/2025'"""
+    if not date_str: return ""
+    date_str = date_str.upper().strip()
+    
+    # Mapeo de meses en español/inglés
+    meses = {
+        'ENE': '01', 'JAN': '01', 'FEB': '02', 'MAR': '03', 'ABR': '04', 'APR': '04',
+        'MAY': '05', 'JUN': '06', 'JUL': '07', 'AGO': '08', 'AUG': '08', 'SEP': '09',
+        'OCT': '10', 'NOV': '11', 'DIC': '12', 'DEC': '12'
+    }
+    
+    # Caso 1: DD-MES (ej: 26-MAY)
+    match = re.search(r'(\d{1,2})[-\s/]([A-Z]{3})', date_str)
+    if match:
+        day = match.group(1).zfill(2)
+        month_name = match.group(2)
+        month = meses.get(month_name, "05")
+        return f"{day}/{month}/2025"
+    
+    # Caso 2: DD/MM (ej: 26/05)
+    match = re.search(r'(\d{1,2})[/](\d{1,2})', date_str)
+    if match:
+        day = match.group(1).zfill(2)
+        month = match.group(2).zfill(2)
+        return f"{day}/{month}/2025"
+    
+    return date_str
+
 def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     # 1. Obtener Datos
     posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
@@ -32,7 +61,6 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
 
     if clientes_posibles:
         # Prioridad 1: Match de ciudad específica dentro de paréntesis 
-        # Ej: "INGLATERRA (LONDRES, LIVERPOOL)" -> si booking es LIVERPOOL
         for c in clientes_posibles:
             curr_dest = (c.destino or "").upper()
             if "(" in curr_dest and booking_destino in curr_dest:
@@ -46,14 +74,14 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
                     cliente_ie = c
                     break
         
-        # Prioridad 3: Match por País (cuando no hay ciudades en el Excel)
+        # Prioridad 3: Match por País
         if not cliente_ie:
             for c in clientes_posibles:
                 if (c.destino or "").upper() == booking_pais:
                     cliente_ie = c
                     break
         
-        # Fallback Final: El primero encontrado
+        # Fallback Final
         if not cliente_ie:
             cliente_ie = clientes_posibles[0]
 
@@ -67,81 +95,74 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         total_unidades = int(re.sub(r'[^0-9]', '', str(posic.total_unidades or "0")))
     except: pass
 
-    # Peso por caja (Granada es usualmente 3.8 o 4.0)
     presentacion = str(posic.presentacion or "").upper()
-    peso_caja = 3.8 # Default
+    peso_caja = 3.8 
     match_peso = re.search(r'([0-9.]+)', presentacion)
     if match_peso:
         peso_caja = float(match_peso.group(1))
 
     peso_neto = total_unidades * peso_caja
-    peso_bruto = peso_neto + (total_unidades * 0.4) # +0.4kg tara
+    peso_bruto = peso_neto + (total_unidades * 0.4)
 
-    # Pre-procesar fecha para mostrarla como 'DD/MM/YYYY - HH:MM'
-    fecha_text = str(posic.fecha_real_llenado or "").strip()
+    # Pre-procesar fechas a numérico
+    fecha_llenado_num = format_to_numeric_date(posic.fecha_real_llenado)
     hora_text = str(posic.hora_solicitada_operador or "").strip()
-    fecha_hora_full = f"{fecha_text} - {hora_text}" if fecha_text and hora_text else (fecha_text or hora_text)
+    fecha_hora_full = f"{fecha_llenado_num} - {hora_text}" if fecha_llenado_num and hora_text else (fecha_llenado_num or hora_text)
+    
+    eta_num = format_to_numeric_date(posic.eta_final)
 
     # 3. Construir PDF
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, 
         pagesize=A4, 
-        rightMargin=1.5*cm, 
-        leftMargin=1.5*cm, 
-        topMargin=1.5*cm, 
-        bottomMargin=1.5*cm
+        rightMargin=1.2*cm, 
+        leftMargin=1.2*cm, 
+        topMargin=0.8*cm, 
+        bottomMargin=0.8*cm
     )
     styles = getSampleStyleSheet()
     
-    # Estilos de Párrafo
-    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold')
-    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica')
-    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1)
-    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=8.5, fontName='Helvetica-Bold', alignment=1) # Centrado por defecto para VB si se usa en celdas críticas
+    # Estilos de Párrafo (Reducidos ligeramente para que quepa en una hoja)
+    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7, fontName='Helvetica-Bold', leading=8)
+    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=8, fontName='Helvetica', leading=9)
+    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=10, fontName='Helvetica-Bold', alignment=1)
+    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=8, fontName='Helvetica-Bold', leading=9, alignment=1)
 
     elements = []
 
     # -- LOGO --
     logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "logo_beta.png")
     if os.path.exists(logo_path):
-        img = Image(logo_path, width=4*cm, height=1.5*cm)
+        img = Image(logo_path, width=3.5*cm, height=1.3*cm)
         img.hAlign = 'LEFT'
         elements.append(img)
-        elements.append(Spacer(1, 0.3*cm))
+        elements.append(Spacer(1, 0.15*cm))
 
-    # Definición de la tabla principal
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): return Paragraph(str(txt or ""), style_value)
     def VB(txt): return Paragraph(f"<b>{str(txt or '')}</b>", style_val_bold)
+    def VBL(txt): return Paragraph(f"<b>{str(txt or '')}</b>", ParagraphStyle('VBLeft', parent=style_val_bold, alignment=0))
 
     # Filas de la Tabla 1
     data1 = [
-        # Encabezado Naranja
         [Paragraph("INSTRUCCIÓNES DE EMBARQUE", style_title), ""],
-        # ID / OGL
-        [VB(f" {posic.orden_beta_final or ''}"), Paragraph(f"<div align='right'><b>OGL25</b></div>", style_val_bold)],
+        [VBL(f" {posic.orden_beta_final or ''}"), Paragraph(f"<div align='right'><b>OGL25</b></div>", style_val_bold)],
         [L("EMBARCADOR"), V("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
         [L("DIRECCIÓN"), V("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
-        # Operador
-        [L("OPERADOR LOGISTICO"), VB(str(posic.operador or "").upper())],
+        [L("OPERADOR LOGISTICO"), VBL(str(posic.operador or "").upper())],
         [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>PLANTA ICA</b><br/>{direccion_planta}", style_value)],
-        # Fecha
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
-        # Consignatario
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{cliente_ie.consignatario_bl or ''}</b><br/>{('EORI: ' + cliente_ie.eori_consignatario) if cliente_ie and cliente_ie.eori_consignatario else ''}", style_value)],
-        # Notificado
         [L("NOTIFICADO<br/>DIRECCIÓN"), V(cliente_ie.notificante_bl if cliente_ie else "")],
-        # Descripción
         [L("DESCRIPCION EN EL B/L"), V(f"{total_unidades} BOXES WITH FRESH POMEGRANATES {posic.variedad or ''} ON 18 PALLETS<br/>{total_unidades} CAJAS CON FRESCA GRANADAS {posic.variedad or ''} EN 18 PALETAS")],
-        # Logística
         [L("AGENCIA NAVIERA"), V(posic.naviera)],
         [L("MOTONAVE"), V(posic.nave)],
-        [L("BOOKING No."), VB(posic.booking)],
+        [L("BOOKING No."), VBL(posic.booking)],
         [L("FREIGHT"), V(posic.flete or "PREPAID")],
-        [L("EMISION B/L"), VB(cliente_ie.emision_bl if cliente_ie else "SWB")],
+        [L("EMISION B/L"), VBL(cliente_ie.emision_bl if cliente_ie else "SWB")],
         [L("PUERTO EMBARQUE"), V(posic.pol)],
-        [L("ETA"), V(posic.eta_final)],
+        [L("ETA"), V(eta_num)],
         [L("PUERTO DESTINO"), V(posic.destino_booking)],
         [L("CANTIDAD DE CONTENEDORES"), V("01")],
         [L("PRODUCTO"), V("GRANADAS")],
@@ -150,51 +171,46 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         [L("VENTILACION"), V(posic.ventilacion)],
         [L("HUMEDAD"), V("OFF")],
         [L("ATMOSFERA CONTROLADA"), V("NO APLICA")],
-        # Filtros / Cold
-        [L("FILTROS"), VB("NO APLICA")],
-        [L("COLD TREAMENT"), VB(posic.ct_option or "NO")],
+        [L("FILTROS"), VBL("NO APLICA")],
+        [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
-        [L("VALOR FOB APROXIMADO"), V(f"USD 34,560.00")], # Placeholder
+        [L("VALOR FOB APROXIMADO"), V(f"USD 34,560.00")],
         ["", ""],
     ]
 
-    # Estilo Tabla 1
-    table1 = Table(data1, colWidths=[5.5*cm, 12.5*cm])
+    table1 = Table(data1, colWidths=[5.5*cm, 13.1*cm])
     style1 = TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        # Encabezado naranja
         ('BACKGROUND', (0,0), (1,0), BETA_ORANGE),
         ('SPAN', (0,0), (1,0)),
-        # Etiquetas grises
         ('BACKGROUND', (0,2), (0,-2), BETA_GRAY),
-        # Row OGL y Fecha también naranja parcial? No, el prompt dice naranja para separadores.
         ('BACKGROUND', (0,4), (1,4), BETA_ORANGE),
         ('BACKGROUND', (0,6), (1,6), BETA_ORANGE),
         ('BACKGROUND', (0,25), (1,26), BETA_ORANGE),
-        # Ajustes de padding
         ('LEFTPADDING', (0,0), (-1,-1), 6),
         ('RIGHTPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ])
     table1.setStyle(style1)
     elements.append(table1)
+    elements.append(Spacer(1, 0.2*cm))
 
     # -- SECCIÓN FITO --
     data2 = [
         [Paragraph("DATOS PARA CERTIFICADO FITOSANITARIO", style_title), ""],
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), V(cliente_ie.cliente_fito if cliente_ie else "")],
-        [L("PAIS DE DESTINO"), VB(posic.pais_booking)],
-        [L("PUNTO DE LLEGADA"), VB(posic.destino_booking)],
-        [L("PRESENTACION"), VB(presentacion or "CAJA 3.8 KG")],
-        [L("ETIQUETAS"), VB(posic.etiqueta_caja or "GENERICA")],
-        [L("PESO NETO ESTIMADO"), VB(f"{peso_neto:,.3f} KG")],
-        [L("PESO BRUTO ESTIMADO"), VB(f"{peso_bruto:,.3f} KG")],
+        [L("PAIS DE DESTINO"), VBL(posic.pais_booking)],
+        [L("PUNTO DE LLEGADA"), VBL(posic.destino_booking)],
+        [L("PRESENTACION"), VBL(presentacion or "CAJA 3.8 KG")],
+        [L("ETIQUETAS"), VBL(posic.etiqueta_caja or "GENERICA")],
+        [L("PESO NETO ESTIMADO"), VBL(f"{peso_neto:,.3f} KG")],
+        [L("PESO BRUTO ESTIMADO"), VBL(f"{peso_bruto:,.3f} KG")],
         [L("OBSERVACIONES"), V(cliente_ie.observaciones if cliente_ie else "")],
     ]
 
-    table2 = Table(data2, colWidths=[5.5*cm, 12.5*cm])
+    table2 = Table(data2, colWidths=[5.5*cm, 13.1*cm])
     style2 = TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -202,8 +218,8 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('SPAN', (0,0), (1,0)),
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ])
     table2.setStyle(style2)
     elements.append(table2)
