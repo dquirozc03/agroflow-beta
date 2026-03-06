@@ -92,6 +92,16 @@ function AgroFlowContent() {
   const [formResetKey, setFormResetKey] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
+  // Estados para Monitorización OCR
+  const [ocrStatus, setOcrStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrLogs, setOcrLogs] = useState<{ type: "info" | "success" | "warning"; message: string; subtext?: string }[]>([]);
+  const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
+
+  const addOcrLog = useCallback((type: "info" | "success" | "warning", message: string, subtext?: string) => {
+    setOcrLogs(prev => [{ type, message, subtext }, ...prev].slice(0, 5));
+  }, []);
+
   // Track cursor position
   const lastFocusedId = useRef<string | null>(null);
 
@@ -324,8 +334,36 @@ function AgroFlowContent() {
 
                       {/* Left Column: Intake & Insights (4 col) */}
                       <div className="col-span-12 lg:col-span-4 space-y-6">
-                        <CardOcr key={`ocr-${formResetKey}`} form={form} setForm={setForm} />
-                        <CardOcrStatus />
+                        <CardOcr
+                          key={`ocr-${formResetKey}`}
+                          form={form}
+                          setForm={setForm}
+                          onProcessingStart={() => {
+                            setOcrStatus("processing");
+                            setOcrProgress(10);
+                            setOcrConfidence(null);
+                            setOcrLogs([]);
+                            addOcrLog("info", "Iniciando extracción", "Analizando estructura del documento...");
+                          }}
+                          onProcessingProgress={(p: number) => setOcrProgress(p)}
+                          onProcessingLog={(type: "info" | "success" | "warning", msg: string, sub?: string) => addOcrLog(type, msg, sub)}
+                          onProcessingEnd={(confidence: number | null) => {
+                            setOcrStatus("success");
+                            setOcrProgress(100);
+                            setOcrConfidence(confidence);
+                          }}
+                          onProcessingError={(err: string) => {
+                            setOcrStatus("error");
+                            setOcrProgress(0);
+                            addOcrLog("warning", "Error en extracción", err);
+                          }}
+                        />
+                        <CardOcrStatus
+                          status={ocrStatus}
+                          progress={ocrProgress}
+                          logs={ocrLogs}
+                          confidence={ocrConfidence}
+                        />
                       </div>
 
                       {/* Right Column: Form Data (8 col) */}
@@ -378,7 +416,7 @@ function AgroFlowContent() {
                                           {reg.estado}
                                         </span>
                                         <span className="text-[10px] text-slate-400">
-                                          ID #{reg.id} • {new Date(reg.fecha_registro).toLocaleDateString()}
+                                          {new Date(reg.fecha_registro).toLocaleDateString()}
                                         </span>
                                       </div>
                                     </div>
