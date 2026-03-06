@@ -118,9 +118,31 @@ async function copyToClipboard(label: string, value: string) {
 
 function EstadoBadge({ estado }: { estado: string }) {
   const e = (estado || "").toLowerCase();
-  if (e === "anulado") return <Badge variant="secondary">ANULADO</Badge>;
-  if (e === "procesado") return <Badge variant="default">PROCESADO</Badge>;
-  return <Badge variant="outline">PENDIENTE</Badge>;
+
+  if (e === "anulado") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">
+        <span className="size-1.5 bg-red-600 rounded-full animate-pulse"></span>
+        Anulado
+      </span>
+    );
+  }
+
+  if (e === "procesado") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">
+        <span className="size-1.5 bg-green-600 rounded-full animate-pulse"></span>
+        Procesado
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">
+      <span className="size-1.5 bg-amber-600 rounded-full animate-pulse"></span>
+      Pendiente
+    </span>
+  );
 }
 
 type ProcessedRow = SapRow & {
@@ -142,13 +164,20 @@ type DetailRow = {
   booking: string;
   awb: string;
   dam: string;
+  marca: string;
+  placas: string;
   dni: string;
-  transportista: string;
+  nombres: string;
+  licencia: string;
   termografos: string;
+  codigo_sap: string;
+  transportista: string;
   ps_beta: string;
   ps_aduana: string;
   ps_operador: string;
   senasa_ps_linea: string;
+  p_registral: string;
+  cer_vehicular: string;
 };
 
 function toDetail(row: any): DetailRow {
@@ -160,13 +189,20 @@ function toDetail(row: any): DetailRow {
     booking: safeStr(getAny(row, "booking", "BOOKING")),
     awb: safeStr(getAny(row, "awb", "AWB")),
     dam: safeStr(getAny(row, "dam", "N_DAM", "DAM")),
+    marca: safeStr(getAny(row, "marca", "MARCA")),
+    placas: safeStr(getAny(row, "placas", "PLACAS")),
     dni: safeStr(getAny(row, "dni", "DNI")),
-    transportista: safeStr(getAny(row, "transportista", "TRANSPORTISTA")),
+    nombres: safeStr(getAny(row, "chofer", "CHOFER", "NOMBRES")),
+    licencia: safeStr(getAny(row, "licencia", "LICENCIA")),
     termografos: safeStr(getAny(row, "termografos", "TERMOGRAFOS")),
+    codigo_sap: safeStr(getAny(row, "codigo_sap", "CODIGO_SAP")),
+    transportista: safeStr(getAny(row, "transportista", "TRANSPORTISTA")),
     ps_beta: safeStr(getAny(row, "ps_beta", "PS_BETA")),
     ps_aduana: safeStr(getAny(row, "ps_aduana", "PS_ADUANA")),
     ps_operador: safeStr(getAny(row, "ps_operador", "PS_OPERADOR")),
     senasa_ps_linea: safeStr(getAny(row, "senasa_ps_linea", "SENASA_PS_LINEA")),
+    p_registral: safeStr(getAny(row, "p_registral", "P_REGISTRAL")),
+    cer_vehicular: safeStr(getAny(row, "cer_vehicular", "CER_VEHICULAR")),
   };
 }
 
@@ -182,73 +218,106 @@ function DetailPanel({
   row: DetailRow;
   onClose: () => void;
 }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (label: string, value: string) => {
+    copyToClipboard(label, value);
+    setCopiedField(label);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const Field = ({ label, value }: { label: string; value: string }) => (
-    <div className="rounded-xl border bg-background p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+    <div className={cn(
+      "rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 transition-all",
+      copiedField === label && "ring-2 ring-primary bg-primary/5 border-primary/30"
+    )}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
             {label}
           </div>
-          <div className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+          <div className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
             {value || "—"}
           </div>
         </div>
 
         <Button
-          variant="outline"
-          size="icon"
-          className="shrink-0"
-          onClick={() => copyToClipboard(label, value)}
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "shrink-0 h-8 w-8 p-0 rounded-lg hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all",
+            copiedField === label ? "text-primary scale-110" : "text-slate-400 hover:text-primary"
+          )}
+          onClick={() => handleCopy(label, value)}
           disabled={!value}
-          title="Copiar"
+          title="Copiar dato"
         >
-          <Copy className="h-4 w-4" />
+          {copiedField === label ? (
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+          ) : (
+            <span className="material-symbols-outlined text-lg">content_copy</span>
+          )}
         </Button>
       </div>
     </div>
   );
 
   return (
-    <div className="rounded-2xl border bg-card shadow-sm overflow-hidden h-full max-h-full flex flex-col min-h-0">
-      <div className="flex items-center justify-between border-b p-4">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden h-full max-h-full flex flex-col min-h-0 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-5 bg-slate-50/50 dark:bg-slate-900/30">
         <div>
-          <div className="text-xs text-muted-foreground">{title}</div>
-          <div className="text-base font-semibold">
-            ID <span className="font-mono">{row.id}</span>
+          <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">
+            {title}
+          </div>
+          <div className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+            REGISTRO <span className="font-mono text-primary">#{row.id}</span>
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={onClose} title="Cerrar panel">
-          <X className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+          title="Cerrar detalles"
+        >
+          <span className="material-symbols-outlined text-slate-500">close</span>
         </Button>
       </div>
 
-      <div className="p-4 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="FECHA" value={row.fecha} />
-          <Field label="O_BETA" value={row.o_beta} />
+      <div className="p-5 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar border-t border-slate-100 dark:border-slate-800">
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="size-1.5 bg-primary rounded-full"></span>
+          Datos para Copiado SAP
         </div>
 
+        {/* ORDEN ESTRICTO SAP */}
+        <Field label="ID" value={row.id} />
+        <Field label="FECHA" value={row.fecha} />
+        <Field label="O_BETA" value={row.o_beta} />
         <Field label="BOOKING" value={row.booking} />
         <Field label="AWB" value={row.awb} />
         <Field label="DAM" value={row.dam} />
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="DNI" value={row.dni} />
-          <Field label="TRANSPORTISTA" value={row.transportista} />
-        </div>
-
+        <Field label="MARCA" value={row.marca} />
+        <Field label="PLACAS" value={row.placas} />
+        <Field label="DNI" value={row.dni} />
+        <Field label="NOMBRES" value={row.nombres} />
+        <Field label="LICENCIA" value={row.licencia} />
         <Field label="TERMÓGRAFOS" value={row.termografos} />
+        <Field label="CÓDIGO SAP" value={row.codigo_sap} />
+        <Field label="TRANSPORTISTA" value={row.transportista} />
+        <Field label="PRECINTOS BETA" value={row.ps_beta} />
+        <Field label="PRECINTO ADUANA" value={row.ps_aduana} />
+        <Field label="PRECINTO OPERADOR" value={row.ps_operador} />
+        <Field label="SENASA/PS LÍNEA" value={row.senasa_ps_linea} />
+        <Field label="PARTIDA REGISTRAL" value={row.p_registral} />
+        <Field label="CERTIFICADO VEHICULAR" value={row.cer_vehicular} />
+      </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="PS_BETA" value={row.ps_beta} />
-          <Field label="PS_ADUANA" value={row.ps_aduana} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="PS_OPERADOR" value={row.ps_operador} />
-          <Field label="SENASA/PS LÍNEA" value={row.senasa_ps_linea} />
-        </div>
+      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+        <p className="text-[10px] text-slate-400 text-center font-medium italic">
+          Haz clic en el icono para copiar el dato directamente a SAP.
+        </p>
       </div>
     </div>
   );
@@ -286,6 +355,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const [processedRows, setProcessedRows] = useState<ProcessedRow[]>([]);
   const [procesadosDate, setProcesadosDate] = useState<string>(localYYYYMMDD());
   const [procesadosLoading, setProcesadosLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // ✅ Filtro de fecha para Pendientes (por defecto: hoy)
   const [pendientesDate, setPendientesDate] = useState<string>(localYYYYMMDD());
@@ -357,21 +427,42 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const scrollAreaClass =
     "relative flex-1 min-h-0 w-full min-w-0 overflow-x-auto overflow-y-auto overscroll-contain";
 
-  // ✅ Filtrar pendientes por fecha (solo muestra los del día seleccionado)
+  // ✅ Filtrar pendientes por fecha y búsqueda
   const filteredPendientes = useMemo(() => {
-    if (!pendientesDate) return rows;
-    const targetDate = pendientesDate;
-    return rows.filter((row) => {
-      const fechaReg = getFecha(row);
-      if (!fechaReg) return false;
-      try {
-        const fechaStr = String(fechaReg).slice(0, 10); // YYYY-MM-DD
-        return fechaStr === targetDate;
-      } catch {
-        return false;
-      }
+    let result = rows;
+
+    if (pendientesDate) {
+      result = result.filter(row => String(getFecha(row)).slice(0, 10) === pendientesDate);
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(row => {
+        const id = String(getId(row)).toLowerCase();
+        const booking = safeStr(getAny(row, "booking", "BOOKING")).toLowerCase();
+        const awb = safeStr(getAny(row, "awb", "AWB")).toLowerCase();
+        const placas = safeStr(getAny(row, "placas", "PLACAS")).toLowerCase();
+        const transportista = safeStr(getAny(row, "transportista", "TRANSPORTISTA")).toLowerCase();
+        return id.includes(q) || booking.includes(q) || awb.includes(q) || placas.includes(q) || transportista.includes(q);
+      });
+    }
+
+    return result;
+  }, [rows, pendientesDate, searchQuery]);
+
+  // ✅ Filtrar procesados por búsqueda
+  const filteredProcesados = useMemo(() => {
+    if (!searchQuery) return processedRows;
+    const q = searchQuery.toLowerCase();
+    return processedRows.filter(row => {
+      const id = String(getId(row)).toLowerCase();
+      const booking = safeStr(getAny(row, "booking", "BOOKING")).toLowerCase();
+      const awb = safeStr(getAny(row, "awb", "AWB")).toLowerCase();
+      const placas = safeStr(getAny(row, "placas", "PLACAS")).toLowerCase();
+      const transportista = safeStr(getAny(row, "transportista", "TRANSPORTISTA")).toLowerCase();
+      return id.includes(q) || booking.includes(q) || awb.includes(q) || placas.includes(q) || transportista.includes(q);
     });
-  }, [rows, pendientesDate]);
+  }, [processedRows, searchQuery]);
 
   const refreshProcesados = useCallback(
     async (fecha: string) => {
@@ -651,105 +742,124 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   }
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col gap-3", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Bandeja SAP</h2>
-          <span className="text-xs text-muted-foreground">
-            Pendientes ({pendientesDate}): {filteredPendientes.length}/{rows.length} · Procesados ({procesadosDate}): {processedRows.length}
-          </span>
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-6", className)}>
+      {/* 🚀 Hero Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Bandeja de Gestión <span className="text-primary italic">AgroFlow</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-base mt-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-xl">sync_alt</span>
+            Sincronización y monitoreo de registros para carga en SAP
+          </p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={handleRefreshAll}
-            disabled={refreshing || filteredPendientes.length === 0}
-            title="Actualizar todos los pendientes visibles"
+            onClick={() => exportCsv(tab === "pendientes" ? filteredPendientes : processedRows, `bandeja_sap_${tab}_${localYYYYMMDD()}.csv`)}
+            disabled={tab === "pendientes" ? filteredPendientes.length === 0 : processedRows.length === 0}
+            className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
           >
-            {refreshing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Actualizar visibles
+            <span className="material-symbols-outlined text-lg">download</span>
+            Exportar Excel
           </Button>
 
           <Button
-            variant="secondary"
-            onClick={() => exportCsv(filteredPendientes, `bandeja_sap_pendientes_${pendientesDate || localYYYYMMDD()}.csv`)}
-            disabled={filteredPendientes.length === 0}
-            title="Exportar pendientes filtrados"
+            onClick={tab === "pendientes" ? handleRefreshAll : () => refreshProcesados(procesadosDate)}
+            disabled={refreshing || procesadosLoading}
+            className="rounded-xl bg-primary text-primary-dark font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 border-none"
           >
-            <Download className="mr-2 h-4 w-4" />
-            Exportar
+            {refreshing || procesadosLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary-dark" />
+            ) : (
+              <span className="material-symbols-outlined text-lg">sync</span>
+            )}
+            Sincronizar SAP
           </Button>
+        </div>
+      </div>
+
+      {/* 🔍 Premium Filters Bar */}
+      <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="flex-1 min-w-[300px]">
+          <div className="relative group">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
+            <input
+              type="text"
+              placeholder="Buscar registros (ID, Booking, AWB, Placas...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+            <span className="material-symbols-outlined text-slate-400 text-sm leading-none">calendar_month</span>
+            <input
+              type="date"
+              value={tab === "pendientes" ? pendientesDate : procesadosDate}
+              onChange={(e) => tab === "pendientes" ? setPendientesDate(e.target.value) : setProcesadosDate(e.target.value)}
+              className="bg-transparent border-none text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-0 py-0 cursor-pointer outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+            <span className="material-symbols-outlined text-slate-400 text-sm leading-none">filter_list</span>
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+              Estado: <span className="text-primary capitalize">{tab}</span>
+            </span>
+          </div>
         </div>
       </div>
 
       <div
         className={[
-          "grid grid-cols-1 gap-3 min-h-0 items-stretch",
-          showDetailDesktop ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "lg:grid-cols-1",
+          "grid grid-cols-1 gap-6 min-h-0 items-stretch",
+          showDetailDesktop ? "lg:grid-cols-[minmax(0,1fr)_400px]" : "lg:grid-cols-1",
         ].join(" ")}
       >
-        <div className="min-w-0 min-h-0">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="min-h-0">
-            <TabsList>
-              <TabsTrigger value="pendientes">Pendientes</TabsTrigger>
-              <TabsTrigger value="procesados">Procesados</TabsTrigger>
-            </TabsList>
+        <div className="min-w-0 min-h-0 flex flex-col gap-6">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="min-h-0 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                <TabsTrigger
+                  value="pendientes"
+                  className="rounded-lg px-6 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm transition-all"
+                >
+                  Pendientes
+                </TabsTrigger>
+                <TabsTrigger
+                  value="procesados"
+                  className="rounded-lg px-6 font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm transition-all"
+                >
+                  Procesados
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Pendientes */}
-            <TabsContent value="pendientes" className="min-h-0">
-              <div
-                className={cn(
-                  "rounded-2xl border bg-card shadow-sm w-full min-w-0 overflow-hidden flex min-h-0 flex-col",
-                  filteredPendientes.length === 0 ? "max-h-[320px]" : "h-full",
-                )}
-              >
-                {/* ✅ Filtros dentro de la tarjeta */}
-                <div className="border-b border-border bg-muted/30 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                        Filtrar por fecha:
-                      </Label>
-                      <Input
-                        type="date"
-                        value={pendientesDate}
-                        onChange={(e) => setPendientesDate(e.target.value)}
-                        className="w-[160px] h-8"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPendientesDate(localYYYYMMDD())}
-                        className="h-8 text-xs"
-                        title="Ver hoy"
-                      >
-                        Hoy
-                      </Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Mostrando: {filteredPendientes.length} de {rows.length} pendientes
-                    </div>
-                  </div>
-                </div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                Total Registros: <span className="text-slate-900 dark:text-white">{tab === "pendientes" ? filteredPendientes.length : filteredProcesados.length}</span>
+              </div>
+            </div>
 
-                <div className={filteredPendientes.length === 0 ? "min-h-0 overflow-visible" : scrollAreaClass}>
+            {/* Pendientes Table Content */}
+            <TabsContent value="pendientes" className="mt-0 flex-1 min-h-0">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
+                <div className={cn(scrollAreaClass, "custom-scrollbar")}>
                   {filteredPendientes.length === 0 ? (
                     <EmptyState text={`No hay pendientes para ${pendientesDate === localYYYYMMDD() ? "hoy" : `la fecha ${pendientesDate}`}.`} />
                   ) : (
-                    <Table className="table-fixed min-w-[1900px]">
-                      <TableHeader className="sticky top-0 z-20">
-                        <TableRow className="border-b">
+                    <Table className="table-fixed min-w-[2200px]">
+                      <TableHeader className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
+                        <TableRow className="border-b border-slate-100 dark:border-slate-800 hover:bg-transparent">
                           {columns.map((c) => (
-                            <TableHead key={c.key} className={[headBase, c.w].join(" ")}>
+                            <TableHead key={c.key} className={cn(headBase, c.w, "border-none py-4 text-slate-900 dark:text-slate-100")}>
                               {c.label}
                             </TableHead>
                           ))}
-                          <TableHead className={[headBase, "w-[220px] text-center"].join(" ")}>
+                          <TableHead className={cn(headBase, "w-[240px] text-center border-none py-4 text-slate-900 dark:text-slate-100")}>
                             Acciones
                           </TableHead>
                         </TableRow>
@@ -759,6 +869,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                         {filteredPendientes.map((row, idx) => {
                           const id = safeStr(getId(row));
                           const isBusy = String(busyId) === String(id);
+                          const isSelected = selected && String(getId(selected)) === id;
 
                           const fecha = fmtTime(getFecha(row));
                           const o_beta = safeStr(getAny(row, "o_beta", "O_BETA"));
@@ -767,7 +878,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                           const marca = safeStr(getAny(row, "marca", "MARCA"));
                           const placas = safeStr(getAny(row, "placas", "PLACAS"));
                           const dni = safeStr(getAny(row, "dni", "DNI"));
-                          const nombres = safeStr(getAny(row, "chofer", "CHOFER"));
+                          const nombres = safeStr(getAny(row, "chofer", "CHOFER", "NOMBRES"));
                           const licencia = safeStr(getAny(row, "licencia", "LICENCIA"));
                           const termografos = safeStr(getAny(row, "termografos", "TERMOGRAFOS"));
                           const codigoSap = safeStr(getAny(row, "codigo_sap", "CODIGO_SAP"));
@@ -776,144 +887,96 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                           const ps_aduana = safeStr(getAny(row, "ps_aduana", "PS_ADUANA"));
                           const ps_operador = safeStr(getAny(row, "ps_operador", "PS_OPERADOR"));
                           const senasa_ps_linea = safeStr(getAny(row, "senasa_ps_linea", "SENASA_PS_LINEA"));
-                          const partidaRegistral = safeStr(getAny(row, "p_registral", "P_REGISTRAL"));
-                          const certificadoVehicular = safeStr(getAny(row, "cer_vehicular", "CER_VEHICULAR"));
+                          const p_registral = safeStr(getAny(row, "p_registral", "P_REGISTRAL"));
+                          const cer_vehicular = safeStr(getAny(row, "cer_vehicular", "CER_VEHICULAR"));
 
                           return (
                             <TableRow
                               key={id || idx}
                               onClick={() => onRowSelect(row)}
-                              className={[
-                                "border-b last:border-b-0 cursor-pointer",
-                                idx % 2 === 0 ? "bg-background" : "bg-muted/20",
-                                "hover:bg-muted/40 transition-colors",
-                              ].join(" ")}
+                              className={cn(
+                                "border-b border-slate-50 dark:border-slate-900 last:border-0 cursor-pointer transition-all duration-200 group",
+                                isSelected ? "bg-primary/10" : idx % 2 === 0 ? "bg-white dark:bg-slate-950" : "bg-slate-50/30 dark:bg-slate-900/20",
+                                "hover:bg-primary/5 dark:hover:bg-primary/10"
+                              )}
                             >
-                              <TableCell className={cn(cellBase, cellCenter, cellMono)} {...cellProps("ID", id)}>
+                              <TableCell className={cn(cellBase, cellCenter, cellMono, "font-bold text-primary group-hover:scale-110 transition-transform")} {...cellProps("ID", id)}>
                                 {id}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("FECHA", fecha)}>
                                 {fecha}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellCenter, "font-semibold")}
-                                {...cellProps("O_BETA", o_beta)}
-                              >
+                              <TableCell className={cn(cellBase, cellCenter, "font-black text-slate-900 dark:text-white")} {...cellProps("O_BETA", o_beta)}>
                                 {o_beta}
                               </TableCell>
-
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("BOOKING", booking)}>
+                              <TableCell className={cn(cellBase, cellLeft, "font-medium")} {...cellProps("BOOKING", booking)}>
                                 {booking}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellLeft)} {...cellProps("AWB", awb)}>
                                 {awb}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("MARCA", marca)}>
                                 {marca}
                               </TableCell>
-
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PLACAS", placas)}>
+                              <TableCell className={cn(cellBase, cellCenter, "font-mono font-bold")} {...cellProps("PLACAS", placas)}>
                                 {placas}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DNI", dni)}>
                                 {dni}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellLeft)} {...cellProps("NOMBRES", nombres)}>
                                 {nombres}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("LICENCIA", licencia)}>
                                 {licencia}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellLeft)} {...cellProps("TERMÓGRAFOS", termografos)}>
                                 {termografos}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("CÓDIGO SAP", codigoSap)}>
                                 {codigoSap}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellLeft)}
-                                {...cellProps("TRANSPORTISTA", transportista)}
-                              >
+                              <TableCell className={cn(cellBase, cellLeft, "text-[12px] opacity-80")} {...cellProps("TRANSPORTISTA", transportista)}>
                                 {transportista}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTOS BETA", ps_beta)}>
                                 {ps_beta}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTO ADUANA", ps_aduana)}>
                                 {ps_aduana}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellCenter)}
-                                {...cellProps("PRECINTO OPERADOR", ps_operador)}
-                              >
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTO OPERADOR", ps_operador)}>
                                 {ps_operador}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellCenter)}
-                                {...cellProps("PRECINTO SENASA/LINEA", senasa_ps_linea)}
-                              >
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("SENASA/PS LÍNEA", senasa_ps_linea)}>
                                 {senasa_ps_linea}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellLeft)}
-                                {...cellProps("PARTIDA REGISTRAL", partidaRegistral)}
-                              >
-                                {partidaRegistral}
+                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("PARTIDA REGISTRAL", p_registral)}>
+                                {p_registral}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellLeft)}
-                                {...cellProps("CERTIFICADO VEHICULAR", certificadoVehicular)}
-                              >
-                                {certificadoVehicular}
+                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("CERTIFICADO VEHICULAR", cer_vehicular)}>
+                                {cer_vehicular}
                               </TableCell>
 
                               <TableCell className={cn(cellBase, cellCenter)}>
-                                <div className="inline-flex flex-wrap items-center justify-center gap-2">
+                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
-                                    variant="outline"
+                                    variant="ghost"
                                     size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRefreshRow(row, "pendientes");
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); handleRefreshRow(row, "pendientes"); }}
                                     disabled={isBusy}
-                                    title="Actualizar fila"
+                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
                                   >
-                                    {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                    {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="material-symbols-outlined text-xl">refresh</span>}
                                   </Button>
-
                                   <Button
                                     size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleProcesar(row);
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); handleProcesar(row); }}
                                     disabled={isBusy}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                    title="Procesar"
+                                    className="h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white font-bold px-3 transition-all"
                                   >
-                                    {isBusy ? (
-                                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                                    )}
-                                    Procesar
+                                    <span className="material-symbols-outlined text-sm mr-1">task_alt</span>
+                                    Listo
                                   </Button>
                                 </div>
                               </TableCell>
@@ -927,88 +990,34 @@ export function BandejaSap({ rows, setRows, className }: Props) {
               </div>
             </TabsContent>
 
-            {/* Procesados */}
-            <TabsContent value="procesados" className="min-h-0">
-              <div
-                className={cn(
-                  "rounded-2xl border bg-card shadow-sm w-full min-w-0 overflow-hidden flex min-h-0 flex-col",
-                  processedRows.length === 0 ? "max-h-[320px]" : "h-full",
-                )}
-              >
-                {/* ✅ Filtros dentro de la tarjeta */}
-                <div className="border-b border-border bg-muted/30 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                        Filtrar por fecha:
-                      </Label>
-                      <Input
-                        type="date"
-                        value={procesadosDate}
-                        onChange={(e) => setProcesadosDate(e.target.value)}
-                        className="w-[160px] h-8"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const hoy = localYYYYMMDD();
-                          setProcesadosDate(hoy);
-                          refreshProcesados(hoy);
-                        }}
-                        className="h-8 text-xs"
-                        title="Ver hoy"
-                      >
-                        Hoy
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refreshProcesados(procesadosDate)}
-                        disabled={procesadosLoading}
-                        title="Refrescar"
-                        className="h-8"
-                      >
-                        {procesadosLoading ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="mr-2 h-3 w-3" />
-                        )}
-                        Refrescar
-                      </Button>
-                    </div>
-
-                    <div className="text-xs text-muted-foreground">
-                      Mostrando: {processedRows.length} procesados
-                    </div>
-                  </div>
-                </div>
-                <div className={processedRows.length === 0 ? "min-h-0 overflow-visible" : scrollAreaClass}>
-                  {processedRows.length === 0 ? (
-                    <EmptyState text="No hay procesados para esa fecha." />
+            {/* Procesados Table Content */}
+            <TabsContent value="procesados" className="mt-0 flex-1 min-h-0">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
+                <div className={cn(scrollAreaClass, "custom-scrollbar")}>
+                  {filteredProcesados.length === 0 ? (
+                    <EmptyState text="No hay registros procesados para mostrar." />
                   ) : (
-                    <Table className="table-fixed min-w-[1550px]">
-                      <TableHeader className="sticky top-0 z-20">
-                        <TableRow className="border-b">
-                          <TableHead className={[headBase, "w-[90px]"].join(" ")}>ID</TableHead>
-                          <TableHead className={[headBase, "w-[180px]"].join(" ")}>Procesado</TableHead>
-                          <TableHead className={[headBase, "w-[150px]"].join(" ")}>O_BETA</TableHead>
-                          <TableHead className={[headBase, "w-[120px]"].join(" ")}>Estado</TableHead>
-                          <TableHead className={[headBase, "w-[180px]"].join(" ")}>BOOKING</TableHead>
-                          <TableHead className={[headBase, "w-[260px]"].join(" ")}>AWB</TableHead>
-                          <TableHead className={[headBase, "w-[160px]"].join(" ")}>DAM</TableHead>
-                          <TableHead className={[headBase, "w-[140px]"].join(" ")}>DNI</TableHead>
-                          <TableHead className={[headBase, "w-[280px]"].join(" ")}>TRANSPORTISTA</TableHead>
-                          <TableHead className={[headBase, "w-[360px] text-center"].join(" ")}>
-                            Acciones
-                          </TableHead>
+                    <Table className="table-fixed min-w-[1600px]">
+                      <TableHeader className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
+                        <TableRow className="border-b border-slate-100 dark:border-slate-800 hover:bg-transparent">
+                          <TableHead className={cn(headBase, "w-[90px] border-none py-4 text-slate-900 dark:text-slate-100")}>ID</TableHead>
+                          <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Fecha Sync</TableHead>
+                          <TableHead className={cn(headBase, "w-[150px] border-none py-4 text-slate-900 dark:text-slate-100")}>O_BETA</TableHead>
+                          <TableHead className={cn(headBase, "w-[140px] border-none py-4 text-slate-900 dark:text-slate-100")}>Estado</TableHead>
+                          <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Booking</TableHead>
+                          <TableHead className={cn(headBase, "w-[240px] border-none py-4 text-slate-900 dark:text-slate-100")}>AWB</TableHead>
+                          <TableHead className={cn(headBase, "w-[160px] border-none py-4 text-slate-900 dark:text-slate-100")}>DAM</TableHead>
+                          <TableHead className={cn(headBase, "w-[160px] border-none py-4 text-slate-900 dark:text-slate-100")}>DNI</TableHead>
+                          <TableHead className={cn(headBase, "w-[280px] border-none py-4 text-slate-900 dark:text-slate-100")}>Transportista</TableHead>
+                          <TableHead className={cn(headBase, "w-[280px] text-center border-none py-4 text-slate-900 dark:text-slate-100")}>Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
 
                       <TableBody>
-                        {processedRows.map((row, idx) => {
+                        {filteredProcesados.map((row, idx) => {
                           const id = safeStr(getId(row));
                           const isBusy = String(busyId) === String(id);
+                          const isSelected = selected && String(getId(selected)) === id;
                           const estado = String((row as any).estado ?? "procesado").toLowerCase();
 
                           const processedAt = fmtTime((row as any).processed_at);
@@ -1023,94 +1032,73 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                             <TableRow
                               key={id || idx}
                               onClick={() => onRowSelect(row)}
-                              className={[
-                                "border-b last:border-b-0 cursor-pointer",
-                                idx % 2 === 0 ? "bg-background" : "bg-muted/20",
-                                "hover:bg-muted/40 transition-colors",
-                              ].join(" ")}
+                              className={cn(
+                                "border-b border-slate-50 dark:border-slate-900 last:border-0 cursor-pointer transition-all duration-200 group",
+                                isSelected ? "bg-primary/10" : idx % 2 === 0 ? "bg-white dark:bg-slate-950" : "bg-slate-50/30 dark:bg-slate-900/20",
+                                "hover:bg-primary/5 dark:hover:bg-primary/10"
+                              )}
                             >
-                              <TableCell className={cn(cellBase, cellCenter, cellMono)} {...cellProps("ID", id)}>
+                              <TableCell className={cn(cellBase, cellCenter, cellMono, "font-bold text-primary")} {...cellProps("ID", id)}>
                                 {id}
                               </TableCell>
-
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("Procesado", processedAt)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("Fecha Sync", processedAt)}>
                                 {processedAt}
                               </TableCell>
-
-                              <TableCell
-                                className={cn(cellBase, cellCenter, "font-semibold")}
-                                {...cellProps("O_BETA", o_beta)}
-                              >
+                              <TableCell className={cn(cellBase, cellCenter, "font-black text-slate-900 dark:text-white")} {...cellProps("O_BETA", o_beta)}>
                                 {o_beta}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)}>
                                 <EstadoBadge estado={estado} />
                               </TableCell>
-
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("BOOKING", booking)}>
+                              <TableCell className={cn(cellBase, cellLeft, "font-medium")} {...cellProps("Booking", booking)}>
                                 {booking}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellLeft)} {...cellProps("AWB", awb)}>
                                 {awb}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DAM", dam)}>
                                 {dam}
                               </TableCell>
-
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DNI", dni)}>
                                 {dni}
                               </TableCell>
-
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("TRANSPORTISTA", transportista)}>
+                              <TableCell className={cn(cellBase, cellLeft, "text-[12px] opacity-80")} {...cellProps("Transportista", transportista)}>
                                 {transportista}
                               </TableCell>
 
                               <TableCell className={cn(cellBase, cellCenter)}>
-                                <div className="inline-flex flex-wrap items-center justify-center gap-2">
+                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
-                                    variant="outline"
+                                    variant="ghost"
                                     size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRefreshRow(row, "procesados");
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); handleRefreshRow(row, "procesados"); }}
                                     disabled={isBusy}
-                                    title="Actualizar fila"
+                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
                                   >
-                                    {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                    <span className="material-symbols-outlined text-xl">refresh</span>
                                   </Button>
 
                                   {puedeEditarRegistros(role) && (
                                     <Button
                                       size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openEditar(row);
-                                      }}
+                                      onClick={(e) => { e.stopPropagation(); openEditar(row); }}
                                       disabled={estado === "anulado"}
-                                      className="bg-amber-500 hover:bg-amber-600 text-white"
-                                      title="Editar (solo roles admin/editor)"
+                                      className="h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 transition-all"
                                     >
-                                      <Pencil className="mr-1 h-3 w-3" />
+                                      <span className="material-symbols-outlined text-sm mr-1">edit</span>
                                       Editar
                                     </Button>
                                   )}
 
                                   {canAnularRegistros(role ?? "documentaria") && (
                                     <Button
-                                      variant="destructive"
+                                      variant="ghost"
                                       size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openAnular(row);
-                                      }}
+                                      onClick={(e) => { e.stopPropagation(); openAnular(row); }}
                                       disabled={estado === "anulado"}
-                                      title="Anular"
+                                      className="h-8 rounded-lg text-red-500 hover:bg-red-50 font-bold px-3 transition-all"
                                     >
-                                      <Ban className="mr-1 h-3 w-3" />
+                                      <span className="material-symbols-outlined text-sm mr-1">block</span>
                                       Anular
                                     </Button>
                                   )}
@@ -1126,13 +1114,52 @@ export function BandejaSap({ rows, setRows, className }: Props) {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* 📊 Stats Footer Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm group hover:scale-[1.02] transition-all">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sincronizados Hoy</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">{processedRows.length}</h3>
+                </div>
+                <div className="size-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 group-hover:rotate-12 transition-transform">
+                  <span className="material-symbols-outlined italic">verified</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm group hover:scale-[1.02] transition-all">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pendientes SAP</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">{filteredPendientes.length}</h3>
+                </div>
+                <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 group-hover:rotate-12 transition-transform">
+                  <span className="material-symbols-outlined italic">pending</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm group hover:scale-[1.02] transition-all">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Errores Sync</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">0</h3>
+                </div>
+                <div className="size-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-600 group-hover:rotate-12 transition-transform">
+                  <span className="material-symbols-outlined italic">report</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Panel desktop solo con selección */}
         {showDetailDesktop && selectedDetail ? (
-          <div className="hidden lg:block min-h-0 h-full max-h-[calc(100vh-260px)]">
+          <div className="hidden lg:block min-h-0 h-full max-h-[calc(100vh-260px)] sticky top-0">
             <DetailPanel
-              title={tab === "pendientes" ? "Detalle · Pendiente" : "Detalle · Procesado"}
+              title={tab === "pendientes" ? "Panel SAP · Pendiente" : "Panel SAP · Procesado"}
               row={selectedDetail}
               onClose={() => setSelected(null)}
             />
