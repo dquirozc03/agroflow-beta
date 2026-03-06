@@ -88,7 +88,7 @@ export default function IePage() {
             <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
                 <AppHeader />
 
-                <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-slate-50 dark:bg-slate-950 p-6 space-y-6">
+                <main className="flex min-w-0 flex-1 flex-col min-h-0 overflow-y-auto lc-scroll bg-slate-50 dark:bg-slate-950 p-6 pb-24 space-y-6">
                     <div className="flex flex-col gap-1">
                         <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
                             Instrucciones de Embarque
