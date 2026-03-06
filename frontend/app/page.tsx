@@ -24,7 +24,7 @@ import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide
 import { DashboardContent } from "@/components/dashboard-content";
 import { ChatWidget } from "@/components/chat-widget";
 
-import { listRegistros } from "@/lib/api";
+import { listRegistros, apiValidarValor } from "@/lib/api";
 import type { FormState, SapRow } from "@/lib/types";
 import { initialFormState } from "@/lib/types";
 import type { RegistroListado } from "@/lib/api";
@@ -97,6 +97,7 @@ function AgroFlowContent() {
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrLogs, setOcrLogs] = useState<{ type: "info" | "success" | "warning"; message: string; subtext?: string }[]>([]);
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
+  const [valCache, setValCache] = useState<Record<string, { valido: boolean; mensaje?: string }>>({});
 
   const addOcrLog = useCallback((type: "info" | "success" | "warning", message: string, subtext?: string) => {
     setOcrLogs(prev => [{ type, message, subtext }, ...prev].slice(0, 5));
@@ -170,11 +171,40 @@ function AgroFlowContent() {
       logs.push({ type: "success", message: "DAM Asignada", subtext: form.dam });
     }
 
+    // 5. Validar Precintos (Unicidad en tiempo real)
+    const todosPrecintos = [
+      ...(form.ps_beta_items || []),
+      ...(form.termografos_items || []),
+      form.ps_operador,
+      form.senasa
+    ].filter(v => v && v.trim() && !v.includes("*"));
+
+    todosPrecintos.forEach(p => {
+      const cache = valCache[p];
+      if (cache) {
+        if (cache.valido) {
+          logs.push({ type: "success", message: `Precinto ${p}`, subtext: "Único (disponible)" });
+        } else {
+          logs.push({ type: "warning", message: `Precinto ${p}`, subtext: "¡YA REGISTRADO! (USADO)" });
+        }
+      } else {
+        // Disparar validación si no está en cache (simplificado para Bitácora)
+        apiValidarValor("PS_BETA", p).then(res => {
+          setValCache(prev => ({ ...prev, [p]: { valido: res.valido, mensaje: res.mensaje } }));
+        }).catch(() => { });
+      }
+    });
+
+    // Especial: Precinto Operador **
+    if (form.ps_operador && form.ps_operador.includes("*")) {
+      logs.push({ type: "success", message: "Precinto Operador", subtext: "Omitido o Comodín (**)" });
+    }
+
     if (logs.length > 0) {
       setOcrLogs(logs);
-      if (ocrStatus === "idle") setOcrProgress(Math.min(logs.length * 25, 100));
+      if (ocrStatus === "idle") setOcrProgress(Math.min(logs.length * 20, 100));
     }
-  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, ocrStatus]);
+  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocrStatus, valCache]);
 
   const bandejaIds = useMemo(() => {
     return new Set(sapRows.map((r) => Number(r.registro_id)));

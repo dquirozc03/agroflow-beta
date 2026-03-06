@@ -304,6 +304,15 @@ export async function createRegistro(
   return json<{ id: number }>(`/registros`, payload, "POST");
 }
 
+export async function apiValidarValor(tipo: string, valor: string): Promise<{ valido: boolean; mensaje: string; valor: string }> {
+  const qs = new URLSearchParams();
+  qs.set("tipo", tipo);
+  qs.set("valor", valor);
+  return request<{ valido: boolean; mensaje: string; valor: string }>(`/registros/validar-valor?${qs.toString()}`, {
+    method: "GET",
+  });
+}
+
 // Lo que tu backend devuelve hoy en cerrar/procesar:
 // {"estado":"procesado","awbs_liberados":true} o {"estado":"ya estaba procesado"}
 export type ProcesarResponse = {

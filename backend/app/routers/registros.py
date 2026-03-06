@@ -140,6 +140,37 @@ def validar_duplicados(db: Session, items: list[tuple[str, str, bool]]) -> list[
     return duplicados
 
 
+@router.get("/validar-valor")
+def validar_valor_unico(
+    tipo: str = Query(..., description="Tipo de dato (O_BETA, BOOKING, PS_BETA, etc)"),
+    valor: str = Query(..., description="Valor a validar"),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite validar si un valor específico (como un precinto) ya está registrado.
+    Útil para la Bitácora de IA reactiva en el frontend.
+    """
+    v = normalizar(valor)
+    if not v:
+        return {"valido": True, "mensaje": "Valor vacío"}
+    
+    # Ignorar comodines asterisco
+    if set(v) == {'*'}:
+        return {"valido": True, "mensaje": "Comodín permitido"}
+
+    es_vigente = tipo in TIPOS_VIGENTES
+    duplicados = validar_duplicados(db, [(tipo, v, es_vigente)])
+    
+    if duplicados:
+        return {
+            "valido": False, 
+            "mensaje": duplicados[0]["mensaje"],
+            "valor": v
+        }
+    
+    return {"valido": True, "mensaje": "Disponible", "valor": v}
+
+
 def validar_duplicados_excluyendo(
     db: Session, items: list[tuple[str, str, bool]], referencia: str
 ) -> list[dict]:
@@ -193,6 +224,32 @@ def snapshot_registro(reg: RegistroOperativo) -> dict:
         "anulado_at": reg.anulado_at.isoformat() if getattr(reg, "anulado_at", None) else None,
         "anulado_motivo": reg.anulado_motivo,
     }
+
+
+def construir_items_unicos(payload: RegistroCrear, senasa_ps_linea_norm: str | None) -> list[tuple[str, str, bool]]:
+    items: list[tuple[str, str, bool]] = []
+    
+    def add(tipo: str, valor: str | None):
+        v = normalizar(valor)
+        if not v:
+            return
+        vigente = tipo in TIPOS_VIGENTES
+        items.append((tipo, v, vigente))
+
+    add("O_BETA", payload.o_beta)
+    add("BOOKING", payload.booking)
+    add("AWB", payload.awb)
+
+    for t in dividir_por_slash(payload.termografos):
+        add("TERMOGRAFO", t)
+    for ps in dividir_por_slash(payload.ps_beta):
+        add("PS_BETA", ps)
+
+    add("PS_ADUANA", payload.ps_aduana)
+    add("PS_OPERADOR", payload.ps_operador)
+    add("SENASA_PS_LINEA", senasa_ps_linea_norm)
+
+    return items
 
 
 def construir_items_unicos_desde_reg(reg: RegistroOperativo) -> list[tuple[str, str, bool]]:

@@ -159,7 +159,7 @@ export function CardAccion({
         toast.error("Conflicto de unicidad (duplicados)");
         return;
       }
-      toast.error("Error al crear registro");
+      toast.error(error?.message || "Error al crear registro");
     } finally {
       setLoadingCreate(false);
     }
