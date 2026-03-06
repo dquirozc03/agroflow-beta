@@ -137,7 +137,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="font-display bg-[#f6f8f6] dark:bg-[#08110a] min-h-screen overflow-x-hidden relative flex flex-col justify-center items-center">
+    <div className="font-display bg-[#f6f8f6] dark:bg-[#08110a] h-screen overflow-hidden relative flex flex-col justify-center items-center">
       <NewAuthBackground />
 
       {/* Main Content Container */}
