@@ -969,7 +969,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               </TableCell>
 
                               <TableCell className={cn(cellBase, cellCenter)}>
-                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-center gap-2">
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -1077,7 +1077,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               </TableCell>
 
                               <TableCell className={cn(cellBase, cellCenter)}>
-                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-center gap-2">
                                   <Button
                                     variant="ghost"
                                     size="icon"
