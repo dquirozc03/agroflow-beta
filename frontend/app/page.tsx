@@ -24,25 +24,14 @@ import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide
 import { DashboardContent } from "@/components/dashboard-content";
 import { ChatWidget } from "@/components/chat-widget";
 
-import { listRegistros, apiValidarValor } from "@/lib/api";
+import { listRegistros, apiValidarValor, listPendientes } from "@/lib/api";
 import type { FormState, SapRow } from "@/lib/types";
 import { initialFormState } from "@/lib/types";
 import type { RegistroListado } from "@/lib/api";
 import { toast } from "sonner";
 
+// Eliminado: el almacenamiento ahora es centralizado en DB
 const BANDEJA_STORAGE_KEY = "logi-capture-bandeja";
-
-function loadBandejaFromStorage(): SapRow[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(BANDEJA_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 function AgroFlowContent() {
   const router = useRouter();
@@ -117,21 +106,20 @@ function AgroFlowContent() {
     return () => document.removeEventListener("focusin", handleFocus);
   }, []);
 
-  // Persistencia: restaurar bandeja al cargar
-  useEffect(() => {
-    setSapRows(loadBandejaFromStorage());
-    setHydrated(true);
+  // Persistencia Global: obtener pendientes del backend
+  const fetchPendientes = useCallback(async () => {
+    try {
+      const res = await listPendientes();
+      setSapRows(res.items as SapRow[]);
+    } catch (error) {
+      console.error("Error fetching pendientes:", error);
+    }
   }, []);
 
-  // Persistencia: guardar bandeja cuando cambie (evitar guardar antes de hidratar)
   useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(BANDEJA_STORAGE_KEY, JSON.stringify(sapRows));
-    } catch {
-      // quota o privado
-    }
-  }, [hydrated, sapRows]);
+    fetchPendientes();
+    setHydrated(true);
+  }, [fetchPendientes]);
 
   const pendingCount = sapRows.length;
 
@@ -218,22 +206,11 @@ function AgroFlowContent() {
    * Nota: esto complementa el bloqueo del botón en Historial.
    */
   const handleSapRow = useCallback((row: SapRow) => {
-    setSapRows((prev) => {
-      const nextId = Number(row.registro_id);
-      const existsIndex = prev.findIndex((r) => Number(r.registro_id) === nextId);
-
-      if (existsIndex !== -1) {
-        // actualiza sin crear duplicado
-        const next = [...prev];
-        next[existsIndex] = row;
-        return next;
-      }
-
-      return [...prev, row];
-    });
-    // Refrescar recientes tras cada inserción existosa
+    // Tras agregar uno nuevo (ya guardado en DB por CardAccion),
+    // refrescamos toda la bandeja del servidor para asegurar consistencia global.
+    fetchPendientes();
     fetchRecientes();
-  }, [fetchRecientes]);
+  }, [fetchPendientes, fetchRecientes]);
 
   /**
    * ✅ Flujo profesional:

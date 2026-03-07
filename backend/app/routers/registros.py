@@ -869,6 +869,63 @@ class ProcesadosSapResponse(BaseModel):
     total: int
 
 
+@router.get("/pendientes", response_model=ProcesadosSapResponse)
+def listar_pendientes(
+    db: Session = Depends(get_db),
+):
+    """
+    Devuelve todos los registros en estado 'pendiente'.
+    Se usa para la persistencia global de la Bandeja SAP.
+    """
+    regs = (
+        db.query(RegistroOperativo)
+        .options(
+            joinedload(RegistroOperativo.chofer),
+            joinedload(RegistroOperativo.vehiculo),
+            joinedload(RegistroOperativo.transportista),
+        )
+        .filter(RegistroOperativo.estado == "pendiente")
+        .order_by(desc(RegistroOperativo.fecha_registro), desc(RegistroOperativo.id))
+        .all()
+    )
+
+    items: list[ProcesadoSapItem] = []
+    for r in regs:
+        chofer = r.chofer
+        veh = r.vehiculo
+        tra = r.transportista
+        fecha_txt = r.fecha_registro.date().isoformat()
+
+        items.append(
+            ProcesadoSapItem(
+                registro_id=r.id,
+                estado=r.estado,
+                processed_at=r.processed_at,
+                FECHA=fecha_txt,
+                O_BETA=safe_str(r.o_beta),
+                BOOKING=safe_str(r.booking),
+                AWB=safe_str(r.awb),
+                MARCA=safe_str(veh.marca if veh else None),
+                PLACAS=safe_str(veh.placas if veh else None),
+                DNI=safe_str(chofer.dni if chofer else None),
+                CHOFER=(chofer.nombre_para_sap if chofer else "") or "",
+                LICENCIA=safe_str(chofer.licencia if chofer else None),
+                TERMOGRAFOS=safe_str(r.termografos),
+                CODIGO_SAP=safe_str(tra.codigo_sap if tra else None),
+                TRANSPORTISTA=safe_str(tra.nombre_transportista if tra else None),
+                PS_BETA=safe_str(r.ps_beta),
+                PS_ADUANA=safe_str(r.ps_aduana),
+                PS_OPERADOR=safe_str(r.ps_operador),
+                SENASA_PS_LINEA=safe_str(r.senasa_ps_linea),
+                N_DAM=safe_str(r.dam),
+                P_REGISTRAL=safe_str(tra.partida_registral if tra else None),
+                CER_VEHICULAR=safe_str(veh.cert_vehicular if veh else None),
+            )
+        )
+
+    return ProcesadosSapResponse(items=items, total=len(items))
+
+
 @router.get("/procesados", response_model=ProcesadosSapResponse)
 def listar_procesados(
     fecha: date = Query(..., description="Fecha local Lima YYYY-MM-DD"),

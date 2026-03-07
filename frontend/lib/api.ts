@@ -471,6 +471,12 @@ export async function listProcesados(params: {
   });
 }
 
+export async function listPendientes(): Promise<ProcesadosResponse> {
+  return request<ProcesadosResponse>(`/registros/pendientes`, {
+    method: "GET",
+  });
+}
+
 // ======================
 // Dashboard estadísticas
 // ======================

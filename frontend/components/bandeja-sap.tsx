@@ -357,8 +357,8 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const [procesadosLoading, setProcesadosLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ✅ Filtro de fecha para Pendientes (por defecto: hoy)
-  const [pendientesDate, setPendientesDate] = useState<string>(localYYYYMMDD());
+  // ✅ Filtro de fecha para Pendientes (por defecto: vacío para mostrar todos)
+  const [pendientesDate, setPendientesDate] = useState<string>("");
 
   const [busyId, setBusyId] = useState<number | string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -803,7 +803,17 @@ export function BandejaSap({ rows, setRows, className }: Props) {
               value={tab === "pendientes" ? pendientesDate : procesadosDate}
               onChange={(e) => tab === "pendientes" ? setPendientesDate(e.target.value) : setProcesadosDate(e.target.value)}
               className="bg-transparent border-none text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-0 py-0 cursor-pointer outline-none"
+              placeholder="Todas las fechas"
             />
+            {tab === "pendientes" && pendientesDate && (
+              <button
+                onClick={() => setPendientesDate("")}
+                className="hover:text-primary transition-colors"
+                title="Mostrar todos los pendientes"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
