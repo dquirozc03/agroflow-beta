@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect, useCallback, Suspense, useRef, useTransit
 import { useSearchParams, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { AppFooter } from "@/components/app-footer";
 import { useAuth } from "@/contexts/auth-context";
 import { canSeeCapturaAndBandeja } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -528,7 +527,6 @@ function AgroFlowContent() {
           ) : null}
         </main>
 
-        <AppFooter />
         <ChatWidget />
       </div>
     </div>

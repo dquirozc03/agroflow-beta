@@ -51,8 +51,6 @@ export function AppHeader({ onOpenScanner }: Props) {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           <img src="/Logo_Beta.png" alt="Beta" className="h-8 w-auto hover:opacity-80 transition-opacity" />
-          <div className="h-4 w-[1.5px] bg-slate-200 dark:bg-white/10 mx-1" />
-          <span className="text-[15px] font-bold text-slate-400 dark:text-slate-500 tracking-tight">AgroFlow</span>
         </div>
 
         <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10">

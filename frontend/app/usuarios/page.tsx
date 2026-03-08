@@ -217,10 +217,10 @@ function UsuariosContent() {
                                 <Table>
                                     <TableHeader className="bg-slate-50/30 dark:bg-slate-900/30">
                                         <TableRow className="border-slate-100 dark:border-slate-800">
-                                            <TableHead className="w-[300px] px-6">Usuario</TableHead>
-                                            <TableHead className="px-6">Rol</TableHead>
+                                            <TableHead className="w-[300px] px-6 text-center">Usuario</TableHead>
+                                            <TableHead className="px-6 text-center">Rol</TableHead>
                                             <TableHead className="px-6 text-center">Estado</TableHead>
-                                            <TableHead className="px-6 text-right">Acciones</TableHead>
+                                            <TableHead className="px-6 text-center">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

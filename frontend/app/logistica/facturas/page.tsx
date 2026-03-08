@@ -113,14 +113,14 @@ function FacturasLogisticasContent() {
                             <Table>
                                 <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
                                     <TableRow className="border-slate-100 dark:border-slate-800">
-                                        <TableHead className="px-6">Operador / RUC</TableHead>
-                                        <TableHead className="px-6">Comprobante</TableHead>
-                                        <TableHead className="px-6">Descripción de Servicios</TableHead>
+                                        <TableHead className="px-6 text-center">Operador / RUC</TableHead>
+                                        <TableHead className="px-6 text-center">Comprobante</TableHead>
+                                        <TableHead className="px-6 text-center">Descripción de Servicios</TableHead>
                                         <TableHead className="px-6 text-center">UM</TableHead>
                                         <TableHead className="px-6 text-center">F. Emisión</TableHead>
-                                        <TableHead className="px-6">Forma Pago</TableHead>
-                                        <TableHead className="px-6 text-right">V. Unitario</TableHead>
-                                        <TableHead className="px-6 text-right">V. Venta (Item)</TableHead>
+                                        <TableHead className="px-6 text-center">Forma Pago</TableHead>
+                                        <TableHead className="px-6 text-center">V. Unitario</TableHead>
+                                        <TableHead className="px-6 text-center">V. Venta (Item)</TableHead>
                                         <TableHead className="px-6 text-center">AWB / Cont.</TableHead>
                                         <TableHead className="px-6 text-center">Estado</TableHead>
                                     </TableRow>

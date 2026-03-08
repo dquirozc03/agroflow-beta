@@ -22,7 +22,6 @@ import { canSeeAuditoria } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { AppFooter } from "@/components/app-footer";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -246,7 +245,6 @@ function AuditoriaContent() {
                     </div>
                 </main>
 
-                <AppFooter />
             </div>
         </div>
     );

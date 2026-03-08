@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { AppFooter } from "@/components/app-footer";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -233,12 +232,12 @@ export default function IePage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent border-b border-border/40">
-                                            <TableHead className="w-[150px]">Fecha/Hora</TableHead>
-                                            <TableHead>Booking</TableHead>
-                                            <TableHead>Orden Beta</TableHead>
-                                            <TableHead>Cliente</TableHead>
-                                            <TableHead>Cultivo</TableHead>
-                                            <TableHead className="text-right">PDF</TableHead>
+                                            <TableHead className="w-[150px] text-center">Fecha/Hora</TableHead>
+                                            <TableHead className="text-center">Booking</TableHead>
+                                            <TableHead className="text-center">Orden Beta</TableHead>
+                                            <TableHead className="text-center">Cliente</TableHead>
+                                            <TableHead className="text-center">Cultivo</TableHead>
+                                            <TableHead className="text-center">PDF</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -288,7 +287,6 @@ export default function IePage() {
                     </div>
                 </main>
 
-                <AppFooter />
             </div>
         </div>
     );

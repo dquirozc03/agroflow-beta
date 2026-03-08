@@ -210,14 +210,14 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ID</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">FECHA</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">BOOKING</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">O/BETA</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">AWB</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">DAM</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ESTADO</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acción</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">ID</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">FECHA</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">BOOKING</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">O/BETA</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">AWB</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">DAM</TableHead>
+                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">ESTADO</TableHead>
+                  <TableHead className="h-10 px-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acción</TableHead>
                 </TableRow>
               </TableHeader>
 

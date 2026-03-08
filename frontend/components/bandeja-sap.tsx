@@ -209,6 +209,57 @@ function toDetail(row: any): DetailRow {
 // ===============================
 // Detail Panel
 // ===============================
+// ✅ Componente Field extraído para evitar remounting al actualizar estado del padre
+const Field = ({
+  label,
+  value,
+  copiedField,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  copiedField: string | null;
+  onCopy: (label: string, value: string) => void;
+}) => (
+  <div
+    className={cn(
+      "rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 transition-all",
+      copiedField === label && "ring-2 ring-primary bg-primary/5 border-primary/30",
+    )}
+  >
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+          {label}
+        </div>
+        <div className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+          {value || "—"}
+        </div>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "shrink-0 h-8 w-8 p-0 rounded-lg hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all",
+          copiedField === label
+            ? "text-primary scale-110"
+            : "text-slate-400 hover:text-primary",
+        )}
+        onClick={() => onCopy(label, value)}
+        disabled={!value}
+        title="Copiar dato"
+      >
+        {copiedField === label ? (
+          <span className="material-symbols-outlined text-lg">check_circle</span>
+        ) : (
+          <span className="material-symbols-outlined text-lg">content_copy</span>
+        )}
+      </Button>
+    </div>
+  </div>
+);
+
 function DetailPanel({
   title,
   row,
@@ -225,42 +276,6 @@ function DetailPanel({
     setCopiedField(label);
     setTimeout(() => setCopiedField(null), 2000);
   };
-
-  const Field = ({ label, value }: { label: string; value: string }) => (
-    <div className={cn(
-      "rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 transition-all",
-      copiedField === label && "ring-2 ring-primary bg-primary/5 border-primary/30"
-    )}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-            {label}
-          </div>
-          <div className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-            {value || "—"}
-          </div>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "shrink-0 h-8 w-8 p-0 rounded-lg hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all",
-            copiedField === label ? "text-primary scale-110" : "text-slate-400 hover:text-primary"
-          )}
-          onClick={() => handleCopy(label, value)}
-          disabled={!value}
-          title="Copiar dato"
-        >
-          {copiedField === label ? (
-            <span className="material-symbols-outlined text-lg">check_circle</span>
-          ) : (
-            <span className="material-symbols-outlined text-lg">content_copy</span>
-          )}
-        </Button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden h-full max-h-full flex flex-col min-h-0 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -292,26 +307,26 @@ function DetailPanel({
         </div>
 
         {/* ORDEN ESTRICTO SAP */}
-        <Field label="ID" value={row.id} />
-        <Field label="FECHA" value={row.fecha} />
-        <Field label="O_BETA" value={row.o_beta} />
-        <Field label="BOOKING" value={row.booking} />
-        <Field label="AWB" value={row.awb} />
-        <Field label="DAM" value={row.dam} />
-        <Field label="MARCA" value={row.marca} />
-        <Field label="PLACAS" value={row.placas} />
-        <Field label="DNI" value={row.dni} />
-        <Field label="NOMBRES" value={row.nombres} />
-        <Field label="LICENCIA" value={row.licencia} />
-        <Field label="TERMÓGRAFOS" value={row.termografos} />
-        <Field label="CÓDIGO SAP" value={row.codigo_sap} />
-        <Field label="TRANSPORTISTA" value={row.transportista} />
-        <Field label="PRECINTOS BETA" value={row.ps_beta} />
-        <Field label="PRECINTO ADUANA" value={row.ps_aduana} />
-        <Field label="PRECINTO OPERADOR" value={row.ps_operador} />
-        <Field label="SENASA/PS LÍNEA" value={row.senasa_ps_linea} />
-        <Field label="PARTIDA REGISTRAL" value={row.p_registral} />
-        <Field label="CERTIFICADO VEHICULAR" value={row.cer_vehicular} />
+        <Field label="ID" value={row.id} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="FECHA" value={row.fecha} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="O_BETA" value={row.o_beta} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="BOOKING" value={row.booking} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="AWB" value={row.awb} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="DAM" value={row.dam} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="MARCA" value={row.marca} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="PLACAS" value={row.placas} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="DNI" value={row.dni} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="NOMBRES" value={row.nombres} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="LICENCIA" value={row.licencia} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="TERMÓGRAFOS" value={row.termografos} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="CÓDIGO SAP" value={row.codigo_sap} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="TRANSPORTISTA" value={row.transportista} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="PRECINTOS BETA" value={row.ps_beta} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="PRECINTO ADUANA" value={row.ps_aduana} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="PRECINTO OPERADOR" value={row.ps_operador} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="SENASA/PS LÍNEA" value={row.senasa_ps_linea} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="PARTIDA REGISTRAL" value={row.p_registral} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="CERTIFICADO VEHICULAR" value={row.cer_vehicular} copiedField={copiedField} onCopy={handleCopy} />
       </div>
 
       <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
@@ -381,11 +396,10 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const [anularSaving, setAnularSaving] = useState(false);
 
   const MOTIVOS_ANULAR = [
-    "Contenedor no salió",
-    "Error de facturación",
-    "Registro duplicado",
-    "Cambio de operación",
-    "Otro",
+    "FALLA DE CONTENEDOR",
+    "ERROR DE FACTURACION",
+    "CAMBIO DE OPERADOR",
+    "OTRO",
   ] as const;
 
   const columns = useMemo(
@@ -421,7 +435,8 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const cellLeft = "text-left";
   const cellMono = "font-mono text-xs text-foreground";
 
-  const selectedDetail = selected ? toDetail(selected) : null;
+  // ✅ Memorizamos el detalle para mantener la referencia estable y evitar scroll jumps
+  const selectedDetail = useMemo(() => (selected ? toDetail(selected) : null), [selected]);
   const showDetailDesktop = Boolean(selectedDetail);
 
   const scrollAreaClass =
@@ -1209,8 +1224,8 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                   <SelectValue placeholder="Selecciona un campo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="booking">BOOKING (recalcula refs)</SelectItem>
-                  <SelectItem value="awb">AWB (contenedor)</SelectItem>
+                  <SelectItem value="booking">BOOKING</SelectItem>
+                  <SelectItem value="awb">Contenedor</SelectItem>
                   <SelectItem value="dni_chofer">DNI chofer</SelectItem>
                   <SelectItem value="transportista">Transportista</SelectItem>
                   <SelectItem value="termografos">Termógrafos</SelectItem>
@@ -1231,7 +1246,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
 
             {editCampo === "awb" && (
               <div className="grid gap-2">
-                <Label>AWB (contenedor)</Label>
+                <Label>Contenedor</Label>
                 <Input
                   value={editValues.awb || ""}
                   onChange={(e) => setEditValues((p) => ({ ...p, awb: e.target.value }))}
