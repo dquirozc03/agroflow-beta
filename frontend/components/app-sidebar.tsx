@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
+  Sprout,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { MODULE_LOGICAPTURE, canSeeAuditoria, canManageUsers } from "@/lib/constants";
@@ -91,7 +92,7 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="flex items-center gap-3 animate-in fade-in duration-500">
             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 bg-gradient-to-br from-primary to-green-600">
-              <span className="material-symbols-outlined text-white text-2xl notranslate">sprout</span>
+              <Sprout className="text-white h-6 w-6" />
             </div>
             <div>
               <h1 className="text-[17px] font-extrabold tracking-tight text-white leading-none">AgroFlow</h1>
