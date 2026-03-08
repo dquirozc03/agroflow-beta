@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { checkApiHealth } from "@/lib/api";
 import { useBackendStatus } from "@/contexts/backend-status-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,9 +21,31 @@ interface Props {
 
 export function AppHeader({ onOpenScanner }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const { isWaking, wakeBackend } = useBackendStatus();
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
+  // Lógica de detección de módulo
+  const tab = searchParams?.get("tab") || "";
+
+  const getModuleInfo = () => {
+    if (pathname === "/ie") return { name: "Instrucciones de Embarque", icon: "description" };
+    if (pathname === "/auditoria") return { name: "Auditoría", icon: "priority_high" };
+    if (pathname === "/logistica/facturas") return { name: "Facturas Logísticas", icon: "package_2" };
+    if (pathname === "/usuarios") return { name: "Gestión de Usuarios", icon: "group" };
+
+    // Si está en el root
+    if (pathname === "/") {
+      if (tab === "dashboard" || tab === "") return { name: "Dashboard Gerencial", icon: "dashboard" };
+      return { name: MODULE_LOGICAPTURE, icon: "inventory_2" };
+    }
+
+    return { name: "AgroFlow", icon: "sprout" };
+  };
+
+  const moduleInfo = getModuleInfo();
 
   const handleLogout = () => {
     logout();
@@ -53,10 +75,10 @@ export function AppHeader({ onOpenScanner }: Props) {
           <img src="/Logo_Beta.png" alt="Beta" className="h-8 w-auto hover:opacity-80 transition-opacity" />
         </div>
 
-        <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10">
-          <span className="material-symbols-outlined text-[18px] text-primary notranslate">inventory_2</span>
+        <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10 animate-in fade-in slide-in-from-left-2 duration-300">
+          <span className="material-symbols-outlined text-[18px] text-primary notranslate">{moduleInfo.icon}</span>
           <span className="text-[13px] font-black text-primary tracking-tight">
-            {MODULE_LOGICAPTURE}
+            {moduleInfo.name}
           </span>
         </div>
       </div>
