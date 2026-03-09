@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from app.utils.logging import logger
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -27,14 +28,6 @@ def _validate_production_config():
             "En producción debe definir JWT_SECRET en el entorno (variable de entorno) "
             "con un valor secreto y aleatorio. No use el valor por defecto."
         )
-
-
-app = FastAPI(
-    title="BETA LogiCapture 1.0",
-    version="0.2.0",
-    description="Catálogos + control de unicidad + preparación SAP.",
-    lifespan=lifespan
-)
 
 
 @asynccontextmanager
@@ -70,6 +63,13 @@ async def lifespan(app: FastAPI):
     # --- SHUTDOWN ---
     logger.info("Cerrando aplicación...")
 
+
+app = FastAPI(
+    title="BETA LogiCapture 1.0",
+    version="0.2.0",
+    description="Catálogos + control de unicidad + preparación SAP.",
+    lifespan=lifespan
+)
 
 @app.get("/ping")
 def ping():
