@@ -133,14 +133,17 @@ export function AppSidebar() {
               if (mod.soon) e.preventDefault();
             }}
           >
-            {/* Indicador lateral (solo expansivo) */}
-            {mod.active && !collapsed && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary shadow-[2px_0_10px_rgba(34,197,94,0.4)]" />
+            {/* Indicador lateral (La Tira) */}
+            {mod.active && (
+              <div className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-all duration-300 z-20",
+                collapsed ? "h-10 w-1.5" : "h-6 w-1"
+              )} />
             )}
 
-            {/* Resaltado Circular (solo colapsado) */}
+            {/* Resaltado de Fondo */}
             {mod.active && collapsed && (
-              <div className="absolute inset-0 rounded-xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300" />
+              <div className="absolute inset-x-1.5 inset-y-0 rounded-xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300" />
             )}
 
             <span className={cn(
