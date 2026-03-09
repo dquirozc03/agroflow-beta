@@ -119,42 +119,33 @@ export function AppSidebar() {
           <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 mt-2">
             Menu Principal
           </p>
-        )}
-
-        {modules.filter(m => !m.hidden).map((mod) => (
+        )}        {modules.filter(m => !m.hidden).map((mod) => (
           <a
             key={mod.name}
             href={mod.href}
             className={cn(
-              "group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-300",
-              mod.active
-                ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(34,197,94,0.05)] border border-primary/20"
-                : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent",
+              "group relative flex items-center transition-all duration-300 rounded-xl",
+              collapsed ? "justify-center h-12 w-12 mx-auto mb-2" : "gap-3 px-3 py-3 mb-1",
+              mod.active && !collapsed ? "bg-primary/10 text-primary border border-primary/20" : "text-slate-400 hover:text-white border border-transparent",
               mod.soon && "cursor-not-allowed opacity-40 grayscale"
             )}
             onClick={(e) => {
               if (mod.soon) e.preventDefault();
             }}
           >
-            {/* Active Highlight Background (Pill design) */}
-            {mod.active && (
-              <div className={cn(
-                "absolute inset-y-1 rounded-full bg-primary/10 border border-primary/20 transition-all duration-300",
-                collapsed ? "inset-x-2" : "inset-x-2"
-              )} />
+            {/* Indicador lateral (solo expansivo) */}
+            {mod.active && !collapsed && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary shadow-[2px_0_10px_rgba(34,197,94,0.4)]" />
             )}
 
-            {/* Active Glow Bar (Left side) */}
-            {mod.active && (
-              <div className={cn(
-                "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full bg-primary shadow-[2px_0_10px_rgba(34,197,94,0.4)] transition-all duration-300",
-                collapsed ? "h-8" : "h-6"
-              )} />
+            {/* Resaltado Circular (solo colapsado) */}
+            {mod.active && collapsed && (
+              <div className="absolute inset-0 rounded-xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300" />
             )}
 
             <span className={cn(
               "material-symbols-outlined transition-all group-hover:scale-110 notranslate leading-none z-10",
-              collapsed ? "mx-auto text-[20px]" : "text-sm",
+              collapsed ? "text-[24px]" : "text-[20px]",
               mod.active ? "text-primary fill-[1]" : "text-slate-500 group-hover:text-white"
             )}>
               {mod.icon}
@@ -162,8 +153,8 @@ export function AppSidebar() {
 
             {!collapsed && (
               <span className={cn(
-                "text-[13.5px] font-bold flex-1 tracking-tight transition-colors",
-                mod.active ? "text-white" : "text-slate-400 group-hover:text-white"
+                "text-sm font-bold tracking-tight transition-colors z-10",
+                mod.active ? "text-primary" : "text-slate-400 group-hover:text-white"
               )}>
                 {mod.name}
                 {mod.soon && (
