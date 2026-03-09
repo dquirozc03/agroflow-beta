@@ -136,17 +136,25 @@ export function AppSidebar() {
               if (mod.soon) e.preventDefault();
             }}
           >
-            {/* Active Glow Bar */}
+            {/* Active Highlight Background (Pill design) */}
             {mod.active && (
               <div className={cn(
-                "absolute left-0 top-1/2 -translate-y-1/2 w-1.5 rounded-r-full bg-primary shadow-[4px_0_15px_rgba(34,197,94,0.6)] transition-all",
-                collapsed ? "h-10" : "h-8"
+                "absolute inset-y-1 rounded-full bg-primary/10 border border-primary/20 transition-all duration-300",
+                collapsed ? "inset-x-2" : "inset-x-2"
+              )} />
+            )}
+
+            {/* Active Glow Bar (Left side) */}
+            {mod.active && (
+              <div className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full bg-primary shadow-[2px_0_10px_rgba(34,197,94,0.4)] transition-all duration-300",
+                collapsed ? "h-8" : "h-6"
               )} />
             )}
 
             <span className={cn(
-              "material-symbols-outlined transition-all group-hover:scale-110 notranslate leading-none",
-              collapsed ? "mx-auto text-[22px]" : "text-slate-500 group-hover:text-white",
+              "material-symbols-outlined transition-all group-hover:scale-110 notranslate leading-none z-10",
+              collapsed ? "mx-auto text-[20px]" : "text-sm",
               mod.active ? "text-primary fill-[1]" : "text-slate-500 group-hover:text-white"
             )}>
               {mod.icon}
