@@ -141,9 +141,9 @@ export function AppHeader({ onOpenScanner }: Props) {
             <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl border-slate-200 dark:border-white/10 shadow-xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
               <DropdownMenuLabel className="px-2 py-1.5">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Mi Cuenta</p>
-                <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user.email}</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user.usuario}</p>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 mx--2" />
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 -mx-1" />
               <DropdownMenuItem className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                 <User className="h-4 w-4 text-slate-400" />
                 <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Mi Perfil</span>
@@ -152,13 +152,13 @@ export function AppHeader({ onOpenScanner }: Props) {
                 <Settings className="h-4 w-4 text-slate-400" />
                 <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Configuración</span>
               </DropdownMenuItem>
-              {user.rol === "admin" && (
+              {user.rol === "administrador" && (
                 <DropdownMenuItem className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                   <ShieldCheck className="h-4 w-4 text-primary" />
                   <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Panel Admin</span>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 mx--2" />
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 -mx-1" />
               <DropdownMenuItem 
                 onClick={handleLogout}
                 className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer bg-red-50/0 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 transition-all font-bold"
