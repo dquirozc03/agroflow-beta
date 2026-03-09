@@ -65,7 +65,7 @@ async function main(workbook: ExcelScript.Workbook, rowDataJson: string) {
     }
     
     const WEBHOOK_URL = `${baseUrl}/api/v1/sync/posicionamiento`;
-    const SYNC_TOKEN = "dev_secret_token_2024";
+    const SYNC_TOKEN = "e2R5SKkbFn1nYRGW3b0CIxp_NVHl5eeCaEaE0bHrRv8";
 
     // 3. Convertir el texto a objeto real con la interfaz definida
     let rowData: ExcelRow;
