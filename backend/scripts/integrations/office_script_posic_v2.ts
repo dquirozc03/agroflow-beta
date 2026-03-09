@@ -52,8 +52,19 @@ async function main(workbook: ExcelScript.Workbook, rowDataJson: string) {
         "FLETE"?: string;
     }
 
-    // 2. Configuración
-    const WEBHOOK_URL = "https://agroflow-beta.onrender.com/api/v1/sync/posicionamiento";
+    // 2. Configuración de Entorno Dinámica
+    const envSheet = workbook.getWorksheet("CONFIG");
+    let baseUrl = "https://agroflow-api.onrender.com"; // URL DE PRODUCCIÓN
+    
+    if (envSheet) {
+        const envValue = envSheet.getRange("B1").getValue()?.toString().trim().toUpperCase();
+        if (envValue === "DEV") {
+            baseUrl = "http://TU_URL_DE_DEV_O_LOCAL.com"; // Cambiar por tu URL de pruebas
+            console.log("Modo DESARROLLO (DEV) activo");
+        }
+    }
+    
+    const WEBHOOK_URL = `${baseUrl}/api/v1/sync/posicionamiento`;
     const SYNC_TOKEN = "dev_secret_token_2024";
 
     // 3. Convertir el texto a objeto real con la interfaz definida

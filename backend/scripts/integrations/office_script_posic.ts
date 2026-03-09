@@ -4,7 +4,19 @@
  * antes de que el script termine.
  */
 async function main(workbook: ExcelScript.Workbook, jsonData: string) {
-    const WEBHOOK_URL = "https://agroflow-beta.onrender.com/api/v1/sync/posicionamiento";
+    // Configuración de Entorno Dinámica
+    const envSheet = workbook.getWorksheet("CONFIG");
+    let baseUrl = "https://agroflow-api.onrender.com"; // URL DE PRODUCCIÓN
+    
+    if (envSheet) {
+        const envValue = envSheet.getRange("B1").getValue()?.toString().trim().toUpperCase();
+        if (envValue === "DEV") {
+            baseUrl = "http://TU_URL_DE_DEV_O_LOCAL.com"; // Cambiar por tu URL de pruebas
+            console.log("Modo DESARROLLO (DEV) activo");
+        }
+    }
+
+    const WEBHOOK_URL = `${baseUrl}/api/v1/sync/posicionamiento`;
     const SYNC_TOKEN = "dev_secret_token_2024";
 
     if (!jsonData || jsonData.trim() === "") {
