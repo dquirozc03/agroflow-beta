@@ -27,23 +27,9 @@ from app.utils.audit import registrar_evento
 
 router = APIRouter(prefix="/api/v1/registros", tags=["Registros"])
 
-# Valores “históricos”: se bloquean si se repiten (siempre)
-TIPOS_HISTORICOS = {
-    "O_BETA",
-    "BOOKING",
-    "TERMOGRAFO",
-    "PS_BETA",
-    "PS_ADUANA",
-    "PS_OPERADOR",
-    "SENASA_PS_LINEA",
-}
-
-# Valores “vigentes”: se bloquean solo mientras el registro está “en curso”
-# (AWB queda libre al PROCESAR/ANULAR, o automático tras DIAS_TRAVESIA_AWB).
-TIPOS_VIGENTES = {"AWB"}
-
-# Días de travesía típica: tras este tiempo el AWB se considera libre aunque no se haya procesado/anulado.
-DIAS_TRAVESIA_AWB = 35  # 1 mes y 5 días
+from app.services.registros_service import (
+    RegistroService, TIPOS_VIGENTES, TIPOS_HISTORICOS, DIAS_TRAVESIA_AWB
+)
 
 
 # ===============================
@@ -82,62 +68,7 @@ def obtener_refs_por_booking(db: Session, booking: str | None) -> dict:
     }
 
 
-def construir_items_unicos(payload: RegistroCrear, senasa_ps_linea_norm: str | None) -> list[tuple[str, str, bool]]:
-    items: list[tuple[str, str, bool]] = []
-
-    def add(tipo: str, valor: str | None):
-        v = normalizar(valor)
-        if not v:
-            return
-        # IGNORAR ASTERISCOS (ej: *, **, ***, ****) en validación de unicidad
-        if set(v) == {'*'}:
-            return
-
-        vigente = tipo in TIPOS_VIGENTES
-        items.append((tipo, v, vigente))
-
-    add("O_BETA", payload.o_beta)
-    add("BOOKING", payload.booking)
-    add("AWB", payload.awb)
-
-    for t in dividir_por_slash(payload.termografos):
-        add("TERMOGRAFO", t)
-
-    for ps in dividir_por_slash(payload.ps_beta):
-        add("PS_BETA", ps)
-
-    add("PS_ADUANA", payload.ps_aduana)
-    add("PS_OPERADOR", payload.ps_operador)
-    add("SENASA_PS_LINEA", senasa_ps_linea_norm)
-
-    return items
-
-
-def validar_duplicados(db: Session, items: list[tuple[str, str, bool]]) -> list[dict]:
-    duplicados: list[dict] = []
-    ahora = datetime.now(timezone.utc)
-    limite_travesia = ahora - timedelta(days=DIAS_TRAVESIA_AWB)
-
-    for tipo, valor, vigente in items:
-        q = db.query(Unico).filter(Unico.tipo == tipo, Unico.valor == valor)
-        if vigente:
-            # AWB: solo bloquea si vigente Y fecha_uso dentro de los últimos DIAS_TRAVESIA_AWB
-            q = q.filter(
-                Unico.vigente == True,  # noqa: E712
-                Unico.fecha_uso >= limite_travesia,
-            )
-        existe = q.first()
-        if existe:
-            duplicados.append(
-                {
-                    "tipo": tipo,
-                    "valor": valor,
-                    "mensaje": "Valor en uso actualmente (candado vigente)"
-                    if vigente
-                    else "Valor ya utilizado (bloqueado por unicidad)",
-                }
-            )
-    return duplicados
+# Las funciones construir_items_unicos y validar_duplicados se han movido a RegistroService.
 
 
 @router.get("/validar-valor")
@@ -279,34 +210,20 @@ def construir_items_unicos_desde_reg(reg: RegistroOperativo) -> list[tuple[str, 
 
 
 def recrear_unicos_del_registro(db: Session, reg: RegistroOperativo):
-    """
-    Reconstruye unicidad del registro completo, revalidando colisiones.
-    Regla clave: si el registro ya está PROCESADO/ANULADO/CERRADO, entonces
-    lo “vigente” (AWB) se marca como no vigente (se libera candado).
-    """
     referencia = f"REG-{reg.id}"
-    items = construir_items_unicos_desde_reg(reg)
+    items = RegistroService.construir_items_unicos(reg, reg.senasa_ps_linea) # Usamos reg como si fuera payload (duck typing)
 
     if reg.estado in {"procesado", "anulado", "cerrado"}:
         items = [(t, v, False if t in TIPOS_VIGENTES else vig) for (t, v, vig) in items]
 
-    duplicados = validar_duplicados_excluyendo(db, items, referencia)
+    duplicados = RegistroService.validar_duplicados(db, items, referencia_excluir=referencia)
     if duplicados:
         raise HTTPException(status_code=409, detail={"duplicados": duplicados})
 
     db.query(Unico).filter(Unico.referencia == referencia).delete(synchronize_session=False)
 
     for tipo, valor, vigente in items:
-        db.add(
-            Unico(
-                tipo=tipo,
-                valor=valor,
-                referencia=referencia,
-                usuario="sistema",
-                origen="registro",
-                vigente=vigente,
-            )
-        )
+        db.add(Unico(tipo=tipo, valor=valor, referencia=referencia, usuario="sistema", origen="registro", vigente=vigente))
 
 
 # ===============================

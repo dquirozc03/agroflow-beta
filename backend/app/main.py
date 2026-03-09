@@ -1,8 +1,12 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from app.utils.logging import logger
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.configuracion import settings
-from app.routers import choferes, vehiculos, transportistas, registros, ocr, sync, referencias, health, auth, chat, agroflow, auditoria, scanner, sync_ie, ie
+from app.routers import (
+    choferes, vehiculos, transportistas, registros, ocr, sync, 
+    referencias, health, auth, chat, agroflow, auditoria, scanner, sync_ie, ie
+)
 from app.services.sync_service import start_sync_service
 import threading
 from app.models.ie_models import CatPlanta
@@ -29,20 +33,26 @@ app = FastAPI(
     title="BETA LogiCapture 1.0",
     version="0.2.0",
     description="Catálogos + control de unicidad + preparación SAP.",
+    lifespan=lifespan
 )
 
 
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- STARTUP ---
+    logger.info("Iniciando aplicación BETA LogiCapture 1.0...")
     _validate_production_config()
+    
     # Inicia el servicio de sincronización de Excel en segundo plano
+    logger.info("Iniciando servicio de sincronización en segundo plano...")
     threading.Thread(target=start_sync_service, daemon=True).start()
     
-    # Semillar plantas iniciales (con blindaje ante tablas faltantes)
+    # Semillar plantas iniciales
     db = SessionLocal()
     try:
         planta_ica = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
         if not planta_ica:
+            logger.info("Semillando planta ICA por defecto...")
             planta_ica = CatPlanta(
                 nombre="ICA", 
                 direccion="CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
@@ -50,11 +60,15 @@ def startup():
             db.add(planta_ica)
             db.commit()
     except sqlalchemy.exc.ProgrammingError:
-        print("⚠️ Tabla cat_plantas no existe aún. Omitiendo semillado inicial.")
+        logger.warning("Tabla cat_plantas no existe aún. Omitiendo semillado inicial.")
     except Exception as e:
-        print(f"⚠️ Error en semillado: {e}")
+        logger.error(f"Error en semillado: {e}")
     finally:
         db.close()
+    
+    yield
+    # --- SHUTDOWN ---
+    logger.info("Cerrando aplicación...")
 
 
 @app.get("/ping")
@@ -78,6 +92,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# =========================
+# Manejo Global de Errores
+# =========================
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Error no controlado en {request.url.path}: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Ha ocurrido un error interno en el servidor. El equipo técnico ha sido notificado."},
+    )
 
 # =========================
 # Routers

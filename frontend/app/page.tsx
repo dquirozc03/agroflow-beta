@@ -23,6 +23,9 @@ import { ClipboardList, TableProperties, History, LayoutDashboard } from "lucide
 import { DashboardContent } from "@/components/dashboard-content";
 import { ChatWidget } from "@/components/chat-widget";
 
+import { useOcr } from "@/hooks/use-ocr";
+import { useScanner } from "@/hooks/use-scanner";
+
 import { listRegistros, apiValidarValor, listPendientes } from "@/lib/api";
 import type { FormState, SapRow } from "@/lib/types";
 import { initialFormState } from "@/lib/types";
@@ -74,36 +77,28 @@ function AgroFlowContent() {
 
   const [form, setForm] = useState<FormState>(initialFormState);
   const [isPending, startTransition] = useTransition();
+  
+  // Hooks personalizados
+  const ocr = useOcr();
+  const scanner = useScanner(setForm, startTransition);
+
   const [refsLocked, setRefsLocked] = useState(false);
   const [registroId, setRegistroId] = useState<number | null>(null);
   const [sapRows, setSapRows] = useState<SapRow[]>([]);
   const [formResetKey, setFormResetKey] = useState(0);
   const [hydrated, setHydrated] = useState(false);
-
-  // Estados para Monitorización OCR
-  const [ocrStatus, setOcrStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
-  const [ocrProgress, setOcrProgress] = useState(0);
-  const [ocrLogs, setOcrLogs] = useState<{ type: "info" | "success" | "warning"; message: string; subtext?: string }[]>([]);
-  const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
   const [valCache, setValCache] = useState<Record<string, { valido: boolean; mensaje?: string }>>({});
-
-  const addOcrLog = useCallback((type: "info" | "success" | "warning", message: string, subtext?: string) => {
-    setOcrLogs(prev => [{ type, message, subtext }, ...prev].slice(0, 5));
-  }, []);
-
-  // Track cursor position
-  const lastFocusedId = useRef<string | null>(null);
 
   useEffect(() => {
     const handleFocus = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT") {
-        lastFocusedId.current = target.id;
+        scanner.lastFocusedId.current = target.id;
       }
     };
     document.addEventListener("focusin", handleFocus);
     return () => document.removeEventListener("focusin", handleFocus);
-  }, []);
+  }, [scanner.lastFocusedId]);
 
   // Persistencia Global: obtener pendientes del backend
   const fetchPendientes = useCallback(async () => {
@@ -128,7 +123,7 @@ function AgroFlowContent() {
    */
   // ✅ Bitácora Reactiva: Monitoreo de campos manuales
   useEffect(() => {
-    if (ocrStatus === "processing") return; // No interrumpir si el OCR está corriendo
+    if (ocr.status === "processing") return; // No interrumpir si el OCR está corriendo
 
     const logs: { type: "info" | "success" | "warning"; message: string; subtext?: string }[] = [];
 
@@ -188,10 +183,10 @@ function AgroFlowContent() {
     }
 
     if (logs.length > 0) {
-      setOcrLogs(logs);
-      if (ocrStatus === "idle") setOcrProgress(Math.min(logs.length * 20, 100));
+      ocr.setLogs(logs);
+      if (ocr.status === "idle") ocr.setProgress(Math.min(logs.length * 20, 100));
     }
-  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocrStatus, valCache]);
+  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocr.status, valCache]);
 
   const bandejaIds = useMemo(() => {
     return new Set(sapRows.map((r) => Number(r.registro_id)));
@@ -235,52 +230,7 @@ function AgroFlowContent() {
   const [justScannedId, setJustScannedId] = useState<string | null>(null);
   const lastScanRef = useRef<{ val: string; time: number }>({ val: "", time: 0 });
 
-  const handleScan = useCallback((data: string) => {
-    const val = data.trim().toUpperCase();
-    if (!val) return;
-
-    // 🛡️ DEDUPLICACIÓN PC: No alertar lo mismo en menos de 2 segundos
-    const now = Date.now();
-    if (val === lastScanRef.current.val && now - lastScanRef.current.time < 2000) return;
-    lastScanRef.current = { val, time: now };
-
-    startTransition(() => {
-      setForm((prev) => {
-        const fieldId = lastFocusedId.current;
-        const toastId = `pc-scan-${val}`; // ID único para deduplicar toasts en sonner
-
-        // 1. Si hay un campo enfocado, intentar insertar ahí
-        if (fieldId && fieldId in prev && !Array.isArray(prev[fieldId as keyof FormState])) {
-          toast.info(`Insertado en ${fieldId}: ${val}`, { id: toastId });
-          setJustScannedId(fieldId);
-          setTimeout(() => setJustScannedId(null), 1000);
-          return { ...prev, [fieldId]: val };
-        }
-
-        // 2. Si no hay foco o el campo no es directo (ej: items), usar lógica inteligente
-        if (/^\d{8}$/.test(val)) {
-          toast.info(`DNI Escaneado: ${val}`, { id: toastId });
-          setJustScannedId("dni");
-          setTimeout(() => setJustScannedId(null), 1000);
-          return { ...prev, dni: val };
-        }
-
-        // 3. Por defecto u otros casos: Agregar a PS_BETA_ITEMS (Precintos múltiples)
-        if (prev.ps_beta_items.includes(val)) {
-          toast.warning("Precinto duplicado", { id: `dup-${val}` });
-          return prev;
-        }
-        toast.success(`Precinto agregado: ${val}`, { id: toastId });
-        // Para items múltiples, flasheamos el input del scanner correspondiente
-        setJustScannedId("scanner_ps_beta");
-        setTimeout(() => setJustScannedId(null), 1000);
-        return {
-          ...prev,
-          ps_beta_items: [...prev.ps_beta_items, val],
-        };
-      });
-    });
-  }, []);
+  const handleScan = scanner.handleScan;
 
   // Debug: Exponer handleScan para pruebas manuales
   useEffect(() => {
@@ -293,13 +243,13 @@ function AgroFlowContent() {
       <AppSidebar />
 
       <ScannerModal
-        open={scannerOpen}
-        onOpenChange={setScannerOpen}
-        onScan={handleScan}
+        open={scanner.scannerOpen}
+        onOpenChange={scanner.setScannerOpen}
+        onScan={scanner.handleScan}
       />
 
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <AppHeader onOpenScanner={() => setScannerOpen(true)} />
+        <AppHeader onOpenScanner={() => scanner.setScannerOpen(true)} />
 
         {/* Contenido principal + footer fijo abajo */}
         {/* Contenido principal + footer fijo abajo */}
@@ -382,31 +332,21 @@ function AgroFlowContent() {
                           key={`ocr-${formResetKey}`}
                           form={form}
                           setForm={setForm}
-                          onProcessingStart={() => {
-                            setOcrStatus("processing");
-                            setOcrProgress(10);
-                            setOcrConfidence(null);
-                            setOcrLogs([]);
-                            addOcrLog("info", "Iniciando extracción", "Analizando estructura del documento...");
-                          }}
-                          onProcessingProgress={(p: number) => setOcrProgress(p)}
-                          onProcessingLog={(type: "info" | "success" | "warning", msg: string, sub?: string) => addOcrLog(type, msg, sub)}
-                          onProcessingEnd={(confidence: number | null) => {
-                            setOcrStatus("success");
-                            setOcrProgress(100);
-                            setOcrConfidence(confidence);
-                          }}
-                          onProcessingError={(err: string) => {
-                            setOcrStatus("error");
-                            setOcrProgress(0);
-                            addOcrLog("warning", "Error en extracción", err);
+                          onProcessingStart={ocr.start}
+                          onProcessingProgress={ocr.setProgress}
+                          onProcessingLog={ocr.addLog}
+                          onProcessingEnd={ocr.setConfidence}
+                          onProcessingError={(err) => {
+                            ocr.setStatus("error");
+                            ocr.setProgress(0);
+                            ocr.addLog("warning", "Error en extracción", err);
                           }}
                         />
                         <CardOcrStatus
-                          status={ocrStatus}
-                          progress={ocrProgress}
-                          logs={ocrLogs}
-                          confidence={ocrConfidence}
+                          status={ocr.status}
+                          progress={ocr.progress}
+                          logs={ocr.logs}
+                          confidence={ocr.confidence}
                         />
                       </div>
 
@@ -417,12 +357,12 @@ function AgroFlowContent() {
                           setForm={setForm}
                           refsLocked={refsLocked}
                           setRefsLocked={setRefsLocked}
-                          justScannedId={justScannedId}
+                           justScannedId={scanner.justScannedId}
                         />
                         <CardOperacion
                           form={form}
                           setForm={setForm}
-                          justScannedId={justScannedId}
+                          justScannedId={scanner.justScannedId}
                         />
 
                         {/* Entradas Recientes Section (Manual Placeholder integration) */}
