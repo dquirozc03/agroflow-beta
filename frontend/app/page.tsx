@@ -177,16 +177,24 @@ function AgroFlowContent() {
       }
     });
 
-    // Especial: Precinto Operador **
-    if (form.ps_operador && form.ps_operador.includes("*")) {
-      logs.push({ type: "success", message: "Precinto Operador", subtext: "Omitido o Comodín (**)" });
-    }
+    // 6. Cálculo de Progreso REAL de completitud
+    const camposMandatorios = [
+      form.booking && form.booking.length > 5,
+      form.dni && form.dni.length === 8,
+      form.placas_tracto && form.placas_tracto.length > 5,
+      form.placas_carreta && form.placas_carreta.length > 5,
+      form.ps_beta_items.length > 0
+    ];
+    const llenos = camposMandatorios.filter(Boolean).length;
+    const porcentajeCompletitud = Math.round((llenos / camposMandatorios.length) * 100);
 
-    if (logs.length > 0) {
+    if (logs.length > 0 || llenos > 0) {
       ocr.setLogs(logs);
-      if (ocr.status === "idle") ocr.setProgress(Math.min(logs.length * 20, 100));
+      if (ocr.status === "idle") {
+        ocr.setProgress(porcentajeCompletitud);
+      }
     }
-  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocr.status, valCache]);
+  }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocr.status, valCache, ocr.setLogs, ocr.setProgress]);
 
   const bandejaIds = useMemo(() => {
     return new Set(sapRows.map((r) => Number(r.registro_id)));

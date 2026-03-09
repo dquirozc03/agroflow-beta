@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { apiUpdateOwnPassword } from "@/lib/api";
 import { toast } from "sonner";
+import { 
+  Sparkles, 
+  Settings2, 
+  BarChart3, 
+  Leaf, 
+  User, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  AlertCircle, 
+  ArrowRight, 
+  ArrowLeft 
+} from "lucide-react";
 
 // Background Component following the new design
 const NewAuthBackground = memo(() => (
@@ -145,7 +158,7 @@ function LoginForm() {
         {/* Branding/Slogan Section */}
         <div className="flex-1 text-center lg:text-left transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13ec5b]/10 border border-[#13ec5b]/20 mb-6">
-            <span className="material-symbols-outlined notranslate text-[#13ec5b] text-sm">auto_awesome</span>
+            <Sparkles className="text-[#13ec5b] h-3.5 w-3.5" />
             <span className="text-xs font-black uppercase tracking-[0.2em] hero-gradient">AgroFlow</span>
           </div>
           <h1 className="text-white tracking-tight text-5xl lg:text-7xl font-bold leading-[1.1] mb-6">
@@ -157,15 +170,15 @@ function LoginForm() {
           </p>
           <div className="mt-10 hidden lg:grid grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">precision_manufacturing</span>
+              <Settings2 className="text-[#a855f7] h-6 w-6" />
               <span className="text-white font-medium">Ops Inteligentes</span>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">analytics</span>
+              <BarChart3 className="text-[#a855f7] h-6 w-6" />
               <span className="text-white font-medium">Datos en Tiempo Real</span>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="material-symbols-outlined notranslate text-[#a855f7] text-3xl">eco</span>
+              <Leaf className="text-[#a855f7] h-6 w-6" />
               <span className="text-white font-medium">Sostenibilidad</span>
             </div>
           </div>
@@ -191,7 +204,7 @@ function LoginForm() {
                   <div className="space-y-2">
                     <label className="text-slate-200 text-[11px] font-black uppercase tracking-[0.15em] px-1">USUARIO</label>
                     <div className="relative group">
-                      <span className="material-symbols-outlined notranslate absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors">person</span>
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-[#13ec5b] transition-colors" />
                       <input
                         className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#08110a]/50 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#13ec5b]/40 focus:border-[#13ec5b]/50 transition-all"
                         placeholder="Ingresa tu usuario"
@@ -219,9 +232,9 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="material-symbols-outlined notranslate absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-white transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-white transition-colors p-1"
                       >
-                        {showPass ? "visibility_off" : "visibility"}
+                        {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                   </div>
@@ -261,7 +274,7 @@ function LoginForm() {
 
               {error && (
                 <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 animate-pulse">
-                  <span className="material-symbols-outlined notranslate text-sm">error</span>
+                  <AlertCircle className="h-4 w-4" />
                   {error}
                 </div>
               )}
@@ -279,7 +292,7 @@ function LoginForm() {
                 ) : (
                   <>
                     <span>{showChangePassword ? "Actualizar y Continuar" : "Ingresar al Tablero"}</span>
-                    <span className="material-symbols-outlined notranslate text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </button>
@@ -291,7 +304,7 @@ function LoginForm() {
                   onClick={handleGoBack}
                   className="text-slate-400 text-sm flex items-center justify-center gap-1 mx-auto hover:text-white transition-colors"
                 >
-                  <span className="material-symbols-outlined notranslate text-sm">arrow_back</span>
+                  <ArrowLeft className="h-3.5 w-3.5" />
                   Regresar al inicio
                 </button>
               )}

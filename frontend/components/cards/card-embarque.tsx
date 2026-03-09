@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, XCircle, CheckCircle2 } from "lucide-react";
 import { getBookingRefs } from "@/lib/api";
 import { toast } from "sonner";
 import type { FormState } from "@/lib/types";
@@ -25,6 +25,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
   justScannedId
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [bookingError, setBookingError] = useState(false);
 
   const handleAutocompletar = async () => {
     if (!form.booking.trim()) {
@@ -32,6 +33,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
       return;
     }
     setLoading(true);
+    setBookingError(false);
     try {
       const refs = await getBookingRefs(form.booking.trim());
       setForm((prev) => ({
@@ -43,6 +45,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
       setRefsLocked(true);
       toast.success("Datos de referencia cargados");
     } catch {
+      setBookingError(true);
       toast.error("No se encontraron referencias para este BOOKING");
     } finally {
       setLoading(false);
@@ -73,14 +76,28 @@ export const CardEmbarque = React.memo(function CardEmbarque({
           <div className="relative group">
             <input
               className={cn(
-                "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200",
-                justScannedId === "booking" && "ring-2 ring-primary bg-primary/5"
+                "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
+                justScannedId === "booking" && "ring-2 ring-primary bg-primary/5",
+                bookingError && "border-red-500 ring-1 ring-red-500 bg-red-50/30 dark:bg-red-950/20"
               )}
               type="text"
               value={form.booking}
-              onChange={(e) => setForm(p => ({ ...p, booking: e.target.value.toUpperCase() }))}
+              onChange={(e) => {
+                setForm(p => ({ ...p, booking: e.target.value.toUpperCase() }));
+                if (bookingError) setBookingError(false);
+              }}
               placeholder="BK-XXXXXX"
             />
+            {bookingError && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 animate-in zoom-in duration-300">
+                <XCircle className="h-5 w-5" />
+              </span>
+            )}
+            {refsLocked && !bookingError && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in duration-300">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+            )}
           </div>
         </div>
 

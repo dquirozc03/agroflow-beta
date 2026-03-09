@@ -138,11 +138,15 @@ export function AppSidebar() {
           >
             {/* Active Glow Bar */}
             {mod.active && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1.5 rounded-r-full bg-primary shadow-[4px_0_15px_rgba(34,197,94,0.6)]" />
+              <div className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 w-1.5 rounded-r-full bg-primary shadow-[4px_0_15px_rgba(34,197,94,0.6)] transition-all",
+                collapsed ? "h-10" : "h-8"
+              )} />
             )}
 
             <span className={cn(
               "material-symbols-outlined transition-all group-hover:scale-110 notranslate leading-none",
+              collapsed ? "mx-auto text-[22px]" : "text-slate-500 group-hover:text-white",
               mod.active ? "text-primary fill-[1]" : "text-slate-500 group-hover:text-white"
             )}>
               {mod.icon}

@@ -4,7 +4,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ImageIcon, Upload, X } from "lucide-react";
+import { Loader2, ImageIcon, Upload, X, Sparkles } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -229,21 +229,29 @@ export function CardOcr({
         </div>
 
         <Button
-          className="w-full mt-6 bg-primary hover:bg-green-600 text-white font-bold h-12 rounded-xl transition-all shadow-lg shadow-green-100 dark:shadow-none"
+          className="w-full mt-6 bg-primary hover:bg-green-600 text-white font-bold h-12 rounded-xl transition-all shadow-lg shadow-green-100 dark:shadow-none relative overflow-hidden group/btn"
           onClick={handleExtract}
           disabled={loading || !file}
         >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Procesando...
-            </>
-          ) : (
-            <>
-              <span className="material-symbols-outlined mr-2 notranslate">psychology</span>
-              Extraer Información
-            </>
+          {loading && (
+            <div 
+              className="absolute inset-0 bg-green-600/50 transition-all duration-500 ease-out"
+              style={{ width: `${onProcessingProgress ? 100 : 0}%` }} // El porcentaje real lo maneja el padre
+            />
           )}
+          <div className="relative z-10 flex items-center justify-center gap-2">
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Extrayendo Datos...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-5 w-5" />
+                <span>Extraer Información</span>
+              </>
+            )}
+          </div>
         </Button>
       </div>
     </section>
