@@ -11,6 +11,12 @@ import { SYSTEM_NAME, MODULE_LOGICAPTURE, ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
@@ -72,7 +78,7 @@ export function AppHeader({ onOpenScanner }: Props) {
       {/* IZQUIERDA */}
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
-          <img src="/Logo_Beta.png" alt="Beta" className="h-8 w-auto hover:opacity-80 transition-opacity" />
+          <img src="/Logo_Beta.png" alt="Beta" className="h-11 w-auto hover:opacity-80 transition-opacity" />
         </div>
 
         <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10 animate-in fade-in slide-in-from-left-2 duration-300">
@@ -123,29 +129,61 @@ export function AppHeader({ onOpenScanner }: Props) {
           <span className="hidden sm:inline">Salir</span>
         </button>
 
-        <div className="flex items-center gap-2 ml-2">
-          <span className={cn(
-            "px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase",
-            ENV === "PROD" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" : "bg-primary/10 text-primary"
-          )}>
-            {ENV}
-          </span>
+        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-slate-100 dark:border-white/5">
+          {/* Indicador de Entorno (DEV/PROD) */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-black tracking-widest uppercase",
+                  ENV === "PROD" 
+                    ? "bg-amber-100/50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400" 
+                    : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                )}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", ENV === "PROD" ? "bg-amber-500" : "bg-blue-500")} />
+                  {ENV}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-[10px] font-bold">Entorno de {ENV === "PROD" ? "Producción" : "Desarrollo"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
+          {/* Indicador de Estado API */}
           <div className="flex items-center">
             {isWaking ? (
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               </div>
             ) : apiOnline ? (
-              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-500/10">
-                <span className="material-symbols-outlined text-[16px] text-emerald-600 dark:text-emerald-400 notranslate leading-none">wifi</span>
-                <span className="hidden xl:inline text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">API Online</span>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/10">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Online</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px] font-bold">Servicio API Conectado</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : (
-              <button onClick={() => wakeBackend()} className="flex items-center gap-2 bg-red-50 dark:bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-500/10 text-red-600">
-                <span className="material-symbols-outlined text-[16px] notranslate leading-none">wifi_off</span>
-                <span className="hidden xl:inline text-[10px] font-black uppercase tracking-wider">Desconectado</span>
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button onClick={() => wakeBackend()} className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 px-2.5 py-1 rounded-full border border-red-100 dark:border-red-500/10 text-red-600">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Offline</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px] font-bold">API Desconectada. Clic para despertar.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>

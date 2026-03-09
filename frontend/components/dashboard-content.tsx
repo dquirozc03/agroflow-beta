@@ -143,7 +143,7 @@ export function DashboardContent() {
 
   return (
     <TooltipProvider>
-      <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6 md:p-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6 md:p-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

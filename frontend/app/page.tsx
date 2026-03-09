@@ -253,7 +253,7 @@ function AgroFlowContent() {
 
         {/* Contenido principal + footer fijo abajo */}
         {/* Contenido principal + footer fijo abajo */}
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-[#f8fafd] dark:bg-[#0f172a] pb-16">
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-[#f8fafd] dark:bg-[#0f172a] pb-8">
           {isDashboard ? (
             /* Solo Dashboard: sin pestañas */
             <div className="mt-0 flex-1 min-h-0 overflow-auto">
