@@ -1,5 +1,5 @@
 from app.database import engine, Base
-from app.models import factura # IMPORTANTE para que sepa las tablas a crear
+import app.models # Carga todos los modelos registrados en __init__.py
 from sqlalchemy import text
 
 print("Creando tablas faltantes...")
