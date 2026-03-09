@@ -172,26 +172,43 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Profile Section */}
+      {/* Monitor de Salud del Sistema (Efecto "Vivo") */}
       <div className="p-4 mt-auto">
         <div className={cn(
-          "rounded-2xl bg-white/5 border border-white/5 p-4 transition-all hover:bg-white/10 group/profile overflow-hidden",
-          collapsed && "p-2 items-center flex justify-center"
+          "rounded-2xl bg-white/5 border border-white/5 p-4 transition-all hover:bg-white/10 group/system overflow-hidden",
+          collapsed && "p-2 mb-2"
         )}>
           <div className="flex items-center gap-3 relative">
-            <div className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-white/5 bg-slate-800 transition-all group-hover/profile:ring-primary/40">
-              <span className="material-symbols-outlined text-[20px] text-slate-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 notranslate">
-                person
+            <div className="relative h-10 w-10 flex items-center justify-center rounded-xl bg-slate-800/50 ring-1 ring-white/10 group-hover/system:ring-primary/40 transition-all shadow-inner">
+              <span className="material-symbols-outlined text-primary text-[20px] animate-pulse-breathing notranslate">
+                sensors
               </span>
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-primary border-2 border-[#131b2e]"></span>
+              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </div>
 
             {!collapsed && (
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-black text-white truncate leading-none">
-                  {user?.nombre?.split(" ")[0] ?? "DANIEL"}
-                </p>
-                <p className="text-[10px] text-primary font-bold tracking-wider mt-1.5 uppercase">Activo ahora</p>
+              <div className="flex-1 overflow-hidden animate-in fade-in slide-in-from-left-2 duration-500">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] leading-none">
+                    Ecosistema
+                  </p>
+                  <p className="text-[9px] font-bold text-primary tracking-tighter animate-pulse">LIVE</p>
+                </div>
+                <div className="mt-2.5 space-y-2">
+                   <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-primary/20 to-primary/80 rounded-full w-[75%] transition-all duration-1000 ease-out" />
+                   </div>
+                   <div className="flex items-center justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                      <span>Sync Activa</span>
+                      <span className="text-slate-600">v1.1.2</span>
+                   </div>
+                </div>
+              </div>
+            )}
+            
+            {collapsed && (
+              <div className="absolute left-full ml-4 hidden rounded-lg bg-slate-900 border border-white/10 px-3 py-1.5 text-[10px] font-black text-white group-hover/system:block whitespace-nowrap z-[100] shadow-2xl animate-in fade-in slide-in-from-left-2 uppercase tracking-widest">
+                Sistema Salud: Óptimo
               </div>
             )}
           </div>

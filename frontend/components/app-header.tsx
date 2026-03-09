@@ -12,11 +12,21 @@ import type { UserRole } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { LogOut, User, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
@@ -106,28 +116,59 @@ export function AppHeader({ onOpenScanner }: Props) {
         <ThemeToggle />
 
         {user && (
-          <div className="flex items-center gap-3 pl-2 border-l border-slate-100 dark:border-white/5 ml-2">
-            <div className="hidden lg:flex flex-col items-end pr-1">
-              <span className="text-[13px] font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight">
-                {user.nombre}
-              </span>
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 text-right">
-                {ROLE_LABELS[user.rol as UserRole]}
-              </span>
-            </div>
-            <button className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/10 hover:border-primary/50 transition-all group">
-              <span className="material-symbols-outlined text-slate-500 group-hover:text-primary notranslate">person</span>
-            </button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="group flex items-center gap-3 pl-2 border-l border-slate-100 dark:border-white/5 ml-2 focus:outline-none transition-all">
+                <div className="hidden lg:flex flex-col items-end pr-1">
+                  <span className="text-[13px] font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight group-hover:text-primary transition-colors">
+                    {user.nombre}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">
+                    {ROLE_LABELS[user.rol as UserRole]}
+                  </span>
+                </div>
+                <div className="relative">
+                  <Avatar className="h-10 w-10 border border-slate-200 dark:border-white/10 group-hover:border-primary/50 transition-all shadow-sm">
+                    <AvatarFallback className="bg-primary text-white font-black text-xs">
+                      {user.nombre?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Ponto de Status Tecnológico (Respirante) */}
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0f172a] shadow-sm animate-pulse" />
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl border-slate-200 dark:border-white/10 shadow-xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <DropdownMenuLabel className="px-2 py-1.5">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Mi Cuenta</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user.email}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 mx--2" />
+              <DropdownMenuItem className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                <User className="h-4 w-4 text-slate-400" />
+                <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Mi Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                <Settings className="h-4 w-4 text-slate-400" />
+                <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Configuración</span>
+              </DropdownMenuItem>
+              {user.rol === "admin" && (
+                <DropdownMenuItem className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Panel Admin</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 mx--2" />
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="gap-2 px-2 py-2.5 rounded-lg cursor-pointer bg-red-50/0 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 transition-all font-bold"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-[13px]">Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-slate-400 hover:text-red-500 transition-colors font-bold text-xs uppercase tracking-wider ml-2"
-        >
-          <span className="material-symbols-outlined text-[18px] notranslate">logout</span>
-          <span className="hidden sm:inline">Salir</span>
-        </button>
 
         <div className="flex items-center gap-2">
           {/* 
