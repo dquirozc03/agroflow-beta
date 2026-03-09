@@ -17,7 +17,7 @@ async function main(workbook: ExcelScript.Workbook, jsonData: string) {
     }
 
     const WEBHOOK_URL = `${baseUrl}/api/v1/sync/posicionamiento`;
-    const SYNC_TOKEN = "e2R5SKkbFn1nYRGW3b0CIxp_NVHl5eeCaEaE0bHrRv8";
+    const SYNC_TOKEN = "TU_TOKEN_DE_RENDER_AQUI";
 
     if (!jsonData || jsonData.trim() === "") {
         console.log("No hay datos para enviar");
