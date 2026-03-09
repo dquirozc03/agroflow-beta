@@ -394,14 +394,10 @@ def sync_asignacion_raw(
             booking = normalizar(val_booking)
             if not booking: continue
 
-            # Posicionamiento
+            # Posicionamiento (IMPORTANTE: Solo buscar, NO crear si no existe)
             posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
-            if not posic:
-                posic = RefPosicionamiento(booking=booking)
-                db.add(posic)
-                db.flush()
 
-            # DAM
+            # DAM (Este sí se crea siempre para tener el registro de transporte)
             db_dam = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
             if not db_dam:
                 db_dam = RefBookingDam(booking=booking)
@@ -446,16 +442,20 @@ def sync_asignacion_raw(
                         db.add(v)
                         db.flush()
 
-            # Contenedor y Validacion
+            # Contenedor y Validacion (Solo si existe Posicionamiento previo)
             if "contenedor" in col_indices:
                 cont_asignacion = normalizar(str(row[col_indices["contenedor"]] or "").strip())
                 db_dam.ce_awb = cont_asignacion
                 db_dam.awb = cont_asignacion
-                if posic.nro_fcl and cont_asignacion:
-                    # Casting bool to int (1 or 0) for Postgres compatibility
-                    db_dam.alerta_discrepancia = int(posic.nro_fcl != cont_asignacion)
-                if not posic.nro_fcl and cont_asignacion:
-                    posic.nro_fcl = cont_asignacion
+                
+                if posic:
+                    if posic.nro_fcl and cont_asignacion:
+                        # Alerta si el contenedor del excel de posicionamiento difiere del de asignación
+                        db_dam.alerta_discrepancia = int(posic.nro_fcl != cont_asignacion)
+                    
+                    if not posic.nro_fcl and cont_asignacion:
+                        # Si posicionamiento no tenía contenedor, lo llenamos con el de asignación
+                        posic.nro_fcl = cont_asignacion
 
             upserts += 1
 
