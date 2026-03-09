@@ -78,7 +78,7 @@ export function AppHeader({ onOpenScanner }: Props) {
       {/* IZQUIERDA */}
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
-          <img src="/Logo_Beta.png" alt="Beta" className="h-11 w-auto hover:opacity-80 transition-opacity" />
+          <img src="/Logo_Beta.png" alt="Beta" className="h-14 w-auto hover:opacity-80 transition-opacity" />
         </div>
 
         <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10 animate-in fade-in slide-in-from-left-2 duration-300">
