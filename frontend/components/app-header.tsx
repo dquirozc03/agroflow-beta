@@ -129,62 +129,36 @@ export function AppHeader({ onOpenScanner }: Props) {
           <span className="hidden sm:inline">Salir</span>
         </button>
 
-        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-slate-100 dark:border-white/5">
-          {/* Indicador de Entorno (DEV/PROD) */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-black tracking-widest uppercase",
-                  ENV === "PROD" 
-                    ? "bg-amber-100/50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400" 
-                    : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                )}>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", ENV === "PROD" ? "bg-amber-500" : "bg-blue-500")} />
-                  {ENV}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-[10px] font-bold">Entorno de {ENV === "PROD" ? "Producción" : "Desarrollo"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Indicador de Estado API */}
+        <div className="flex items-center gap-2">
+          {/* 
+              DISEÑO POR EXCEPCIÓN: 
+              Solo mostramos el estado de la API si hay problemas (isWaking o Offline).
+              El indicador de entorno (DEV) se oculta para no confundir al usuario final.
+          */}
           <div className="flex items-center">
             {isWaking ? (
-              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+              <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 animate-pulse">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Iniciando API...</span>
               </div>
-            ) : apiOnline ? (
+            ) : !apiOnline && apiOnline !== null ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/10">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Online</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-[10px] font-bold">Servicio API Conectado</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button onClick={() => wakeBackend()} className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 px-2.5 py-1 rounded-full border border-red-100 dark:border-red-500/10 text-red-600">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Offline</span>
+                    <button 
+                      onClick={() => wakeBackend()} 
+                      className="flex items-center gap-2 bg-red-50 dark:bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-500/10 text-red-600 animate-in fade-in zoom-in duration-300"
+                    >
+                      <span className="material-symbols-outlined text-[16px] notranslate leading-none">wifi_off</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Sin Conexión</span>
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-[10px] font-bold">API Desconectada. Clic para despertar.</p>
+                    <p className="text-[10px] font-bold">API Desconectada. Clic para reintentar.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
