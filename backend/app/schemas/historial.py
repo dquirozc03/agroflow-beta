@@ -20,14 +20,22 @@ class RegistroListado(BaseModel):
     awb: str | None = None
     dam: str | None = None
 
-    # Datos “humanos” para tabla
+    # Datos completos para exportación profesional
     dni: str | None = None
     chofer: str | None = None
     placas: str | None = None
+    marca: str | None = None
+    licencia: str | None = None
     transportista: str | None = None
     codigo_sap: str | None = None
+    termografos: str | None = None
+    ps_beta: str | None = None
+    ps_aduana: str | None = None
+    ps_operador: str | None = None
+    senasa_ps_linea: str | None = None
+    p_registral: str | None = None
+    cer_vehicular: str | None = None
 
-    # Campos útiles para auditoría (no rompen nada si no existen aún)
     processed_at: datetime | None = None
     anulado_at: datetime | None = None
 

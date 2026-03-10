@@ -89,34 +89,122 @@ export function HistorialRegistros() {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
-  const exportHistorial = useCallback(() => {
+  const exportHistorial = useCallback(async () => {
     if (rows.length === 0) return;
 
-    const headers = ["ID", "Fecha", "Estado", "Booking", "O. Beta", "AWB", "DAM", "DNI", "Chofer", "Transportista"];
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(r => [
-        r.id,
-        r.fecha_registro,
-        r.estado,
-        `"${(r.booking || "").replace(/"/g, '""')}"`,
-        `"${(r.o_beta || "").replace(/"/g, '""')}"`,
-        `"${(r.awb || "").replace(/"/g, '""')}"`,
-        `"${(r.dam || "").replace(/"/g, '""')}"`,
-        `"${(r.dni || "").replace(/"/g, '""')}"`,
-        `"${(r.chofer || "").replace(/"/g, '""')}"`,
-        `"${(r.transportista || "").replace(/"/g, '""')}"`
-      ].join(","))
-    ].join("\n");
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const { saveAs } = (await import("file-saver")).default as any;
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `historial_registros_${desde}_al_${hasta}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Historial de Registros");
+
+      // 1. Definir Columnas
+      const columns = [
+        { header: "ID", key: "id", width: 10 },
+        { header: "FECHA REGISTRO", key: "fecha", width: 18 },
+        { header: "ESTADO", key: "estado", width: 15 },
+        { header: "O_BETA", key: "o_beta", width: 15 },
+        { header: "BOOKING", key: "booking", width: 18 },
+        { header: "AWB / CONTENEDOR", key: "awb", width: 22 },
+        { header: "DAM", key: "dam", width: 15 },
+        { header: "MARCA", key: "marca", width: 15 },
+        { header: "PLACAS", key: "placas", width: 15 },
+        { header: "DNI CHOFER", key: "dni", width: 15 },
+        { header: "NOMBRES CHOFER", key: "chofer", width: 25 },
+        { header: "LICENCIA", key: "licencia", width: 15 },
+        { header: "TERMÓGRAFOS", key: "termografos", width: 20 },
+        { header: "CÓDIGO SAP", key: "codigo_sap", width: 15 },
+        { header: "TRANSPORTISTA", key: "transportista", width: 30 },
+        { header: "PRECINTOS BETA", key: "ps_beta", width: 20 },
+        { header: "PRECINTO ADUANA", key: "ps_aduana", width: 18 },
+        { header: "PRECINTO OPERADOR", key: "ps_operador", width: 18 },
+        { header: "SENASA/LINEA", key: "ps_linea", width: 20 },
+        { header: "PARTIDA REGISTRAL", key: "p_registral", width: 20 },
+        { header: "CERT. VEHICULAR", key: "cer_vehicular", width: 20 },
+      ];
+
+      worksheet.columns = columns;
+
+      // 2. Estilizar Encabezados
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 30;
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1E293B" }, // Slate 800
+        };
+        cell.font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+          size: 11,
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          bottom: { style: "thin", color: { argb: "FF475569" } },
+        };
+      });
+
+      // 3. Añadir Datos
+      rows.forEach((r, idx) => {
+        const rowData = {
+          id: r.id,
+          fecha: String(r.fecha_registro).slice(0, 10),
+          estado: (r.estado || "").toUpperCase(),
+          o_beta: r.o_beta || "—",
+          booking: r.booking || "—",
+          awb: r.awb || "—",
+          dam: r.dam || "—",
+          marca: r.marca || "—",
+          placas: r.placas || "—",
+          dni: r.dni || "—",
+          chofer: r.chofer || "—",
+          licencia: r.licencia || "—",
+          termografos: r.termografos || "—",
+          codigo_sap: r.codigo_sap || "—",
+          transportista: r.transportista || "—",
+          ps_beta: r.ps_beta || "—",
+          ps_aduana: r.ps_aduana || "—",
+          ps_operador: r.ps_operador || "—",
+          ps_linea: r.senasa_ps_linea || "—",
+          p_registral: r.p_registral || "—",
+          cer_vehicular: r.cer_vehicular || "—",
+        };
+        const row = worksheet.addRow(rowData);
+        
+        // Celdas centradas y con bordes tenues
+        row.eachCell((cell) => {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.border = {
+            bottom: { style: "thin", color: { argb: "FFF1F5F9" } },
+          };
+          if (idx % 2 === 1) {
+             cell.fill = {
+               type: "pattern",
+               pattern: "solid",
+               fgColor: { argb: "FFF8FAFC" } // Slate 50
+             };
+          }
+        });
+      });
+
+      // 4. Formatear como Tabla (opcional, pero ExcelJS no tiene un "addTable" tan simple con estilos automáticos sin que rompa en algunos visores, así que lo hacemos manual con filtros)
+      worksheet.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: 1, column: columns.length },
+      };
+
+      // 5. Generar archivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `HISTORIAL_REGISTROS_${desde}_AL_${hasta}.xlsx`);
+      
+      toast.success("Excel generado correctamente.");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Error al generar el Excel.");
+    }
   }, [rows, desde, hasta]);
 
   const toggleSearch = () => {
@@ -269,8 +357,6 @@ export function HistorialRegistros() {
                   <TableHead className={cn(headBase, "w-[150px]")}>Booking</TableHead>
                   <TableHead className={cn(headBase, "w-[150px]")}>O. Beta</TableHead>
                   <TableHead className={cn(headBase, "w-[180px]")}>AWB (AirWay Bill)</TableHead>
-                  <TableHead className={cn(headBase, "w-[150px]")}>DAM</TableHead>
-                  <TableHead className={cn(headBase, "w-[280px]")}>Transportista Asignado</TableHead>
                   <TableHead className={cn(headBase, "w-[150px]")}>Estado</TableHead>
                 </TableRow>
               </TableHeader>
@@ -278,7 +364,7 @@ export function HistorialRegistros() {
               <TableBody>
                 {loading && rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-32 text-center bg-slate-50/20">
+                    <TableCell colSpan={6} className="py-32 text-center bg-slate-50/20">
                       <div className="flex flex-col items-center gap-4">
                         <div className="relative">
                            <Loader2 className="h-12 w-12 animate-spin text-primary/30" />
@@ -318,12 +404,6 @@ export function HistorialRegistros() {
                       <TableCell className={cn(cellBase, "font-mono text-[11px] opacity-60")}>
                         {r.awb ?? "—"}
                       </TableCell>
-                      <TableCell className={cn(cellBase, "font-mono text-[11px] opacity-60")}>
-                        {r.dam ?? "—"}
-                      </TableCell>
-                      <TableCell className={cn(cellBase, "text-[11px] font-black uppercase tracking-tight opacity-50 px-6")}>
-                        {r.transportista ?? "—"}
-                      </TableCell>
                       <TableCell className={cn(cellBase)}>
                         <EstadoBadge estado={r.estado ?? ""} className="shadow-2xl scale-90 ring-1 ring-white/10" />
                       </TableCell>
@@ -333,7 +413,7 @@ export function HistorialRegistros() {
 
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-32 text-center bg-slate-50/10">
+                    <TableCell colSpan={6} className="py-32 text-center bg-slate-50/10">
                       <div className="flex flex-col items-center justify-center gap-4">
                         <div className="size-20 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center mb-2">
                            <Search className="h-8 w-8 text-slate-200" />

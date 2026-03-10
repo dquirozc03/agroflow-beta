@@ -910,8 +910,19 @@ def listar_historial(
                 dni=r.chofer.dni if r.chofer else None,
                 chofer=r.chofer.nombre_para_sap if r.chofer else None,
                 placas=r.vehiculo.placas if r.vehiculo else None,
+                marca=r.vehiculo.marca if r.vehiculo else None,
+                licencia=r.chofer.licencia if r.chofer else None,
                 transportista=r.transportista.nombre_transportista if r.transportista else None,
                 codigo_sap=r.transportista.codigo_sap if r.transportista else None,
+                termografos=r.termografos,
+                ps_beta=r.ps_beta,
+                ps_aduana=r.ps_aduana,
+                ps_operador=r.ps_operador,
+                senasa_ps_linea=r.senasa_ps_linea,
+                p_registral=r.transportista.partida_registral if r.transportista else None,
+                cer_vehicular=r.vehiculo.cert_vehicular if r.vehiculo else None,
+                processed_at=r.processed_at,
+                anulado_at=r.anulado_at,
             )
         )
 

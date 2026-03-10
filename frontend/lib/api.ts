@@ -396,7 +396,20 @@ export type RegistroListado = {
   dam?: string | null;
   dni?: string | null;
   chofer?: string | null;
+  placas?: string | null;
+  marca?: string | null;
+  licencia?: string | null;
   transportista?: string | null;
+  codigo_sap?: string | null;
+  termografos?: string | null;
+  ps_beta?: string | null;
+  ps_aduana?: string | null;
+  ps_operador?: string | null;
+  senasa_ps_linea?: string | null;
+  p_registral?: string | null;
+  cer_vehicular?: string | null;
+  processed_at?: string | null;
+  anulado_at?: string | null;
 };
 
 export type HistorialResponse = {
