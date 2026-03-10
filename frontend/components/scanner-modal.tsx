@@ -26,11 +26,15 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
         if (open && !sessionId) {
             const id = uuidv4();
             setSessionId(id);
-            // Detectar host actual
-            const host = window.location.host; // localhost:3000
+            // Detectar host actual. 
+            // Si estamos en producción (Render), el host de ventana nos dará la URL pública.
+            const host = window.location.host; 
             const protocol = window.location.protocol;
+            const fullUrl = `${protocol}//${host}`;
+            
             setCustomHost(host);
-            setScanUrl(`${protocol}//${host}/scanner/${id}`);
+            setScanUrl(`${fullUrl}/scanner/${id}`);
+            console.log("QR URL Generated:", `${fullUrl}/scanner/${id}`);
         }
     }, [open, sessionId]);
 

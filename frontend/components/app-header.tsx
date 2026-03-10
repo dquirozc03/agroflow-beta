@@ -106,7 +106,7 @@ export function AppHeader({ onOpenScanner }: Props) {
             variant="outline"
             size="sm"
             onClick={onOpenScanner}
-            className="hidden sm:flex h-10 gap-2 border-slate-200 dark:border-white/10 rounded-xl px-4 text-slate-600 dark:text-slate-300 font-bold text-xs hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
+            className="hidden sm:flex h-10 gap-2 border-slate-200 dark:border-white/10 rounded-xl px-4 text-slate-900 dark:text-slate-200 font-bold text-xs hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px] notranslate">smartphone</span>
             Vincular Celular

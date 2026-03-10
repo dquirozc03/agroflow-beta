@@ -83,8 +83,20 @@ export const CardEmbarque = React.memo(function CardEmbarque({
               type="text"
               value={form.booking}
               onChange={(e) => {
-                setForm(p => ({ ...p, booking: e.target.value.toUpperCase() }));
+                const val = e.target.value.toUpperCase();
+                setForm(p => ({ ...p, booking: val }));
                 if (bookingError) setBookingError(false);
+                
+                // Si borra el booking, limpiar datos autocompletados
+                if (!val.trim()) {
+                  setForm(prev => ({
+                    ...prev,
+                    o_beta: "",
+                    awb: "",
+                    dam: ""
+                  }));
+                  setRefsLocked(false);
+                }
               }}
               placeholder="BK-XXXXXX"
             />
