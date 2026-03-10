@@ -32,7 +32,7 @@ export function UserCreateDialog({ onUserCreated }: { onUserCreated: () => void 
         usuario: "",
         nombre: "",
         rol: "facturador",
-        password: "",
+        password: "123456",
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +47,7 @@ export function UserCreateDialog({ onUserCreated }: { onUserCreated: () => void 
             await createUser(form);
             toast.success("Usuario creado correctamente");
             setOpen(false);
-            setForm({ usuario: "", nombre: "", rol: "facturador", password: "" });
+            setForm({ usuario: "", nombre: "", rol: "facturador", password: "123456" });
             onUserCreated();
         } catch (error: any) {
             toast.error(error.message || "Error al crear usuario");

@@ -321,6 +321,7 @@ function UsuariosContent() {
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem className="gap-2" onClick={() => {
                                                                 setResettingUser(u);
+                                                                setNuevaPassword("123456");
                                                                 setIsResetModalOpen(true);
                                                             }}>
                                                                 <Key className="h-4 w-4 text-amber-500" />

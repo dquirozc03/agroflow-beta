@@ -46,7 +46,7 @@ class MeResponse(BaseModel):
 class UsuarioCreate(BaseModel):
     usuario: str
     nombre: str
-    password: str
+    password: str = "123456"
     rol: str
 
 
@@ -69,7 +69,7 @@ class UsuarioUpdate(BaseModel):
 
 
 class RestablecerPasswordBody(BaseModel):
-    nueva_password: str
+    nueva_password: str = "123456"
 
 
 class CambiarPasswordPropiaBody(BaseModel):
@@ -118,7 +118,7 @@ def crear_usuario(
     )
     
     db.add(nuevo)
-    # db.commit() <- Removido, se hace al final
+    db.commit()
     db.refresh(nuevo)
 
     registrar_evento(
