@@ -115,40 +115,52 @@ export default function ScannerMobilePage({ params }: Props) {
         const toastId = toast.loading("Analizando imagen con IA...");
         
         try {
-            // 1. Capturar frame actual del video
+            // 1. Capturar frame actual del video con alta calidad
             const canvas = document.createElement("canvas");
+            // Usamos la resolución real del video para máxima nitidez de IA
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
             const ctx = canvas.getContext("2d");
             if (!ctx) throw new Error("Canvas context error");
             
             ctx.drawImage(videoElement, 0, 0);
-            const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+            
+            // Convertir a Blob (archivo real) en lugar de base64 string
+            const blob = await new Promise<Blob | null>((resolve) => 
+                canvas.toBlob((b) => resolve(b), "image/jpeg", 0.95)
+            );
 
-            // 2. Enviar al backend real (endpoint de OCR del precinto)
-            // Nota: El backend espera multipart o base64 según el endpoint. 
-            // Usaremos el endpoint estándar de OCR de AgroFlow.
-            const response = await fetch("/api/v1/ocr/predict", {
+            if (!blob) throw new Error("Fallo al generar imagen");
+
+            // 2. Preparar FormData (Multipart)
+            const formData = new FormData();
+            formData.append("archivo", blob, "scan_capture.jpg");
+
+            // 3. Enviar al backend real con el parámetro de tipo
+            // Por defecto usamos PS_BETA ya que es el uso más común para OCR de precintos
+            const response = await fetch("/api/v1/ocr/extraer?tipo=PS_BETA", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: base64Image })
+                body: formData
             });
 
-            if (!response.ok) throw new Error("Error en servidor OCR");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Error en servidor OCR");
+            }
 
             const result = await response.json();
-            // El backend devuelve { mejor_valor: string, texto: string, ... }
-            const extractedText = result.mejor_valor || result.texto || "";
+            // El backend devuelve { mejor_valor: string, texto: string, valores_detectados: [] }
+            const extractedText = result.mejor_valor || (result.valores_detectados && result.valores_detectados[0]) || "";
             
-            if (extractedText && extractedText.length > 2) {
-                toast.success(`Texto extraído: ${extractedText}`, { id: toastId });
+            if (extractedText) {
+                toast.success(`Detectado: ${extractedText}`, { id: toastId });
                 handleScan(extractedText);
             } else {
-                toast.error("No se detectó texto nítido", { id: toastId });
+                toast.error("IA: No se encontró texto válido", { id: toastId });
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("OCR Error:", e);
-            toast.error("Fallo al procesar imagen", { id: toastId });
+            toast.error(e.message || "Fallo al procesar imagen", { id: toastId });
         } finally {
             setOcrProcessing(false);
         }
