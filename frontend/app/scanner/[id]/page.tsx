@@ -125,7 +125,7 @@ export default function ScannerMobilePage({ params }: Props) {
         const { Html5Qrcode, Html5QrcodeSupportedFormats } = require("html5-qrcode");
 
         const startCamera = async () => {
-            if (!document.getElementById(elementId) || mode === "ocr") return;
+            if (!document.getElementById(elementId)) return;
             setCameraState("loading");
 
             if (scannerRef.current) {
@@ -262,18 +262,43 @@ export default function ScannerMobilePage({ params }: Props) {
                             </>
                         )}
 
-                        {/* OCR Capture Button */}
+                        {/* OCR HUD (Overlays de Guía) */}
+                        {mode === "ocr" && cameraState === "active" && !ocrProcessing && (
+                            <div className="absolute inset-0 z-30 pointer-events-none flex flex-col items-center justify-center">
+                                {/* Visor de Encuadre de Texto */}
+                                <div className="w-[85%] h-32 border-2 border-primary/40 rounded-3xl bg-primary/5 relative backdrop-blur-[1px] animate-pulse">
+                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-primary px-3 py-0.5 rounded-full">
+                                        <span className="text-[8px] font-black text-black uppercase tracking-widest text-[8px]">Encuadra el Texto</span>
+                                    </div>
+                                    {/* Esquinas de diseño */}
+                                    <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-primary" />
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-primary" />
+                                    <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-primary" />
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-primary" />
+                                </div>
+                                <p className="mt-4 text-[9px] font-bold text-white/40 uppercase tracking-[0.2em] text-center max-w-[200px]">
+                                    Coloca el código del precinto dentro del recuadro
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Botón de Captura Flotante para OCR */}
                         {mode === "ocr" && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-950/20 backdrop-blur-[2px] z-40">
+                            <div className="absolute inset-0 flex items-end justify-center pb-8 z-40 bg-transparent">
                                 <button 
                                     onClick={handleOCR}
                                     disabled={ocrProcessing}
-                                    className="group relative flex items-center justify-center h-32 w-32 rounded-full border-2 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all active:scale-90"
+                                    className="group relative flex items-center justify-center h-20 w-20 rounded-full border-4 border-primary/20 bg-black/40 hover:bg-black/60 transition-all active:scale-90"
                                 >
-                                    <div className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-20" />
-                                    {ocrProcessing ? <Loader2 className="h-12 w-12 animate-spin text-emerald-500" /> : <Camera className="h-12 w-12 text-emerald-500" />}
+                                    <div className="absolute inset-0 rounded-full border border-primary/40 animate-ping opacity-20" />
+                                    {ocrProcessing ? (
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    ) : (
+                                        <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                                            <Camera className="h-7 w-7 text-black" />
+                                        </div>
+                                    )}
                                 </button>
-                                <span className="mt-6 text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Capturar Texto</span>
                             </div>
                         )}
 
