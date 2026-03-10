@@ -135,23 +135,39 @@ export default function ScannerMobilePage({ params }: Props) {
                 scannerRef.current = null;
             }
 
-            const html5QrCode = new Html5Qrcode(elementId);
+            const html5QrCode = new Html5Qrcode(elementId, {
+                verbose: false,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            });
             scannerRef.current = html5QrCode;
 
             try {
+                const config = {
+                    fps: 30,
+                    qrbox: (viewfetchWidth: number, viewfetchHeight: number) => {
+                        // Área de escaneo dinámica más grande para capturar códigos pequeños
+                        const minDim = Math.min(viewfetchWidth, viewfetchHeight);
+                        return { width: minDim * 0.8, height: minDim * 0.8 };
+                    },
+                    // Forzar resolución alta si el dispositivo lo permite
+                    videoConstraints: {
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+
                 await html5QrCode.start(
                     { facingMode: "environment" },
-                    {
-                        fps: 30,
-                        qrbox: mode === "dni" ? { width: 320, height: 160 } : { width: 260, height: 260 },
-                        aspectRatio: 1.0,
-                    },
+                    config,
                     (text: string) => mounted && handleScan(text),
                     () => {} 
                 );
                 if (mounted) setCameraState("active");
             } catch (err) {
-                console.error(err);
+                console.error("Scanner Error:", err);
                 if (mounted) setCameraState("denied");
             }
         };
@@ -283,9 +299,17 @@ export default function ScannerMobilePage({ params }: Props) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center">
+                                <div className="text-center animate-in fade-in duration-700">
                                     <p className="text-emerald-500/20 text-[10px] font-black uppercase tracking-[0.4em]">Enfoque Automático</p>
-                                    <p className="text-white/20 text-[9px] uppercase tracking-wider mt-1">{mode === 'dni' ? 'Escanea PDF417 de DNI' : 'Encuentra código o QR'}</p>
+                                    <p className="text-white/20 text-[9px] uppercase tracking-wider mt-1">
+                                        {mode === 'dni' ? 'Escanea PDF417 de DNI' : 'Encuentra código o QR'}
+                                    </p>
+                                    <div className="mt-4 flex flex-col items-center gap-1 opacity-40">
+                                        <span className="text-[7px] text-emerald-500 font-mono uppercase tracking-widest">Consejo Pro</span>
+                                        <p className="text-[8px] text-white/60 max-w-[150px] leading-tight">
+                                            {mode === 'standard' ? 'Aléjate un poco y deja que la cámara enfoque el código pequeño.' : 'Mantén el código centrado y evita reflejos directos.'}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>
