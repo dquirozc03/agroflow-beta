@@ -288,6 +288,19 @@ def sync_posicionamiento_raw(
         
         db_row = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
         if not db_row:
+            # VALIDACIÓN: Solo crear si la fila trae algún dato útil aparte del booking
+            # (Ignorar valores 'SIN CAMBIOS' o celdas vacías)
+            has_useful_data = False
+            for field, idx in col_indices.items():
+                if field == "booking": continue
+                val_raw = str(row[idx] or "").strip().upper()
+                if val_raw and val_raw not in ["", "NULL", "SIN CAMBIOS", "0"]:
+                    has_useful_data = True
+                    break
+            
+            if not has_useful_data:
+                continue # Saltar esta fila, no crear stub vacío
+            
             db_row = RefPosicionamiento(booking=booking)
             db.add(db_row)
         

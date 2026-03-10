@@ -8,7 +8,7 @@ class RefBookingDam(Base):
     __tablename__ = "ref_booking_dam"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    booking: Mapped[str] = mapped_column(String(50), ForeignKey("ref_posicionamiento.booking"), unique=True, index=True, nullable=False)
+    booking: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
 
     awb: Mapped[str | None] = mapped_column(String(50), nullable=True) # Campo legado
     ce_awb: Mapped[str | None] = mapped_column(String(100), nullable=True) # Nuevo campo contenedor
