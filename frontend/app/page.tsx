@@ -88,6 +88,7 @@ function AgroFlowContent() {
   const [formResetKey, setFormResetKey] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [valCache, setValCache] = useState<Record<string, { valido: boolean; mensaje?: string }>>({});
+  const [formProgress, setFormProgress] = useState(0);
 
   useEffect(() => {
     const handleFocus = (e: FocusEvent) => {
@@ -202,9 +203,7 @@ function AgroFlowContent() {
 
     if (logs.length > 0 || llenos > 0) {
       ocr.setLogs(logs);
-      if (ocr.status === "idle") {
-        ocr.setProgress(porcentajeCompletitud);
-      }
+      setFormProgress(porcentajeCompletitud);
     }
   }, [form.booking, form.dni, form.placas_tracto, form.placas_carreta, form.dam, form.ps_beta_items, form.termografos_items, form.ps_operador, form.senasa, ocr.status, valCache, ocr.setLogs, ocr.setProgress]);
 
@@ -365,6 +364,7 @@ function AgroFlowContent() {
                         <CardOcrStatus
                           status={ocr.status}
                           progress={ocr.progress}
+                          formProgress={formProgress}
                           logs={ocr.logs}
                           confidence={ocr.confidence}
                         />

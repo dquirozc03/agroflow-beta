@@ -27,9 +27,34 @@ from app.utils.audit import registrar_evento
 
 router = APIRouter(prefix="/api/v1/registros", tags=["Registros"])
 
+# Tipos de datos heredados del servicio
 from app.services.registros_service import (
     RegistroService, TIPOS_VIGENTES, TIPOS_HISTORICOS, DIAS_TRAVESIA_AWB
 )
+
+
+def snapshot_registro(reg: RegistroOperativo) -> dict:
+    """Captura el estado actual de un registro para auditoría."""
+    return {
+        "id": reg.id,
+        "estado": reg.estado,
+        "booking": reg.booking,
+        "o_beta": reg.o_beta,
+        "awb": reg.awb,
+        "dam": reg.dam,
+        "chofer_id": reg.chofer_id,
+        "transportista_id": reg.transportista_id,
+        "termografos": reg.termografos,
+        "ps_beta": reg.ps_beta,
+        "ps_aduana": reg.ps_aduana,
+        "ps_operador": reg.ps_operador,
+        "senasa": reg.senasa,
+        "ps_linea": reg.ps_linea,
+        "senasa_ps_linea": reg.senasa_ps_linea,
+        "processed_at": reg.processed_at.isoformat() if getattr(reg, "processed_at", None) else None,
+        "anulado_at": reg.anulado_at.isoformat() if getattr(reg, "anulado_at", None) else None,
+        "anulado_motivo": reg.anulado_motivo,
+    }
 
 
 # ===============================
@@ -105,27 +130,7 @@ def validar_valor_unico(
 # Las funciones construir_items_unicos y validar_duplicados ahora se usan desde RegistroService.
 
 
-def snapshot_registro(reg: RegistroOperativo) -> dict:
-    return {
-        "id": reg.id,
-        "estado": reg.estado,
-        "booking": reg.booking,
-        "o_beta": reg.o_beta,
-        "awb": reg.awb,
-        "dam": reg.dam,
-        "chofer_id": reg.chofer_id,
-        "transportista_id": reg.transportista_id,
-        "termografos": reg.termografos,
-        "ps_beta": reg.ps_beta,
-        "ps_aduana": reg.ps_aduana,
-        "ps_operador": reg.ps_operador,
-        "senasa": reg.senasa,
-        "ps_linea": reg.ps_linea,
-        "senasa_ps_linea": reg.senasa_ps_linea,
-        "processed_at": reg.processed_at.isoformat() if getattr(reg, "processed_at", None) else None,
-        "anulado_at": reg.anulado_at.isoformat() if getattr(reg, "anulado_at", None) else None,
-        "anulado_motivo": reg.anulado_motivo,
-    }
+# snapshot_registro movido a la cabecera del archivo.
 
 
 def recrear_unicos_del_registro(db: Session, reg: RegistroOperativo):
