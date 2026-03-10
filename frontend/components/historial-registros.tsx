@@ -176,7 +176,11 @@ export function HistorialRegistros() {
         
         // Celdas centradas y con bordes tenues
         row.eachCell((cell) => {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.alignment = { 
+            vertical: "middle", 
+            horizontal: "center",
+            wrapText: true // <--- Esto permite que el texto largo baje de línea
+          };
           cell.border = {
             bottom: { style: "thin", color: { argb: "FFF1F5F9" } },
           };
