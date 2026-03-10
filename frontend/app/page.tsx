@@ -130,6 +130,17 @@ function AgroFlowContent() {
     // 1. Validar Booking (Dato Maestro)
     if (form.booking && form.booking.length > 3) {
       logs.push({ type: "success", message: "Booking Detectado", subtext: form.booking });
+      
+      // 1.5 Validar Datos Maestros (Alertas de orígenes)
+      if (form.booking.length > 5) {
+        if (!form.o_beta) {
+          logs.push({ type: "warning", message: "Posicionamiento", subtext: "Faltan datos (O/BETA vacía)" });
+        }
+        if (!form.awb || !form.dam) {
+          const faltantes = [!form.awb && "CONTENEDOR", !form.dam && "DAM"].filter(Boolean).join(" y ");
+          logs.push({ type: "warning", message: "Control de unidades", subtext: `Falta ${faltantes}` });
+        }
+      }
     } else if (form.booking) {
       logs.push({ type: "warning", message: "Booking parcial", subtext: "Esperando código completo..." });
     }
