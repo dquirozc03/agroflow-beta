@@ -81,7 +81,7 @@ function fmtTime(v?: any) {
   try {
     const d = new Date(String(v));
     if (Number.isNaN(d.getTime())) return String(v);
-    return d.toLocaleString();
+    return d.toLocaleDateString();
   } catch {
     return String(v);
   }
@@ -430,7 +430,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const headBase =
     "px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/40 backdrop-blur-sm border-b border-border text-center whitespace-nowrap";
   const cellBase =
-    "px-3 py-2 align-middle text-sm text-foreground/90 whitespace-nowrap border-b border-border/40 transition-colors group-hover:bg-muted/50";
+    "px-3 py-3 align-middle text-[13px] text-foreground/90 border-b border-border/40 transition-colors group-hover:bg-muted/50 leading-tight whitespace-normal break-words";
   const cellCenter = "text-center";
   const cellLeft = "text-left";
   const cellMono = "font-mono text-xs text-foreground";
@@ -790,7 +790,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
             ) : (
               <span className="material-symbols-outlined text-lg">sync</span>
             )}
-            Sincronizar SAP
+            Sincronizar
           </Button>
         </div>
       </div>
@@ -934,10 +934,10 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               <TableCell className={cn(cellBase, cellCenter, "font-black text-slate-900 dark:text-white")} {...cellProps("O_BETA", o_beta)}>
                                 {o_beta}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft, "font-medium")} {...cellProps("BOOKING", booking)}>
+                              <TableCell className={cn(cellBase, cellCenter, "font-medium")} {...cellProps("BOOKING", booking)}>
                                 {booking}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("AWB", awb)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("AWB", awb)}>
                                 {awb}
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("MARCA", marca)}>
@@ -949,37 +949,37 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DNI", dni)}>
                                 {dni}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("NOMBRES", nombres)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("NOMBRES", nombres)}>
                                 {nombres}
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("LICENCIA", licencia)}>
                                 {licencia}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("TERMÓGRAFOS", termografos)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("TERMÓGRAFOS", termografos)}>
                                 {termografos}
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("CÓDIGO SAP", codigoSap)}>
                                 {codigoSap}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft, "text-[12px] opacity-80")} {...cellProps("TRANSPORTISTA", transportista)}>
+                              <TableCell className={cn(cellBase, cellCenter, "text-[11px] font-medium opacity-80 uppercase whitespace-normal break-words")} {...cellProps("TRANSPORTISTA", transportista)}>
                                 {transportista}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTOS BETA", ps_beta)}>
+                              <TableCell className={cn(cellBase, cellCenter, "whitespace-normal break-words")} {...cellProps("PRECINTOS BETA", ps_beta)}>
                                 {ps_beta}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTO ADUANA", ps_aduana)}>
+                              <TableCell className={cn(cellBase, cellCenter, "whitespace-normal break-words")} {...cellProps("PRECINTO ADUANA", ps_aduana)}>
                                 {ps_aduana}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PRECINTO OPERADOR", ps_operador)}>
+                              <TableCell className={cn(cellBase, cellCenter, "whitespace-normal break-words")} {...cellProps("PRECINTO OPERADOR", ps_operador)}>
                                 {ps_operador}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("SENASA/PS LÍNEA", senasa_ps_linea)}>
+                              <TableCell className={cn(cellBase, cellCenter, "whitespace-normal break-words")} {...cellProps("SENASA/PS LÍNEA", senasa_ps_linea)}>
                                 {senasa_ps_linea}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("PARTIDA REGISTRAL", p_registral)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("PARTIDA REGISTRAL", p_registral)}>
                                 {p_registral}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("CERTIFICADO VEHICULAR", cer_vehicular)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("CERTIFICADO VEHICULAR", cer_vehicular)}>
                                 {cer_vehicular}
                               </TableCell>
 
@@ -990,7 +990,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                                     size="icon"
                                     onClick={(e) => { e.stopPropagation(); handleRefreshRow(row, "pendientes"); }}
                                     disabled={isBusy}
-                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
+                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                                   >
                                     {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="material-symbols-outlined text-xl">refresh</span>}
                                   </Button>
@@ -1075,10 +1075,10 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               <TableCell className={cn(cellBase, cellCenter)}>
                                 <EstadoBadge estado={estado} />
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft, "font-medium")} {...cellProps("Booking", booking)}>
+                              <TableCell className={cn(cellBase, cellCenter, "font-medium")} {...cellProps("Booking", booking)}>
                                 {booking}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft)} {...cellProps("AWB", awb)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("AWB", awb)}>
                                 {awb}
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DAM", dam)}>
@@ -1087,7 +1087,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               <TableCell className={cn(cellBase, cellCenter)} {...cellProps("DNI", dni)}>
                                 {dni}
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellLeft, "text-[12px] opacity-80")} {...cellProps("Transportista", transportista)}>
+                              <TableCell className={cn(cellBase, cellCenter, "text-[11px] font-medium opacity-80 uppercase whitespace-normal break-words")} {...cellProps("Transportista", transportista)}>
                                 {transportista}
                               </TableCell>
 
@@ -1098,7 +1098,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                                     size="icon"
                                     onClick={(e) => { e.stopPropagation(); handleRefreshRow(row, "procesados"); }}
                                     disabled={isBusy}
-                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
+                                    className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                                   >
                                     <span className="material-symbols-outlined text-xl">refresh</span>
                                   </Button>
