@@ -103,12 +103,10 @@ export function AppHeader({ onOpenScanner }: Props) {
       <div className="flex items-center gap-4">
         {onOpenScanner && (
           <Button
-            variant="outline"
-            size="sm"
             onClick={onOpenScanner}
-            className="hidden sm:flex h-10 gap-2 border-slate-200 dark:border-white/10 rounded-xl px-4 text-slate-900 dark:text-slate-200 font-bold text-xs hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
+            className="hidden sm:flex h-10 gap-2 bg-primary hover:bg-primary/90 text-white dark:text-white rounded-xl px-5 font-black text-xs transition-all shadow-md hover:shadow-lg active:scale-95"
           >
-            <span className="material-symbols-outlined text-[18px] notranslate">smartphone</span>
+            <span className="material-symbols-outlined text-[18px] notranslate text-white">smartphone</span>
             Vincular Celular
           </Button>
         )}

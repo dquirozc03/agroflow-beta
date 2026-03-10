@@ -26,23 +26,23 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
         if (open && !sessionId) {
             const id = uuidv4();
             setSessionId(id);
-            // Detectar host actual. 
-            // Si estamos en producción (Render), el host de ventana nos dará la URL pública.
-            const host = window.location.host; 
-            const protocol = window.location.protocol;
-            const fullUrl = `${protocol}//${host}`;
+            // Usar origin directamente es más robusto
+            const origin = window.location.origin;
+            const finalUrl = `${origin}/scanner/${id}`;
             
-            setCustomHost(host);
-            setScanUrl(`${fullUrl}/scanner/${id}`);
-            console.log("QR URL Generated:", `${fullUrl}/scanner/${id}`);
+            setCustomHost(window.location.host);
+            setScanUrl(finalUrl);
+            console.log("Scanner Logic: QR URL is", finalUrl);
         }
     }, [open, sessionId]);
 
-    // Actualizar URL cuando cambia el host custom
+    // Actualizar URL cuando el usuario edita el host manualmente
     useEffect(() => {
         if (sessionId && customHost) {
             const protocol = window.location.protocol;
-            setScanUrl(`${protocol}//${customHost}/scanner/${sessionId}`);
+            // Asegurar que no haya duplicación de protocolo si el usuario lo escribe
+            const cleanHost = customHost.replace(/^https?:\/\//, "");
+            setScanUrl(`${protocol}//${cleanHost}/scanner/${sessionId}`);
         }
     }, [customHost, sessionId]);
 
