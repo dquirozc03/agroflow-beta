@@ -182,6 +182,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             <div className="relative group">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 notranslate font-semibold">person</span>
               <input
+                id="input-dni"
                 className={cn(
                   "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 pl-10 pr-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                   justScannedId === "dni" && "ring-2 ring-primary bg-primary/5"
@@ -198,6 +199,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
               Placa Tractor {placasLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}
             </label>
             <input
+              id="input-placas-tracto"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "placas_tracto" && "ring-2 ring-primary bg-primary/5"
@@ -211,6 +213,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Placa Carreta</label>
             <input
+              id="input-placas-carreta"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "placas_carreta" && "ring-2 ring-primary bg-primary/5"
@@ -248,6 +251,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Naviera (Aduana)</label>
             <input
+              id="input-ps-aduana"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "ps_aduana" && "ring-2 ring-primary bg-primary/5"
@@ -261,6 +265,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Operador Log.</label>
             <input
+              id="input-ps-operador"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "ps_operador" && "ring-2 ring-primary bg-primary/5"
@@ -274,6 +279,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Precinto SENASA</label>
             <input
+              id="input-senasa"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "senasa" && "ring-2 ring-primary bg-primary/5"
@@ -287,6 +293,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Línea (Naviera)</label>
             <input
+              id="input-ps-linea"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "ps_linea" && "ring-2 ring-primary bg-primary/5"

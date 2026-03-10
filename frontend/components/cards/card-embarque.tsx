@@ -75,6 +75,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Booking</label>
           <div className="relative group">
             <input
+              id="input-booking"
               className={cn(
                 "w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4 transition-all outline-none text-slate-700 dark:text-slate-200 font-mono",
                 justScannedId === "booking" && "ring-2 ring-primary bg-primary/5",

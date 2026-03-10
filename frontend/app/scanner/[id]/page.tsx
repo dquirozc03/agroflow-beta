@@ -60,8 +60,10 @@ export default function ScannerMobilePage({ params }: Props) {
 
     const handleScan = async (text: string) => {
         const now = Date.now();
-        if (text === lastResultRef.current && now - lastScanTime.current < 5000) return;
-        if (isSendingRef.current && text === lastResultRef.current) return;
+        
+        // Bloqueo estricto de 5 segundos tras cualquier escaneo exitoso (o duplicado reciente)
+        if (now - lastScanTime.current < 5000) return;
+        if (isSendingRef.current) return;
 
         navigator.vibrate?.(200);
         setFlash(true);
@@ -82,19 +84,21 @@ export default function ScannerMobilePage({ params }: Props) {
             });
 
             if (res.ok) {
-                toast.success(`Enviado: ${text}`);
+                toast.success(`Capturado: ${text}`);
             } else {
                 playSound("error");
-                toast.error("Error enviando al PC");
+                toast.error("Error de transmisión");
             }
         } catch {
             playSound("error");
-            toast.error("Error de conexión");
+            toast.error("Error de red");
         } finally {
+            // El bloqueo isSending dura los 5 segundos completos del cooldown
             setTimeout(() => {
                 setSending(false);
                 isSendingRef.current = false;
-            }, 1000);
+                setLastResult(null); // Limpiamos para indicar que puede volver a escanear
+            }, 5000);
         }
     };
 

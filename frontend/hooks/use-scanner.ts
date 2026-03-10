@@ -13,7 +13,8 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
     if (!val) return;
 
     const now = Date.now();
-    if (val === lastScanRef.current.val && now - lastScanRef.current.time < 2000) return;
+    // Sincronizado con el móvil: 5 segundos de cooldown para evitar ráfagas
+    if (now - lastScanRef.current.time < 5000) return;
     lastScanRef.current = { val, time: now };
 
     startTransition(() => {
@@ -21,26 +22,40 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
         const fieldId = lastFocusedId.current;
         const toastId = `pc-scan-${val}`;
 
-        if (fieldId && fieldId in prev && !Array.isArray(prev[fieldId as keyof FormState])) {
-          toast.info(`Insertado en ${fieldId}: ${val}`, { id: toastId });
-          setJustScannedId(fieldId);
+        // Mapeo inteligente de IDs de DOM a propiedades de FormState
+        const fieldMap: Record<string, keyof FormState> = {
+          "input-booking": "booking",
+          "input-dni": "dni",
+          "input-placas-tracto": "placas_tracto",
+          "input-placas-carreta": "placas_carreta",
+          "input-ps-operador": "ps_operador",
+          "input-senasa": "senasa"
+        };
+
+        const targetField = fieldId ? (fieldMap[fieldId] || fieldId) : null;
+
+        if (targetField && targetField in prev && !Array.isArray(prev[targetField as keyof FormState])) {
+          toast.info(`Insertado en ${String(targetField).toUpperCase()}: ${val}`, { id: toastId });
+          setJustScannedId(String(targetField));
           setTimeout(() => setJustScannedId(null), 1000);
-          return { ...prev, [fieldId]: val };
+          return { ...prev, [targetField]: val };
         }
 
+        // Fallback: Si no hay foco, intentar adivinar por formato
         if (/^\d{8}$/.test(val)) {
-          toast.info(`DNI Escaneado: ${val}`, { id: toastId });
+          toast.info(`DNI Detectado: ${val}`, { id: toastId });
           setJustScannedId("dni");
           setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, dni: val };
         }
 
+        // Por defecto, si no se sabe dónde va, es un Precinto Beta
         if (prev.ps_beta_items.includes(val)) {
-          toast.warning("Precinto duplicado", { id: `dup-${val}` });
+          toast.warning("Precinto ya en lista", { id: `dup-${val}` });
           return prev;
         }
         
-        toast.success(`Precinto agregado: ${val}`, { id: toastId });
+        toast.success(`Precinto Beta: ${val}`, { id: toastId });
         setJustScannedId("scanner_ps_beta");
         setTimeout(() => setJustScannedId(null), 1000);
         return {
