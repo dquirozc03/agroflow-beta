@@ -273,19 +273,19 @@ export default function ScannerMobilePage({ params }: Props) {
                                     <div className="flex gap-1">
                                         {[1,2,3].map(i => <div key={i} className="h-1 w-4 bg-emerald-500 animate-pulse" style={{animationDelay: `${i*100}ms`}} />)}
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-[0.5em] text-emerald-400">DATA_SYNC</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.5em] text-emerald-400">SINC_DATOS</span>
                                 </div>
                             ) : lastResult ? (
                                 <div className="text-center w-full animate-in slide-in-from-bottom-2 duration-500">
-                                    <span className="text-[8px] font-bold text-emerald-500/40 uppercase tracking-[0.3em] block mb-2 font-mono">Capture_Confirmed</span>
+                                    <span className="text-[8px] font-bold text-emerald-500/40 uppercase tracking-[0.3em] block mb-2 font-mono">CAPTURA_CONFIRMADA</span>
                                     <div className="text-xl font-mono font-black text-emerald-400 break-all leading-none py-2 px-4 bg-emerald-400/5 border-y border-emerald-400/20">
                                         {lastResult}
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center">
-                                    <p className="text-emerald-500/20 text-[10px] font-black uppercase tracking-[0.4em]">Focalización Automática</p>
-                                    <p className="text-white/20 text-[9px] uppercase tracking-wider mt-1">{mode === 'dni' ? 'Escanea PDF417' : 'Busca código o precinto'}</p>
+                                    <p className="text-emerald-500/20 text-[10px] font-black uppercase tracking-[0.4em]">Enfoque Automático</p>
+                                    <p className="text-white/20 text-[9px] uppercase tracking-wider mt-1">{mode === 'dni' ? 'Escanea PDF417 de DNI' : 'Encuentra código o QR'}</p>
                                 </div>
                             )}
                         </div>

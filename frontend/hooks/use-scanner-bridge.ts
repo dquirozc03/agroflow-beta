@@ -27,15 +27,19 @@ export function useScannerBridge(
             if (isCleaningUp) return;
 
             // Conectar WebSocket
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-            let wsUrl = backendUrl.replace(/^http/, "ws");
-            if (!wsUrl.startsWith("ws")) {
-                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-                wsUrl = `${protocol}//${backendUrl}`;
-            }
-            wsUrl = wsUrl.replace(/\/$/, "");
+            // Conectar WebSocket
+            const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            let backendUrl = process.env.NEXT_PUBLIC_API_URL || (isLocal ? "localhost:8000" : "agroflow-api.onrender.com");
+            
+            // Limpiar protocolo si viene incluido
+            backendUrl = backendUrl.replace(/^https?:\/\//, "");
+            
+            // Determinar protocolo seguro (wss) si estamos en producción/SSL
+            const protocol = (window.location.protocol === "https:" || !isLocal) ? "wss:" : "ws:";
+            const wsUrl = `${protocol}//${backendUrl.replace(/\/$/, "")}`;
             const url = `${wsUrl}/api/v1/scanner/ws/${sessionId}`;
 
+            console.log("Scanner Bridge: Intentando conectar a ->", url);
             setStatus("connecting");
             const ws = new WebSocket(url);
 
@@ -69,7 +73,7 @@ export function useScannerBridge(
             };
 
             ws.onerror = (err) => {
-                console.error("WS Error", err);
+                console.error("Scanner Bridge: Error en WebSocket", err);
                 ws.close();
             };
 
