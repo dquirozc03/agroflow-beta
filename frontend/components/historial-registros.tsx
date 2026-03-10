@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { listRegistros } from "@/lib/api";
 import type { RegistroListado } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Loader2, Search, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { EstadoBadge } from "@/components/estado-badge";
@@ -129,13 +128,17 @@ export function HistorialRegistros() {
     }
   };
 
+  const headBase = "px-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 text-center whitespace-nowrap z-20 sticky top-0";
+  const cellBase = "px-3 py-4 align-middle text-[13px] text-slate-600 dark:text-slate-300 border-b border-slate-50 dark:border-slate-900 transition-colors group-hover:bg-primary/5 dark:group-hover:bg-primary/10 leading-tight whitespace-normal break-words text-center";
+  const cellMono = "font-mono text-xs font-bold text-primary";
+
   return (
-    <div className="grid gap-4">
-      {/* Filtros y buscador moderno */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Desde</label>
+    <div className="grid gap-6 animate-in fade-in duration-700">
+      {/* 🔍 Filtros y buscador moderno */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 dark:border-slate-800/50 transition-all hover:shadow-2xl">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="grid gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Rango Desde</label>
             <input
               type="date"
               value={desde}
@@ -143,11 +146,11 @@ export function HistorialRegistros() {
                 setDesde(e.target.value);
                 setPage(1);
               }}
-              className="h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              className="h-11 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-4 focus:ring-primary/10 transition-all outline-none shadow-sm"
             />
           </div>
-          <div className="grid gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Hasta</label>
+          <div className="grid gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Rango Hasta</label>
             <input
               type="date"
               value={hasta}
@@ -155,51 +158,51 @@ export function HistorialRegistros() {
                 setHasta(e.target.value);
                 setPage(1);
               }}
-              className="h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              className="h-11 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-4 focus:ring-primary/10 transition-all outline-none shadow-sm"
             />
           </div>
-          <div className="grid gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Estado</label>
+          <div className="grid gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Estatus Global</label>
             <Select value={estadoFilter} onValueChange={(val) => { setEstadoFilter(val); setPage(1); }}>
-              <SelectTrigger className="h-10 w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                <SelectValue placeholder="Estado" />
+              <SelectTrigger className="h-11 w-[160px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold text-slate-700 dark:text-slate-200 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
+                <SelectValue placeholder="Seleccionar" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                <SelectItem value="todas">Todos</SelectItem>
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="procesado">Procesado</SelectItem>
-                <SelectItem value="anulado">Anulado</SelectItem>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-2xl p-1">
+                <SelectItem value="todas" className="rounded-xl font-bold">Todos los Estatus</SelectItem>
+                <SelectItem value="pendiente" className="rounded-xl font-bold">Pendientes</SelectItem>
+                <SelectItem value="procesado" className="rounded-xl font-bold">Procesados</SelectItem>
+                <SelectItem value="anulado" className="rounded-xl font-bold">Anulados</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex items-center gap-2">
             <div className={cn(
-              "relative flex items-center h-10 transition-all duration-300 ease-in-out overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
-              isSearchExpanded ? "w-[240px] px-3 ring-2 ring-primary/20" : "w-10 px-0 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+              "relative flex items-center h-11 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm",
+              isSearchExpanded ? "w-[280px] px-4 ring-4 ring-primary/10" : "w-11 px-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
             )}
             onClick={!isSearchExpanded ? toggleSearch : undefined}
             >
               <Search className={cn(
-                "h-4 w-4 text-muted-foreground transition-colors",
-                isSearchExpanded ? "mr-2" : "mx-auto"
+                "h-5 w-5 text-slate-400 transition-all duration-300",
+                isSearchExpanded ? "mr-3 text-primary animate-pulse" : "mx-auto"
               )} />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Buscar booking, dam..."
+                placeholder="Escanea o escribe..."
                 value={searchQuery}
                 onKeyDown={(e) => e.key === "Enter" && fetchData()}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={cn(
-                  "bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/60 transition-opacity duration-200",
+                  "bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 w-full placeholder:text-slate-300 transition-opacity duration-300",
                   isSearchExpanded ? "opacity-100" : "opacity-0 invisible"
                 )}
               />
               {isSearchExpanded && searchQuery && (
                 <X 
-                  className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground ml-1" 
-                  onClick={() => setSearchQuery("")}
+                  className="h-4 w-4 text-slate-300 cursor-pointer hover:text-red-500 ml-1 transition-colors" 
+                  onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}
                 />
               )}
             </div>
@@ -207,7 +210,7 @@ export function HistorialRegistros() {
                <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-100"
+                className="h-11 w-11 rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 transition-all"
                 onClick={fetchData}
                 disabled={loading}
               >
@@ -217,34 +220,34 @@ export function HistorialRegistros() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Button
             variant="outline"
             onClick={exportHistorial}
             disabled={loading || rows.length === 0}
-            className="h-10 px-4 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
+            className="h-11 px-6 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-black text-[11px] uppercase tracking-[0.1em] text-slate-700 dark:text-slate-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 border-none ring-1 ring-slate-200/50"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 text-primary" />
             Exportar Excel
           </Button>
           
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="h-8 w-8 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-[11px] font-bold px-2 min-w-[70px] text-center text-slate-600 dark:text-slate-300">
-              PÁG. {page} / {totalPages}
+            <span className="text-[10px] font-black px-3 min-w-[90px] text-center text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
+              PAG. <span className="text-primary text-xs">{page}</span> / {totalPages}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="h-8 w-8 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
               disabled={page >= totalPages || loading}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
@@ -254,57 +257,75 @@ export function HistorialRegistros() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden animate-in fade-in duration-500">
-        <div className="w-full overflow-x-auto custom-scrollbar">
-          <div className="min-w-[1100px]">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50/50">
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">ID</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">FECHA</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">BOOKING</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">O. BETA</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">AWB</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">DAM</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">TRANSPORTISTA</TableHead>
-                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">ESTADO</TableHead>
+      {/* 📊 Tabla Principal Premium */}
+      <div className="rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl overflow-hidden flex flex-col transition-all">
+        <div className="w-full overflow-x-auto custom-scrollbar max-h-[700px]">
+          <div className="min-w-[1200px]">
+            <Table className="table-fixed">
+              <TableHeader className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md shadow-sm">
+                <TableRow className="border-b border-slate-100 dark:border-slate-800 hover:bg-transparent">
+                  <TableHead className={cn(headBase, "w-[90px]")}>ID</TableHead>
+                  <TableHead className={cn(headBase, "w-[150px]")}>Fecha Registro</TableHead>
+                  <TableHead className={cn(headBase, "w-[150px]")}>Booking</TableHead>
+                  <TableHead className={cn(headBase, "w-[150px]")}>O. Beta</TableHead>
+                  <TableHead className={cn(headBase, "w-[180px]")}>AWB (AirWay Bill)</TableHead>
+                  <TableHead className={cn(headBase, "w-[150px]")}>DAM</TableHead>
+                  <TableHead className={cn(headBase, "w-[280px]")}>Transportista Asignado</TableHead>
+                  <TableHead className={cn(headBase, "w-[150px]")}>Estado</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {loading && rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-24 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                        <span className="text-sm font-medium text-slate-400 italic">Cargando registros...</span>
+                    <TableCell colSpan={8} className="py-32 text-center bg-slate-50/20">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                           <Loader2 className="h-12 w-12 animate-spin text-primary/30" />
+                           <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="h-2 w-2 bg-primary rounded-full animate-ping"></span>
+                           </div>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando Historial...</span>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  rows.map((r) => (
-                    <TableRow key={r.id} className="group border-b border-slate-50 dark:border-slate-900 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                      <TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-primary text-center">#{r.id}</TableCell>
-                      <TableCell className="px-4 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
+                  rows.map((r, idx) => (
+                    <TableRow 
+                      key={r.id} 
+                      className={cn(
+                        "group border-b border-slate-50 dark:border-slate-900 transition-all duration-300",
+                        idx % 2 === 0 ? "bg-white dark:bg-slate-950" : "bg-slate-50/20 dark:bg-slate-900/10",
+                        "hover:bg-primary/[0.03] dark:hover:bg-primary/[0.05]"
+                      )}
+                    >
+                      <TableCell className={cn(cellBase, cellMono, "text-primary/70")}>
+                         <div className="flex items-center justify-center gap-1">
+                            <span className="text-[10px] opacity-30">#</span>
+                            {r.id}
+                         </div>
+                      </TableCell>
+                      <TableCell className={cn(cellBase, "font-black text-slate-800 dark:text-slate-200")}>
                         {String(r.fecha_registro).slice(0, 10)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-200 text-center uppercase">
-                        {r.booking ?? "---"}
+                      <TableCell className={cn(cellBase, "font-mono font-black text-slate-900 dark:text-white text-sm tracking-tight")}>
+                        {r.booking ?? "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
-                        {r.o_beta ?? "---"}
+                      <TableCell className={cn(cellBase, "font-medium opacity-70")}>
+                        {r.o_beta ?? "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
-                        {r.awb ?? "---"}
+                      <TableCell className={cn(cellBase, "font-mono text-[11px] opacity-60")}>
+                        {r.awb ?? "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
-                        {r.dam ?? "---"}
+                      <TableCell className={cn(cellBase, "font-mono text-[11px] opacity-60")}>
+                        {r.dam ?? "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 text-xs text-slate-500 text-center max-w-[200px] truncate">
-                        {r.transportista ?? "---"}
+                      <TableCell className={cn(cellBase, "text-[11px] font-black uppercase tracking-tight opacity-50 px-6")}>
+                        {r.transportista ?? "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 text-center">
-                        <EstadoBadge estado={r.estado ?? ""} className="shadow-none" />
+                      <TableCell className={cn(cellBase)}>
+                        <EstadoBadge estado={r.estado ?? ""} className="shadow-2xl scale-90 ring-1 ring-white/10" />
                       </TableCell>
                     </TableRow>
                   ))
@@ -312,11 +333,15 @@ export function HistorialRegistros() {
 
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-24 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3 text-slate-300">
-                        <Search className="h-12 w-12 opacity-10" />
-                        <div className="text-sm font-medium">No se encontraron registros en este rango.</div>
-                        <p className="text-xs text-slate-400">Intenta ajustar los filtros de fecha o estado.</p>
+                    <TableCell colSpan={8} className="py-32 text-center bg-slate-50/10">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="size-20 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center mb-2">
+                           <Search className="h-8 w-8 text-slate-200" />
+                        </div>
+                        <div className="text-sm font-black text-slate-400 uppercase tracking-widest">Sin coincidencias</div>
+                        <p className="text-xs text-slate-400 max-w-[200px] mx-auto leading-relaxed italic opacity-70">
+                          Ajusta los filtros de fecha o utiliza el buscador para localizar registros específicos.
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -326,24 +351,30 @@ export function HistorialRegistros() {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Total: <span className="text-primary">{total}</span> REGISTROS
+        <div className="px-8 py-5 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+             <div className="size-2 bg-primary rounded-full animate-pulse shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+             <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+               Balance Total: <span className="text-slate-900 dark:text-white text-sm ml-1 font-black">{total}</span> DOCUMENTOS
+             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registros por página:</label>
-            <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-              <SelectTrigger className="h-8 w-[110px] rounded-lg border-slate-200 bg-white font-bold text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
-                {PAGE_SIZES.map((n) => (
-                  <SelectItem key={n} value={String(n)} className="text-[11px] font-medium">
-                    {n} filas
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Vista:</label>
+              <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+                <SelectTrigger className="h-9 w-[115px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-black text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 shadow-2xl p-1">
+                  {PAGE_SIZES.map((n) => (
+                    <SelectItem key={n} value={String(n)} className="text-[11px] font-black rounded-lg">
+                      {n} FILAS
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>

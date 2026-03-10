@@ -971,7 +971,6 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                           <TableHead className={cn(headBase, "w-[90px] border-none py-4 text-slate-900 dark:text-slate-100")}>ID</TableHead>
                           <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Fecha Sync</TableHead>
                           <TableHead className={cn(headBase, "w-[150px] border-none py-4 text-slate-900 dark:text-slate-100")}>O_BETA</TableHead>
-                          <TableHead className={cn(headBase, "w-[140px] border-none py-4 text-slate-900 dark:text-slate-100")}>Estado</TableHead>
                           <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Booking</TableHead>
                           <TableHead className={cn(headBase, "w-[240px] border-none py-4 text-slate-900 dark:text-slate-100")}>AWB</TableHead>
                           <TableHead className={cn(headBase, "w-[160px] border-none py-4 text-slate-900 dark:text-slate-100")}>DAM</TableHead>
@@ -1014,9 +1013,6 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter, "font-black text-slate-900 dark:text-white")} {...cellProps("O_BETA", o_beta)}>
                                 {o_beta}
-                              </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)}>
-                                <EstadoBadge estado={estado} />
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter, "font-medium")} {...cellProps("Booking", booking)}>
                                 {booking}
