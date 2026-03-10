@@ -13,16 +13,23 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
     if (!val) return;
 
     const now = Date.now();
-    // Sincronizado con el móvil: 5 segundos de cooldown para evitar ráfagas
-    if (now - lastScanRef.current.time < 5000) return;
+    console.log("Scanner Logic: Data received on PC ->", val);
+    
+    // Sincronizado con el móvil: 5 segundos de cooldown entre escaneos exitosos
+    if (lastScanRef.current.time && now - lastScanRef.current.time < 5000) {
+        console.log("Scanner Logic: Cooldown active, ignoring scan.");
+        return;
+    }
+    
     lastScanRef.current = { val, time: now };
 
     startTransition(() => {
       setForm((prev) => {
         const fieldId = lastFocusedId.current;
+        console.log("Scanner Logic: Current active field ID ->", fieldId);
+        
         const toastId = `pc-scan-${val}`;
 
-        // Mapeo inteligente de IDs de DOM a propiedades de FormState
         const fieldMap: Record<string, keyof FormState> = {
           "input-booking": "booking",
           "input-dni": "dni",
@@ -33,6 +40,7 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
         };
 
         const targetField = fieldId ? (fieldMap[fieldId] || fieldId) : null;
+        console.log("Scanner Logic: Target FormState field ->", targetField);
 
         if (targetField && targetField in prev && !Array.isArray(prev[targetField as keyof FormState])) {
           toast.info(`Insertado en ${String(targetField).toUpperCase()}: ${val}`, { id: toastId });
@@ -43,13 +51,14 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
 
         // Fallback: Si no hay foco, intentar adivinar por formato
         if (/^\d{8}$/.test(val)) {
+          console.log("Scanner Logic: Fallback to DNI field");
           toast.info(`DNI Detectado: ${val}`, { id: toastId });
           setJustScannedId("dni");
           setTimeout(() => setJustScannedId(null), 1000);
           return { ...prev, dni: val };
         }
 
-        // Por defecto, si no se sabe dónde va, es un Precinto Beta
+        console.log("Scanner Logic: Defaulting to PS_BETA list");
         if (prev.ps_beta_items.includes(val)) {
           toast.warning("Precinto ya en lista", { id: `dup-${val}` });
           return prev;

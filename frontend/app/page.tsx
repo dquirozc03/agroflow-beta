@@ -91,8 +91,9 @@ function AgroFlowContent() {
 
   useEffect(() => {
     const handleFocus = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLInputElement;
       if (target.tagName === "INPUT") {
+        console.log("Scanner Logic: Input focused ->", target.id || "no-id");
         scanner.lastFocusedId.current = target.id;
       }
     };
