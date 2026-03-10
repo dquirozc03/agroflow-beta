@@ -37,15 +37,15 @@ export function normalizeEstado(estadoRaw: unknown): RegistroEstadoUI {
 function estadoStyle(e: RegistroEstadoUI) {
   switch (e) {
     case "PENDIENTE":
-      return "border-chart-3/30 bg-chart-3/10 text-chart-3";
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400";
     case "PROCESADO":
-      return "border-accent/30 bg-accent/10 text-accent";
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-400";
     case "CERRADO":
-      return "border-border bg-muted/40 text-foreground";
+      return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400";
     case "ANULADO":
-      return "border-destructive/30 bg-destructive/10 text-destructive";
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-950/20 dark:text-rose-400";
     case "OBSERVADO":
-      return "border-primary/30 bg-primary/10 text-primary";
+      return "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-400";
     default:
       return "border-border bg-muted/30 text-muted-foreground";
   }

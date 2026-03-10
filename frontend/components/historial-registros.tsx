@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { listRegistros, getRegistroSap } from "@/lib/api";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { listRegistros } from "@/lib/api";
 import type { RegistroListado } from "@/lib/api";
-import type { SapRow } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -20,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Search, ChevronLeft, ChevronRight, Check, Ban, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { EstadoBadge } from "@/components/estado-badge";
 import { cn } from "@/lib/utils";
@@ -37,13 +37,7 @@ function minusDaysISO(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-type Props = {
-  onAddSapRow: (row: SapRow) => void;
-  /** IDs que YA están en bandeja (para bloquear duplicados desde Historial) */
-  bandejaIds?: Set<number>;
-};
-
-export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
+export function HistorialRegistros() {
   const [desde, setDesde] = useState(minusDaysISO(7));
   const [hasta, setHasta] = useState(todayISO());
   const [pageSize, setPageSize] = useState<number>(10);
@@ -51,13 +45,23 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState<RegistroListado[]>([]);
   const [loading, setLoading] = useState(false);
-  const [addingId, setAddingId] = useState<number | null>(null);
+  const [estadoFilter, setEstadoFilter] = useState<string>("todas");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const offset = (page - 1) * pageSize;
-      const data = await listRegistros({ desde, hasta, limit: pageSize, offset });
+      const data = await listRegistros({
+        desde,
+        hasta,
+        limit: pageSize,
+        offset,
+        estado: estadoFilter === "todas" ? undefined : estadoFilter,
+        search: searchQuery || undefined,
+      });
       setRows(data.items);
       setTotal(data.total);
     } catch {
@@ -67,7 +71,7 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [desde, hasta, page, pageSize]);
+  }, [desde, hasta, page, pageSize, estadoFilter, searchQuery]);
 
   useEffect(() => {
     fetchData();
@@ -85,33 +89,6 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
-
-  // Normaliza estado a lower-case para comparar robusto
-  const isPendiente = useCallback((estado: unknown) => {
-    return String(estado ?? "").trim().toLowerCase() === "pendiente";
-  }, []);
-
-  const addToBandeja = useCallback(
-    async (registroId: number) => {
-      // Blindaje: si ya está en bandeja, no hacemos nada (evita duplicados incluso si el UI fallara)
-      if (bandejaIds?.has(registroId)) {
-        toast.message(`El registro #${registroId} ya está en Bandeja SAP`);
-        return;
-      }
-
-      setAddingId(registroId);
-      try {
-        const sap = await getRegistroSap(registroId);
-        onAddSapRow({ registro_id: registroId, ...(sap as Record<string, unknown>) });
-        toast.success(`Agregado a bandeja SAP (#${registroId})`);
-      } catch {
-        toast.error("No se pudo traer SAP para ese registro");
-      } finally {
-        setAddingId(null);
-      }
-    },
-    [bandejaIds, onAddSapRow]
-  );
 
   const exportHistorial = useCallback(() => {
     if (rows.length === 0) return;
@@ -143,16 +120,22 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
     document.body.removeChild(link);
   }, [rows, desde, hasta]);
 
-  // Solo para UX: si hay bandejaIds, calculamos unfallback seguro
-  const bandejaIdsSafe = useMemo(() => bandejaIds ?? new Set<number>(), [bandejaIds]);
+  const toggleSearch = () => {
+    setIsSearchExpanded(!isSearchExpanded);
+    if (!isSearchExpanded) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      setSearchQuery("");
+    }
+  };
 
   return (
     <div className="grid gap-4">
-      {/* Filtros y selector de página */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:flex-row">
-          <div className="grid gap-1">
-            <label className="text-xs font-medium text-muted-foreground">Desde</label>
+      {/* Filtros y buscador moderno */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="grid gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Desde</label>
             <input
               type="date"
               value={desde}
@@ -160,11 +143,11 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
                 setDesde(e.target.value);
                 setPage(1);
               }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              className="h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
             />
           </div>
-          <div className="grid gap-1">
-            <label className="text-xs font-medium text-muted-foreground">Hasta</label>
+          <div className="grid gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Hasta</label>
             <input
               type="date"
               value={hasta}
@@ -172,70 +155,98 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
                 setHasta(e.target.value);
                 setPage(1);
               }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              className="h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
             />
           </div>
-          <div className="grid gap-1">
-            <label className="text-xs font-medium text-muted-foreground">Mostrar</label>
-            <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-              <SelectTrigger className="h-9 w-full">
-                <SelectValue />
+          <div className="grid gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Estado</label>
+            <Select value={estadoFilter} onValueChange={(val) => { setEstadoFilter(val); setPage(1); }}>
+              <SelectTrigger className="h-10 w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <SelectValue placeholder="Estado" />
               </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZES.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n} registros
-                  </SelectItem>
-                ))}
+              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                <SelectItem value="todas">Todos</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="procesado">Procesado</SelectItem>
+                <SelectItem value="anulado">Anulado</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end gap-2">
-            <Button onClick={fetchData} disabled={loading} className="w-full sm:w-auto">
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="mr-2 h-4 w-4" />
-              )}
-              Buscar
-            </Button>
-            <Button
-              variant="outline"
-              onClick={exportHistorial}
-              disabled={loading || rows.length === 0}
-              className="w-full sm:w-auto border-slate-200"
+
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "relative flex items-center h-10 transition-all duration-300 ease-in-out overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+              isSearchExpanded ? "w-[240px] px-3 ring-2 ring-primary/20" : "w-10 px-0 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+            onClick={!isSearchExpanded ? toggleSearch : undefined}
             >
-              <Download className="mr-2 h-4 w-4" />
-              Exportar CSV
-            </Button>
+              <Search className={cn(
+                "h-4 w-4 text-muted-foreground transition-colors",
+                isSearchExpanded ? "mr-2" : "mx-auto"
+              )} />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Buscar booking, dam..."
+                value={searchQuery}
+                onKeyDown={(e) => e.key === "Enter" && fetchData()}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={cn(
+                  "bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/60 transition-opacity duration-200",
+                  isSearchExpanded ? "opacity-100" : "opacity-0 invisible"
+                )}
+              />
+              {isSearchExpanded && searchQuery && (
+                <X 
+                  className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground ml-1" 
+                  onClick={() => setSearchQuery("")}
+                />
+              )}
+            </div>
+            {!isSearchExpanded && (
+               <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-100"
+                onClick={fetchData}
+                disabled={loading}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className="whitespace-nowrap">
-            Mostrando {from}–{to} de {total}
-          </span>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={exportHistorial}
+            disabled={loading || rows.length === 0}
+            className="h-10 px-4 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar Excel
+          </Button>
+          
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all"
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              title="Página anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[80px] text-center font-medium">
-              Pág. {page} / {totalPages}
+            <span className="text-[11px] font-bold px-2 min-w-[70px] text-center text-slate-600 dark:text-slate-300">
+              PÁG. {page} / {totalPages}
             </span>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all"
               disabled={page >= totalPages || loading}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              title="Página siguiente"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -243,112 +254,96 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="w-full overflow-x-auto">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl overflow-hidden animate-in fade-in duration-500">
+        <div className="w-full overflow-x-auto custom-scrollbar">
           <div className="min-w-[1100px]">
             <Table>
               <TableHeader>
-                <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">ID</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">FECHA</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">BOOKING</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">O/BETA</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">AWB</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">DAM</TableHead>
-                  <TableHead className="h-10 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center">ESTADO</TableHead>
-                  <TableHead className="h-10 px-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acción</TableHead>
+                <TableRow className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50/50">
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">ID</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">FECHA</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">BOOKING</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">O. BETA</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">AWB</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">DAM</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">TRANSPORTISTA</TableHead>
+                  <TableHead className="h-12 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 text-center">ESTADO</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {loading && rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-12 text-center">
-                      <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                    <TableCell colSpan={8} className="py-24 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                        <span className="text-sm font-medium text-slate-400 italic">Cargando registros...</span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  rows.map((r) => {
-                    const yaEnBandeja = bandejaIdsSafe.has(r.id);
-                    const pendiente = isPendiente(r.estado);
-                    const busy = addingId === r.id;
-
-                    const disabled = busy || yaEnBandeja || !pendiente;
-
-                    const label = yaEnBandeja
-                      ? "En bandeja"
-                      : !pendiente
-                        ? "No disponible"
-                        : "Bandeja SAP";
-
-                    const Icon = busy
-                      ? Loader2
-                      : yaEnBandeja
-                        ? Check
-                        : !pendiente
-                          ? Ban
-                          : Plus;
-
-                    return (
-                      <TableRow key={r.id} className="group border-b border-border/40 transition-colors hover:bg-muted/50">
-                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground">#{r.id}</TableCell>
-                        <TableCell className="px-3 py-2 text-sm text-foreground/90 whitespace-nowrap">
-                          {String(r.fecha_registro).slice(0, 10)}
-                        </TableCell>
-                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
-                          {r.booking ?? "---"}
-                        </TableCell>
-                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
-                          {r.o_beta ?? "---"}
-                        </TableCell>
-                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
-                          {r.awb ?? "---"}
-                        </TableCell>
-                        <TableCell className="px-3 py-2 font-mono text-xs text-foreground/80">
-                          {r.dam ?? "---"}
-                        </TableCell>
-                        <TableCell className="px-3 py-2">
-                          <EstadoBadge estado={r.estado ?? ""} className="w-[100px] shadow-sm transform scale-90 origin-left" />
-                        </TableCell>
-                        <TableCell className="px-3 py-2 text-right">
-                          <Button
-                            variant={yaEnBandeja ? "outline" : "secondary"}
-                            size="sm"
-                            onClick={() => addToBandeja(r.id)}
-                            disabled={disabled}
-                            className={cn(
-                              "h-7 text-xs shadow-sm",
-                              yaEnBandeja && "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900",
-                              !pendiente && !yaEnBandeja && "opacity-50"
-                            )}
-                          >
-                            <Icon
-                              className={
-                                busy
-                                  ? "mr-1 h-3 w-3 animate-spin"
-                                  : "mr-1 h-3 w-3"
-                              }
-                            />
-                            {label}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                  rows.map((r) => (
+                    <TableRow key={r.id} className="group border-b border-slate-50 dark:border-slate-900 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                      <TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-primary text-center">#{r.id}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
+                        {String(r.fecha_registro).slice(0, 10)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-200 text-center uppercase">
+                        {r.booking ?? "---"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
+                        {r.o_beta ?? "---"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
+                        {r.awb ?? "---"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 font-mono text-xs text-slate-500 text-center">
+                        {r.dam ?? "---"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 text-xs text-slate-500 text-center max-w-[200px] truncate">
+                        {r.transportista ?? "---"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 text-center">
+                        <EstadoBadge estado={r.estado ?? ""} className="shadow-none" />
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
 
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-16 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Search className="h-8 w-8 opacity-20" />
-                        <span className="text-sm">No se encontraron registros en este rango.</span>
+                    <TableCell colSpan={8} className="py-24 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3 text-slate-300">
+                        <Search className="h-12 w-12 opacity-10" />
+                        <div className="text-sm font-medium">No se encontraron registros en este rango.</div>
+                        <p className="text-xs text-slate-400">Intenta ajustar los filtros de fecha o estado.</p>
                       </div>
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Total: <span className="text-primary">{total}</span> REGISTROS
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registros por página:</label>
+            <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="h-8 w-[110px] rounded-lg border-slate-200 bg-white font-bold text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                {PAGE_SIZES.map((n) => (
+                  <SelectItem key={n} value={String(n)} className="text-[11px] font-medium">
+                    {n} filas
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

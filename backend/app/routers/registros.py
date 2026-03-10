@@ -861,6 +861,8 @@ def listar_historial(
     hasta: date | None = Query(default=None),
     limit: int = Query(default=10, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    estado: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Listado paginado para dashboard (10/25/50/100 por página)."""
@@ -869,6 +871,18 @@ def listar_historial(
         base = base.filter(RegistroOperativo.fecha_registro >= datetime.combine(desde, time.min))
     if hasta:
         base = base.filter(RegistroOperativo.fecha_registro <= datetime.combine(hasta, time.max))
+    if estado:
+        base = base.filter(RegistroOperativo.estado == estado.lower())
+    if search:
+        s = f"%{search}%"
+        base = base.filter(
+            or_(
+                RegistroOperativo.booking.ilike(s),
+                RegistroOperativo.o_beta.ilike(s),
+                RegistroOperativo.awb.ilike(s),
+                RegistroOperativo.dam.ilike(s)
+            )
+        )
 
     total = base.with_entities(func.count(RegistroOperativo.id)).scalar() or 0
 

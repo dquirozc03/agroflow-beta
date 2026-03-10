@@ -473,12 +473,12 @@ function AgroFlowContent() {
                         Historial de registros
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Todo lo registrado; mostrado por páginas. Añade filas a la Bandeja SAP si necesitas reexportar.
+                        Consulta y exportación de todos los registros capturados en el sistema.
                       </div>
                     </div>
 
                     <div className="rounded-2xl border border-border bg-background p-3 shadow-sm md:p-4">
-                      <HistorialRegistros onAddSapRow={handleSapRow} bandejaIds={bandejaIds} />
+                      <HistorialRegistros />
                     </div>
                   </div>
                 </div>

@@ -409,12 +409,16 @@ export async function listRegistros(params?: {
   hasta?: string; // YYYY-MM-DD
   limit?: number;
   offset?: number;
+  estado?: string;
+  search?: string;
 }): Promise<HistorialResponse> {
   const qs = new URLSearchParams();
   if (params?.desde) qs.set("desde", params.desde);
   if (params?.hasta) qs.set("hasta", params.hasta);
   if (params?.limit != null) qs.set("limit", String(params.limit));
   if (params?.offset != null) qs.set("offset", String(params.offset));
+  if (params?.estado) qs.set("estado", params.estado);
+  if (params?.search) qs.set("search", params.search);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return request<HistorialResponse>(`/registros/historial${suffix}`, {
     method: "GET",
