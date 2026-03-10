@@ -122,6 +122,16 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
                         <p className="text-[10px] text-muted-foreground mt-1">
                             Asegúrate que el celular y PC estén en la misma red.
                         </p>
+                        
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-500/20 animate-pulse text-left">
+                            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-tight">
+                                🚨 IMPORTANTE PARA VERCEL:
+                                <br />
+                                Si te pide login, ve a: 
+                                <span className="block mt-1 font-black italic">Settings &gt; Deployment Protection</span> 
+                                y desactiva <span className="underline">"Vercel Authentication"</span>.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex w-full items-center gap-2 mt-2">
