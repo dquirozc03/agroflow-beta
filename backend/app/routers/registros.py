@@ -90,7 +90,7 @@ def validar_valor_unico(
         return {"valido": True, "mensaje": "Comodín permitido"}
 
     es_vigente = tipo in TIPOS_VIGENTES
-    duplicados = validar_duplicados(db, [(tipo, v, es_vigente)])
+    duplicados = RegistroService.validar_duplicados(db, [(tipo, v, es_vigente)])
     
     if duplicados:
         return {
@@ -102,111 +102,7 @@ def validar_valor_unico(
     return {"valido": True, "mensaje": "Disponible", "valor": v}
 
 
-def validar_duplicados_excluyendo(
-    db: Session, items: list[tuple[str, str, bool]], referencia: str
-) -> list[dict]:
-    duplicados: list[dict] = []
-    ahora = datetime.now(timezone.utc)
-    limite_travesia = ahora - timedelta(days=DIAS_TRAVESIA_AWB)
-
-    for tipo, valor, vigente in items:
-        q = db.query(Unico).filter(
-            Unico.tipo == tipo,
-            Unico.valor == valor,
-            Unico.referencia != referencia,
-        )
-        if vigente:
-            q = q.filter(
-                Unico.vigente == True,  # noqa: E712
-                Unico.fecha_uso >= limite_travesia,
-            )
-        existe = q.first()
-        if existe:
-            duplicados.append(
-                {
-                    "tipo": tipo,
-                    "valor": valor,
-                    "mensaje": "Valor en uso actualmente (candado vigente)"
-                    if vigente
-                    else "Valor ya utilizado (bloqueado por unicidad)",
-                }
-            )
-    return duplicados
-
-
-def snapshot_registro(reg: RegistroOperativo) -> dict:
-    return {
-        "id": reg.id,
-        "estado": reg.estado,
-        "booking": reg.booking,
-        "o_beta": reg.o_beta,
-        "awb": reg.awb,
-        "dam": reg.dam,
-        "chofer_id": reg.chofer_id,
-        "transportista_id": reg.transportista_id,
-        "termografos": reg.termografos,
-        "ps_beta": reg.ps_beta,
-        "ps_aduana": reg.ps_aduana,
-        "ps_operador": reg.ps_operador,
-        "senasa": reg.senasa,
-        "ps_linea": reg.ps_linea,
-        "senasa_ps_linea": reg.senasa_ps_linea,
-        "processed_at": reg.processed_at.isoformat() if getattr(reg, "processed_at", None) else None,
-        "anulado_at": reg.anulado_at.isoformat() if getattr(reg, "anulado_at", None) else None,
-        "anulado_motivo": reg.anulado_motivo,
-    }
-
-
-def construir_items_unicos(payload: RegistroCrear, senasa_ps_linea_norm: str | None) -> list[tuple[str, str, bool]]:
-    items: list[tuple[str, str, bool]] = []
-    
-    def add(tipo: str, valor: str | None):
-        v = normalizar(valor)
-        if not v:
-            return
-        vigente = tipo in TIPOS_VIGENTES
-        items.append((tipo, v, vigente))
-
-    add("O_BETA", payload.o_beta)
-    add("BOOKING", payload.booking)
-    add("AWB", payload.awb)
-
-    for t in dividir_por_slash(payload.termografos):
-        add("TERMOGRAFO", t)
-    for ps in dividir_por_slash(payload.ps_beta):
-        add("PS_BETA", ps)
-
-    add("PS_ADUANA", payload.ps_aduana)
-    add("PS_OPERADOR", payload.ps_operador)
-    add("SENASA_PS_LINEA", senasa_ps_linea_norm)
-
-    return items
-
-
-def construir_items_unicos_desde_reg(reg: RegistroOperativo) -> list[tuple[str, str, bool]]:
-    items: list[tuple[str, str, bool]] = []
-
-    def add(tipo: str, valor: str | None):
-        v = normalizar(valor)
-        if not v:
-            return
-        vigente = tipo in TIPOS_VIGENTES
-        items.append((tipo, v, vigente))
-
-    add("O_BETA", reg.o_beta)
-    add("BOOKING", reg.booking)
-    add("AWB", reg.awb)
-
-    for t in dividir_por_slash(reg.termografos):
-        add("TERMOGRAFO", t)
-    for ps in dividir_por_slash(reg.ps_beta):
-        add("PS_BETA", ps)
-
-    add("PS_ADUANA", reg.ps_aduana)
-    add("PS_OPERADOR", reg.ps_operador)
-    add("SENASA_PS_LINEA", reg.senasa_ps_linea)
-
-    return items
+# Las funciones construir_items_unicos y validar_duplicados ahora se usan desde RegistroService.
 
 
 def recrear_unicos_del_registro(db: Session, reg: RegistroOperativo):
@@ -298,8 +194,8 @@ def crear_registro(
 
         dam_norm = normalizar(getattr(payload, "dam", None))
 
-        items_unicos = construir_items_unicos(payload, senasa_ps_linea_norm)
-        duplicados = validar_duplicados(db, items_unicos)
+        items_unicos = RegistroService.construir_items_unicos(payload, senasa_ps_linea_norm)
+        duplicados = RegistroService.validar_duplicados(db, items_unicos)
         if duplicados:
             raise HTTPException(status_code=409, detail={"duplicados": duplicados})
 
@@ -356,8 +252,8 @@ def crear_registro(
     except IntegrityError:
         db.rollback()
         # Intentar identificar duplicados nuevamente si el commit falló por integridad
-        items_unicos = construir_items_unicos(payload, normalizar(construir_senasa_ps_linea(payload.senasa, payload.ps_linea)))
-        duplicados = validar_duplicados(db, items_unicos)
+        items_unicos = RegistroService.construir_items_unicos(payload, normalizar(construir_senasa_ps_linea(payload.senasa, payload.ps_linea)))
+        duplicados = RegistroService.validar_duplicados(db, items_unicos)
         if duplicados:
             raise HTTPException(status_code=409, detail={"duplicados": duplicados})
         raise HTTPException(status_code=409, detail="Conflicto de integridad en la base de datos.")
