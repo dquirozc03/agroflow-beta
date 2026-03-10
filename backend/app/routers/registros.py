@@ -105,6 +105,29 @@ def validar_valor_unico(
 # Las funciones construir_items_unicos y validar_duplicados ahora se usan desde RegistroService.
 
 
+def snapshot_registro(reg: RegistroOperativo) -> dict:
+    return {
+        "id": reg.id,
+        "estado": reg.estado,
+        "booking": reg.booking,
+        "o_beta": reg.o_beta,
+        "awb": reg.awb,
+        "dam": reg.dam,
+        "chofer_id": reg.chofer_id,
+        "transportista_id": reg.transportista_id,
+        "termografos": reg.termografos,
+        "ps_beta": reg.ps_beta,
+        "ps_aduana": reg.ps_aduana,
+        "ps_operador": reg.ps_operador,
+        "senasa": reg.senasa,
+        "ps_linea": reg.ps_linea,
+        "senasa_ps_linea": reg.senasa_ps_linea,
+        "processed_at": reg.processed_at.isoformat() if getattr(reg, "processed_at", None) else None,
+        "anulado_at": reg.anulado_at.isoformat() if getattr(reg, "anulado_at", None) else None,
+        "anulado_motivo": reg.anulado_motivo,
+    }
+
+
 def recrear_unicos_del_registro(db: Session, reg: RegistroOperativo):
     referencia = f"REG-{reg.id}"
     items = RegistroService.construir_items_unicos(reg, reg.senasa_ps_linea) # Usamos reg como si fuera payload (duck typing)
