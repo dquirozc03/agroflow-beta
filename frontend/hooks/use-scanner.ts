@@ -32,15 +32,35 @@ export function useScanner(setForm: React.Dispatch<React.SetStateAction<FormStat
 
         const fieldMap: Record<string, keyof FormState> = {
           "input-booking": "booking",
+          "input-o-beta": "o_beta",
+          "input-awb": "awb",
+          "input-dam": "dam",
           "input-dni": "dni",
           "input-placas-tracto": "placas_tracto",
           "input-placas-carreta": "placas_carreta",
+          "input-ps-aduana": "ps_aduana",
           "input-ps-operador": "ps_operador",
-          "input-senasa": "senasa"
+          "input-senasa": "senasa",
+          "input-ps-linea": "ps_linea",
+          "scanner_ps_beta": "ps_beta_items" as any,
+          "scanner_termografos": "termografos_items" as any
         };
 
         const targetField = fieldId ? (fieldMap[fieldId] || fieldId) : null;
         console.log("Scanner Logic: Target FormState field ->", targetField);
+
+        // Caso especial para listas/arrays
+        if (targetField === "ps_beta_items" || targetField === "termografos_items") {
+           const listKey = targetField as "ps_beta_items" | "termografos_items";
+           if (prev[listKey].includes(val)) {
+             toast.warning(`${targetField === "ps_beta_items" ? "Precinto" : "Termógrafo"} ya en lista`, { id: `dup-${val}` });
+             return prev;
+           }
+           toast.success(`${targetField === "ps_beta_items" ? "Precinto Beta" : "Termógrafo"} agregado: ${val}`, { id: toastId });
+           setJustScannedId(targetField);
+           setTimeout(() => setJustScannedId(null), 1000);
+           return { ...prev, [listKey]: [...prev[listKey], val] };
+        }
 
         if (targetField && targetField in prev && !Array.isArray(prev[targetField as keyof FormState])) {
           toast.info(`Insertado en ${String(targetField).toUpperCase()}: ${val}`, { id: toastId });

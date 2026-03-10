@@ -118,6 +118,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">O/Beta</label>
           <input
+            id="input-o-beta"
             className={cn(
               "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-500 dark:text-slate-400 cursor-not-allowed",
               justScannedId === "o_beta" && "ring-2 ring-primary bg-primary/5"
@@ -133,6 +134,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">CONTENEDOR</label>
           <input
+            id="input-awb"
             className={cn(
               "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-500 dark:text-slate-400 cursor-not-allowed",
               justScannedId === "awb" && "ring-2 ring-primary bg-primary/5"
@@ -148,6 +150,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Número de DAM</label>
           <input
+            id="input-dam"
             className={cn(
               "w-full bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 outline-none text-slate-500 dark:text-slate-400 cursor-not-allowed",
               justScannedId === "dam" && "ring-2 ring-primary bg-primary/5"
