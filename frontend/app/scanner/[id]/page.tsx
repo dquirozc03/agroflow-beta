@@ -103,17 +103,52 @@ export default function ScannerMobilePage({ params }: Props) {
     };
 
     const handleOCR = async () => {
-        if (ocrProcessing) return;
+        if (ocrProcessing || cameraState !== "active") return;
+        
+        const videoElement = document.querySelector("#reader video") as HTMLVideoElement;
+        if (!videoElement) {
+            toast.error("Cámara no lista");
+            return;
+        }
+
         setOcrProcessing(true);
-        toast.info("Analizando imagen (OCR)...");
+        const toastId = toast.loading("Analizando imagen con IA...");
         
         try {
-            await new Promise(r => setTimeout(r, 2000));
-            const mockExtractedText = "PRE-" + Math.floor(100000 + Math.random() * 900000);
-            handleScan(mockExtractedText);
-            toast.success("Texto extraído!");
+            // 1. Capturar frame actual del video
+            const canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("Canvas context error");
+            
+            ctx.drawImage(videoElement, 0, 0);
+            const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+
+            // 2. Enviar al backend real (endpoint de OCR del precinto)
+            // Nota: El backend espera multipart o base64 según el endpoint. 
+            // Usaremos el endpoint estándar de OCR de AgroFlow.
+            const response = await fetch("/api/v1/ocr/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: base64Image })
+            });
+
+            if (!response.ok) throw new Error("Error en servidor OCR");
+
+            const result = await response.json();
+            // El backend devuelve { mejor_valor: string, texto: string, ... }
+            const extractedText = result.mejor_valor || result.texto || "";
+            
+            if (extractedText && extractedText.length > 2) {
+                toast.success(`Texto extraído: ${extractedText}`, { id: toastId });
+                handleScan(extractedText);
+            } else {
+                toast.error("No se detectó texto nítido", { id: toastId });
+            }
         } catch (e) {
-            toast.error("Error OCR");
+            console.error("OCR Error:", e);
+            toast.error("Fallo al procesar imagen", { id: toastId });
         } finally {
             setOcrProcessing(false);
         }
