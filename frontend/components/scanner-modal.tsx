@@ -26,13 +26,14 @@ export function ScannerModal({ open, onOpenChange, onScan }: Props) {
         if (open && !sessionId) {
             const id = uuidv4();
             setSessionId(id);
-            // Usar origin directamente es más robusto
-            const origin = window.location.origin;
-            const finalUrl = `${origin}/scanner/${id}`;
+            // PRODUCCIÓN: Usar siempre la URL pública del frontend definida en variables de entorno
+            // o en su defecto el origin actual si es público/producción.
+            const publicUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+            const finalUrl = `${publicUrl}/scanner/${id}`;
             
-            setCustomHost(window.location.host);
+            setCustomHost(new URL(publicUrl).host);
             setScanUrl(finalUrl);
-            console.log("Scanner Logic: QR URL is", finalUrl);
+            console.log("Scanner Logic: Universal URL is", finalUrl);
         }
     }, [open, sessionId]);
 
