@@ -200,10 +200,13 @@ export default function ScannerMobilePage({ params }: Props) {
             try {
                 // Configuración equilibrada para máxima compatibilidad y códigos pequeños
                 const config = {
-                    fps: 50, // Más FPS para mejor captura de movimiento
-                    qrbox: mode === "dni" ? { width: 320, height: 160 } : { width: 300, height: 300 },
+                    fps: 50, 
+                    qrbox: (viewWidth: number, viewHeight: number) => {
+                        if (mode === "dni") return { width: viewWidth * 0.85, height: 180 };
+                        if (mode === "precinto") return { width: viewWidth * 0.85, height: 200 };
+                        return { width: 280, height: 280 }; // Cuadrado para AUTO/QR
+                    },
                     aspectRatio: 1.0,
-                    // Deshabilitar el detector nativo si falla, pero activarlo por defecto
                     videoConstraints: {
                         facingMode: "environment",
                         focusMode: "continuous"
