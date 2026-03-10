@@ -286,13 +286,13 @@ export function HistorialRegistros() {
               ref={searchContainerRef}
               className={cn(
                 "relative flex items-center h-11 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm",
-                isSearchExpanded ? "w-[280px] px-4 ring-4 ring-primary/10" : "w-11 px-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                isSearchExpanded ? "w-[280px] px-4 ring-4 ring-primary/10" : "w-11 px-0 justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
               onClick={!isSearchExpanded ? toggleSearch : undefined}
             >
               <Search className={cn(
-                "h-5 w-5 text-slate-400 transition-all duration-300",
-                isSearchExpanded ? "mr-3 text-primary" : "mx-auto"
+                "h-5 w-5 text-slate-400 transition-all duration-300 shrink-0",
+                isSearchExpanded ? "mr-3 text-primary" : ""
               )} />
               <input
                 ref={searchInputRef}
@@ -303,12 +303,12 @@ export function HistorialRegistros() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={cn(
                   "bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 w-full placeholder:text-slate-300 transition-opacity duration-300",
-                  isSearchExpanded ? "opacity-100" : "opacity-0 invisible"
+                  isSearchExpanded ? "opacity-100" : "opacity-0 hidden"
                 )}
               />
               {isSearchExpanded && searchQuery && (
                 <X 
-                  className="h-4 w-4 text-slate-300 cursor-pointer hover:text-red-500 ml-1 transition-colors" 
+                  className="h-4 w-4 text-slate-300 cursor-pointer hover:text-red-500 ml-1 transition-colors shrink-0" 
                   onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}
                 />
               )}
