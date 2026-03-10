@@ -122,7 +122,7 @@ export default function ScannerMobilePage({ params }: Props) {
     useEffect(() => {
         let mounted = true;
         const elementId = "reader";
-        const { Html5Qrcode } = require("html5-qrcode");
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = require("html5-qrcode");
 
         const startCamera = async () => {
             if (!document.getElementById(elementId) || mode === "ocr") return;
@@ -137,6 +137,13 @@ export default function ScannerMobilePage({ params }: Props) {
 
             const html5QrCode = new Html5Qrcode(elementId, {
                 verbose: false,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                    Html5QrcodeSupportedFormats.DATA_MATRIX,
+                    Html5QrcodeSupportedFormats.PDF_417,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39
+                ],
                 experimentalFeatures: {
                     useBarCodeDetectorIfSupported: true
                 }
@@ -144,18 +151,15 @@ export default function ScannerMobilePage({ params }: Props) {
             scannerRef.current = html5QrCode;
 
             try {
+                // Configuración equilibrada para máxima compatibilidad y códigos pequeños
                 const config = {
-                    fps: 30,
-                    qrbox: (viewfetchWidth: number, viewfetchHeight: number) => {
-                        // Área de escaneo dinámica más grande para capturar códigos pequeños
-                        const minDim = Math.min(viewfetchWidth, viewfetchHeight);
-                        return { width: minDim * 0.8, height: minDim * 0.8 };
-                    },
-                    // Forzar resolución alta si el dispositivo lo permite
+                    fps: 50, // Más FPS para mejor captura de movimiento
+                    qrbox: mode === "dni" ? { width: 320, height: 160 } : { width: 300, height: 300 },
+                    aspectRatio: 1.0,
+                    // Deshabilitar el detector nativo si falla, pero activarlo por defecto
                     videoConstraints: {
                         facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
+                        focusMode: "continuous"
                     }
                 };
 
