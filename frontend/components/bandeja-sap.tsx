@@ -607,53 +607,6 @@ export function BandejaSap({ rows, setRows, className }: Props) {
     };
   }
 
-  function exportCsv(rowsToExport: any[], filename: string) {
-    const headers = columns.map((c) => c.label);
-    const lines = [
-      headers.join(","),
-      ...rowsToExport.map((r) => {
-        const vals = [
-          safeStr(getId(r)),
-          safeStr(getFecha(r)),
-          safeStr(getAny(r, "o_beta", "O_BETA")),
-          safeStr(getAny(r, "booking", "BOOKING")),
-          safeStr(getAny(r, "awb", "AWB")),
-          safeStr(getAny(r, "marca", "MARCA")),
-          safeStr(getAny(r, "placas", "PLACAS")),
-          safeStr(getAny(r, "dni", "DNI")),
-          safeStr(getAny(r, "chofer", "CHOFER")),
-          safeStr(getAny(r, "licencia", "LICENCIA")),
-          safeStr(getAny(r, "transportista", "TRANSPORTISTA")),
-          safeStr(getAny(r, "termografos", "TERMOGRAFOS")),
-          safeStr(getAny(r, "ps_beta", "PS_BETA")),
-          safeStr(getAny(r, "ps_aduana", "PS_ADUANA")),
-          safeStr(getAny(r, "ps_operador", "PS_OPERADOR")),
-          safeStr(getAny(r, "senasa_ps_linea", "SENASA_PS_LINEA")),
-          safeStr(getAny(r, "p_registral", "P_REGISTRAL")),
-          safeStr(getAny(r, "cer_vehicular", "CER_VEHICULAR")),
-        ];
-        return vals
-          .map((x) => {
-            const s = String(x ?? "");
-            if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-              return `"${s.replace(/"/g, '""')}"`;
-            }
-            return s;
-          })
-          .join(",");
-      }),
-    ];
-    const blob = new Blob([lines.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   // ========== Edit / Anular ==========
   function openEditar(row: ProcessedRow) {
     const estado = String((row as any).estado ?? "procesado").toLowerCase();
@@ -770,16 +723,6 @@ export function BandejaSap({ rows, setRows, className }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => exportCsv(tab === "pendientes" ? filteredPendientes : processedRows, `bandeja_sap_${tab}_${localYYYYMMDD()}.csv`)}
-            disabled={tab === "pendientes" ? filteredPendientes.length === 0 : processedRows.length === 0}
-            className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-lg">download</span>
-            Exportar Excel
-          </Button>
-
           <Button
             onClick={tab === "pendientes" ? handleRefreshAll : () => refreshProcesados(procesadosDate)}
             disabled={refreshing || procesadosLoading}
@@ -1121,7 +1064,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                                       size="sm"
                                       onClick={(e) => { e.stopPropagation(); openAnular(row); }}
                                       disabled={estado === "anulado"}
-                                      className="h-8 rounded-lg text-red-500 hover:bg-red-50 font-bold px-3 transition-all"
+                                      className="h-8 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 font-bold px-3 transition-all"
                                     >
                                       <span className="material-symbols-outlined text-sm mr-1">block</span>
                                       Anular

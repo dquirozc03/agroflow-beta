@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Search, ChevronLeft, ChevronRight, Check, Ban } from "lucide-react";
+import { Loader2, Plus, Search, ChevronLeft, ChevronRight, Check, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import { EstadoBadge } from "@/components/estado-badge";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,37 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
     [bandejaIds, onAddSapRow]
   );
 
-  // Solo para UX: si hay bandejaIds, calculamos un fallback seguro
+  const exportHistorial = useCallback(() => {
+    if (rows.length === 0) return;
+
+    const headers = ["ID", "Fecha", "Estado", "Booking", "O. Beta", "AWB", "DAM", "DNI", "Chofer", "Transportista"];
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => [
+        r.id,
+        r.fecha_registro,
+        r.estado,
+        `"${(r.booking || "").replace(/"/g, '""')}"`,
+        `"${(r.o_beta || "").replace(/"/g, '""')}"`,
+        `"${(r.awb || "").replace(/"/g, '""')}"`,
+        `"${(r.dam || "").replace(/"/g, '""')}"`,
+        `"${(r.dni || "").replace(/"/g, '""')}"`,
+        `"${(r.chofer || "").replace(/"/g, '""')}"`,
+        `"${(r.transportista || "").replace(/"/g, '""')}"`
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `historial_registros_${desde}_al_${hasta}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [rows, desde, hasta]);
+
+  // Solo para UX: si hay bandejaIds, calculamos unfallback seguro
   const bandejaIdsSafe = useMemo(() => bandejaIds ?? new Set<number>(), [bandejaIds]);
 
   return (
@@ -160,7 +190,7 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button onClick={fetchData} disabled={loading} className="w-full sm:w-auto">
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -168,6 +198,15 @@ export function HistorialRegistros({ onAddSapRow, bandejaIds }: Props) {
                 <Search className="mr-2 h-4 w-4" />
               )}
               Buscar
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportHistorial}
+              disabled={loading || rows.length === 0}
+              className="w-full sm:w-auto border-slate-200"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
             </Button>
           </div>
         </div>
