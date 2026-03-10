@@ -48,6 +48,7 @@ export function HistorialRegistros() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -211,10 +212,22 @@ export function HistorialRegistros() {
     setIsSearchExpanded(!isSearchExpanded);
     if (!isSearchExpanded) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
-    } else {
-      setSearchQuery("");
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchExpanded(false);
+      }
+    };
+    if (isSearchExpanded) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchExpanded]);
 
   const headBase = "px-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 text-center whitespace-nowrap z-20 sticky top-0";
   const cellBase = "px-3 py-4 align-middle text-[13px] text-slate-600 dark:text-slate-300 border-b border-slate-50 dark:border-slate-900 transition-colors group-hover:bg-primary/5 dark:group-hover:bg-primary/10 leading-tight whitespace-normal break-words text-center";
@@ -265,15 +278,17 @@ export function HistorialRegistros() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className={cn(
-              "relative flex items-center h-11 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm",
-              isSearchExpanded ? "w-[280px] px-4 ring-4 ring-primary/10" : "w-11 px-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
-            )}
-            onClick={!isSearchExpanded ? toggleSearch : undefined}
+            <div 
+              ref={searchContainerRef}
+              className={cn(
+                "relative flex items-center h-11 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm",
+                isSearchExpanded ? "w-[280px] px-4 ring-4 ring-primary/10" : "w-11 px-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+              )}
+              onClick={!isSearchExpanded ? toggleSearch : undefined}
             >
               <Search className={cn(
                 "h-5 w-5 text-slate-400 transition-all duration-300",
-                isSearchExpanded ? "mr-3 text-primary animate-pulse" : "mx-auto"
+                isSearchExpanded ? "mr-3 text-primary" : "mx-auto"
               )} />
               <input
                 ref={searchInputRef}
@@ -294,17 +309,6 @@ export function HistorialRegistros() {
                 />
               )}
             </div>
-            {!isSearchExpanded && (
-               <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-11 w-11 rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 transition-all"
-                onClick={fetchData}
-                disabled={loading}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
 
