@@ -15,7 +15,7 @@ class RegistroEvento(Base):
 
     registro_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("ope_registros.id", ondelete="CASCADE"),
+        ForeignKey("ope_registros.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
