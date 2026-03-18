@@ -59,6 +59,13 @@ def sync_clientes_ie_raw(
                 f = WHITELIST_MAP[h]
                 if f not in col_indices: 
                     col_indices[f] = i
+                    
+        # Fallback ultra-agresivo para Excel roto:
+        for i, h in enumerate(processed_headers):
+            if "codigo_sap_cliente" not in col_indices and "CLIENTE" in h and ("SAP" in h or "SA" in h) and "NOTIFY" not in h:
+                col_indices["codigo_sap_cliente"] = i
+            if "codigo_sap_notify" not in col_indices and "NOTIF" in h and ("SAP" in h or "SA" in h):
+                col_indices["codigo_sap_notify"] = i
 
         if "nombre_comercial" not in col_indices:
             return {"ok": False, "detail": "No se encontró la columna CLIENTE"}
@@ -103,7 +110,13 @@ def sync_clientes_ie_raw(
             upserts += 1
 
         db.commit()
-        return {"ok": True, "upserts": upserts, "cultivo": cultivo}
+        return {
+            "ok": True, 
+            "upserts": upserts, 
+            "cultivo": cultivo,
+            "columnas_detectadas": list(col_indices.keys()),
+            "_debug_raw_headers": raw_headers
+        }
     except Exception as e:
         db.rollback()
         return {"ok": False, "error": str(e)}
