@@ -1,6 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Public_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono, Public_Sans, Outfit } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
@@ -15,6 +15,7 @@ const _jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
 });
+const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 
 export const metadata: Metadata = {
@@ -43,10 +44,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-background font-sans antialiased selection:bg-primary/20",
+        "min-h-screen bg-background antialiased selection:bg-primary/20 text-slate-800",
         _inter.variable,
         _publicSans.variable,
-        _jetbrains.variable
+        _jetbrains.variable,
+        _outfit.variable,
+        _outfit.className
       )}>
         <Providers>
           <AuthGuard>
