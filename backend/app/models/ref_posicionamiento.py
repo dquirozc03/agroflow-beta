@@ -65,6 +65,7 @@ class RefPosicionamiento(Base):
     calibre: Mapped[str | None] = mapped_column(String(50), nullable=True) # CALIBRE
     cj_kg: Mapped[str | None] = mapped_column(String(50), nullable=True) # CJ/KG
     total_unidades: Mapped[str | None] = mapped_column(String(50), nullable=True) # TOTAL
+    total_pallet: Mapped[int | None] = mapped_column(Integer, nullable=True) # TOTAL DE PALLETS
     
     # --- 8. Logística Final ---
     incoterm: Mapped[str | None] = mapped_column(String(50), nullable=True) # INCOTERM

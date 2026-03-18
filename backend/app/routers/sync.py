@@ -98,6 +98,7 @@ class PosicionamientoItem(BaseModel):
     calibre: Optional[str] = Field(None, alias="CALIBRE")
     cj_kg: Optional[str] = Field(None, alias="CJ/KG")
     total_unidades: Optional[int] = Field(None, alias="TOTAL")
+    total_pallet: Optional[int] = Field(None, alias="TOTAL DE PALLETS")
     
     # Logística
     incoterm: Optional[str] = Field(None, alias="INCOTERM")
@@ -172,7 +173,8 @@ def sync_posicionamiento(
         row.presentacion = normalizar(it.presentacion)
         row.calibre = normalizar(it.calibre)
         row.cj_kg = normalizar(it.cj_kg)
-        row.total_unidades = normalizar(it.total_unidades)
+        row.total_unidades = normalizar(str(it.total_unidades)) if it.total_unidades is not None else None
+        row.total_pallet = it.total_pallet
         
         row.incoterm = normalizar(it.incoterm)
         row.flete = normalizar(it.flete)
@@ -241,6 +243,9 @@ def sync_posicionamiento_raw(
         fuzzy_key("CALIBRE"): "calibre",
         fuzzy_key("CJ/KG"): "cj_kg",
         fuzzy_key("TOTAL"): "total_unidades",
+        fuzzy_key("TOTAL DE PALLET"): "total_pallet",
+        fuzzy_key("TOTAL DE PALLETS"): "total_pallet",
+        fuzzy_key("TOTAL PALLETS"): "total_pallet",
         fuzzy_key("INCOTERM"): "incoterm",
         fuzzy_key("FLETE"): "flete"
     }
@@ -309,7 +314,7 @@ def sync_posicionamiento_raw(
             if field == "booking": continue
             val = row[idx] if idx < len(row) else None
             
-            if field in ["dias_tt_booking", "dias_tt_real"]:
+            if field in ["dias_tt_booking", "dias_tt_real", "total_pallet"]:
                 try:
                     db_val = int(float(val)) if val not in [None, ""] else None
                     setattr(db_row, field, db_val)
