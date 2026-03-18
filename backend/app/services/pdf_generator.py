@@ -154,10 +154,10 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         # Ruta relativa al archivo actual (services/pdf_generator.py)
         # Sube un nivel a app/ y otro a la raiz del backend/
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        logo_path = os.path.join(current_dir, "..", "..", "backend", "assets", "Logo_Beta.png")
+        logo_path = os.path.join(current_dir, "..", "..", "backend", "assets", "logo_beta.png")
         if not os.path.exists(logo_path):
             # Intento secundario si la estructura de carpetas de la nube difiere
-            logo_path = os.path.join(current_dir, "..", "..", "assets", "Logo_Beta.png")
+            logo_path = os.path.join(current_dir, "..", "..", "assets", "logo_beta.png")
             
         if os.path.exists(logo_path):
             img = Image(logo_path, width=7.5*cm, height=2.6*cm)
