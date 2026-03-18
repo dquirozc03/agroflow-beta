@@ -151,15 +151,21 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
 
     # -- LOGO MÁS GRANDE --
     try:
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        logo_path = os.path.join(base_path, "backend", "assets", "Logo_Beta.png")
+        # Ruta relativa al archivo actual (services/pdf_generator.py)
+        # Sube un nivel a app/ y otro a la raiz del backend/
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(current_dir, "..", "..", "backend", "assets", "Logo_Beta.png")
+        if not os.path.exists(logo_path):
+            # Intento secundario si la estructura de carpetas de la nube difiere
+            logo_path = os.path.join(current_dir, "..", "..", "assets", "Logo_Beta.png")
+            
         if os.path.exists(logo_path):
-            img = Image(logo_path, width=7.0*cm, height=2.4*cm)
+            img = Image(logo_path, width=7.5*cm, height=2.6*cm)
             img.hAlign = 'LEFT'
             elements.append(img)
             elements.append(Spacer(1, 0.1*cm))
         else:
-            elements.append(Paragraph(f"<b>COMPLEJO AGROINDUSTRIAL BETA S.A.</b>", style_title))
+            elements.append(Spacer(1, 0.4*cm))
             elements.append(Spacer(1, 0.2*cm))
     except:
         elements.append(Spacer(1, 0.3*cm))
