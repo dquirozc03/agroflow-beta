@@ -26,11 +26,13 @@ class CatClienteIE(Base):
     pais: Mapped[str | None] = mapped_column(String(100), nullable=True)
     
     # Consignatario
+    codigo_sap_cliente: Mapped[str | None] = mapped_column(String(50), nullable=True)
     eori_consignatario: Mapped[str | None] = mapped_column(String(100), nullable=True)
     consignatario_bl: Mapped[str | None] = mapped_column(Text, nullable=True)
     datos_referenciales_consignatario: Mapped[str | None] = mapped_column(Text, nullable=True)
     
     # Notificante
+    codigo_sap_notify: Mapped[str | None] = mapped_column(String(50), nullable=True)
     eori_notify: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notificante_bl: Mapped[str | None] = mapped_column(Text, nullable=True)
     datos_referenciales_notify: Mapped[str | None] = mapped_column(Text, nullable=True)

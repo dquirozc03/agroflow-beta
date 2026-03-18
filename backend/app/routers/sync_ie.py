@@ -23,16 +23,28 @@ def sync_clientes_ie_raw(
         def fuzzy_key(h: str) -> str:
             return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
 
+        def extract_sap_code(text: str) -> str:
+            if not text: return ""
+            match = re.search(r'SAP[^\d]*(\d+)', text, flags=re.IGNORECASE)
+            if match: return match.group(1)
+            match_fb = re.search(r'\b\d{5,10}\b', text)
+            if match_fb: return match_fb.group(0)
+            return ""
+
         raw_headers = payload[0]
         processed_headers = [fuzzy_key(h) for h in raw_headers]
         
         WHITELIST_MAP = {
             fuzzy_key("CLIENTE"): "nombre_comercial",
+            fuzzy_key("CODIGO SAP CLIENTE"): "codigo_sap_cliente",
+            fuzzy_key("CODIGO SA CLIENTE"): "codigo_sap_cliente",
+            fuzzy_key("CÓDIGO SAP CLIENTE"): "codigo_sap_cliente",
             fuzzy_key("DESTINO"): "destino",
             fuzzy_key("PAIS"): "pais",
             fuzzy_key("EORI CONSIGNE"): "eori_consignatario",
             fuzzy_key("CONSIGNE BL"): "consignatario_bl",
             fuzzy_key("Datos Referenciales CONSIGNE"): "datos_referenciales_consignatario",
+            fuzzy_key("CODIGO SAP NOTIFY"): "codigo_sap_notify",
             fuzzy_key("EORI NOTIFY"): "eori_notify",
             fuzzy_key("NOTIFY BL"): "notificante_bl",
             fuzzy_key("Datos Referenciales NOTIFY"): "datos_referenciales_notify",
@@ -75,10 +87,12 @@ def sync_clientes_ie_raw(
                 db.add(db_item)
 
             # Mapear todos los campos
+            if "codigo_sap_cliente" in col_indices: db_item.codigo_sap_cliente = extract_sap_code(str(row[col_indices["codigo_sap_cliente"]] or ""))
             if "pais" in col_indices: db_item.pais = str(row[col_indices["pais"]] or "").strip()
             if "eori_consignatario" in col_indices: db_item.eori_consignatario = str(row[col_indices["eori_consignatario"]] or "").strip()
             if "consignatario_bl" in col_indices: db_item.consignatario_bl = str(row[col_indices["consignatario_bl"]] or "").strip()
             if "datos_referenciales_consignatario" in col_indices: db_item.datos_referenciales_consignatario = str(row[col_indices["datos_referenciales_consignatario"]] or "").strip()
+            if "codigo_sap_notify" in col_indices: db_item.codigo_sap_notify = extract_sap_code(str(row[col_indices["codigo_sap_notify"]] or ""))
             if "eori_notify" in col_indices: db_item.eori_notify = str(row[col_indices["eori_notify"]] or "").strip()
             if "notificante_bl" in col_indices: db_item.notificante_bl = str(row[col_indices["notificante_bl"]] or "").strip()
             if "datos_referenciales_notify" in col_indices: db_item.datos_referenciales_notify = str(row[col_indices["datos_referenciales_notify"]] or "").strip()
