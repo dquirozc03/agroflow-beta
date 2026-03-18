@@ -56,6 +56,7 @@ class RefPosicionamiento(Base):
     
     # --- 6. Producción y Llenado ---
     hora_solicitada_operador: Mapped[str | None] = mapped_column(String(50), nullable=True) # HORA SOLICITADA (OPERADOR)
+    fecha_solicitada_operador: Mapped[str | None] = mapped_column(String(50), nullable=True) # FECHA SOLICITADA (OPERADOR)
     fecha_real_llenado: Mapped[str | None] = mapped_column(String(50), nullable=True) # FECHA REAL DE LLENADO
     week_llenado: Mapped[str | None] = mapped_column(String(20), nullable=True) # WEEK LLENADO
     

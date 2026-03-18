@@ -89,6 +89,7 @@ class PosicionamientoItem(BaseModel):
     
     # Producción
     hora_solicitada_operador: Optional[str] = Field(None, alias="HORA SOLICITADA (OPERADOR)")
+    fecha_solicitada_operador: Optional[str] = Field(None, alias="FECHA SOLICITADA (OPERADOR)")
     fecha_real_llenado: Optional[str] = Field(None, alias="FECHA REAL DE LLENADO")
     week_llenado: Optional[str] = Field(None, alias="WEEK LLENADO")
     
@@ -168,6 +169,7 @@ def sync_posicionamiento(
         row.filtros = normalizar(it.filtros)
         
         row.hora_solicitada_operador = normalizar(it.hora_solicitada_operador)
+        row.fecha_solicitada_operador = normalizar(it.fecha_solicitada_operador)
         row.fecha_real_llenado = normalizar(it.fecha_real_llenado)
         row.week_llenado = normalizar(it.week_llenado)
         
@@ -240,6 +242,7 @@ def sync_posicionamiento_raw(
         fuzzy_key("HUMEDAD"): "humedad",
         fuzzy_key("FILTROS"): "filtros",
         fuzzy_key("HORA SOLICITADA (OPERADOR)"): "hora_solicitada_operador",
+        fuzzy_key("FECHA SOLICITADA (OPERADOR)"): "fecha_solicitada_operador",
         fuzzy_key("FECHA REAL DE LLENADO"): "fecha_real_llenado",
         fuzzy_key("WEEK LLENADO"): "week_llenado",
         fuzzy_key("VARIEDAD"): "variedad",

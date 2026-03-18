@@ -123,11 +123,16 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     peso_bruto = peso_neto + (total_unidades * 0.4)
 
     # Pre-procesar fechas a numérico
-    fecha_llenado_num = format_to_numeric_date(posic.fecha_real_llenado)
+    # Prioridad: Fecha Real de Llenado -> Fecha Solicitada Operador
+    fecha_llenado_raw = posic.fecha_real_llenado or posic.fecha_solicitada_operador
+    fecha_llenado_num = format_to_numeric_date(fecha_llenado_raw)
+    
     hora_text = str(posic.hora_solicitada_operador or "").strip()
     fecha_hora_full = f"{fecha_llenado_num} - {hora_text}" if fecha_llenado_num and hora_text else (fecha_llenado_num or hora_text)
     
-    eta_num = format_to_numeric_date(posic.eta_final)
+    # ETA: Prioridad Final -> Booking
+    eta_raw = posic.eta_final or posic.eta_booking
+    eta_num = format_to_numeric_date(eta_raw)
 
     # 3. Construir PDF
     buffer = io.BytesIO()
@@ -160,7 +165,7 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
             logo_path = os.path.join(current_dir, "..", "..", "assets", "logo_beta.png")
             
         if os.path.exists(logo_path):
-            img = Image(logo_path, width=7.5*cm, height=2.6*cm)
+            img = Image(logo_path, width=6.0*cm, height=2.4*cm)
             img.hAlign = 'LEFT'
             elements.append(img)
             elements.append(Spacer(1, 0.1*cm))
