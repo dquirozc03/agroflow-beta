@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Ejemplo producción: CORS_ORIGINS=https://app.tudominio.com,https://www.tudominio.com
     CORS_ORIGINS: str = ""
 
+    # TAREA-B04: Pool de Conexiones para carga alta (AWS / Producción)
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT: int = 30
+
     # Carga primero .env (prod) y luego .env.local (dev)
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.local"),

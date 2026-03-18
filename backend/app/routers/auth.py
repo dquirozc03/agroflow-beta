@@ -5,29 +5,18 @@
 #   Router HTTP de autenticación y gestión de usuarios.
 #   Este módulo solo contiene endpoints (lógica HTTP).
 #   Los schemas Pydantic viven en app/schemas/auth.py
-#   La lógica de negocio compleja irá a app/services/auth_service.py (TAREA-B03)
+#   La lógica de negocio compleja está en app/services/auth_service.py (TAREA-B03)
 #
 # PREFIJO: /api/v1/auth — cumple con el estándar de versionado de la API
 # =============================================================================
 
-from typing import Optional, Annotated
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.utils.rate_limit import login_rate_limit
-from app.models.auth import Usuario
-from app.dependencies.auth import (
-    create_access_token,
-    get_current_user,
-    CurrentUser,
-)
-from app.utils.password import hash_password, verify_password
-from app.utils.audit import registrar_evento
-
-# TAREA-B01: Schemas importados desde su capa correcta (app/schemas/auth.py)
-# Antes estaban definidos inline en este mismo archivo, lo que violaba el
-# principio de responsabilidad única y hacía el router muy difícil de leer.
+from app.dependencies.auth import create_access_token, CurrentUser
+from app.core.exceptions import PermisoInsuficienteError
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
@@ -38,12 +27,10 @@ from app.schemas.auth import (
     RestablecerPasswordBody,
     CambiarPasswordPropiaBody,
 )
+from app.services import auth_service
 
 # Prefijo /api/v1/auth — el /api/v1 garantiza compatibilidad futura si se crea una v2
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
-
-# Máximo de intentos de login fallidos antes de bloquear la cuenta
-MAX_INTENTOS_LOGIN = 3
 
 
 # ========== Endpoints ==========
@@ -54,9 +41,9 @@ def listar_usuarios(
 ):
     """Lista todos los usuarios. Solo administradores."""
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="No tiene permisos para listar usuarios")
+        raise PermisoInsuficienteError("No tiene permisos para listar usuarios")
     
-    return db.query(Usuario).order_by(Usuario.nombre).all()
+    return auth_service.listar_usuarios(db)
 
 
 @router.post("/usuarios", response_model=UsuarioResponse)
@@ -67,41 +54,9 @@ def crear_usuario(
 ):
     """Crea un nuevo usuario. Solo administradores."""
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="Solo un administrador puede crear usuarios")
+        raise PermisoInsuficienteError("Solo un administrador puede crear usuarios")
     
-    # Verificar si ya existe
-    existente = db.query(Usuario).filter(Usuario.usuario == payload.usuario.strip()).first()
-    if existente:
-        raise HTTPException(status_code=400, detail="El nombre de usuario ya está en uso")
-    
-    nuevo = Usuario(
-        usuario=payload.usuario.strip(),
-        nombre=payload.nombre.strip(),
-        rol=payload.rol.strip(),
-        password_hash=hash_password(payload.password),
-        activo=True,
-        requiere_cambio_password=True
-    )
-    
-    db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
-
-    registrar_evento(
-        db,
-        registro_id=None,
-        accion="USUARIO_CREAR",
-        antes=None,
-        despues={
-            "usuario": nuevo.usuario,
-            "nombre": nuevo.nombre,
-            "rol": nuevo.rol
-        },
-        usuario=current_user.usuario
-    )
-    db.commit()
-    
-    return nuevo
+    return auth_service.crear_usuario(db, payload, admin_user=current_user.usuario)
 
 
 @router.delete("/usuarios/{usuario_id}")
@@ -112,30 +67,9 @@ def toggle_usuario_status(
 ):
     """Activa/Desactiva un usuario. Solo administradores."""
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="Solo un administrador puede modificar usuarios")
+        raise PermisoInsuficienteError("Solo un administrador puede modificar usuarios")
     
-    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    if user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
-    
-    user.activo = not user.activo
-    # db.commit() <- Removido, se hace al final
-    
-    estado = "activado" if user.activo else "desactivado"
-    
-    registrar_evento(
-        db,
-        registro_id=None,
-        accion="USUARIO_ESTADO",
-        antes={"usuario": user.usuario, "activo": not user.activo},
-        despues={"usuario": user.usuario, "activo": user.activo},
-        usuario=current_user.usuario
-    )
-    db.commit()
-    
+    estado = auth_service.toggle_usuario_status(db, usuario_id, current_user.usuario, current_user.id)
     return {"ok": True, "mensaje": f"Usuario {estado} correctamente"}
 
 
@@ -148,49 +82,9 @@ def actualizar_usuario(
 ):
     """Actualiza datos básicos de un usuario (nombre, rol). Solo administradores."""
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="No tienes permisos para editar usuarios")
+        raise PermisoInsuficienteError("No tienes permisos para editar usuarios")
     
-    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    antes = {
-        "nombre": user.nombre,
-        "rol": user.rol,
-        "usuario": user.usuario
-    }
-    
-    if payload.nombre is not None:
-        user.nombre = payload.nombre.strip()
-    if payload.rol is not None:
-        user.rol = payload.rol.strip()
-    if payload.usuario is not None:
-        new_usuario = payload.usuario.strip()
-        if new_usuario != user.usuario:
-            # Verificar si el nuevo ID ya está en uso
-            existente = db.query(Usuario).filter(Usuario.usuario == new_usuario).first()
-            if existente:
-                raise HTTPException(status_code=400, detail="El ID de usuario ya está en uso por otro colaborador")
-            user.usuario = new_usuario
-        
-    # db.commit() <- Removido, se hace al final
-    db.refresh(user)
-
-    registrar_evento(
-        db,
-        registro_id=None,
-        accion="USUARIO_EDITAR",
-        antes=antes,
-        despues={
-            "nombre": user.nombre,
-            "rol": user.rol,
-            "usuario": user.usuario
-        },
-        usuario=current_user.usuario
-    )
-    db.commit()
-    
-    return user
+    return auth_service.actualizar_usuario(db, usuario_id, payload, current_user.usuario)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -202,36 +96,10 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         raise
     except Exception:
         pass
-    usuario = (payload.usuario or "").strip()
-    if not usuario:
-        raise HTTPException(status_code=400, detail="Usuario requerido")
-    user = db.query(Usuario).filter(Usuario.usuario == usuario).first()
-    if not user or not user.activo:
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    if getattr(user, "bloqueado", False):
-        raise HTTPException(
-            status_code=status.HTTP_423_LOCKED,
-            detail="Cuenta bloqueada por múltiples intentos fallidos. Contacte al administrador.",
-        )
-    if not verify_password(payload.password or "", user.password_hash):
-        intentos = getattr(user, "intentos_fallidos", 0) + 1
-        user.intentos_fallidos = intentos
-        if intentos >= MAX_INTENTOS_LOGIN:
-            user.bloqueado = True
-            db.commit()
-            raise HTTPException(
-                status_code=status.HTTP_423_LOCKED,
-                detail="Cuenta bloqueada tras 3 intentos fallidos. Contacte al administrador.",
-            )
-        db.commit()
-        raise HTTPException(
-            status_code=401,
-            detail=f"Usuario o contraseña incorrectos. Intentos restantes: {MAX_INTENTOS_LOGIN - intentos}",
-        )
-    user.intentos_fallidos = 0
-    user.bloqueado = False
-    db.commit()
+    
+    user = auth_service.autenticar_usuario(db, payload)
     token = create_access_token(usuario=user.usuario, rol=user.rol, user_id=user.id)
+    
     return LoginResponse(
         access_token=token,
         usuario=user.usuario,
@@ -258,32 +126,9 @@ def restablecer_password_v2(
     Restablece la contraseña de un usuario usando su ID. Solo administrador.
     """
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="Solo un administrador puede restablecer contraseñas")
+        raise PermisoInsuficienteError("Solo un administrador puede restablecer contraseñas")
     
-    user = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    pwd = (body.nueva_password or "").strip()
-    if len(pwd) < 6:
-        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
-    
-    user.password_hash = hash_password(pwd)
-    user.intentos_fallidos = 0
-    user.bloqueado = False
-    user.requiere_cambio_password = True
-    db.commit()
-
-    registrar_evento(
-        db,
-        registro_id=None,
-        accion="USUARIO_PASSWORD_RESET",
-        antes={"usuario": user.usuario},
-        despues={"usuario": user.usuario, "requiere_cambio_password": True},
-        usuario=current_user.usuario
-    )
-    db.commit()
-    
+    user = auth_service.restablecer_password(db, usuario_id, body, current_user.usuario)
     return {"ok": True, "mensaje": f"Contraseña de {user.usuario} actualizada. Se requerirá cambio al iniciar sesión."}
 
 
@@ -294,28 +139,7 @@ def cambiar_password_propia(
     db: Session = Depends(get_db),
 ):
     """Permite al usuario cambiar su propia contraseña."""
-    if not current_user.requiere_cambio_password:
-        if not body.password_actual or not verify_password(body.password_actual, current_user.password_hash):
-            raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
-    
-    pwd = body.nueva_password.strip()
-    if len(pwd) < 6:
-        raise HTTPException(status_code=400, detail="La nueva contraseña debe tener al menos 6 caracteres")
-    
-    current_user.password_hash = hash_password(pwd)
-    current_user.requiere_cambio_password = False
-    db.commit()
-
-    registrar_evento(
-        db,
-        registro_id=None,
-        accion="USUARIO_CAMBIAR_PASSWORD",
-        antes={"usuario": current_user.usuario},
-        despues={"usuario": current_user.usuario, "requiere_cambio_password": False},
-        usuario=current_user.usuario
-    )
-    db.commit()
-    
+    auth_service.cambiar_password_propia(db, current_user, body)
     return {"ok": True, "mensaje": "Tu contraseña ha sido actualizada correctamente"}
 
 
@@ -327,11 +151,7 @@ def desbloquear_usuario(
 ):
     """Desbloquea una cuenta. Solo administrador."""
     if current_user.rol != "administrador":
-        raise HTTPException(status_code=403, detail="Solo un administrador puede desbloquear cuentas")
-    user = db.query(Usuario).filter(Usuario.usuario == usuario.strip()).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    user.intentos_fallidos = 0
-    user.bloqueado = False
-    db.commit()
+        raise PermisoInsuficienteError("Solo un administrador puede desbloquear cuentas")
+    
+    auth_service.desbloquear_usuario(db, usuario)
     return {"ok": True, "mensaje": "Usuario desbloqueado"}
