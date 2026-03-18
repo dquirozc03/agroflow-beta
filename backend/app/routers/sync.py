@@ -84,6 +84,8 @@ class PosicionamientoItem(BaseModel):
     ct_option: Optional[str] = Field(None, alias="C/T")
     ventilacion: Optional[str] = Field(None, alias="VENT")
     temperatura: Optional[str] = Field(None, alias="T°")
+    humedad: Optional[str] = Field(None, alias="HUMEDAD")
+    filtros: Optional[str] = Field(None, alias="FILTROS")
     
     # Producción
     hora_solicitada_operador: Optional[str] = Field(None, alias="HORA SOLICITADA (OPERADOR)")
@@ -162,6 +164,8 @@ def sync_posicionamiento(
         row.ct_option = normalizar(it.ct_option)
         row.ventilacion = normalizar(it.ventilacion)
         row.temperatura = normalizar(it.temperatura)
+        row.humedad = normalizar(it.humedad)
+        row.filtros = normalizar(it.filtros)
         
         row.hora_solicitada_operador = normalizar(it.hora_solicitada_operador)
         row.fecha_real_llenado = normalizar(it.fecha_real_llenado)
@@ -233,6 +237,8 @@ def sync_posicionamiento_raw(
         fuzzy_key("C/T"): "ct_option",
         fuzzy_key("VENT"): "ventilacion",
         fuzzy_key("T°"): "temperatura",
+        fuzzy_key("HUMEDAD"): "humedad",
+        fuzzy_key("FILTROS"): "filtros",
         fuzzy_key("HORA SOLICITADA (OPERADOR)"): "hora_solicitada_operador",
         fuzzy_key("FECHA REAL DE LLENADO"): "fecha_real_llenado",
         fuzzy_key("WEEK LLENADO"): "week_llenado",

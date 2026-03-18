@@ -51,6 +51,8 @@ class RefPosicionamiento(Base):
     ct_option: Mapped[str | None] = mapped_column(String(50), nullable=True) # C/T
     ventilacion: Mapped[str | None] = mapped_column(String(50), nullable=True) # VENT
     temperatura: Mapped[str | None] = mapped_column(String(50), nullable=True) # T°
+    humedad: Mapped[str | None] = mapped_column(String(50), nullable=True) # HUMEDAD
+    filtros: Mapped[str | None] = mapped_column(String(150), nullable=True) # FILTROS
     
     # --- 6. Producción y Llenado ---
     hora_solicitada_operador: Mapped[str | None] = mapped_column(String(50), nullable=True) # HORA SOLICITADA (OPERADOR)
