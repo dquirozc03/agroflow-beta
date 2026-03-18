@@ -482,3 +482,84 @@ def sync_asignacion_raw(
     except Exception as e:
         db.rollback()
         return {"ok": False, "error": str(e)}
+
+@router.post("/posicionamiento/pedidos-pallets/raw")
+def sync_pedidos_pallets_raw(
+    payload: List[List[Union[str, int, float, None]]],
+    db: Session = Depends(get_db),
+    x_sync_token: str | None = Header(default=None),
+):
+    """
+    Endpoint especializado para procesar el Excel 'Pedidos comerciales granada COPIA',
+    sumar todos los pallets segmentados en distintas filas bajo una misma Orden Beta,
+    e inyectarlos al Posicionamiento cruzando el número entero de la orden (EJ: '080' hace match con 'BGA080 L')
+    """
+    validar_token(x_sync_token)
+    if not payload or len(payload) < 2:
+        return {"ok": False, "detail": "Datos insuficientes en tabla PEDIDOS"}
+
+    try:
+        raw_headers = payload[0]
+        processed_headers = [fuzzy_key(h) for h in raw_headers]
+
+        col_orden = -1
+        col_pallets = -1
+
+        for i, h in enumerate(processed_headers):
+            if "ORDEN" in h and col_orden == -1: col_orden = i
+            if "PALLET" in h and col_pallets == -1: col_pallets = i
+
+        if col_orden == -1 or col_pallets == -1:
+            return {"ok": False, "detail": "Columnas ORDEN o PALLETS no encontradas en el Excel", "headers": processed_headers}
+
+        import math
+        from collections import defaultdict
+        sumas = defaultdict(int)
+
+        # 1. Agrupar y sumar matemáticamente todas las filas de la misma ORDEN
+        for row in payload[1:]:
+            if not row or len(row) <= max(col_orden, col_pallets): continue
+            
+            val_orden = str(row[col_orden] or "").strip()
+            val_pallets = str(row[col_pallets] or "").strip()
+
+            if not val_orden: continue
+
+            # Extraer puramente la parte numérica del número de orden
+            solo_nums = re.sub(r'\D', '', val_orden)
+            if not solo_nums: continue
+
+            try:
+                # Sumar pallets (incluso si vienen con decimales)
+                qty = int(math.ceil(float(val_pallets)))
+                # Guardamos como Entero la llave para matches seguros
+                sumas[int(solo_nums)] += qty
+            except:
+                pass
+
+        upserts = 0
+        todos_pos = db.query(RefPosicionamiento).all()
+        
+        # 2. Distribuir a la base de datos general
+        for pos in todos_pos:
+            # Juntar toda la "basura" de las ordenes beta del posicionamiento (Ej: "BGA080 L  null")
+            text_eval = f"{pos.o_beta_inicial} {pos.orden_beta_final} {pos.status_beta_text} {pos.booking}".upper()
+            
+            # Extraer un arreglo de todos los numeros puros hallados en esta fila de base de datos
+            db_nums_strings = re.findall(r'\d+', text_eval)
+            db_num_ints = [int(n) for n in db_nums_strings if n]
+            
+            # 3. Intersectar base de datos numerica vs sumatoria del Excel de hoy
+            for numero_orden, total_pallets in sumas.items():
+                if numero_orden in db_num_ints:
+                    # Si el posicionamiento tiene el "080", inyectamos la sumatoria aquí
+                    pos.total_pallet = total_pallets
+                    upserts += 1
+                    break # Rompemos el ciclo interno, analizamos la siguiente linea DB
+        
+        db.commit()
+        return {"ok": True, "upserts": upserts, "sumatoria_calculada": sumas}
+    
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e)}
