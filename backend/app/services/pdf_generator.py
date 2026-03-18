@@ -152,9 +152,9 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     # -- LOGO MÁS GRANDE --
     try:
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        logo_path = os.path.join(base_path, "assets", "logo_beta.png")
+        logo_path = os.path.join(base_path, "backend", "assets", "Logo_Beta.png")
         if os.path.exists(logo_path):
-            img = Image(logo_path, width=5.5*cm, height=2.2*cm)
+            img = Image(logo_path, width=7.0*cm, height=2.4*cm)
             img.hAlign = 'LEFT'
             elements.append(img)
             elements.append(Spacer(1, 0.1*cm))
@@ -215,11 +215,11 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         ('BACKGROUND', (0,25), (1,26), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 1.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
+        ('TOPPADDING', (0,0), (-1,-1), 1.0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.0),
         # Aumentar cuadros de Consignatario (row 7) y Notificado (row 8)
-        ('TOPPADDING', (0,7), (1,8), 12),
-        ('BOTTOMPADDING', (0,7), (1,8), 12),
+        ('TOPPADDING', (0,7), (1,8), 8),
+        ('BOTTOMPADDING', (0,7), (1,8), 8),
     ])
     table1.setStyle(style1)
     elements.append(table1)
