@@ -511,7 +511,7 @@ def sync_pedidos_pallets_raw(
             if "ORDEN" in h and col_orden == -1: 
                 col_orden = i
                 match_orden_str = raw_headers[i]
-            if "PALLET" in h and col_pallets == -1: 
+            if "PALLET" in h and "TIPO" not in h and col_pallets == -1: 
                 col_pallets = i
                 match_pallets_str = raw_headers[i]
 
