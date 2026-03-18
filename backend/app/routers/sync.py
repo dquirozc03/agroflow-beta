@@ -146,21 +146,25 @@ def sync_posicionamiento(
         row.week_debe_arribar = normalizar(it.week_debe_arribar)
         row.pol = normalizar(it.pol)
         
+        row.o_beta_inicial = normalizar(it.o_beta_inicial)
+        row.orden_beta_final = normalizar(it.orden_beta_final)
+        
         # Manejo de Cliente y Recibidor (Separar por '-' ej: OGL-VDH)
         cliente_ref = normalizar(it.cliente)
         recibidor_ref = normalizar(it.recibidor)
         
         if cliente_ref and "-" in cliente_ref:
-            partes = cliente_ref.split("-", 1)
-            row.cliente = partes[0].strip()
+            partes = [p.strip() for p in cliente_ref.split("-", 1)]
+            row.cliente = partes[0]
             # Solo sobreescribe recibidor si el original viene vacío
-            if not recibidor_ref:
-                row.recibidor = partes[1].strip()
+            if not recibidor_ref and len(partes) > 1:
+                row.recibidor = partes[1]
             else:
                 row.recibidor = recibidor_ref
         else:
-            row.cliente = cliente_ref
-            row.recibidor = recibidor_ref
+            row.cliente = (cliente_ref or "").strip()
+            row.recibidor = (recibidor_ref or "").strip()
+
         row.destino_pedido = normalizar(it.destino_pedido)
         row.po_number = normalizar(it.po_number)
         row.destino_booking = normalizar(it.destino_booking)
