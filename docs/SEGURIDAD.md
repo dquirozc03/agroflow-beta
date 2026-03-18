@@ -1,81 +1,94 @@
-# Seguridad en Nexo / LogiCapture
+# Seguridad en AGROFLOW / LogiCapture
 
-## Lo que ya está implementado
-
-### Frontend
-
-- **Protección de rutas**: `AuthGuard` redirige a `/login` si no hay sesión. Solo `/login` es ruta pública; el resto exige usuario autenticado.
-- **Roles en cliente**: La UI muestra u oculta pestañas y botones según el rol (administrador, supervisor_facturacion, facturador, documentaria). No se puede acceder a Captura/Bandeja si el rol es documentaria; el botón Editar solo aparece para administrador y supervisor.
-- **Envío de rol al backend**: Las peticiones de edición envían el header `X-User-Role` (admin/editor) para que el backend rechace ediciones de usuarios no autorizados.
-- **Sesión persistente**: La sesión (usuario y rol) se guarda en `localStorage` bajo la clave `nexo-auth`. Al refrescar, el usuario sigue logueado en el mismo navegador.
-
-### Backend
-
-- **Edición condicionada por rol**: `PATCH /api/v1/registros/{id}/editar` exige el header `X-User-Role: admin` o `editor`. Si no viene o es otro valor, responde **403**.
-- **Validación de negocio**: Crear registro exige DNI de chofer, placas (tracto + carreta), vehículo con transportista; anular exige motivo; etc.
+> **Estado actualizado:** Marzo 2026. Refleja el estado real implementado.
 
 ---
 
-## Lo que falta para un sistema seguro en producción
+## ✅ Lo que YA está implementado
 
-### 1. Autenticación real
+### Autenticación y JWT
 
-- **Ahora**: Usuario y contraseña se validan contra una lista fija en el frontend (mock). Cualquiera que abra la consola puede ver los usuarios de prueba.
-- **Recomendado**:
-  - Backend: endpoint `POST /auth/login` que valide credenciales (LDAP, BD, IdP, etc.) y devuelva un **token JWT** (o cookie de sesión httpOnly).
-  - Frontend: enviar usuario/contraseña al login; guardar solo el token (en memoria o en cookie); no guardar la contraseña.
-  - En cada petición a la API, enviar el token en el header `Authorization: Bearer <token>` (o cookie si usas sesión).
+- **Login real con JWT:** `POST /api/v1/auth/login` valida usuario y contraseña contra la BD (bcrypt). Devuelve un token JWT firmado con `JWT_SECRET`.
+- **Validación de token en el backend:** Todas las rutas protegidas usan la dependencia `get_current_user` (`dependencies/auth.py`) que valida firma y caducidad del token en cada petición. Sin token válido → **401**.
+- **Rol embebido en el JWT:** El rol del usuario se incluye en el payload del token al momento del login. El backend lo lee desde el token, nunca confía en headers enviados por el cliente (`X-User-Role` fue una deuda técnica de la fase anterior, ya superada).
+- **`JWT_SECRET` obligatorio en producción:** Si `ENVIRONMENT=production`, el backend no arranca si `JWT_SECRET` está vacío o es el valor por defecto de desarrollo. Implementado en `main.py`.
+- **Bloqueo de cuenta por intentos fallidos:** Tras 3 intentos de login fallidos, la cuenta se bloquea (`bloqueado=True` en BD). Solo un administrador puede desbloquearla vía `PATCH /api/v1/auth/usuarios/{usuario}/desbloquear`.
+- **Rate limiting en login:** `POST /api/v1/auth/login` limite 10 intentos por IP cada 15 minutos. Responde **429** si se excede. Implementado en `utils/rate_limit.py`.
+- **Cambio de contraseña forzado en primer login:** Los usuarios creados por el administrador tienen `requiere_cambio_password=True`. El frontend detecta esta bandera en la respuesta del login y redirige a la pantalla de cambio antes de permitir el acceso.
 
-### 2. Validación de token en el backend
+### Control de Acceso por Rol (RBAC)
 
-- **Ahora**: Las rutas de la API (registros, vehiculos, etc.) no comprueban identidad. Cualquiera que conozca la URL del backend podría llamar a la API sin estar logueado.
-- **Recomendado**:
-  - Middleware o dependencia en FastAPI que en cada petición (excepto `/health`, `/auth/login`) exija un token válido y extraiga usuario y rol del token.
-  - Rechazar con **401** si no hay token o está caducado; **403** si el rol no tiene permiso para esa acción (por ejemplo, editar solo para admin/editor).
+- Las rutas de administración (crear usuarios, restablecer contraseñas, desbloquear cuentas) verifican `current_user.rol == "administrador"` y responden **403** si el rol no alcanza.
+- Las rutas de edición de registros verifican el rol del token antes de permitir la mutación.
 
-### 3. Rol en el servidor
+### Infraestructura
 
-- **Ahora**: El rol se guarda en el cliente y se envía en headers. Un usuario podría manipular el cliente y enviar otro rol.
-- **Recomendado**: Tras el login, el backend asigna el rol (desde BD o IdP) y lo incluye **dentro del JWT**. El backend debe leer el rol del token, no del header `X-User-Role` enviado por el cliente. El header puede seguir usándose como respaldo si el backend rellena el valor desde el token.
-
-### 4. JWT_SECRET en producción
-
-- **Implementado**: Si `ENVIRONMENT=production`, el backend **no arranca** si `JWT_SECRET` no está definido o sigue siendo el valor por defecto de desarrollo.
-- **Qué hacer**: En producción definir en el entorno:
-  - `ENVIRONMENT=production`
-  - `JWT_SECRET=<valor aleatorio y largo>` (p. ej. generado con `openssl rand -hex 32`).
-
-### 5. Contraseñas por defecto y recuperación
-
-- Los scripts `seed_admin` y `seed_all_roles` crean usuarios con contraseñas de prueba (admin/admin, etc.).
-- **En producción**: cambiar todas las contraseñas tras el primer acceso. No dejar admin/admin ni usuario=contraseña.
-- **Recuperar contraseña**: no hay email en el modelo; un **administrador** puede restablecer la contraseña de cualquier usuario con `PATCH /api/v1/auth/usuarios/{usuario}/password` (body: `{ "nueva_password": "..." }`). En el login se indica "Contacta al administrador".
-
-### 6. HTTPS en producción
-
-- **Objetivo**: Que todo el tráfico (login, API) vaya cifrado. Usuario, contraseña y JWT no deben viajar en claro.
-- **Cómo**:
-  - No exponer uvicorn directamente a internet. Detrás de un **reverse proxy** que termine SSL (nginx, Caddy, Traefik) o usar un host que lo ofrezca (Render, Railway, Fly.io, etc.).
-  - El proxy recibe HTTPS y hace proxy a `http://127.0.0.1:8000` (uvicorn). El frontend debe cargarse también por HTTPS.
-- **Frontend**: Si se sirve con Next.js en Vercel/Netlify o similar, HTTPS suele venir por defecto.
-
-### 7. Buenas prácticas adicionales
-
-- **Auditoría**: En anular y editar se registra **quién** realizó la acción (usuario del JWT) en la tabla `ope_registro_eventos` (campo `usuario` y `creado_en`). Consultar esa tabla para ver quién anuló o editó cada registro.
-- **Cierre de sesión**: Invalidar el token en el backend al hacer logout (lista negra de tokens o sesión en servidor), además de borrar el token en el cliente.
-- **Caducidad**: JWT con `exp` razonable (ej. 8 h) y renovación con refresh token si se desea.
-- **CORS**: En producción definir `CORS_ORIGINS` en el backend con la URL del frontend (ej. `https://app.tudominio.com`). Por defecto solo localhost.
-- **Rate limiting**: **Implementado** en `POST /api/v1/auth/login`: máximo 10 intentos por IP cada 15 minutos (429 si se excede). Almacén en memoria; con varios workers usar Redis u otro almacén compartido.
+- **CORS dinámico:** `CORS_ORIGINS` se lee desde la variable de entorno del servidor (panel de Render/Railway/EC2). En producción se define solo el dominio oficial del frontend.
+- **Protección de rutas en frontend:** `AuthGuard` redirige a `/login` si no hay token válido. Solo `/login` es ruta pública.
+- **HTTPS automático:** El despliegue en Render/Railway/Vercel provee HTTPS por defecto. En AWS EC2 (futuro), el reverse proxy (nginx/ALB) terminará SSL antes de llegar a uvicorn.
+- **Auditoría de acciones:** Las acciones de edición y anulación registran quién las realizó (usuario del JWT) en la tabla `ope_registro_eventos`.
 
 ---
 
-## Checklist rápido para producción
+## 🔲 Pendiente antes de lanzamiento en AWS
 
-- [ ] Login real (API que valide credenciales y devuelva token/sesión).
-- [ ] Backend exige token en todas las rutas protegidas y valida firma/caducidad.
-- [ ] Rol y usuario obtenidos del token en el servidor, no confiar en headers enviados por el cliente para autorización.
-- [ ] HTTPS en frontend y backend.
-- [ ] Logout invalida la sesión/token en el servidor.
-- [ ] CORS y, si aplica, rate limiting configurados.
+### 1. Contraseñas por defecto
 
-Con esto tendrás una base de seguridad sólida; el siguiente paso natural es implementar login real y protección de la API con JWT (o sesiones) en el backend.
+- Los scripts `seed_admin` y `seed_all_roles` crean usuarios con contraseñas de prueba (admin/admin, usuario=contraseña).
+- **En producción:** Cambiar todas las contraseñas tras el primer acceso. El sistema ya fuerza el cambio con `requiere_cambio_password=True`.
+
+### 2. Pool de conexiones para carga alta
+
+- Actualmente `database.py` usa el pool por defecto de SQLAlchemy (5 conexiones).
+- **En producción con múltiples usuarios concurrentes** configurar en el panel del servidor:
+  ```
+  DB_POOL_SIZE=10
+  DB_MAX_OVERFLOW=20
+  DB_POOL_TIMEOUT=30
+  ```
+- Y leer estos valores en `database.py` condicionados a `ENVIRONMENT=production`.
+
+### 3. Logout que invalide token en servidor
+
+- Actualmente el logout borra el token del cliente (localStorage).
+- **Para mayor seguridad en producción:** Implementar lista negra de tokens (Redis) o usar refresh tokens con rotación. Prioridad post-lanzamiento inicial.
+
+### 4. Rate limiting con almacén compartido
+
+- El rate limiting actual usa memoria del proceso. Con múltiples workers (gunicorn/uvicorn multiprocess) cada proceso tiene su propio contador.
+- **En producción con múltiples workers:** Usar Redis como almacén compartido para el rate limiter.
+
+---
+
+## Checklist rápido para producción en AWS
+
+- [x] Login real con JWT y bcrypt.
+- [x] Backend valida token en todas las rutas protegidas.
+- [x] Rol obtenido del token en el servidor, no de headers del cliente.
+- [x] Bloqueo de cuenta tras 3 intentos fallidos.
+- [x] `JWT_SECRET` obligatorio en producción (el backend no arranca sin él).
+- [x] Rate limiting en el endpoint de login.
+- [x] HTTPS (Render/Railway en dev; ALB/nginx en AWS prod).
+- [x] CORS configurado por variable de entorno.
+- [ ] Contraseñas de seeds cambiadas en producción.
+- [ ] Pool de conexiones BD configurado para carga concurrente.
+- [ ] Logout invalida token en servidor (lista negra o refresh tokens).
+- [ ] Rate limiting con Redis en entorno multi-worker.
+- [ ] Secretos en AWS Secrets Manager (en lugar de variables de entorno del servidor).
+
+---
+
+## Referencia: Cómo restablecer contraseña de un usuario
+
+No hay recuperación por email (el modelo de usuario no tiene campo email).  
+Un **administrador** puede restablecer la contraseña de cualquier usuario:
+
+```http
+PATCH /api/v1/auth/usuarios/{usuario_id}/password-reset
+Authorization: Bearer <token_del_administrador>
+Content-Type: application/json
+
+{"nueva_password": "NuevaPass123"}
+```
+
+El sistema marcará `requiere_cambio_password=True` al usuario, forzándolo a elegir una nueva contraseña en su próximo login.

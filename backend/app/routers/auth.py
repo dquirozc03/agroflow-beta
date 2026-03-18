@@ -1,6 +1,17 @@
+# =============================================================================
+# AGROFLOW — backend/app/routers/auth.py
+#
+# PROPÓSITO:
+#   Router HTTP de autenticación y gestión de usuarios.
+#   Este módulo solo contiene endpoints (lógica HTTP).
+#   Los schemas Pydantic viven en app/schemas/auth.py
+#   La lógica de negocio compleja irá a app/services/auth_service.py (TAREA-B03)
+#
+# PREFIJO: /api/v1/auth — cumple con el estándar de versionado de la API
+# =============================================================================
+
 from typing import Optional, Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,69 +25,24 @@ from app.dependencies.auth import (
 from app.utils.password import hash_password, verify_password
 from app.utils.audit import registrar_evento
 
+# TAREA-B01: Schemas importados desde su capa correcta (app/schemas/auth.py)
+# Antes estaban definidos inline en este mismo archivo, lo que violaba el
+# principio de responsabilidad única y hacía el router muy difícil de leer.
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    MeResponse,
+    UsuarioCreate,
+    UsuarioResponse,
+    UsuarioUpdate,
+    RestablecerPasswordBody,
+    CambiarPasswordPropiaBody,
+)
+
+# Prefijo /api/v1/auth — el /api/v1 garantiza compatibilidad futura si se crea una v2
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-
-# ========== Schemas ==========
-class LoginRequest(BaseModel):
-    usuario: str
-    password: str
-
-
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    usuario: str
-    nombre: str
-    rol: str
-    requiere_cambio_password: Optional[bool] = False
-
-
-class MeResponse(BaseModel):
-    id: Optional[int] = None
-    usuario: str
-    nombre: str
-    rol: str
-    requiere_cambio_password: Optional[bool] = False
-
-    class Config:
-        from_attributes = True
-
-
-class UsuarioCreate(BaseModel):
-    usuario: str
-    nombre: str
-    password: str = "123456"
-    rol: str
-
-
-class UsuarioResponse(BaseModel):
-    id: int
-    usuario: str
-    nombre: str
-    rol: str
-    activo: bool
-    requiere_cambio_password: Optional[bool] = False
-
-    class Config:
-        from_attributes = True
-
-
-class UsuarioUpdate(BaseModel):
-    nombre: Optional[str] = None
-    rol: Optional[str] = None
-    usuario: Optional[str] = None
-
-
-class RestablecerPasswordBody(BaseModel):
-    nueva_password: str = "123456"
-
-
-class CambiarPasswordPropiaBody(BaseModel):
-    password_actual: Optional[str] = None
-    nueva_password: str
-
-
+# Máximo de intentos de login fallidos antes de bloquear la cuenta
 MAX_INTENTOS_LOGIN = 3
 
 
