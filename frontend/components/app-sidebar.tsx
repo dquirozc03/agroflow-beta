@@ -10,7 +10,7 @@ import {
   Sprout,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { MODULE_LOGICAPTURE, canSeeAuditoria, canManageUsers } from "@/lib/constants";
+import { MODULE_LOGICAPTURE, canSeeModule } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 
 export function AppSidebar() {
@@ -43,7 +43,6 @@ export function AppSidebar() {
         href: "/auditoria",
         active: pathname === "/auditoria",
         soon: false,
-        hidden: !canSeeAuditoria(user?.rol ?? ""),
       },
       {
         name: "Facturas Logísticas",
@@ -65,7 +64,6 @@ export function AppSidebar() {
         href: "/usuarios",
         active: pathname === "/usuarios",
         soon: false,
-        hidden: !canManageUsers(user?.rol ?? ""),
       },
       {
         name: "Configuración",
@@ -119,7 +117,7 @@ export function AppSidebar() {
           <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 mt-2">
             Menu Principal
           </p>
-        )}        {modules.filter(m => !m.hidden).map((mod) => (
+        )}        {modules.filter(m => canSeeModule(user?.rol ?? "", m.name)).map((mod) => (
           <a
             key={mod.name}
             href={mod.href}
