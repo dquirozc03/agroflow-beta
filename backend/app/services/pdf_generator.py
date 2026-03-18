@@ -89,9 +89,15 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         if not cliente_ie:
             cliente_ie = clientes_posibles[0]
 
-    # Buscar dirección de planta
-    planta = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
-    direccion_planta = planta.direccion if planta else "CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
+    # Buscar dirección de planta (Dinámico por Posicionamiento)
+    nombre_planta_db = str(posic.planta_empacadora or "").upper().strip()
+    if "LITARDO" in nombre_planta_db:
+        nombre_planta_pdf = "PLANTA LITARDO"
+        direccion_planta_pdf = "CAR.PANAMERICANA SUR KM. 205 (ALTURA ENTRADA STA ROSA) CHINCHA BAJA CHINCHA ICA PERÚ."
+    else:
+        nombre_planta_pdf = "PLANTA ICA"
+        planta_db_obj = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
+        direccion_planta_pdf = planta_db_obj.direccion if planta_db_obj else "CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
 
     # 2. Cálculos
     total_unidades = 0
@@ -166,15 +172,15 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
     # Filas de la Tabla 1
     data1 = [
         [Paragraph("INSTRUCCIÓNES DE EMBARQUE", style_title), ""],
-        [VBL(f" {posic.orden_beta_final or ''}"), Paragraph(f"<div align='right'><b>OGL25</b></div>", style_val_bold)],
+        [VBL(f" {posic.orden_beta_final or ''}"), ""],
         [L("EMBARCADOR"), V("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
         [L("DIRECCIÓN"), V("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
         [L("OPERADOR LOGISTICO"), VBL(str(posic.operador or "").upper())],
-        [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>PLANTA ICA</b><br/>{direccion_planta}", style_value)],
+        [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>{nombre_planta_pdf}</b><br/>{direccion_planta_pdf}", style_value)],
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{cliente_ie.consignatario_bl or ''}</b><br/>{('EORI: ' + cliente_ie.eori_consignatario) if cliente_ie and cliente_ie.eori_consignatario else ''}", style_value)],
         [L("NOTIFICADO<br/>DIRECCIÓN"), V(cliente_ie.notificante_bl if cliente_ie else "")],
-        [L("DESCRIPCION EN EL B/L"), V(f"{total_unidades} BOXES WITH FRESH POMEGRANATES {posic.variedad or ''} ON 18 PALLETS<br/>{total_unidades} CAJAS CON FRESCA GRANADAS {posic.variedad or ''} EN 18 PALETAS")],
+        [L("DESCRIPCION EN EL B/L"), V(f"{total_unidades} BOXES WITH FRESH POMEGRANATES {str(posic.variedad or '')} ON {str(posic.total_pallet or '')} PALLETS<br/>{total_unidades} CAJAS CON FRESCA GRANADAS {str(posic.variedad or '')} EN {str(posic.total_pallet or '')} PALETAS")],
         [L("AGENCIA NAVIERA"), V(posic.naviera)],
         [L("MOTONAVE"), V(posic.nave)],
         [L("BOOKING No."), VBL(posic.booking)],
@@ -188,9 +194,9 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         [L("VARIEDAD"), V(posic.variedad)],
         [L("TEMPERATURA"), V(f"{posic.temperatura or ''}°C" if posic.temperatura else "")],
         [L("VENTILACION"), V(posic.ventilacion)],
-        [L("HUMEDAD"), V("OFF")],
+        [L("HUMEDAD"), V(posic.humedad or "OFF")],
         [L("ATMOSFERA CONTROLADA"), V("NO APLICA")],
-        [L("FILTROS"), VBL("NO APLICA")],
+        [L("FILTROS"), VBL(posic.filtros or "NO APLICA")],
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
         [L("VALOR FOB APROXIMADO"), V(f"USD 34,560.00")],
