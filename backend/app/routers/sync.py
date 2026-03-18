@@ -504,10 +504,16 @@ def sync_pedidos_pallets_raw(
 
         col_orden = -1
         col_pallets = -1
+        match_orden_str = ""
+        match_pallets_str = ""
 
         for i, h in enumerate(processed_headers):
-            if "ORDEN" in h and col_orden == -1: col_orden = i
-            if "PALLET" in h and col_pallets == -1: col_pallets = i
+            if "ORDEN" in h and col_orden == -1: 
+                col_orden = i
+                match_orden_str = raw_headers[i]
+            if "PALLET" in h and col_pallets == -1: 
+                col_pallets = i
+                match_pallets_str = raw_headers[i]
 
         if col_orden == -1 or col_pallets == -1:
             return {"ok": False, "detail": "Columnas ORDEN o PALLETS no encontradas en el Excel", "headers": processed_headers}
@@ -515,6 +521,7 @@ def sync_pedidos_pallets_raw(
         import math
         from collections import defaultdict
         sumas = defaultdict(int)
+        debug_filas_anomalas = []
 
         # 1. Agrupar y sumar matemáticamente todas las filas de la misma ORDEN
         for row in payload[1:]:
@@ -525,17 +532,23 @@ def sync_pedidos_pallets_raw(
 
             if not val_orden: continue
 
-            # Extraer puramente la parte numérica del número de orden
+            # Extraer puramente la parte numérica
             solo_nums = re.sub(r'\D', '', val_orden)
-            if not solo_nums: continue
+            clean_pallets = re.sub(r'[^\d\.]', '', val_pallets)
+
+            if not solo_nums or not clean_pallets: 
+                # Guardar en debug si falló al aislar y valia algo
+                if val_orden or val_pallets:
+                    if len(debug_filas_anomalas) < 10:
+                        debug_filas_anomalas.append({"orden": val_orden, "pallets": val_pallets})
+                continue
 
             try:
-                # Sumar pallets (incluso si vienen con decimales)
-                qty = int(math.ceil(float(val_pallets)))
-                # Guardamos como Entero la llave para matches seguros
+                qty = int(math.ceil(float(clean_pallets)))
                 sumas[int(solo_nums)] += qty
-            except:
-                pass
+            except Exception as e:
+                if len(debug_filas_anomalas) < 10:
+                    debug_filas_anomalas.append({"error": str(e), "val": clean_pallets})
 
         upserts = 0
         todos_pos = db.query(RefPosicionamiento).all()
@@ -558,7 +571,13 @@ def sync_pedidos_pallets_raw(
                     break # Rompemos el ciclo interno, analizamos la siguiente linea DB
         
         db.commit()
-        return {"ok": True, "upserts": upserts, "sumatoria_calculada": sumas}
+        return {
+            "ok": True, 
+            "upserts": upserts, 
+            "sumatoria_calculada": sumas, 
+            "diagnostico_columnas": {"col_orden": match_orden_str, "col_pallets": match_pallets_str},
+            "filas_anomalas": debug_filas_anomalas
+        }
     
     except Exception as e:
         db.rollback()
