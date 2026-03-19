@@ -344,7 +344,23 @@ def sync_posicionamiento_raw(
                     setattr(db_row, field, db_val)
                 except: setattr(db_row, field, None)
             else:
-                setattr(db_row, field, normalizar(str(val)) if val not in [None, ""] else None)
+                final_val = normalizar(str(val)) if val not in [None, ""] else None
+                
+                # REGLA ESPECIAL: SI ES CLIENTE Y TIENE GUION
+                if field == "cliente" and final_val and "-" in final_val:
+                    partes = [p.strip() for p in final_val.split("-", 1)]
+                    setattr(db_row, "cliente", partes[0])
+                    # Solo asigna al recibidor si el campo recibidor no viene ya en el excel
+                    if "recibidor" not in col_indices and len(partes) > 1:
+                        setattr(db_row, "recibidor", partes[1])
+                else:
+                    # Evitar sobreescribir si ya se asignó por la regla de arriba
+                    if field == "recibidor" and getattr(db_row, "cliente", None) and "-" in str(row[col_indices.get("cliente", -1)] or ""):
+                        # Si ya se asignó arriba por split, solo sobreescribe si el valor actual no es nulo
+                        if final_val:
+                            setattr(db_row, field, final_val)
+                    else:
+                        setattr(db_row, field, final_val)
         
         upserts += 1
 
