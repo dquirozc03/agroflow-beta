@@ -79,7 +79,7 @@ def download_ie_pdf(booking: str, db: Session = Depends(get_db)):
             content=pdf_buffer.getvalue(),
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"attachment; filename=IE_{booking}.pdf"
+                "Content-Disposition": f"attachment; filename=IE_{posic.orden_beta_final if posic and posic.orden_beta_final else booking}.pdf"
             }
         )
     except ValueError as e:
