@@ -79,23 +79,25 @@ def sync_clientes_ie_raw(
             nombre = str(row[col_indices["nombre_comercial"]] or "").strip() if "nombre_comercial" in col_indices else ""
             if not nombre: continue
 
-            # Destino (importante para duplicados con distintas direcciones)
+            # Destino/País (importante para duplicados con distintas direcciones)
             destino = str(row[col_indices["destino"]] or "").strip() if "destino" in col_indices else ""
+            pais = str(row[col_indices["pais"]] or "").strip() if "pais" in col_indices else ""
 
-            # Buscar o crear (Key: nombre + destino + cultivo)
+            # Buscar o crear (Key: nombre + pais + cultivo)
             db_item = db.query(CatClienteIE).filter(
                 CatClienteIE.nombre_comercial == nombre,
-                CatClienteIE.destino == destino,
+                CatClienteIE.pais == pais,
                 CatClienteIE.cultivo == cultivo
             ).first()
             
             if not db_item:
-                db_item = CatClienteIE(nombre_comercial=nombre, destino=destino, cultivo=cultivo)
+                db_item = CatClienteIE(nombre_comercial=nombre, pais=pais, cultivo=cultivo)
                 db.add(db_item)
 
             # Mapear todos los campos
+            if "destino" in col_indices: db_item.destino = destino
             if "codigo_sap_cliente" in col_indices: db_item.codigo_sap_cliente = extract_sap_code(str(row[col_indices["codigo_sap_cliente"]] or ""))
-            if "pais" in col_indices: db_item.pais = str(row[col_indices["pais"]] or "").strip()
+            if "pais" in col_indices: db_item.pais = pais
             if "eori_consignatario" in col_indices: db_item.eori_consignatario = str(row[col_indices["eori_consignatario"]] or "").strip()
             if "consignatario_bl" in col_indices: db_item.consignatario_bl = str(row[col_indices["consignatario_bl"]] or "").strip()
             if "datos_referenciales_consignatario" in col_indices: db_item.datos_referenciales_consignatario = str(row[col_indices["datos_referenciales_consignatario"]] or "").strip()
