@@ -506,8 +506,9 @@ def sync_asignacion_raw(
                     t = db.query(Transportista).filter(Transportista.nombre_transportista == nombre_t).first()
                     
                 if not t and (ruc or nombre_t):
-                    fake_ruc = ruc if ruc else "S/RUC"
                     safe_name = nombre_t if nombre_t else "DESCONOCIDO"
+                    # Generar un RUC falso (pero único para esa empresa) si no hay RUC
+                    fake_ruc = ruc if ruc else f"S/RUC-{hash(safe_name) % 10000000}" 
                     t = Transportista(ruc=fake_ruc[:20], nombre_transportista=safe_name, codigo_sap=f"AUTO-{fake_ruc[:20]}")
                     db.add(t)
                     db.flush()
