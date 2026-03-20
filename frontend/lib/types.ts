@@ -89,6 +89,9 @@ export interface FormState {
   vehiculo_ancho_c: string;
   vehiculo_alto_c: string;
 
+  transportista_partida: string;
+  transportista_sap: string;
+
   /** True si la DB requiere que el usuario rellene propiedades faltantes */
   requiere_datos_vehiculo: boolean;
 
@@ -125,6 +128,9 @@ export const initialFormState: FormState = {
   vehiculo_largo_c: "",
   vehiculo_ancho_c: "",
   vehiculo_alto_c: "",
+
+  transportista_partida: "",
+  transportista_sap: "",
   requiere_datos_vehiculo: false,
 
   ps_beta_items: [],

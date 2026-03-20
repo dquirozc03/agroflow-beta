@@ -37,6 +37,10 @@ class RegistroCrear(BaseModel):
     ancho_carreta: Optional[float] = None
     alto_carreta: Optional[float] = None
 
+    # Extras para rellenar Catálogo de Transportista (Si falta en BD)
+    partida_registral: Optional[str] = None
+    codigo_sap: Optional[str] = None
+
 
 class RegistroRespuesta(BaseModel):
     id: int

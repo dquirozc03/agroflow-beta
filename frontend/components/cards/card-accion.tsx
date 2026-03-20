@@ -129,9 +129,6 @@ export function CardAccion({
         dni: txt(form.dni),
         placas,
 
-        ruc: null,
-        codigo_sap: null,
-
         termografos: termografos || null,
         ps_beta: ps_beta || null,
         ps_aduana: txt(form.ps_aduana) || null,
@@ -139,6 +136,10 @@ export function CardAccion({
 
         senasa: txt(form.senasa) || "**",
         ps_linea: txt(form.ps_linea) || null,
+
+        // Extras Transportista (Si faltan o son autogenerados)
+        partida_registral: form.transportista_partida ? txt(form.transportista_partida) : undefined,
+        codigo_sap: form.transportista_sap ? txt(form.transportista_sap) : undefined,
 
         // Extras para completitud Vehicular:
         marca: form.requiere_datos_vehiculo ? txt(form.vehiculo_marca) || undefined : undefined,

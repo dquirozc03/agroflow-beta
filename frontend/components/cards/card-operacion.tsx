@@ -257,6 +257,34 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           </div>
         </div>
         
+        {/* Row 1.3: Datos de Transportista por Primera Vez */}
+        {form.transportista && (!form.transportista.partida_registral || !form.transportista.codigo_sap || form.transportista.codigo_sap.startsWith("AUTO-")) && (
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/40 rounded-lg p-5 space-y-4 animate-in slide-in-from-top-2">
+            <h4 className="text-sm font-bold text-blue-800 dark:text-blue-500 flex items-center gap-2">
+              <span className="material-symbols-outlined text-base font-semibold notranslate">domain_add</span>
+              Datos legales de Empresa de Transporte pendientes: Por favor complete la información
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Partida Registral (Obligatoria para Guías de Remisión)</label>
+                <input
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-blue-500 focus:border-blue-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  placeholder="Ej: 1510197 CNG" value={form.transportista_partida}
+                  onChange={(e) => setForm(p => ({ ...p, transportista_partida: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Código SAP (Pisco)</label>
+                <input
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-blue-500 focus:border-blue-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  placeholder="Ej: 128117" value={form.transportista_sap}
+                  onChange={(e) => setForm(p => ({ ...p, transportista_sap: e.target.value.toUpperCase() }))}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Row 1.5: Datos de Vehículo por Primera Vez */}
         {form.requiere_datos_vehiculo && (
           <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 rounded-lg p-5 space-y-5 animate-in slide-in-from-top-2">

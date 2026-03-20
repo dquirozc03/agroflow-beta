@@ -271,6 +271,20 @@ def crear_registro(
                 status_code=422,
                 detail="El vehículo no tiene transportista asociado. Asocia el transportista al vehículo en catálogos.",
             )
+            
+        # Actualizar datos de transportista si es que los envía (solo si faltan o son autogenerados)
+        hubo_cambios_transp = False
+        if payload.partida_registral and not transportista.partida_registral:
+            transportista.partida_registral = payload.partida_registral.upper()
+            hubo_cambios_transp = True
+            
+        if payload.codigo_sap:
+            if not transportista.codigo_sap or transportista.codigo_sap.startswith("AUTO-"):
+                transportista.codigo_sap = payload.codigo_sap.upper()
+                hubo_cambios_transp = True
+                
+        if hubo_cambios_transp:
+            db.flush()
 
         # Autocompletar desde refs por booking
         refs = obtener_refs_por_booking(db, payload.booking)
