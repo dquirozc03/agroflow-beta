@@ -424,9 +424,17 @@ def sync_asignacion_raw(
             fuzzy_key("DAM"): "dam",
             fuzzy_key("CONTENEDOR"): "contenedor",
             fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista",
+            fuzzy_key("EMPRESA DA TRANAPORTE"): "transportista",
+            fuzzy_key("TRANSPORTISTA"): "transportista",
             fuzzy_key("RUC"): "ruc",
             fuzzy_key("CONDUCTOR"): "conductor",
-            fuzzy_key("PLACAS"): "placas",
+            fuzzy_key("CHOFER"): "conductor",
+            fuzzy_key("PLACAS"): "placas", # A veces la mandan combinada
+            fuzzy_key("PLACA DE TRACTO"): "placa_tracto",
+            fuzzy_key("PLACA TRACTO"): "placa_tracto",
+            fuzzy_key("PLACA DA CARRETA"): "placa_carreta",   
+            fuzzy_key("PLACA DE CARRETA"): "placa_carreta",   
+            fuzzy_key("PLACA CARRETA"): "placa_carreta",   
             fuzzy_key("LICENCIA"): "licencia",
             fuzzy_key("DNI"): "licencia"
         }
@@ -533,27 +541,43 @@ def sync_asignacion_raw(
                         db.flush()
 
             # Placas
+            clean_placas = ""
+            tracto = ""
+            carreta = ""
+
             if "placas" in col_indices:
                 raw_placas = str(row[col_indices["placas"]] or "").strip().upper()
                 clean_placas = re.sub(r'[^A-Z0-9/]', '', raw_placas)
                 if clean_placas:
-                    db_dam.placas = clean_placas # Para autocompletar en el Frontend
-                    
                     p_parts = clean_placas.split('/')
                     tracto = p_parts[0] if len(p_parts) > 0 else ""
                     carreta = p_parts[1] if len(p_parts) > 1 else None
-                    
-                    if tracto:
-                        v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
-                        if not v:
-                            v = Vehiculo(
-                                placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
-                                transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
-                                largo_carreta=0, ancho_carreta=0, alto_carreta=0,
-                                configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
-                            )
-                            db.add(v)
-                            db.flush()
+            else:
+                raw_t = str(row[col_indices.get("placa_tracto")] or "").strip().upper() if "placa_tracto" in col_indices else ""
+                raw_c = str(row[col_indices.get("placa_carreta")] or "").strip().upper() if "placa_carreta" in col_indices else ""
+                
+                tracto = re.sub(r'[^A-Z0-9]', '', raw_t)
+                carreta = re.sub(r'[^A-Z0-9]', '', raw_c) if raw_c else None
+                
+                if tracto:
+                    clean_placas = tracto
+                    if carreta:
+                        clean_placas += f"/{carreta}"
+
+            if clean_placas:
+                db_dam.placas = clean_placas # Para autocompletar en el Frontend
+                
+                if tracto:
+                    v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
+                    if not v:
+                        v = Vehiculo(
+                            placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
+                            transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
+                            largo_carreta=0, ancho_carreta=0, alto_carreta=0,
+                            configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
+                        )
+                        db.add(v)
+                        db.flush()
 
             # Contenedor y Validacion (Solo si existe Posicionamiento previo)
             if "contenedor" in col_indices:
