@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Download, History, Calendar as CalendarIcon, Loader2, Ban } from "lucide-react";
+import { Search, FileText, Download, History, Calendar as CalendarIcon, Loader2, Ban, ChevronLeft, ChevronRight } from "lucide-react";
 import { searchIeBookings, getIeHistory, getDownloadIeUrl, checkIeExists, anularIe, type IeSearchResult, type IeHistoryRecord } from "@/lib/api";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,7 +25,9 @@ export default function IePage() {
 
     const [history, setHistory] = useState<IeHistoryRecord[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const [dateFilter, setDateFilter] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [dateFilter, setDateFilter] = useState("");
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     
     // UI states
     const [observaciones, setObservaciones] = useState("");
@@ -60,14 +62,19 @@ export default function IePage() {
     const loadHistory = useCallback(async () => {
         setIsLoadingHistory(true);
         try {
-            const data = await getIeHistory({ desde: dateFilter });
+            const data = await getIeHistory({ 
+                desde: dateFilter || undefined, 
+                limit: 5, 
+                page: page 
+            });
             setHistory(data.results);
+            setTotalPages(Math.max(1, Math.ceil(data.total / 5)));
         } catch (error) {
             toast.error("Error al cargar el historial");
         } finally {
             setIsLoadingHistory(false);
         }
-    }, [dateFilter]);
+    }, [dateFilter, page]);
 
     useEffect(() => {
         loadHistory();
@@ -272,7 +279,7 @@ export default function IePage() {
                                         <input
                                             type="date"
                                             value={dateFilter}
-                                            onChange={(e) => setDateFilter(e.target.value)}
+                                            onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
                                             className="bg-transparent border-none text-sm focus:ring-0 outline-none"
                                         />
                                     </div>
@@ -353,12 +360,37 @@ export default function IePage() {
                                         ) : (
                                             <TableRow>
                                                 <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                                    No hay registros para la fecha seleccionada
+                                                    No hay registros de Instrucciones de Embarque {dateFilter && "para la fecha seleccionada"}
                                                 </TableCell>
                                             </TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
+                            </div>
+                            
+                            {/* Paginación */}
+                            <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-slate-50/50 dark:bg-slate-900/50">
+                                <span className="text-xs text-muted-foreground">
+                                    Página {page} de {totalPages}
+                                </span>
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        disabled={page === 1 || isLoadingHistory}
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        disabled={page >= totalPages || isLoadingHistory}
+                                        onClick={() => setPage((p) => p + 1)}
+                                    >
+                                        Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </div>
                             </div>
                         </Card>
                     </div>

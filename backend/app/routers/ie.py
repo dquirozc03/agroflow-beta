@@ -37,13 +37,11 @@ def get_ie_history(
     db: Session = Depends(get_db)
 ):
     """Obtiene el historial de IEs generadas"""
-    if not start_date:
-        start_date = date.today()
-    
+    # Permite omitir la fecha de inicio para traer por paginación los últimos registros
     query = db.query(RegistroIE)
     
-    # Filtro por fecha usando func.date para ignorar la zona horaria a nivel de día
-    query = query.filter(func.date(RegistroIE.fecha_generacion) >= start_date)
+    if start_date:
+        query = query.filter(func.date(RegistroIE.fecha_generacion) >= start_date)
     if end_date:
         query = query.filter(func.date(RegistroIE.fecha_generacion) <= end_date)
     
