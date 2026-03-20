@@ -449,18 +449,26 @@ def sync_asignacion_raw(
         if "booking" not in col_indices:
             return {"ok": False, "detail": "No se encontró la columna BOOKING"}
             
-        def format_chofer_name(raw_name: str) -> str:
-            if not raw_name: return ""
+        def parse_chofer_name(raw_name: str):
+            if not raw_name: return "", {}
             words = [w for w in raw_name.replace(',', ' ').split() if w]
-            if len(words) == 0: return ""
-            if len(words) == 1: return words[0].upper()
-            if len(words) == 2: return f"{words[1]} {words[0]}".upper()
+            if len(words) == 0: return "", {}
+            if len(words) == 1:
+                return words[0].upper(), {"primer_nombre": words[0].upper(), "apellido_paterno": "-"}
+            if len(words) == 2:
+                return f"{words[1]} {words[0]}".upper(), {"primer_nombre": words[1].upper(), "apellido_paterno": words[0].upper()}
+                
             # Asume ApellidoPaterno ApellidoMaterno Nombre1 [NombreN...] -> Ej: "SALCEDO QUISPE JOSE SANTOS"
-            if len(words) >= 3:
-                nombres = " ".join(words[2:])
-                apellido_paterno = words[0]
-                apellido_materno_inicial = words[1][0] + "."
-                return f"{nombres} {apellido_paterno} {apellido_materno_inicial}".upper()
+            nombres = " ".join(words[2:]).upper()
+            ap = words[0].upper()
+            am = words[1].upper()
+            am_inicial = f"{am[0]}."
+            
+            return f"{nombres} {ap} {am_inicial}", {
+                "primer_nombre": nombres,
+                "apellido_paterno": ap,
+                "apellido_materno": am
+            }
 
         upserts = 0
         for row_idx in range(1, len(payload)):
@@ -530,14 +538,14 @@ def sync_asignacion_raw(
                 if dni:
                     db_dam.licencia = dni # Esto alimenta el frontend DNI del chofer
                     
-                formated_name = format_chofer_name(raw_cond)
+                formated_name, kwargs_chofer = parse_chofer_name(raw_cond)
                 if formated_name:
                     db_dam.chofer = formated_name
                     
-                if dni and formated_name:
+                if dni and kwargs_chofer:
                     c = db.query(Chofer).filter(Chofer.dni == dni).first()
                     if not c:
-                        c = Chofer(dni=dni, nombre_chofer=formated_name, licencia=raw_lic)
+                        c = Chofer(dni=dni, licencia=raw_lic, **kwargs_chofer)
                         db.add(c)
                         db.flush()
 
