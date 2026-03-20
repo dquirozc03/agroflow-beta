@@ -587,6 +587,11 @@ def sync_asignacion_raw(
                         )
                         db.add(v)
                         db.flush()
+                    else:
+                        # Si ya existía pero no se le había asignado empresa o cambió, la forzamos
+                        if t_id and v.transportista_id != t_id:
+                            v.transportista_id = t_id
+                            db.flush()
 
             # Contenedor y Validacion (Solo si existe Posicionamiento previo)
             if "contenedor" in col_indices:
