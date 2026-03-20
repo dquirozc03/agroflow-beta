@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, XCircle, CheckCircle2 } from "lucide-react";
 import { getBookingRefs } from "@/lib/api";
 import { toast } from "sonner";
@@ -26,16 +26,14 @@ export const CardEmbarque = React.memo(function CardEmbarque({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [bookingError, setBookingError] = useState(false);
+  const bookingDebounceRef = useRef<number | null>(null);
+  const lastSearchedBookingRef = useRef<string | null>(null);
 
-  const handleAutocompletar = async () => {
-    if (!form.booking.trim()) {
-      toast.error("Ingrese un BOOKING primero");
-      return;
-    }
+  const ejecutarAutocompletado = useCallback(async (bookingStr: string) => {
     setLoading(true);
     setBookingError(false);
     try {
-      const refs = await getBookingRefs(form.booking.trim());
+      const refs = await getBookingRefs(bookingStr);
       setForm((prev) => {
         let n_tracto = prev.placas_tracto;
         let n_carreta = prev.placas_carreta;
@@ -57,14 +55,41 @@ export const CardEmbarque = React.memo(function CardEmbarque({
         };
       });
       setRefsLocked(true);
-      toast.success("Datos de referencia cargados");
+      lastSearchedBookingRef.current = bookingStr;
+      toast.success("Referencias vehiculares y de embarque cargadas", {
+        description: `Booking verificado: ${bookingStr}`
+      });
     } catch {
       setBookingError(true);
-      toast.error("No se encontraron referencias para este BOOKING");
     } finally {
       setLoading(false);
     }
+  }, [setForm, setRefsLocked]);
+
+  const handleAutocompletarManual = () => {
+    if (!form.booking.trim()) {
+      toast.error("Ingrese un BOOKING primero");
+      return;
+    }
+    ejecutarAutocompletado(form.booking.trim());
   };
+
+  useEffect(() => {
+    const bookingStr = (form.booking || "").trim();
+    if (bookingStr.length < 5) return;
+    
+    if (refsLocked && lastSearchedBookingRef.current === bookingStr) return;
+
+    if (bookingDebounceRef.current) window.clearTimeout(bookingDebounceRef.current);
+    
+    bookingDebounceRef.current = window.setTimeout(() => {
+      ejecutarAutocompletado(bookingStr);
+    }, 800);
+
+    return () => {
+      if (bookingDebounceRef.current) window.clearTimeout(bookingDebounceRef.current);
+    };
+  }, [form.booking, refsLocked, ejecutarAutocompletado]);
 
   return (
     <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -74,7 +99,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
           1. Datos de Embarque
         </h3>
         <button
-          onClick={handleAutocompletar}
+          onClick={handleAutocompletarManual}
           disabled={loading || !form.booking.trim()}
           className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-50 disabled:no-underline"
         >
@@ -101,8 +126,9 @@ export const CardEmbarque = React.memo(function CardEmbarque({
                 const val = e.target.value.toUpperCase();
                 setForm(p => ({ ...p, booking: val }));
                 if (bookingError) setBookingError(false);
+                setRefsLocked(false); // Resetea para permitir nueva busqueda
                 
-                // Si borra el booking, limpiar datos autocompletados
+                // Si borra el booking, limpiar datos autocompletados (O/Beta, AWB, DAM)
                 if (!val.trim()) {
                   setForm(prev => ({
                     ...prev,
@@ -110,7 +136,6 @@ export const CardEmbarque = React.memo(function CardEmbarque({
                     awb: "",
                     dam: ""
                   }));
-                  setRefsLocked(false);
                 }
               }}
               placeholder="BK-XXXXXX"
