@@ -426,7 +426,9 @@ def sync_asignacion_raw(
             fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista",
             fuzzy_key("RUC"): "ruc",
             fuzzy_key("CONDUCTOR"): "conductor",
-            fuzzy_key("PLACAS"): "placas"
+            fuzzy_key("PLACAS"): "placas",
+            fuzzy_key("LICENCIA"): "licencia",
+            fuzzy_key("DNI"): "licencia"
         }
 
         col_indices = {}
@@ -438,11 +440,24 @@ def sync_asignacion_raw(
 
         if "booking" not in col_indices:
             return {"ok": False, "detail": "No se encontró la columna BOOKING"}
+            
+        def format_chofer_name(raw_name: str) -> str:
+            if not raw_name: return ""
+            words = [w for w in raw_name.replace(',', ' ').split() if w]
+            if len(words) == 0: return ""
+            if len(words) == 1: return words[0].upper()
+            if len(words) == 2: return f"{words[1]} {words[0]}".upper()
+            # Asume ApellidoPaterno ApellidoMaterno Nombre1 [NombreN...] -> Ej: "SALCEDO QUISPE JOSE SANTOS"
+            if len(words) >= 3:
+                nombres = " ".join(words[2:])
+                apellido_paterno = words[0]
+                apellido_materno_inicial = words[1][0] + "."
+                return f"{nombres} {apellido_paterno} {apellido_materno_inicial}".upper()
 
         upserts = 0
         for row_idx in range(1, len(payload)):
             row = payload[row_idx]
-            if not row or len(row) <= max(col_indices.values()): continue
+            if not row or len(row) <= max(col_indices.values(), default=-1): continue
             
             # Booking
             b_idx = col_indices["booking"]
@@ -465,40 +480,80 @@ def sync_asignacion_raw(
             if "dam" in col_indices:
                 raw_dam = str(row[col_indices["dam"]] or "").strip()
                 clean_dam = re.sub(r'(40-)0+', r'\1', raw_dam)
-                db_dam.dam = clean_dam
+                if clean_dam: db_dam.dam = clean_dam
 
             # Transportista
             t_id = None
-            if "ruc" in col_indices and "transportista" in col_indices:
-                ruc = str(row[col_indices["ruc"]] or "").strip()
-                nombre_t = str(row[col_indices["transportista"]] or "").strip()
+            if "ruc" in col_indices or "transportista" in col_indices:
+                idx_ruc = col_indices.get("ruc", -1)
+                idx_trans = col_indices.get("transportista", -1)
+                
+                ruc = str(row[idx_ruc] or "").strip() if idx_ruc >= 0 and idx_ruc < len(row) else ""
+                nombre_t = str(row[idx_trans] or "").strip().upper() if idx_trans >= 0 and idx_trans < len(row) else ""
+                
+                t = None
                 if ruc:
                     t = db.query(Transportista).filter(Transportista.ruc == ruc).first()
-                    if not t:
-                        t = Transportista(ruc=ruc, nombre_transportista=nombre_t, codigo_sap=f"AUTO-{ruc[:20]}")
-                        db.add(t)
-                        db.flush()
+                elif nombre_t:
+                    t = db.query(Transportista).filter(Transportista.nombre_transportista == nombre_t).first()
+                    
+                if not t and (ruc or nombre_t):
+                    fake_ruc = ruc if ruc else "S/RUC"
+                    safe_name = nombre_t if nombre_t else "DESCONOCIDO"
+                    t = Transportista(ruc=fake_ruc[:20], nombre_transportista=safe_name, codigo_sap=f"AUTO-{fake_ruc[:20]}")
+                    db.add(t)
+                    db.flush()
+                
+                if t:
                     t_id = t.id
+                    db_dam.transportista = t.nombre_transportista
+
+            # Licencia y Chofer
+            if "licencia" in col_indices or "conductor" in col_indices:
+                idx_lic = col_indices.get("licencia", -1)
+                idx_cond = col_indices.get("conductor", -1)
+                
+                raw_lic = str(row[idx_lic] or "").strip().upper() if idx_lic >= 0 and idx_lic < len(row) else ""
+                raw_cond = str(row[idx_cond] or "").strip() if idx_cond >= 0 and idx_cond < len(row) else ""
+                
+                dni = re.sub(r'[^\d]', '', raw_lic)
+                
+                if dni:
+                    db_dam.licencia = dni # Esto alimenta el frontend DNI del chofer
+                    
+                formated_name = format_chofer_name(raw_cond)
+                if formated_name:
+                    db_dam.chofer = formated_name
+                    
+                if dni and formated_name:
+                    c = db.query(Chofer).filter(Chofer.dni == dni).first()
+                    if not c:
+                        c = Chofer(dni=dni, nombre_chofer=formated_name, licencia=raw_lic)
+                        db.add(c)
+                        db.flush()
 
             # Placas
             if "placas" in col_indices:
                 raw_placas = str(row[col_indices["placas"]] or "").strip().upper()
                 clean_placas = re.sub(r'[^A-Z0-9/]', '', raw_placas)
-                p_parts = clean_placas.split('/')
-                tracto = p_parts[0] if len(p_parts) > 0 else ""
-                carreta = p_parts[1] if len(p_parts) > 1 else None
-                
-                if tracto:
-                    v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
-                    if not v:
-                        v = Vehiculo(
-                            placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
-                            transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
-                            largo_carreta=0, ancho_carreta=0, alto_carreta=0,
-                            configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
-                        )
-                        db.add(v)
-                        db.flush()
+                if clean_placas:
+                    db_dam.placas = clean_placas # Para autocompletar en el Frontend
+                    
+                    p_parts = clean_placas.split('/')
+                    tracto = p_parts[0] if len(p_parts) > 0 else ""
+                    carreta = p_parts[1] if len(p_parts) > 1 else None
+                    
+                    if tracto:
+                        v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
+                        if not v:
+                            v = Vehiculo(
+                                placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
+                                transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
+                                largo_carreta=0, ancho_carreta=0, alto_carreta=0,
+                                configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
+                            )
+                            db.add(v)
+                            db.flush()
 
             # Contenedor y Validacion (Solo si existe Posicionamiento previo)
             if "contenedor" in col_indices:

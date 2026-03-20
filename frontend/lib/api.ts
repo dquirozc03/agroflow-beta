@@ -259,6 +259,11 @@ export type BookingRefs = {
 
   awb?: string | null;
   dam?: string | null;
+
+  licencia?: string | null;
+  chofer?: string | null;
+  placas?: string | null;
+  transportista?: string | null;
 };
 
 export async function getBookingRefs(booking: string): Promise<BookingRefs> {

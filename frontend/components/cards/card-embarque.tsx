@@ -36,12 +36,26 @@ export const CardEmbarque = React.memo(function CardEmbarque({
     setBookingError(false);
     try {
       const refs = await getBookingRefs(form.booking.trim());
-      setForm((prev) => ({
-        ...prev,
-        o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
-        awb: (refs.awb as string) || prev.awb,
-        dam: (refs.dam as string) || prev.dam,
-      }));
+      setForm((prev) => {
+        let n_tracto = prev.placas_tracto;
+        let n_carreta = prev.placas_carreta;
+        
+        if (refs.placas) {
+            const parts = refs.placas.split('/');
+            if (parts[0]) n_tracto = parts[0];
+            if (parts.length > 1 && parts[1]) n_carreta = parts[1];
+        }
+        
+        return {
+          ...prev,
+          o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
+          awb: (refs.awb as string) || prev.awb,
+          dam: (refs.dam as string) || prev.dam,
+          dni: refs.licencia ? String(refs.licencia) : prev.dni,
+          placas_tracto: n_tracto,
+          placas_carreta: n_carreta
+        };
+      });
       setRefsLocked(true);
       toast.success("Datos de referencia cargados");
     } catch {

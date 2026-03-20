@@ -14,6 +14,12 @@ class RefBookingDam(Base):
     ce_awb: Mapped[str | None] = mapped_column(String(100), nullable=True) # Nuevo campo contenedor
     dam: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
+    # Datos adicionales de Asignación de Unidades
+    licencia: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    chofer: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    placas: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    transportista: Mapped[str | None] = mapped_column(String(150), nullable=True)
+
     # Flag para alertas web si los contenedores no coinciden
     alerta_discrepancia: Mapped[int] = mapped_column(Integer, server_default="0", default=0)
 

@@ -87,4 +87,10 @@ def ref_por_booking(booking: str, db: Session = Depends(get_db)):
         # Priorizar AWB de la tabla de DAMs si existe
         "awb": dam_row.awb if dam_row and dam_row.awb else None,
         "dam": dam_row.dam if dam_row else None,
+        
+        # Datos de Asignación Automática
+        "licencia": dam_row.licencia if dam_row else None,
+        "chofer": dam_row.chofer if dam_row else None,
+        "placas": dam_row.placas if dam_row else None,
+        "transportista": dam_row.transportista if dam_row else None,
     }
