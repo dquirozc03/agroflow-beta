@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Download, History, Calendar as CalendarIcon, Loader2 } from "lucide-react";
-import { searchIeBookings, getIeHistory, getDownloadIeUrl, type IeSearchResult, type IeHistoryRecord } from "@/lib/api";
+import { Search, FileText, Download, History, Calendar as CalendarIcon, Loader2, Ban } from "lucide-react";
+import { searchIeBookings, getIeHistory, getDownloadIeUrl, checkIeExists, anularIe, type IeSearchResult, type IeHistoryRecord } from "@/lib/api";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -24,6 +26,11 @@ export default function IePage() {
     const [history, setHistory] = useState<IeHistoryRecord[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [dateFilter, setDateFilter] = useState(format(new Date(), "yyyy-MM-dd"));
+    
+    // UI states
+    const [observaciones, setObservaciones] = useState("");
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [pendingBookingToGenerate, setPendingBookingToGenerate] = useState<string | null>(null);
 
     // Buscar bookings
     const handleSearch = useCallback(async (q: string) => {
@@ -66,19 +73,54 @@ export default function IePage() {
         loadHistory();
     }, [loadHistory]);
 
-    const handleGenerate = async (booking: string) => {
+    const handleRequestGenerate = async (booking: string) => {
         try {
-            const url = getDownloadIeUrl(booking);
+            const { exists } = await checkIeExists(booking);
+            if (exists) {
+                setPendingBookingToGenerate(booking);
+                setConfirmDialogOpen(true);
+            } else {
+                await doGenerate(booking, false);
+            }
+        } catch (error) {
+            toast.error("Error al consultar el estado de la Instrucción de Embarque");
+        }
+    };
+
+    const doGenerate = async (booking: string, override: boolean) => {
+        try {
+            if (override) {
+                toast.loading("Anulando instrucción anterior...");
+                await anularIe(booking);
+                toast.dismiss();
+            }
+
+            const url = getDownloadIeUrl(booking, observaciones);
             // Abrir en nueva pestaña para descargar
             window.open(url, "_blank");
             toast.success(`Generando IE para ${booking}...`);
 
             // Recargar historial después de un momento
             setTimeout(loadHistory, 2000);
+            setConfirmDialogOpen(false);
         } catch (error) {
-            toast.error("Error al disparar la descarga");
+            toast.dismiss();
+            toast.error("Error al generar la Instrucción de Embarque");
         }
     };
+    
+    const handleAnularDesdeHistorial = async (booking: string) => {
+        if (!window.confirm(`¿Estás seguro de anular la IE activa del booking ${booking}?`)) return;
+        try {
+            const res = await anularIe(booking);
+            if(res.ok) {
+                toast.success(`IE Anulada correctamente`);
+                loadHistory();
+            }
+        } catch (error) {
+            toast.error("Error al anular la Instrucción de Embarque");
+        }
+    }
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -183,10 +225,21 @@ export default function IePage() {
                                             </div>
 
                                             <div className="pt-4 border-t border-border/60">
+                                                <div className="mb-4">
+                                                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                                        Observaciones (Opcional)
+                                                    </p>
+                                                    <Textarea 
+                                                        placeholder="Escribe alguna observación a añadir en el recuadro final del PDF..."
+                                                        value={observaciones}
+                                                        onChange={(e) => setObservaciones(e.target.value)}
+                                                        className="resize-none text-sm h-16"
+                                                    />
+                                                </div>
                                                 <Button
                                                     size="lg"
                                                     className="w-full gap-2 text-base shadow-lg shadow-primary/20"
-                                                    onClick={() => handleGenerate(selectedBooking.booking)}
+                                                    onClick={() => handleRequestGenerate(selectedBooking.booking)}
                                                 >
                                                     <Download className="h-5 w-5" />
                                                     Generar Instrucciones de Embarque
@@ -237,7 +290,8 @@ export default function IePage() {
                                             <TableHead className="text-center">Orden Beta</TableHead>
                                             <TableHead className="text-center">Cliente</TableHead>
                                             <TableHead className="text-center">Cultivo</TableHead>
-                                            <TableHead className="text-center">PDF</TableHead>
+                                            <TableHead className="text-center">Estado</TableHead>
+                                            <TableHead className="text-center">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -261,12 +315,35 @@ export default function IePage() {
                                                             {record.cultivo}
                                                         </Badge>
                                                     </TableCell>
-                                                    <TableCell className="text-right">
+                                                    <TableCell className="text-center relative">
+                                                        {record.estado === 'ACTIVO' ? (
+                                                            <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] hover:bg-emerald-500/20">
+                                                                ACTIVO
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-[10px] hover:bg-rose-500/20">
+                                                                ANULADO
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="flex items-center justify-end gap-1">
+                                                        {record.estado === 'ACTIVO' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                title="Anular Instrucción Activa"
+                                                                className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                                                                onClick={() => handleAnularDesdeHistorial(record.booking)}
+                                                            >
+                                                                <Ban className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
+                                                            title="Descargar IE"
                                                             className="h-8 w-8 p-0 hover:text-primary transition-colors"
-                                                            onClick={() => handleGenerate(record.booking)}
+                                                            onClick={() => doGenerate(record.booking, false)}
                                                         >
                                                             <Download className="h-4 w-4" />
                                                         </Button>
@@ -275,7 +352,7 @@ export default function IePage() {
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                                                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                                                     No hay registros para la fecha seleccionada
                                                 </TableCell>
                                             </TableRow>
@@ -286,6 +363,25 @@ export default function IePage() {
                         </Card>
                     </div>
                 </main>
+                
+                {/* Cuadro de Diálogo para IE Duplicada */}
+                <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¡Instrucción de Embarque Existente!</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-500">
+                                El booking <b>{pendingBookingToGenerate}</b> ya cuenta con una Instrucción de Embarque <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border-none mx-1 text-[10px]">ACTIVA</Badge>. <br/><br/>
+                                ¿Deseas anular la versión anterior y generar una nueva instrucción? Se actualizará el historial para reflejar este cambio.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Mantener Actual</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => { if(pendingBookingToGenerate) doGenerate(pendingBookingToGenerate, true) }}>
+                                Sí, Anular y Generar Nueva
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
             </div>
         </div>

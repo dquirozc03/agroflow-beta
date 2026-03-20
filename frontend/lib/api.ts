@@ -693,6 +693,7 @@ export type IeHistoryRecord = {
   cliente: string | null;
   fecha_generacion: string;
   creado_por: string | null;
+  estado: string;
 };
 
 export type IeHistoryResponse = {
@@ -722,7 +723,19 @@ export async function getIeHistory(params: {
   return request<IeHistoryResponse>(`/ie/history?${qs.toString()}`, { method: "GET" });
 }
 
-export function getDownloadIeUrl(booking: string): string {
+export async function checkIeExists(booking: string): Promise<{ exists: boolean }> {
+  return request<{ exists: boolean }>(`/ie/check/${encodeURIComponent(booking)}`, { method: "GET" });
+}
+
+export async function anularIe(booking: string): Promise<{ ok: boolean; anulados: number }> {
+  return request<{ ok: boolean; anulados: number }>(`/ie/anular/${encodeURIComponent(booking)}`, { method: "PUT" });
+}
+
+export function getDownloadIeUrl(booking: string, observaciones?: string): string {
   // Retorna la URL relativa para que el navegador inicie la descarga
-  return `/api/v1/ie/generate/${encodeURIComponent(booking)}`;
+  const url = new URL(`/api/v1/ie/generate/${encodeURIComponent(booking)}`, window.location.origin);
+  if (observaciones) {
+      url.searchParams.set("observaciones", observaciones);
+  }
+  return url.pathname + url.search;
 }

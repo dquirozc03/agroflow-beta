@@ -25,6 +25,8 @@ def search_bookings(q: str, db: Session = Depends(get_db)):
 
 from app.models.ie_models import RegistroIE
 from datetime import date, datetime
+from typing import Optional
+from sqlalchemy import func
 
 @router.get("/history")
 def get_ie_history(
@@ -40,10 +42,10 @@ def get_ie_history(
     
     query = db.query(RegistroIE)
     
-    # Filtro por fecha (fecha_generacion es datetime)
-    query = query.filter(RegistroIE.fecha_generacion >= datetime.combine(start_date, datetime.min.time()))
+    # Filtro por fecha usando func.date para ignorar la zona horaria a nivel de día
+    query = query.filter(func.date(RegistroIE.fecha_generacion) >= start_date)
     if end_date:
-        query = query.filter(RegistroIE.fecha_generacion <= datetime.combine(end_date, datetime.max.time()))
+        query = query.filter(func.date(RegistroIE.fecha_generacion) <= end_date)
     
     total = query.count()
     results = query.order_by(RegistroIE.fecha_generacion.desc()).offset((page - 1) * limit).limit(limit).all()
@@ -52,17 +54,51 @@ def get_ie_history(
         "total": total,
         "page": page,
         "limit": limit,
-        "results": results
+        "results": [
+            {
+                "id": r.id,
+                "booking": r.booking,
+                "o_beta": r.o_beta,
+                "cultivo": r.cultivo,
+                "cliente": r.cliente,
+                "fecha_generacion": r.fecha_generacion.isoformat(),
+                "estado": r.estado
+            } for r in results
+        ]
     }
 
+@router.get("/check/{booking}")
+def check_ie_exists(booking: str, db: Session = Depends(get_db)):
+    """Verifica si ya existe un IE ACTIVO para este booking"""
+    registro = db.query(RegistroIE).filter(
+        RegistroIE.booking == booking,
+        RegistroIE.estado == 'ACTIVO'
+    ).first()
+    
+    return {"exists": registro is not None}
+
+@router.put("/anular/{booking}")
+def anular_ie(booking: str, db: Session = Depends(get_db)):
+    """Anula todos los registros ACTIVO de un booking"""
+    registros = db.query(RegistroIE).filter(
+        RegistroIE.booking == booking,
+        RegistroIE.estado == 'ACTIVO'
+    ).all()
+    
+    for r in registros:
+        r.estado = 'ANULADO'
+    
+    db.commit()
+    return {"ok": True, "anulados": len(registros)}
+
 @router.get("/generate/{booking}")
-def download_ie_pdf(booking: str, db: Session = Depends(get_db)):
+def download_ie_pdf(booking: str, observaciones: Optional[str] = None, db: Session = Depends(get_db)):
     """Genera y descarga el PDF de Instrucciones de Embarque y lo registra"""
     try:
         # Recuperar data para el registro
         posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
         
-        pdf_buffer = generate_ie_pdf(booking, db)
+        pdf_buffer = generate_ie_pdf(booking, db, observaciones)
         
         # Registrar en el historial
         registro = RegistroIE(

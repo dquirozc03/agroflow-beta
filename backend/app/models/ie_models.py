@@ -64,4 +64,6 @@ class RegistroIE(Base):
         nullable=False
     )
     
+    estado: Mapped[str] = mapped_column(String(50), server_default='ACTIVO', nullable=False)
+    
     creado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)

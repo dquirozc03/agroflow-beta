@@ -43,7 +43,7 @@ def format_to_numeric_date(date_str: str) -> str:
     
     return date_str
 
-def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
+def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.BytesIO:
     # 1. Obtener Datos
     posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
     if not posic:
@@ -211,8 +211,13 @@ def generate_ie_pdf(booking: str, db: Session) -> io.BytesIO:
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
         [L("VALOR FOB APROXIMADO"), V(f"USD 34,560.00")],
-        ["", ""],
     ]
+    
+    if observaciones:
+        data1.append([L("OBSERVACIONES"), V(observaciones)])
+    else:
+        data1.append(["", ""])
+
 
     table1 = Table(data1, colWidths=[5.5*cm, 13.1*cm])
     style1 = TableStyle([
