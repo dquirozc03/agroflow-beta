@@ -49,11 +49,30 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     if not posic:
         raise ValueError(f"Booking {booking} no encontrado en Posicionamiento")
 
-    # Buscar cliente en CatClienteIE (Cruce inteligente por Destino/Ciudad)
-    clientes_posibles = db.query(CatClienteIE).filter(
-        CatClienteIE.nombre_comercial == posic.cliente,
+    # Buscar cliente en CatClienteIE (Cruce inteligente incluyendo nombres parecidos)
+    search_cliente = str(posic.cliente or "").upper().strip()
+    todos_cultivo = db.query(CatClienteIE).filter(
         CatClienteIE.cultivo == posic.cultivo
     ).all()
+
+    clientes_posibles = []
+    
+    # Limpiamos para la comparación pura (solo alfas y espacios sencillos)
+    search_cliente_clean = re.sub(r'[^A-Z0-9]', ' ', search_cliente)
+    search_cliente_clean = " ".join(search_cliente_clean.split())
+    
+    for c in todos_cultivo:
+        c_name = str(c.nombre_comercial or "").upper().strip()
+        if not c_name: continue
+        
+        c_name_clean = re.sub(r'[^A-Z0-9]', ' ', c_name)
+        c_name_clean = " ".join(c_name_clean.split())
+        
+        if c_name_clean and (c_name_clean in search_cliente_clean or search_cliente_clean in c_name_clean):
+            clientes_posibles.append(c)
+            
+    # Ordenar por longitud de nombre comercial (descendente) para preferir la "mayor coincidencia" (ej: "INCO 92 B.V" antes que "INCO")
+    clientes_posibles.sort(key=lambda x: len(str(x.nombre_comercial or "")), reverse=True)
 
     cliente_ie = None
     booking_destino = str(posic.destino_booking or "").upper().strip()
