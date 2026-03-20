@@ -77,6 +77,21 @@ export interface FormState {
   } | null;
   codigo_sap: string;
 
+  // Variables Extra de Formulario (si DB devuelve null)
+  vehiculo_marca: string;
+  vehiculo_cert_tracto: string;
+  vehiculo_cert_carreta: string;
+  vehiculo_config: string;
+  vehiculo_largo_t: string;
+  vehiculo_ancho_t: string;
+  vehiculo_alto_t: string;
+  vehiculo_largo_c: string;
+  vehiculo_ancho_c: string;
+  vehiculo_alto_c: string;
+
+  /** True si la DB requiere que el usuario rellene propiedades faltantes */
+  requiere_datos_vehiculo: boolean;
+
   ps_beta_items: string[];
   termografos_items: string[];
 
@@ -99,6 +114,18 @@ export const initialFormState: FormState = {
 
   transportista: null,
   codigo_sap: "",
+
+  vehiculo_marca: "",
+  vehiculo_cert_tracto: "",
+  vehiculo_cert_carreta: "",
+  vehiculo_config: "",
+  vehiculo_largo_t: "",
+  vehiculo_ancho_t: "",
+  vehiculo_alto_t: "",
+  vehiculo_largo_c: "",
+  vehiculo_ancho_c: "",
+  vehiculo_alto_c: "",
+  requiere_datos_vehiculo: false,
 
   ps_beta_items: [],
   termografos_items: [],

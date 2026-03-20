@@ -176,14 +176,94 @@ def crear_registro(
                 detail="Debes enviar placa tracto y placa carreta (ambas obligatorias para registrar)",
             )
 
+        placas_comb = f"{tracto}/{carreta}"
+        
         vehiculo = (
             db.query(Vehiculo)
             .options(joinedload(Vehiculo.transportista))
-            .filter(Vehiculo.placa_tracto == tracto)
+            .filter(Vehiculo.placas == placas_comb)
             .first()
         )
+        
         if not vehiculo:
-            raise HTTPException(status_code=404, detail="Vehículo no encontrado para esa placa tracto")
+            # Si no existe la combinación exacta, veamos si existe al menos el TRACTO para heredar
+            veh_base = (
+                db.query(Vehiculo)
+                .options(joinedload(Vehiculo.transportista))
+                .filter(Vehiculo.placa_tracto == tracto)
+                .first()
+            )
+            
+            if not veh_base:
+                raise HTTPException(status_code=404, detail="Vehículo (tracto) no encontrado. Debe registrarse primero.")
+                
+            # Clonamos el tracto para que exista la combinación (útil cuando tracto cambia de carreta)
+            veh_nuevo = Vehiculo(
+                placa_tracto=tracto,
+                placa_carreta=carreta,
+                placas=placas_comb,
+                marca=veh_base.marca,
+                cert_tracto=veh_base.cert_tracto,
+                cert_carreta="",  # Una nueva carreta requerirá nuevo certificado
+                cert_vehicular=veh_base.cert_tracto,
+                largo_tracto=veh_base.largo_tracto,
+                ancho_tracto=veh_base.ancho_tracto,
+                alto_tracto=veh_base.alto_tracto,
+                largo_carreta=0, # Pendiente de llenar si no se manda payload
+                ancho_carreta=0,
+                alto_carreta=0,
+                configuracion_vehicular="T3/S3",
+                peso_neto_tracto=veh_base.peso_neto_tracto,
+                peso_neto_carreta=8000,
+                peso_bruto_vehicular=48000,
+                transportista_id=veh_base.transportista_id
+            )
+            db.add(veh_nuevo)
+            db.flush()
+            vehiculo = veh_nuevo
+            vehiculo.transportista = veh_base.transportista
+
+        # Actualizar datos de vehículo si es que los envía para auto-rellenado (solo si faltan en BD)
+        hubo_cambios_veh = False
+        if payload.marca and not vehiculo.marca:
+            vehiculo.marca = payload.marca.upper()
+            hubo_cambios_veh = True
+            
+        if payload.cert_tracto and not vehiculo.cert_tracto:
+            vehiculo.cert_tracto = payload.cert_tracto.upper()
+            hubo_cambios_veh = True
+            
+        if payload.cert_carreta and not vehiculo.cert_carreta:
+            vehiculo.cert_carreta = payload.cert_carreta.upper()
+            hubo_cambios_veh = True
+            
+        if hubo_cambios_veh and not vehiculo.cert_vehicular:
+            ct = (vehiculo.cert_tracto or "").strip()
+            cc = (vehiculo.cert_carreta or "").strip()
+            if ct and cc:
+                vehiculo.cert_vehicular = f"{ct}/{cc}"
+            elif ct:
+                vehiculo.cert_vehicular = ct
+            elif cc:
+                vehiculo.cert_vehicular = cc
+                
+        # Si el vehículo tenía medidas por defecto (0) y envían configuración, lo actualizamos.
+        if payload.configuracion_vehicular and vehiculo.largo_tracto == 0:
+            vehiculo.configuracion_vehicular = payload.configuracion_vehicular
+            vehiculo.largo_tracto = payload.largo_tracto or 0
+            vehiculo.ancho_tracto = payload.ancho_tracto or 0
+            vehiculo.alto_tracto = payload.alto_tracto or 0
+            vehiculo.largo_carreta = payload.largo_carreta or 0
+            vehiculo.ancho_carreta = payload.ancho_carreta or 0
+            vehiculo.alto_carreta = payload.alto_carreta or 0
+            try:
+                vehiculo.aplicar_reglas_configuracion()
+                hubo_cambios_veh = True
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=str(e))
+                
+        if hubo_cambios_veh:
+            db.flush()
 
         transportista = vehiculo.transportista
         if not transportista:

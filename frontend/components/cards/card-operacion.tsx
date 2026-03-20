@@ -136,6 +136,17 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
           ...prev,
           transportista: data.transportista ?? null,
           codigo_sap: data.transportista?.codigo_sap ?? "",
+          requiere_datos_vehiculo: !data.marca || !data.cert_tracto || data.largo_tracto === 0 || !data.configuracion_vehicular,
+          vehiculo_marca: data.marca || "",
+          vehiculo_cert_tracto: data.cert_tracto || "",
+          vehiculo_cert_carreta: data.cert_carreta || "",
+          vehiculo_config: data.configuracion_vehicular || "T3/S3",
+          vehiculo_largo_t: data.largo_tracto ? String(data.largo_tracto) : "",
+          vehiculo_ancho_t: data.ancho_tracto ? String(data.ancho_tracto) : "",
+          vehiculo_alto_t: data.alto_tracto ? String(data.alto_tracto) : "",
+          vehiculo_largo_c: data.largo_carreta ? String(data.largo_carreta) : "",
+          vehiculo_ancho_c: data.ancho_carreta ? String(data.ancho_carreta) : "",
+          vehiculo_alto_c: data.alto_carreta ? String(data.alto_carreta) : "",
         }));
         if (data.transportista) {
           toast.success("Transportista cargado");
@@ -245,6 +256,84 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             </div>
           </div>
         </div>
+        
+        {/* Row 1.5: Datos de Vehículo por Primera Vez */}
+        {form.requiere_datos_vehiculo && (
+          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 rounded-lg p-5 space-y-5 animate-in slide-in-from-top-2">
+            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-500 flex items-center gap-2">
+              <span className="material-symbols-outlined text-base font-semibold notranslate">app_registration</span>
+              Primer ingreso de esta unidad a Pisco: Por favor complete los datos técnicos
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Marca Tracto</label>
+                <input
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  placeholder="Ej: VOLVO" value={form.vehiculo_marca}
+                  onChange={(e) => setForm(p => ({ ...p, vehiculo_marca: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Tracto</label>
+                <input
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  placeholder="Ej: C-TR-12345" value={form.vehiculo_cert_tracto}
+                  onChange={(e) => setForm(p => ({ ...p, vehiculo_cert_tracto: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Carreta</label>
+                <input
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  placeholder="Ej: C-CA-67890" value={form.vehiculo_cert_carreta}
+                  onChange={(e) => setForm(p => ({ ...p, vehiculo_cert_carreta: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Configuración</label>
+                <select
+                  className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
+                  value={form.vehiculo_config}
+                  onChange={(e) => setForm(p => ({ ...p, vehiculo_config: e.target.value }))}
+                >
+                  <option value="T3/S3">T3/S3 (48 TN)</option>
+                  <option value="T3/S2">T3/S2 (43 TN)</option>
+                  <option value="T3/Se2">T3/Se2 (47 TN)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 border-t border-amber-200/50 dark:border-amber-800/50 pt-4">
+              {/* Medidas Tracto */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Largo Tracto</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_t} onChange={(e) => setForm(p => ({...p, vehiculo_largo_t: e.target.value}))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Ancho Tracto</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_t} onChange={(e) => setForm(p => ({...p, vehiculo_ancho_t: e.target.value}))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Alto Tracto</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_t} onChange={(e) => setForm(p => ({...p, vehiculo_alto_t: e.target.value}))} />
+              </div>
+              {/* Medidas Carreta */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Largo Carreta</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_c} onChange={(e) => setForm(p => ({...p, vehiculo_largo_c: e.target.value}))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Ancho Carreta</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_c} onChange={(e) => setForm(p => ({...p, vehiculo_ancho_c: e.target.value}))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">M. Alto Carreta</label>
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_c} onChange={(e) => setForm(p => ({...p, vehiculo_alto_c: e.target.value}))} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Row 2: Precintos Principales */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

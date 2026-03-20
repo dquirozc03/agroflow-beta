@@ -294,6 +294,18 @@ export type RegistroCreatePayload = {
   ruc?: string | null;
   codigo_sap?: string | null;
 
+  // Variables Extra para Actualización de Vehículo (Si faltan en la DB)
+  marca?: string | null;
+  cert_tracto?: string | null;
+  cert_carreta?: string | null;
+  configuracion_vehicular?: string;
+  largo_tracto?: number;
+  ancho_tracto?: number;
+  alto_tracto?: number;
+  largo_carreta?: number;
+  ancho_carreta?: number;
+  alto_carreta?: number;
+
   termografos?: string | null;
   ps_beta?: string | null;
   ps_aduana?: string | null;
@@ -582,6 +594,15 @@ export type VehiculoConTransportista = {
   placas: string;
   marca: string | null;
   cert_vehicular: string | null;
+  cert_tracto: string | null;
+  cert_carreta: string | null;
+  configuracion_vehicular: string;
+  largo_tracto: number;
+  ancho_tracto: number;
+  alto_tracto: number;
+  largo_carreta: number;
+  ancho_carreta: number;
+  alto_carreta: number;
   transportista: Transportista | null;
   /** True si la placa carreta pertenece a otro transportista (el que manda es el del tracto). */
   carreta_distinto_transportista: boolean;

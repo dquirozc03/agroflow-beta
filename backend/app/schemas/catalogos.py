@@ -121,6 +121,17 @@ class VehiculoConTransportistaRespuesta(BaseModel):
     placas: str
     marca: Optional[str]
     cert_vehicular: Optional[str]
+    cert_tracto: Optional[str] = None
+    cert_carreta: Optional[str] = None
+    
+    configuracion_vehicular: str = "T3/S3"
+    largo_tracto: float = 0
+    ancho_tracto: float = 0
+    alto_tracto: float = 0
+    largo_carreta: float = 0
+    ancho_carreta: float = 0
+    alto_carreta: float = 0
+    
     transportista: Optional[TransportistaRespuesta] = None
     # Si la placa carreta pertenece a otro transportista (el que manda es el del tracto)
     carreta_distinto_transportista: bool = False

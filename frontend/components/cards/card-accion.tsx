@@ -139,6 +139,18 @@ export function CardAccion({
 
         senasa: txt(form.senasa) || "**",
         ps_linea: txt(form.ps_linea) || null,
+
+        // Extras para completitud Vehicular:
+        marca: form.requiere_datos_vehiculo ? txt(form.vehiculo_marca) || undefined : undefined,
+        cert_tracto: form.requiere_datos_vehiculo ? txt(form.vehiculo_cert_tracto) || undefined : undefined,
+        cert_carreta: form.requiere_datos_vehiculo ? txt(form.vehiculo_cert_carreta) || undefined : undefined,
+        configuracion_vehicular: form.requiere_datos_vehiculo ? txt(form.vehiculo_config) || undefined : undefined,
+        largo_tracto: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_largo_t) || undefined : undefined,
+        ancho_tracto: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_ancho_t) || undefined : undefined,
+        alto_tracto: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_alto_t) || undefined : undefined,
+        largo_carreta: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_largo_c) || undefined : undefined,
+        ancho_carreta: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_ancho_c) || undefined : undefined,
+        alto_carreta: form.requiere_datos_vehiculo ? parseFloat(form.vehiculo_alto_c) || undefined : undefined,
       };
 
       const res = await createRegistro(payload);

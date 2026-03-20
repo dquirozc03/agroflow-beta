@@ -25,6 +25,18 @@ class RegistroCrear(BaseModel):
 
     dam: Optional[str] = None
 
+    # Extras para rellenar Catálogo de Vehículo (Si falta en BD)
+    marca: Optional[str] = None
+    cert_tracto: Optional[str] = None
+    cert_carreta: Optional[str] = None
+    configuracion_vehicular: Optional[str] = None
+    largo_tracto: Optional[float] = None
+    ancho_tracto: Optional[float] = None
+    alto_tracto: Optional[float] = None
+    largo_carreta: Optional[float] = None
+    ancho_carreta: Optional[float] = None
+    alto_carreta: Optional[float] = None
+
 
 class RegistroRespuesta(BaseModel):
     id: int
