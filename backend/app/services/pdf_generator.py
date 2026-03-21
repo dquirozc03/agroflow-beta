@@ -278,15 +278,10 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("FILTROS"), VBL(posic.filtros or "NO APLICA")],
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
-        [L("VALOR FOB APROXIMADO"), V(f"USD 34,560.00")],
+        [L("VALOR FOB APROXIMADO"), V(f"USD {posic.valor_fob or '0.00'}")],
+        [L("OBSERVACIONES"), V(posic.observaciones)],
     ]
     
-    if observaciones:
-        data1.append([L("OBSERVACIONES"), V(observaciones)])
-    else:
-        data1.append(["", ""])
-
-
     table1 = Table(data1, colWidths=[5.5*cm, 13.1*cm])
     style1 = TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
@@ -296,20 +291,19 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
         ('BACKGROUND', (0,4), (1,5), BETA_GRAY), # Gray for Address and Ubigeo labels
         ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), # Orange for Fecha y Hora (Shifts to 6)
-        # Se quit?? el SPAN de Datos Referenciales por ser una sola fila ahora.
-        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE),
+        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE), # Filtros y Cold Treatment
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 1.0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 1.0),
+        ('TOPPADDING', (0,0), (-1,-1), 4.5), # Aumento de espacio interno
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4.5), # Aumento de espacio interno
         # Aumentar cuadros de Consignatario (row 7) y Notificado (row 8)
         ('TOPPADDING', (0,7), (1,8), 8),
         ('BOTTOMPADDING', (0,7), (1,8), 8),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 0.1*cm))
-
+    elements.append(Spacer(1, 1.2*cm)) # Espacio en blanco real sin líneas entre tablas
+    
     # -- SECCIÓN FITO --
     data2 = [
         [Paragraph("DATOS PARA CERTIFICADO FITOSANITARIO", style_title), ""],
@@ -331,8 +325,9 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('SPAN', (0,0), (1,0)),
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 1.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 4.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4.5),
     ])
     table2.setStyle(style2)
     elements.append(table2)
