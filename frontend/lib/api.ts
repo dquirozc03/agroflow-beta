@@ -493,11 +493,13 @@ export type ProcesadosResponse = {
 
 export async function listProcesados(params: {
   fecha: string; // YYYY-MM-DD
+  fecha_fin?: string; // YYYY-MM-DD
   limit?: number;
   offset?: number;
 }): Promise<ProcesadosResponse> {
   const qs = new URLSearchParams();
   qs.set("fecha", params.fecha);
+  if (params.fecha_fin) qs.set("fecha_fin", params.fecha_fin);
   if (params.limit != null) qs.set("limit", String(params.limit));
   if (params.offset != null) qs.set("offset", String(params.offset));
   return request<ProcesadosResponse>(`/registros/procesados?${qs.toString()}`, {

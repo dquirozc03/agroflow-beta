@@ -34,14 +34,19 @@ class Chofer(Base):
         Formato requerido: PrimerNombre + ApellidoPaterno + InicialApellidoMaterno.
         Ej: Daniel Quiroz C.
         """
-        pn = (self.primer_nombre or "").strip()
-        ap = (self.apellido_paterno or "").strip()
+        # Extraemos estrictamente el primer nombre
+        pn = (self.primer_nombre or "").strip().split()[0] if (self.primer_nombre or "").strip() else ""
+        
+        # Extraemos estrictamente el primer apellido (por si enviaron nombres compuestos en el campo paterno)
+        ap = (self.apellido_paterno or "").strip().split()[0] if (self.apellido_paterno or "").strip() else ""
+        
         am = (self.apellido_materno or "").strip()
 
         inicial = ""
         if am:
             inicial = f" {am[0].upper()}."
-        return f"{pn} {ap}{inicial}".strip()
+            
+        return f"{pn} {ap}{inicial}".strip().upper()
 
 
 class Vehiculo(Base):

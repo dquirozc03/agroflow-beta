@@ -369,6 +369,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   // ✅ Procesados viene de backend
   const [processedRows, setProcessedRows] = useState<ProcessedRow[]>([]);
   const [procesadosDate, setProcesadosDate] = useState<string>(localYYYYMMDD());
+  const [procesadosDateEnd, setProcesadosDateEnd] = useState<string>("");
   const [procesadosLoading, setProcesadosLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -480,11 +481,11 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   }, [processedRows, searchQuery]);
 
   const refreshProcesados = useCallback(
-    async (fecha: string) => {
+    async (fecha: string, fechaFin?: string) => {
       const f = (fecha || "").trim() || localYYYYMMDD();
       try {
         setProcesadosLoading(true);
-        const resp = await listProcesados({ fecha: f, limit: 300, offset: 0 });
+        const resp = await listProcesados({ fecha: f, fecha_fin: fechaFin || undefined, limit: 300, offset: 0 });
         const mapped = (resp.items || []).map(mapProcesadoToRow);
         setProcessedRows(mapped);
       } catch (e: any) {
@@ -500,9 +501,9 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   // ✅ Cuando el usuario cambia la fecha de procesados O cambia de pestaña, refrescamos.
   useEffect(() => {
     if (tab === "procesados") {
-      refreshProcesados(procesadosDate);
+      refreshProcesados(procesadosDate, procesadosDateEnd);
     }
-  }, [procesadosDate, tab, refreshProcesados]);
+  }, [procesadosDate, procesadosDateEnd, tab, refreshProcesados]);
 
   async function handleRefreshRow(row: SapRow, where: "pendientes" | "procesados") {
     const id = getId(row);
@@ -564,8 +565,9 @@ export function BandejaSap({ rows, setRows, className }: Props) {
       // UX: vamos a Procesados y refrescamos HOY desde backend
       const hoy = localYYYYMMDD();
       setProcesadosDate(hoy);
+      setProcesadosDateEnd("");
       setTab("procesados");
-      await refreshProcesados(hoy);
+      await refreshProcesados(hoy, "");
 
       toast.success("Registro procesado.");
     } catch (e: any) {
@@ -724,7 +726,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={tab === "pendientes" ? handleRefreshAll : () => refreshProcesados(procesadosDate)}
+            onClick={tab === "pendientes" ? handleRefreshAll : () => refreshProcesados(procesadosDate, procesadosDateEnd)}
             disabled={refreshing || procesadosLoading}
             className="rounded-xl bg-primary text-primary-dark font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 border-none"
           >
@@ -754,15 +756,30 @@ export function BandejaSap({ rows, setRows, className }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
-            <span className="material-symbols-outlined text-slate-400 text-sm leading-none">calendar_month</span>
-            <input
-              type="date"
-              value={tab === "pendientes" ? pendientesDate : procesadosDate}
-              onChange={(e) => tab === "pendientes" ? setPendientesDate(e.target.value) : setProcesadosDate(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-0 py-0 cursor-pointer outline-none"
-              placeholder="Todas las fechas"
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-400 text-sm leading-none">calendar_month</span>
+              <input
+                type="date"
+                value={tab === "pendientes" ? pendientesDate : procesadosDate}
+                onChange={(e) => tab === "pendientes" ? setPendientesDate(e.target.value) : setProcesadosDate(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-0 py-0 cursor-pointer outline-none"
+                placeholder="Todas las fechas"
+              />
+            </div>
+            {tab === "procesados" && (
+                <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-2">
+                    <span className="text-xs text-slate-400 font-medium">al</span>
+                    <input
+                      type="date"
+                      value={procesadosDateEnd}
+                      onChange={(e) => setProcesadosDateEnd(e.target.value)}
+                      className="bg-transparent border-none text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-0 py-0 cursor-pointer outline-none"
+                      placeholder="Hasta (Opcional)"
+                    />
+                </div>
+            )}
+            
             {tab === "pendientes" && pendientesDate && (
               <button
                 onClick={() => setPendientesDate("")}
@@ -770,6 +787,15 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                 title="Mostrar todos los pendientes"
               >
                 <span className="material-symbols-outlined text-xs">close</span>
+              </button>
+            )}
+            {tab === "procesados" && (procesadosDate !== localYYYYMMDD() || procesadosDateEnd !== "") && (
+              <button
+                onClick={() => { setProcesadosDate(localYYYYMMDD()); setProcesadosDateEnd(""); }}
+                className="hover:text-primary transition-colors"
+                title="Restablecer a fecha actual"
+              >
+                <span className="material-symbols-outlined text-xs text-slate-400 hover:text-primary mt-1">close</span>
               </button>
             )}
           </div>

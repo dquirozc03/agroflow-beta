@@ -863,7 +863,8 @@ def listar_pendientes(
 
 @router.get("/procesados", response_model=ProcesadosSapResponse)
 def listar_procesados(
-    fecha: date = Query(..., description="Fecha local Lima YYYY-MM-DD"),
+    fecha: date = Query(..., description="Fecha inicial local Lima YYYY-MM-DD"),
+    fecha_fin: date | None = Query(None, description="Fecha final local Lima YYYY-MM-DD"),
     limit: int = Query(default=200, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -881,9 +882,11 @@ def listar_procesados(
     except ZoneInfoNotFoundError:
         lima = timezone.utc
 
-    # Rango del día en la zona elegida (inclusive)
+    end_date = fecha_fin if fecha_fin else fecha
+
+    # Rango en la zona elegida (inclusive)
     start_local = datetime.combine(fecha, time.min).replace(tzinfo=lima)
-    end_local = datetime.combine(fecha, time.max).replace(tzinfo=lima)
+    end_local = datetime.combine(end_date, time.max).replace(tzinfo=lima)
 
     # A UTC para comparar con processed_at (que se guarda en UTC)
     start_utc = start_local.astimezone(timezone.utc)
