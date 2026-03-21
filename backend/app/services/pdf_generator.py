@@ -13,6 +13,19 @@ import re
 # Colores Beta
 BETA_ORANGE = colors.Color(244/255, 145/255, 33/255) # #F49121
 BETA_GRAY = colors.Color(234/255, 234/255, 234/255) # #EAEAEA
+BETA_BLACK = colors.black
+
+def format_multiline_bold_first(txt: str) -> str:
+    """Bolea la primera línea y deja el resto normal, convirtiendo \n a <br/>"""
+    if not txt: return ""
+    lines = str(txt).strip().split("\n")
+    if not lines: return ""
+    
+    first = f"<b>{lines[0]}</b>"
+    if len(lines) > 1:
+        rest = "<br/>".join(lines[1:])
+        return f"{first}<br/>{rest}"
+    return first
 
 def format_to_numeric_date(date_str: str) -> str:
     """Convierte fechas tipo '26-MAY' o '26/05' a '26/05/2025'"""
@@ -243,8 +256,8 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>{nombre_planta_pdf}</b><br/>{direccion_planta_pdf}", style_value)],
         [L("UBIGEO PLANTA"), V(ubigeo_planta_pdf)],
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
-        [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{str(cliente_ie.consignatario_bl or '').replace('\n', '<br/>') if cliente_ie else '(SIN INFO CLIENTE)'}</b>", style_value)],
-        [L("NOTIFICADO<br/>DIRECCIÓN"), V(cliente_ie.notificante_bl if cliente_ie else "")],
+        [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(format_multiline_bold_first(cliente_ie.consignatario_bl) if cliente_ie else '(SIN INFO CLIENTE)', style_value)],
+        [L("NOTIFICADO<br/>DIRECCIÓN"), Paragraph(format_multiline_bold_first(cliente_ie.notificante_bl) if cliente_ie else "", style_value)],
         [L("DATOS REFERENCIALES"), V(f"EORI CONSIGNE: {cliente_ie.eori_consignatario or '---'}")],
         ["", V(f"EORI NOTIFY: {cliente_ie.eori_notify or '---'}")],
         [L("DESCRIPCION EN EL B/L"), V(f"{total_unidades} BOXES WITH FRESH POMEGRANATES {str(posic.variedad or '')} ON {str(posic.total_pallet or '')} PALLETS<br/>{total_unidades} CAJAS CON FRESCA GRANADAS {str(posic.variedad or '')} EN {str(posic.total_pallet or '')} PALETAS")],
@@ -301,7 +314,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     # -- SECCIÓN FITO --
     data2 = [
         [Paragraph("DATOS PARA CERTIFICADO FITOSANITARIO", style_title), ""],
-        [L("CONSIGNATARIO<br/>DIRECCIÓN"), V(cliente_ie.cliente_fito if cliente_ie else "")],
+        [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(format_multiline_bold_first(cliente_ie.cliente_fito) if cliente_ie else "", style_value)],
         [L("PAIS DE DESTINO"), VBL(posic.pais_booking)],
         [L("PUNTO DE LLEGADA"), VBL(posic.destino_booking)],
         [L("PRESENTACION"), VBL(presentacion or "CAJA 3.8 KG")],
