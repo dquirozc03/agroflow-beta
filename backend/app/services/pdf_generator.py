@@ -168,31 +168,53 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     # Estilos de Párrafo (Comprimidos al máximo para permitir logo grande)
     style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8)
     style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10)
-    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1)
+    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1, leading=14)
     style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold', leading=10, alignment=1)
+    style_header_main = ParagraphStyle('HeaderMain', parent=styles['Normal'], fontSize=12, fontName='Helvetica-Bold', alignment=1, leading=15)
 
     elements = []
 
-    # -- LOGO MÁS GRANDE --
+    # -- HEADER TABLE (LOGO | TEXT | IMAGE) --
+    header_elements = []
     try:
-        # Ruta relativa al archivo actual (services/pdf_generator.py)
-        # Sube un nivel a app/ y otro a la raiz del backend/
         current_dir = os.path.dirname(os.path.abspath(__file__))
         logo_path = os.path.join(current_dir, "..", "..", "backend", "assets", "logo_beta.png")
         if not os.path.exists(logo_path):
-            # Intento secundario si la estructura de carpetas de la nube difiere
             logo_path = os.path.join(current_dir, "..", "..", "assets", "logo_beta.png")
-            
+        
+        granada_path = os.path.join(current_dir, "..", "..", "backend", "assets", "image_granada.png")
+        if not os.path.exists(granada_path):
+            granada_path = os.path.join(current_dir, "..", "..", "assets", "image_granada.png")
+
+        logo_img = None
         if os.path.exists(logo_path):
-            img = Image(logo_path, width=6.0*cm, height=2.4*cm)
-            img.hAlign = 'LEFT'
-            elements.append(img)
-            elements.append(Spacer(1, 0.1*cm))
-        else:
-            elements.append(Spacer(1, 0.4*cm))
-            elements.append(Spacer(1, 0.2*cm))
-    except:
+            logo_img = Image(logo_path, width=4.0*cm, height=1.6*cm)
+            logo_img.hAlign = 'LEFT'
+        
+        fruit_img = None
+        if os.path.exists(granada_path):
+            fruit_img = Image(granada_path, width=4.0*cm, height=1.6*cm)
+            fruit_img.hAlign = 'RIGHT'
+
+        # Texto Central
+        cliente_txt = str(cliente_ie.nombre_comercial if cliente_ie else "").upper()
+        dest_txt = str(posic.destino_booking or "").upper()
+        pais_txt = str(posic.pais_booking or "").upper()
+        header_text = Paragraph(
+            f"INSTRUCCIONES DE EMBARQUE<br/>{cliente_txt} - {dest_txt} - {pais_txt}<br/>{str(posic.cultivo or '').upper()}", 
+            style_header_main
+        )
+
+        header_table = Table([[logo_img or "", header_text, fruit_img or ""]], colWidths=[4.5*cm, 9.6*cm, 4.5*cm])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (1,0), (1,0), 'CENTER'),
+        ]))
+        elements.append(header_table)
         elements.append(Spacer(1, 0.3*cm))
+    except Exception as e:
+        print(f"Error en header PDF: {e}")
+        elements.append(Spacer(1, 1*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): return Paragraph(str(txt or ""), style_value)
@@ -201,8 +223,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
 
     # Filas de la Tabla 1
     data1 = [
-        [Paragraph("INSTRUCCIÓNES DE EMBARQUE", style_title), ""],
-        [VBL(f" {posic.orden_beta_final or ''}"), ""],
+        [VBL(str(posic.orden_beta_final or "").upper()), Paragraph(f"<div align='right'><b>{str(posic.booking or '').upper()}</b></div>", style_val_bold)],
         [L("EMBARCADOR"), V("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
         [L("DIRECCIÓN"), V("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
         [L("OPERADOR LOGISTICO"), VBL(str(posic.operador or "").upper())],
@@ -244,13 +265,12 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     style1 = TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BACKGROUND', (0,0), (1,0), BETA_ORANGE),
-        ('SPAN', (0,0), (1,0)),
-        ('BACKGROUND', (0,2), (0,-2), BETA_GRAY),
-        ('BACKGROUND', (0,4), (1,4), BETA_ORANGE),
-        ('BACKGROUND', (0,6), (1,6), BETA_ORANGE),
-        ('SPAN', (0,9), (0,10)), # Nuevo: Span para Datos Referenciales
-        ('BACKGROUND', (0,27), (1,28), BETA_ORANGE),
+        # Quitamos fondo orange de la primera fila ya que no hay t??tulo ah??.
+        ('BACKGROUND', (0,1), (0,-2), BETA_GRAY),
+        ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
+        ('BACKGROUND', (0,5), (1,5), BETA_ORANGE),
+        ('SPAN', (0,8), (0,9)), # Datos Referenciales (ahora rows 8 y 9)
+        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
         ('TOPPADDING', (0,0), (-1,-1), 1.0),
