@@ -1311,7 +1311,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                   <SelectItem value="transportista">Transportista</SelectItem>
                   <SelectItem value="termografos">Termógrafos</SelectItem>
                   <SelectItem value="precintos">Precintos</SelectItem>
-                  <SelectItem value="fecha">Fecha a mostrar SAP</SelectItem>
+                  <SelectItem value="fecha">FECHA DE EMBARQUE</SelectItem>
                   <SelectItem value="transporte_legales">Fe de Erratas Legales (Partida/Tarjeta MTC)</SelectItem>
                 </SelectContent>
               </Select>
@@ -1409,7 +1409,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
 
             {editCampo === "fecha" && (
               <div className="grid gap-2">
-                <Label>Fecha SAP (YYYY-MM-DD)</Label>
+                <Label>FECHA DE EMBARQUE</Label>
                 <Input
                   type="date"
                   value={editValues.fecha || ""}
