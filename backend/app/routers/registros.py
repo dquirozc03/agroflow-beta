@@ -64,13 +64,19 @@ def snapshot_registro(reg: RegistroOperativo) -> dict:
 
 
 def construir_senasa_ps_linea(senasa: str | None, ps_linea: str | None) -> str | None:
-    senasa = (senasa or "").strip()
-    ps_linea = (ps_linea or "").strip()
-    if senasa and ps_linea:
-        return f"{senasa}/PS.LIN:{ps_linea}"
-    if ps_linea:
-        return f"PS.LIN:{ps_linea}"
-    return None
+    s = (senasa or "").strip()
+    l = (ps_linea or "").strip()
+    
+    # Si senasa es un comodín o vacío, mostrar solo el de línea
+    if s == "**" or s == "*" or not s:
+        if not l: return None
+        return f"PS.LIN:{l}"
+    
+    # Si tenemos ambos
+    if s and l:
+        return f"{s}/PS.LIN:{l}"
+    
+    return None # Solo senasa sin línea no se suele dar según lógica de negocio, o se puede ignorar
 
 
 def safe_str(x) -> str:
