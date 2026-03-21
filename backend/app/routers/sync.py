@@ -456,24 +456,45 @@ def sync_asignacion_raw(
             
         def parse_chofer_name(raw_name: str):
             if not raw_name: return "", {}
-            words = [w for w in raw_name.replace(',', ' ').split() if w]
-            if len(words) == 0: return "", {}
-            if len(words) == 1:
-                return words[0].upper(), {"primer_nombre": words[0].upper(), "apellido_paterno": "-"}
-            if len(words) == 2:
-                return f"{words[1]} {words[0]}".upper(), {"primer_nombre": words[1].upper(), "apellido_paterno": words[0].upper()}
-                
-            # Asume ApellidoPaterno ApellidoMaterno Nombre1 [NombreN...] -> Ej: "SALCEDO QUISPE JOSE SANTOS"
-            nombres = " ".join(words[2:]).upper()
-            ap = words[0].upper()
-            am = words[1].upper()
-            am_inicial = f"{am[0]}."
+            # Limpieza básica
+            raw_name = re.sub(r'[\.,]', ' ', raw_name)
+            words = [w.strip().upper() for w in raw_name.split() if w.strip()]
             
-            return f"{nombres} {ap} {am_inicial}", {
-                "primer_nombre": nombres,
-                "apellido_paterno": ap,
-                "apellido_materno": am
-            }
+            if len(words) == 0: return "", {}
+            
+            # Formatos comunes:
+            # 1 palabra: "JUAN" -> PN: JUAN, AP: -, AM: -
+            if len(words) == 1:
+                pn = words[0]
+                return pn, {"primer_nombre": pn, "apellido_paterno": "-"}
+            
+            # 2 palabras: "JUAN ACARO" -> PN: JUAN, AP: ACARO, AM: -
+            if len(words) == 2:
+                pn, ap = words[0], words[1]
+                return f"{pn} {ap}", {"primer_nombre": pn, "apellido_paterno": ap}
+
+            # 3 o más palabras: Intentar detectar si es Nombres + Apellidos (Más común en asignación manual)
+            # O seguir la regla previa de AP AM Nombres.
+            # Regla simplificada para AgroFlow: 
+            # Si el último parece una inicial (A.) o tiene 1-2 letras, suele ser AM.
+            # Pero para "JUAN WILMER ACARO CARREÑO":
+            # PN: JUAN WILMER, AP: ACARO, AM: CARREÑO
+            
+            # Vamos a asumir Nombres... ApellidoPaterno ApellidoMaterno (Formato Estándar DNI)
+            # Ej: JUAN WILMER ACARO CARREÑO -> words[0:2] = Nombres, words[2] = AP, words[3] = AM
+            if len(words) >= 3:
+                am = words[-1]
+                ap = words[-2]
+                nombres = " ".join(words[:-2])
+                
+                am_inicial = f"{am[0]}." if am else ""
+                return f"{nombres} {ap} {am_inicial}".strip(), {
+                    "primer_nombre": nombres,
+                    "apellido_paterno": ap,
+                    "apellido_materno": am
+                }
+            
+            return "", {}
 
         upserts = 0
         for row_idx in range(1, len(payload)):
@@ -528,6 +549,10 @@ def sync_asignacion_raw(
                 
                 if t:
                     t_id = t.id
+                    # Actualizar nombre si cambió en el Excel
+                    if nombre_t and t.nombre_transportista != nombre_t:
+                        t.nombre_transportista = nombre_t
+                        db.flush()
                     db_dam.transportista = t.nombre_transportista
 
             # Licencia y Chofer
@@ -552,6 +577,14 @@ def sync_asignacion_raw(
                     if not c:
                         c = Chofer(dni=dni, licencia=raw_lic, **kwargs_chofer)
                         db.add(c)
+                        db.flush()
+                    else:
+                        # ACTUALIZACIÓN: Si el chofer ya existe, actualizamos sus nombres 
+                        # por si se corrigieron en el Excel
+                        for k, v in kwargs_chofer.items():
+                            setattr(c, k, v)
+                        if raw_lic:
+                            c.licencia = raw_lic
                         db.flush()
 
             # Placas
