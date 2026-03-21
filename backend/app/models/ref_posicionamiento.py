@@ -73,6 +73,7 @@ class RefPosicionamiento(Base):
     # --- 8. Logística Final ---
     incoterm: Mapped[str | None] = mapped_column(String(50), nullable=True) # INCOTERM
     flete: Mapped[str | None] = mapped_column(String(50), nullable=True) # FLETE
+    valor_fob: Mapped[str | None] = mapped_column(String(50), nullable=True) # VALOR FOB
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

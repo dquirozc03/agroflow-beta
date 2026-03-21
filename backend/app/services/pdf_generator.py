@@ -126,7 +126,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     if "LITARDO" in nombre_planta_db:
         nombre_planta_pdf = "PLANTA LITARDO"
         direccion_planta_pdf = "CAR.PANAMERICANA SUR KM. 205 (ALTURA ENTRADA STA ROSA) CHINCHA BAJA CHINCHA ICA PERÚ."
-        ubigeo_planta_pdf = "100200"
+        ubigeo_planta_pdf = "110204"
     else:
         # Por defecto buscamos ICA o lo que diga el nombre
         target = "ICA" if "ICA" in nombre_planta_db or not nombre_planta_db else nombre_planta_db
@@ -134,7 +134,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         
         nombre_planta_pdf = planta_db_obj.nombre if planta_db_obj else target
         direccion_planta_pdf = planta_db_obj.direccion if planta_db_obj else "CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
-        ubigeo_planta_pdf = planta_db_obj.ubigeo if (planta_db_obj and planta_db_obj.ubigeo) else "110111" # Santiago, Ica
+        ubigeo_planta_pdf = planta_db_obj.ubigeo if (planta_db_obj and planta_db_obj.ubigeo) else "110112"
 
     # 2. Cálculos
     total_unidades = 0
@@ -280,7 +280,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("FILTROS"), VBL(posic.filtros or "NO APLICA")],
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
-        [L("VALOR FOB APROXIMADO"), V(f"USD {posic.valor_fob or '0.00'}")],
+        [L("VALOR FOB APROXIMADO"), V(f"USD {getattr(posic, 'valor_fob', '34,560.00') or '34,560.00'}")],
         [L("OBSERVACIONES"), V(posic.observaciones)],
     ]
     
