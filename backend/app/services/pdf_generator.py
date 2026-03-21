@@ -222,9 +222,17 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         elements.append(Spacer(1, 1*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
-    def V(txt): return Paragraph(str(txt or ""), style_value)
-    def VB(txt): return Paragraph(f"<b>{str(txt or '')}</b>", style_val_bold)
-    def VBL(txt): return Paragraph(f"<b>{str(txt or '')}</b>", ParagraphStyle('VBLeft', parent=style_val_bold, alignment=0))
+    def V(txt): 
+        val = str(txt or "").replace("\n", "<br/>")
+        return Paragraph(val, style_value)
+    
+    def VB(txt): 
+        val = str(txt or "").replace("\n", "<br/>")
+        return Paragraph(f"<b>{val}</b>", style_val_bold)
+
+    def VBL(txt): 
+        val = str(txt or "").replace("\n", "<br/>")
+        return Paragraph(f"<b>{val}</b>", ParagraphStyle('VBLeft', parent=style_val_bold, alignment=0))
 
     # Filas de la Tabla 1
     data1 = [
@@ -235,7 +243,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>{nombre_planta_pdf}</b><br/>{direccion_planta_pdf}", style_value)],
         [L("UBIGEO PLANTA"), V(ubigeo_planta_pdf)],
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
-        [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{cliente_ie.consignatario_bl if cliente_ie else '(SIN INFO CLIENTE)'}</b>", style_value)],
+        [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{str(cliente_ie.consignatario_bl or '').replace('\n', '<br/>') if cliente_ie else '(SIN INFO CLIENTE)'}</b>", style_value)],
         [L("NOTIFICADO<br/>DIRECCIÓN"), V(cliente_ie.notificante_bl if cliente_ie else "")],
         [L("DATOS REFERENCIALES"), V(f"EORI CONSIGNE: {cliente_ie.eori_consignatario or '---'}")],
         ["", V(f"EORI NOTIFY: {cliente_ie.eori_notify or '---'}")],
