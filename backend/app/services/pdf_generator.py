@@ -258,8 +258,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(format_multiline_bold_first(cliente_ie.consignatario_bl) if cliente_ie else '(SIN INFO CLIENTE)', style_value)],
         [L("NOTIFICADO<br/>DIRECCIÓN"), Paragraph(format_multiline_bold_first(cliente_ie.notificante_bl) if cliente_ie else "", style_value)],
-        [L("DATOS REFERENCIALES"), V(f"EORI CONSIGNE: {cliente_ie.eori_consignatario or '---'}")],
-        ["", V(f"EORI NOTIFY: {cliente_ie.eori_notify or '---'}")],
+        [L("DATOS REFERENCIALES"), V(f"EORI CONSIGNE: {cliente_ie.eori_consignatario or '---'}\nEORI NOTIFY: {cliente_ie.eori_notify or '---'}")],
         [L("DESCRIPCION EN EL B/L"), V(f"{total_unidades} BOXES WITH FRESH POMEGRANATES {str(posic.variedad or '')} ON {str(posic.total_pallet or '')} PALLETS<br/>{total_unidades} CAJAS CON FRESCA GRANADAS {str(posic.variedad or '')} EN {str(posic.total_pallet or '')} PALETAS")],
         [L("AGENCIA NAVIERA"), V(posic.naviera)],
         [L("MOTONAVE"), V(posic.nave)],
@@ -297,8 +296,8 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
         ('BACKGROUND', (0,4), (1,5), BETA_GRAY), # Gray for Address and Ubigeo labels
         ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), # Orange for Fecha y Hora (Shifts to 6)
-        ('SPAN', (0,9), (0,10)), # Datos Referenciales (Se movi?? a 9 y 10)
-        ('BACKGROUND', (0,27), (1,28), BETA_ORANGE),
+        # Se quit?? el SPAN de Datos Referenciales por ser una sola fila ahora.
+        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
         ('TOPPADDING', (0,0), (-1,-1), 1.0),
