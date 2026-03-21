@@ -275,6 +275,8 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("VENTILACION"), V(posic.ventilacion)],
         [L("HUMEDAD"), V(posic.humedad or "OFF")],
         [L("ATMOSFERA CONTROLADA"), V("NO APLICA")],
+        [L("OXIGENO"), V("NO APLICA")],
+        [L("CO2"), V("NO APLICA")],
         [L("FILTROS"), VBL(posic.filtros or "NO APLICA")],
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
@@ -291,7 +293,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
         ('BACKGROUND', (0,4), (1,5), BETA_GRAY), # Gray for Address and Ubigeo labels
         ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), # Orange for Fecha y Hora (Shifts to 6)
-        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE), # Filtros y Cold Treatment
+        ('BACKGROUND', (0,28), (1,29), BETA_ORANGE), # Filtros y Cold Treatment (Shifts +2 from 26,27)
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
         ('TOPPADDING', (0,0), (-1,-1), 4.5), # Aumento de espacio interno
