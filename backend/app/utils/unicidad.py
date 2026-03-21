@@ -30,3 +30,23 @@ def unir_por_slash(valores: Iterable[str]) -> str | None:
     if not vals:
         return None
     return "/".join(vals)
+
+import re
+
+def format_container_number(valor: str | None) -> str | None:
+    """
+    Standardize container numbers to the AAAA 111111-1 format.
+    Ensures that containers like MEDU9144085 are converted to MEDU 914408-5.
+    """
+    if valor is None:
+        return None
+    
+    # Remove all non-alphanumeric characters and make upper case
+    v = re.sub(r'[^A-Z0-9]', '', str(valor).upper())
+    
+    if len(v) == 11 and v[:4].isalpha() and v[4:].isdigit():
+        return f"{v[:4]} {v[4:10]}-{v[10]}"
+    
+    # Si no es un contenedor estándar de 11 caracteres (4 letras + 7 números), 
+    # devolvemos el valor normalizado o como lo tenemos.
+    return normalizar(valor)
