@@ -67,9 +67,9 @@ def construir_senasa_ps_linea(senasa: str | None, ps_linea: str | None) -> str |
     senasa = (senasa or "").strip()
     ps_linea = (ps_linea or "").strip()
     if senasa and ps_linea:
-        return f"{senasa}/PS.{ps_linea}"
+        return f"{senasa}/PS.LIN:{ps_linea}"
     if ps_linea:
-        return f"PS.{ps_linea}"
+        return f"PS.LIN:{ps_linea}"
     return None
 
 

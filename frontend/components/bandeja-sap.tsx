@@ -422,7 +422,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
       { key: "PS_OPERADOR", label: "PRECINTO OPERADOR", w: "w-[190px]" },
       { key: "SENASA_PS_LINEA", label: "PRECINTO SENASA/LINEA", w: "w-[210px]" },
       { key: "P_REGISTRAL", label: "PARTIDA REGISTRAL", w: "w-[190px]" },
-      { key: "CER_VEHICULAR", label: "CERTIFICADO VEHICULAR", w: "w-[210px]" },
+      { key: "CER_VEHICULAR", label: "CERTIFICADO VEHICULAR (REGISTRO MTC)", w: "w-[210px]" },
     ],
     [],
   );

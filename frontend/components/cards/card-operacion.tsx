@@ -256,7 +256,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             </div>
           </div>
         </div>
-        
+
         {/* Row 1.3: Datos de Transportista por Primera Vez */}
         {form.transportista && (!form.transportista.partida_registral || !form.transportista.codigo_sap || form.transportista.codigo_sap.startsWith("AUTO-")) && (
           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/40 rounded-lg p-5 space-y-4 animate-in slide-in-from-top-2">
@@ -292,7 +292,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
               <span className="material-symbols-outlined text-base font-semibold notranslate">app_registration</span>
               Primer ingreso de esta unidad a Pisco: Por favor complete los datos técnicos
             </h4>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Marca Tracto</label>
@@ -303,7 +303,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Tracto</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Tracto (Registro MTC)</label>
                 <input
                   className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
                   placeholder="Ej: C-TR-12345" value={form.vehiculo_cert_tracto}
@@ -311,7 +311,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Carreta</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Carreta (Registro MTC)</label>
                 <input
                   className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
                   placeholder="Ej: C-CA-67890" value={form.vehiculo_cert_carreta}
@@ -336,28 +336,28 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
               {/* Medidas Tracto */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Largo Tracto</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_t} onChange={(e) => setForm(p => ({...p, vehiculo_largo_t: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_t} onChange={(e) => setForm(p => ({ ...p, vehiculo_largo_t: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Ancho Tracto</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_t} onChange={(e) => setForm(p => ({...p, vehiculo_ancho_t: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_t} onChange={(e) => setForm(p => ({ ...p, vehiculo_ancho_t: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Alto Tracto</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_t} onChange={(e) => setForm(p => ({...p, vehiculo_alto_t: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_t} onChange={(e) => setForm(p => ({ ...p, vehiculo_alto_t: e.target.value }))} />
               </div>
               {/* Medidas Carreta */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Largo Carreta</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_c} onChange={(e) => setForm(p => ({...p, vehiculo_largo_c: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_largo_c} onChange={(e) => setForm(p => ({ ...p, vehiculo_largo_c: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Ancho Carreta</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_c} onChange={(e) => setForm(p => ({...p, vehiculo_ancho_c: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_ancho_c} onChange={(e) => setForm(p => ({ ...p, vehiculo_ancho_c: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">M. Alto Carreta</label>
-                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_c} onChange={(e) => setForm(p => ({...p, vehiculo_alto_c: e.target.value}))} />
+                <input type="number" step="0.01" className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs outline-none" placeholder="m" value={form.vehiculo_alto_c} onChange={(e) => setForm(p => ({ ...p, vehiculo_alto_c: e.target.value }))} />
               </div>
             </div>
           </div>
@@ -366,7 +366,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
         {/* Row 2: Precintos Principales */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Naviera (Aduana)</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">PRECINTO ADUANA</label>
             <input
               id="input-ps-aduana"
               className={cn(
@@ -380,7 +380,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Operador Log.</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">PRECINTO OPERADOR</label>
             <input
               id="input-ps-operador"
               className={cn(
@@ -408,7 +408,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Línea (Naviera)</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">PRECINTO LINEA</label>
             <input
               id="input-ps-linea"
               className={cn(
@@ -427,7 +427,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ScannerField
             id="scanner_ps_beta"
-            label="PS BETA (Exportador)"
+            label="PRECINTOS BETA"
             items={form.ps_beta_items}
             onAdd={(v) => setForm(p => ({ ...p, ps_beta_items: [...p.ps_beta_items, v] }))}
             onClear={() => setForm(p => ({ ...p, ps_beta_items: [] }))}
