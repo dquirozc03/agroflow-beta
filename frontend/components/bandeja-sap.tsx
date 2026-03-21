@@ -609,6 +609,85 @@ export function BandejaSap({ rows, setRows, className }: Props) {
     };
   }
 
+  // ========== Exportar a Excel ==========
+  const exportPendientes = useCallback(async () => {
+    if (filteredPendientes.length === 0) return toast.info("No hay datos para exportar.");
+
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const { saveAs } = (await import("file-saver")).default as any;
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Pendientes SAP");
+
+      // 1. Definir Columnas
+      const columnsDef = columns.map(c => ({
+        header: c.label,
+        key: c.key,
+        width: Math.max(15, c.label.length + 5)
+      }));
+      worksheet.columns = columnsDef;
+
+      // 2. Estilizar Encabezados
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 30;
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E293B" } };
+        cell.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 11 };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = { bottom: { style: "thin", color: { argb: "FF475569" } } };
+      });
+
+      // 3. Añadir Datos
+      filteredPendientes.forEach((r, idx) => {
+        const rowData: Record<string, string> = {
+          ID: safeStr(getId(r)),
+          FECHA: fmtTime(getFecha(r)),
+          O_BETA: safeStr(getAny(r, "o_beta", "O_BETA")),
+          BOOKING: safeStr(getAny(r, "booking", "BOOKING")),
+          AWB: safeStr(getAny(r, "awb", "AWB")),
+          MARCA: safeStr(getAny(r, "marca", "MARCA")),
+          PLACAS: safeStr(getAny(r, "placas", "PLACAS")),
+          DNI: safeStr(getAny(r, "dni", "DNI")),
+          NOMBRES: safeStr(getAny(r, "chofer", "CHOFER", "NOMBRES")),
+          LICENCIA: safeStr(getAny(r, "licencia", "LICENCIA")),
+          TERMOGRAFOS: safeStr(getAny(r, "termografos", "TERMOGRAFOS")),
+          CODIGO_SAP: safeStr(getAny(r, "codigo_sap", "CODIGO_SAP")),
+          TRANSPORTISTA: safeStr(getAny(r, "transportista", "TRANSPORTISTA")),
+          PS_BETA: safeStr(getAny(r, "ps_beta", "PS_BETA")),
+          PS_ADUANA: safeStr(getAny(r, "ps_aduana", "PS_ADUANA")),
+          PS_OPERADOR: safeStr(getAny(r, "ps_operador", "PS_OPERADOR")),
+          SENASA_PS_LINEA: safeStr(getAny(r, "senasa_ps_linea", "SENASA_PS_LINEA")),
+          P_REGISTRAL: safeStr(getAny(r, "p_registral", "P_REGISTRAL", "PARTIDA_REGISTRAL")),
+          CER_VEHICULAR: safeStr(getAny(r, "cer_vehicular", "CER_VEHICULAR", "CERTIFICADO_VEHICULAR")),
+        };
+        const row = worksheet.addRow(rowData);
+        
+        row.eachCell((cell) => {
+          cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+          cell.border = { bottom: { style: "thin", color: { argb: "FFF1F5F9" } } };
+          if (idx % 2 === 1) {
+             cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
+          }
+        });
+      });
+
+      worksheet.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: 1, column: columnsDef.length },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `BandejaSAP_Pendientes_${localYYYYMMDD()}.xlsx`);
+      
+      toast.success("Excel de pendientes generado correctamente.");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Error al generar el Excel.");
+    }
+  }, [filteredPendientes, columns]);
+
   // ========== Edit / Anular ==========
   function openEditar(row: ProcessedRow) {
     const estado = String((row as any).estado ?? "procesado").toLowerCase();
@@ -748,6 +827,17 @@ export function BandejaSap({ rows, setRows, className }: Props) {
             )}
             Sincronizar
           </Button>
+
+          {tab === "pendientes" && (
+            <Button
+              onClick={exportPendientes}
+              disabled={refreshing || filteredPendientes.length === 0}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 border-none"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exportar</span> Excel
+            </Button>
+          )}
         </div>
       </div>
 
