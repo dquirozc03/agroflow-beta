@@ -738,7 +738,10 @@ def editar_registro_controlado(
             # Recrea DateTime en medianoche (o usa el timezone adecuado dependiendo de backend)
             # asume timezone limit en schema: DateTime(timezone=True)
             zona = ZoneInfo("America/Lima")
-            reg.fecha_registro = datetime.strptime(fecha_str, "%Y-%m-%d").replace(hour=12, minute=0, second=0, tzinfo=zona)
+            nueva_fecha = datetime.strptime(fecha_str, "%Y-%m-%d").replace(hour=12, minute=0, second=0, tzinfo=zona)
+            reg.fecha_registro = nueva_fecha
+            if reg.processed_at is not None:
+                reg.processed_at = nueva_fecha.astimezone(timezone.utc)
         except Exception as e:
             raise HTTPException(status_code=422, detail=f"Formato de fecha inválido. Usa YYYY-MM-DD. Error: {e}")
 

@@ -180,11 +180,17 @@ type DetailRow = {
   cer_vehicular: string;
 };
 
-function toDetail(row: any): DetailRow {
+function toDetail(row: any, isProcesado: boolean): DetailRow {
   const id = safeStr(getId(row));
+  
+  let fechaToShow = fmtTime(getFecha(row));
+  if (isProcesado && row.processed_at) {
+    fechaToShow = fmtTime(row.processed_at);
+  }
+
   return {
     id,
-    fecha: fmtTime(getFecha(row)),
+    fecha: fechaToShow,
     o_beta: safeStr(getAny(row, "o_beta", "O_BETA")),
     booking: safeStr(getAny(row, "booking", "BOOKING")),
     awb: safeStr(getAny(row, "awb", "AWB")),
@@ -437,7 +443,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const cellMono = "font-mono text-xs text-foreground";
 
   // ✅ Memorizamos el detalle para mantener la referencia estable y evitar scroll jumps
-  const selectedDetail = useMemo(() => (selected ? toDetail(selected) : null), [selected]);
+  const selectedDetail = useMemo(() => (selected ? toDetail(selected, tab === "procesados") : null), [selected, tab]);
   const showDetailDesktop = Boolean(selectedDetail);
 
   const scrollAreaClass =
