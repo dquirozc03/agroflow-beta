@@ -126,7 +126,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     if "LITARDO" in nombre_planta_db:
         nombre_planta_pdf = "PLANTA LITARDO"
         direccion_planta_pdf = "CAR.PANAMERICANA SUR KM. 205 (ALTURA ENTRADA STA ROSA) CHINCHA BAJA CHINCHA ICA PERÚ."
-        ubigeo_planta_pdf = "110202" # Chincha Baja
+        ubigeo_planta_pdf = "100200"
     else:
         # Por defecto buscamos ICA o lo que diga el nombre
         target = "ICA" if "ICA" in nombre_planta_db or not nombre_planta_db else nombre_planta_db
