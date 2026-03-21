@@ -441,7 +441,11 @@ def sync_asignacion_raw(
             fuzzy_key("PLACA DE CARRETA"): "placa_carreta",   
             fuzzy_key("PLACA CARRETA"): "placa_carreta",   
             fuzzy_key("LICENCIA"): "licencia",
-            fuzzy_key("DNI"): "licencia"
+            fuzzy_key("DNI"): "licencia",
+            # Soporte para columnas separadas de nombres/apellidos
+            fuzzy_key("APELLIDOS"): "apellidos", 
+            fuzzy_key("NOMBRE"): "nombres",
+            fuzzy_key("NOMBRES"): "nombres",
         }
 
         col_indices = {}
@@ -454,47 +458,65 @@ def sync_asignacion_raw(
         if "booking" not in col_indices:
             return {"ok": False, "detail": "No se encontró la columna BOOKING"}
             
-        def parse_chofer_name(raw_name: str):
-            if not raw_name: return "", {}
-            # Limpieza básica
-            raw_name = re.sub(r'[\.,]', ' ', raw_name)
-            words = [w.strip().upper() for w in raw_name.split() if w.strip()]
+        def parse_chofer_name(raw_name: str, surnames_raw: str = ""):
+            if not raw_name and not surnames_raw: return "", {}
             
-            if len(words) == 0: return "", {}
-            
-            # Formatos comunes:
-            # 1 palabra: "JUAN" -> PN: JUAN, AP: -, AM: -
-            if len(words) == 1:
-                pn = words[0]
-                return pn, {"primer_nombre": pn, "apellido_paterno": "-"}
-            
-            # 2 palabras: "JUAN ACARO" -> PN: JUAN, AP: ACARO, AM: -
-            if len(words) == 2:
-                pn, ap = words[0], words[1]
-                return f"{pn} {ap}", {"primer_nombre": pn, "apellido_paterno": ap}
-
-            # 3 o más palabras: Intentar detectar si es Nombres + Apellidos (Más común en asignación manual)
-            # O seguir la regla previa de AP AM Nombres.
-            # Regla simplificada para AgroFlow: 
-            # Si el último parece una inicial (A.) o tiene 1-2 letras, suele ser AM.
-            # Pero para "JUAN WILMER ACARO CARREÑO":
-            # PN: JUAN WILMER, AP: ACARO, AM: CARREÑO
-            
-            # Vamos a asumir Nombres... ApellidoPaterno ApellidoMaterno (Formato Estándar DNI)
-            # Ej: JUAN WILMER ACARO CARREÑO -> words[0:2] = Nombres, words[2] = AP, words[3] = AM
-            if len(words) >= 3:
-                am = words[-1]
-                ap = words[-2]
-                nombres = " ".join(words[:-2])
+            # Caso A: Columnas separadas (Lo más preciso)
+            if raw_name and surnames_raw:
+                n_words = [w.upper() for w in raw_name.split() if w.strip()]
+                s_words = [w.upper() for w in surnames_raw.split() if w.strip()]
                 
-                am_inicial = f"{am[0]}." if am else ""
-                return f"{nombres} {ap} {am_inicial}".strip(), {
-                    "primer_nombre": nombres,
+                pn = " ".join(n_words)
+                ap = s_words[0] if s_words else "-"
+                am = s_words[1] if len(s_words) > 1 else ""
+                
+                am_init = f"{am[0]}." if am else ""
+                return f"{pn} {ap} {am_init}".strip(), {
+                    "primer_nombre": pn,
                     "apellido_paterno": ap,
                     "apellido_materno": am
                 }
+
+            # Caso B: Una sola columna con coma "Apellidos, Nombres"
+            if "," in raw_name:
+                parts = raw_name.split(",", 1)
+                s_words = [w.upper().strip() for w in parts[0].split() if w.strip()]
+                n_words = [w.upper().strip() for w in parts[1].split() if w.strip()]
+                
+                pn = " ".join(n_words)
+                ap = s_words[0] if s_words else "-"
+                am = s_words[1] if len(s_words) > 1 else ""
+                
+                am_init = f"{am[0]}." if am else ""
+                return f"{pn} {ap} {am_init}".strip(), {
+                    "primer_nombre": pn,
+                    "apellido_paterno": ap,
+                    "apellido_materno": am
+                }
+
+            # Caso C: Texto plano sin separador (Guess)
+            raw_name = raw_name.replace('.', ' ')
+            words = [w.strip().upper() for w in raw_name.split() if w.strip()]
+            if not words: return "", {}
             
-            return "", {}
+            if len(words) == 1:
+                return words[0], {"primer_nombre": words[0], "apellido_paterno": "-"}
+            
+            if len(words) == 2:
+                # ¿Será Apellido Nombre? Difícil saber. Asumimos Nombre Apellido.
+                return f"{words[0]} {words[1]}", {"primer_nombre": words[0], "apellido_paterno": words[1]}
+
+            # Si hay 3 o más, asumimos NOMBRES + AP + AM (más común hoy)
+            am = words[-1]
+            ap = words[-2]
+            pn = " ".join(words[:-2])
+            
+            am_init = f"{am[0]}." if am else ""
+            return f"{pn} {ap} {am_init}".strip(), {
+                "primer_nombre": pn,
+                "apellido_paterno": ap,
+                "apellido_materno": am
+            }
 
         upserts = 0
         for row_idx in range(1, len(payload)):
@@ -556,19 +578,26 @@ def sync_asignacion_raw(
                     db_dam.transportista = t.nombre_transportista
 
             # Licencia y Chofer
-            if "licencia" in col_indices or "conductor" in col_indices:
+            if any(k in col_indices for k in ["licencia", "conductor", "nombres", "apellidos"]):
                 idx_lic = col_indices.get("licencia", -1)
                 idx_cond = col_indices.get("conductor", -1)
+                idx_nom = col_indices.get("nombres", -1)
+                idx_ape = col_indices.get("apellidos", -1)
                 
                 raw_lic = str(row[idx_lic] or "").strip().upper() if idx_lic >= 0 and idx_lic < len(row) else ""
                 raw_cond = str(row[idx_cond] or "").strip() if idx_cond >= 0 and idx_cond < len(row) else ""
+                raw_nom = str(row[idx_nom] or "").strip() if idx_nom >= 0 and idx_nom < len(row) else ""
+                raw_ape = str(row[idx_ape] or "").strip() if idx_ape >= 0 and idx_ape < len(row) else ""
                 
                 dni = re.sub(r'[^\d]', '', raw_lic)
                 
                 if dni:
                     db_dam.licencia = dni # Esto alimenta el frontend DNI del chofer
-                    
-                formated_name, kwargs_chofer = parse_chofer_name(raw_cond)
+                
+                # Intentamos parsear nombres (priorizando columnas separadas si existen)
+                input_name = raw_nom if raw_nom else raw_cond
+                formated_name, kwargs_chofer = parse_chofer_name(input_name, raw_ape)
+                
                 if formated_name:
                     db_dam.chofer = formated_name
                     

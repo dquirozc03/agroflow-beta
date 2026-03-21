@@ -37,13 +37,13 @@ export const CardEmbarque = React.memo(function CardEmbarque({
       setForm((prev) => {
         let n_tracto = prev.placas_tracto;
         let n_carreta = prev.placas_carreta;
-        
+
         if (refs.placas) {
-            const parts = refs.placas.split('/');
-            if (parts[0]) n_tracto = parts[0];
-            if (parts.length > 1 && parts[1]) n_carreta = parts[1];
+          const parts = refs.placas.split('/');
+          if (parts[0]) n_tracto = parts[0];
+          if (parts.length > 1 && parts[1]) n_carreta = parts[1];
         }
-        
+
         return {
           ...prev,
           o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
@@ -77,11 +77,11 @@ export const CardEmbarque = React.memo(function CardEmbarque({
   useEffect(() => {
     const bookingStr = (form.booking || "").trim();
     if (bookingStr.length < 5) return;
-    
+
     if (refsLocked && lastSearchedBookingRef.current === bookingStr) return;
 
     if (bookingDebounceRef.current) window.clearTimeout(bookingDebounceRef.current);
-    
+
     bookingDebounceRef.current = window.setTimeout(() => {
       ejecutarAutocompletado(bookingStr);
     }, 800);
@@ -127,7 +127,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
                 setForm(p => ({ ...p, booking: val }));
                 if (bookingError) setBookingError(false);
                 setRefsLocked(false); // Resetea para permitir nueva busqueda
-                
+
                 // Si borra el booking, limpiar datos autocompletados (O/Beta, AWB, DAM)
                 if (!val.trim()) {
                   setForm(prev => ({
@@ -138,7 +138,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
                   }));
                 }
               }}
-              placeholder="BK-XXXXXX"
+              placeholder="Ejem: EBKG16127682"
             />
             {bookingError && (
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 animate-in zoom-in duration-300">
@@ -197,7 +197,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
             type="text"
             value={form.dam}
             readOnly
-            placeholder="000-000000"
+            placeholder="Autocompletado..."
           />
         </div>
       </div>
