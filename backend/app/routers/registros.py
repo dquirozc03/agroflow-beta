@@ -735,11 +735,16 @@ def editar_registro_controlado(
         if not fecha_str:
             raise HTTPException(status_code=422, detail="Debes enviar fecha YYYY-MM-DD")
         try:
-            # Recrea DateTime en medianoche (o usa el timezone adecuado dependiendo de backend)
-            # asume timezone limit en schema: DateTime(timezone=True)
-            zona = ZoneInfo("America/Lima")
+            # Fallback seguro para arquitecturas sin base de datos de zonas (Windows/etc)
+            try:
+                zona = ZoneInfo("America/Lima")
+            except ZoneInfoNotFoundError:
+                zona = timezone.utc
+                
             nueva_fecha = datetime.strptime(fecha_str, "%Y-%m-%d").replace(hour=12, minute=0, second=0, tzinfo=zona)
             reg.fecha_registro = nueva_fecha
+            
+            # También actualizamos processed_at ya que la bandeja de procesados filtra por este campo
             if reg.processed_at is not None:
                 reg.processed_at = nueva_fecha.astimezone(timezone.utc)
         except Exception as e:

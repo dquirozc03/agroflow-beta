@@ -412,7 +412,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
   const columns = useMemo(
     () => [
       { key: "ID", label: "ID", w: "w-[80px]" },
-      { key: "FECHA", label: "FECHA", w: "w-[120px]" },
+      { key: "FECHA", label: "FECHA DE EMBARQUE", w: "w-[180px]" },
       { key: "O_BETA", label: "O_BETA", w: "w-[130px]" },
       { key: "BOOKING", label: "BOOKING", w: "w-[150px]" },
       { key: "AWB", label: "AWB", w: "w-[210px]" },
@@ -628,7 +628,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
 
       // 1. Definir Columnas
       const columnsDef = columns.map(c => ({
-        header: c.label,
+        header: c.label === "FECHA" ? "FECHA DE EMBARQUE" : c.label,
         key: c.key,
         width: Math.max(15, c.label.length + 5)
       }));
@@ -754,8 +754,14 @@ export function BandejaSap({ rows, setRows, className }: Props) {
 
       await editarRegistro(Number(id), editCampo, data, editMotivo?.trim() || undefined, role);
 
-      // refrescamos toda la lista de procesados para la fecha actual (evita inconsistencias)
-      await refreshProcesados(procesadosDate);
+      // Si se editó la fecha, movemos la vista a esa fecha para que el usuario vea el cambio
+      if (editCampo === "fecha" && data.fecha) {
+        setProcesadosDate(String(data.fecha));
+        await refreshProcesados(String(data.fecha), procesadosDateEnd);
+      } else {
+        // refrescamos toda la lista de procesados para la fecha actual (evita inconsistencias)
+        await refreshProcesados(procesadosDate, procesadosDateEnd);
+      }
 
       toast.success("Edición aplicada.");
       setEditOpen(false);
@@ -1102,7 +1108,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                       <TableHeader className="sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
                         <TableRow className="border-b border-slate-100 dark:border-slate-800 hover:bg-transparent">
                           <TableHead className={cn(headBase, "w-[90px] border-none py-4 text-slate-900 dark:text-slate-100")}>ID</TableHead>
-                          <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Fecha Sync</TableHead>
+                          <TableHead className={cn(headBase, "w-[200px] border-none py-4 text-slate-900 dark:text-slate-100")}>FECHA DE EMBARQUE</TableHead>
                           <TableHead className={cn(headBase, "w-[150px] border-none py-4 text-slate-900 dark:text-slate-100")}>O_BETA</TableHead>
                           <TableHead className={cn(headBase, "w-[180px] border-none py-4 text-slate-900 dark:text-slate-100")}>Booking</TableHead>
                           <TableHead className={cn(headBase, "w-[240px] border-none py-4 text-slate-900 dark:text-slate-100")}>AWB</TableHead>
@@ -1139,9 +1145,12 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                               )}
                             >
                               <TableCell className={cn(cellBase, cellCenter, cellMono, "font-bold text-primary")} {...cellProps("ID", id)}>
-                                {id}
+                                <div className="flex items-center justify-center gap-1">
+                                   <span className="text-[10px] opacity-30">#</span>
+                                   {id}
+                                </div>
                               </TableCell>
-                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("Fecha Sync", processedAt)}>
+                              <TableCell className={cn(cellBase, cellCenter)} {...cellProps("FECHA DE EMBARQUE", processedAt)}>
                                 {processedAt}
                               </TableCell>
                               <TableCell className={cn(cellBase, cellCenter, "font-black text-slate-900 dark:text-white")} {...cellProps("O_BETA", o_beta)}>
