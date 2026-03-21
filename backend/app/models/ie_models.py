@@ -11,6 +11,7 @@ class CatPlanta(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     direccion: Mapped[str] = mapped_column(String(500))
+    ubigeo: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 class CatClienteIE(Base):
     """Base de datos de clientes para Instrucciones de Embarque"""

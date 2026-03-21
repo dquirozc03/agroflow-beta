@@ -113,10 +113,15 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     if "LITARDO" in nombre_planta_db:
         nombre_planta_pdf = "PLANTA LITARDO"
         direccion_planta_pdf = "CAR.PANAMERICANA SUR KM. 205 (ALTURA ENTRADA STA ROSA) CHINCHA BAJA CHINCHA ICA PERÚ."
+        ubigeo_planta_pdf = "110202" # Chincha Baja
     else:
-        nombre_planta_pdf = "PLANTA ICA"
-        planta_db_obj = db.query(CatPlanta).filter(CatPlanta.nombre == "ICA").first()
+        # Por defecto buscamos ICA o lo que diga el nombre
+        target = "ICA" if "ICA" in nombre_planta_db or not nombre_planta_db else nombre_planta_db
+        planta_db_obj = db.query(CatPlanta).filter(CatPlanta.nombre.ilike(f"%{target}%")).first()
+        
+        nombre_planta_pdf = planta_db_obj.nombre if planta_db_obj else target
         direccion_planta_pdf = planta_db_obj.direccion if planta_db_obj else "CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU"
+        ubigeo_planta_pdf = planta_db_obj.ubigeo if (planta_db_obj and planta_db_obj.ubigeo) else "110111" # Santiago, Ica
 
     # 2. Cálculos
     total_unidades = 0
@@ -228,6 +233,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("DIRECCIÓN"), V("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
         [L("OPERADOR LOGISTICO"), VBL(str(posic.operador or "").upper())],
         [L("DIRECCION DE LA PLANTA"), Paragraph(f"<b>{nombre_planta_pdf}</b><br/>{direccion_planta_pdf}", style_value)],
+        [L("UBIGEO PLANTA"), V(ubigeo_planta_pdf)],
         [L("FECHA Y HORA DEL LLENADO"), Paragraph(f"<div align='center'><b>{fecha_hora_full}</b></div>", style_val_bold)],
         [L("CONSIGNATARIO<br/>DIRECCIÓN"), Paragraph(f"<b>{cliente_ie.consignatario_bl if cliente_ie else '(SIN INFO CLIENTE)'}</b>", style_value)],
         [L("NOTIFICADO<br/>DIRECCIÓN"), V(cliente_ie.notificante_bl if cliente_ie else "")],
@@ -268,9 +274,10 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         # Quitamos fondo orange de la primera fila ya que no hay t??tulo ah??.
         ('BACKGROUND', (0,1), (0,-2), BETA_GRAY),
         ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
-        ('BACKGROUND', (0,5), (1,5), BETA_ORANGE),
-        ('SPAN', (0,8), (0,9)), # Datos Referenciales (ahora rows 8 y 9)
-        ('BACKGROUND', (0,26), (1,27), BETA_ORANGE),
+        ('BACKGROUND', (0,4), (1,5), BETA_GRAY), # Gray for Address and Ubigeo labels
+        ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), # Orange for Fecha y Hora (Shifts to 6)
+        ('SPAN', (0,9), (0,10)), # Datos Referenciales (Se movi?? a 9 y 10)
+        ('BACKGROUND', (0,27), (1,28), BETA_ORANGE),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
         ('TOPPADDING', (0,0), (-1,-1), 1.0),
