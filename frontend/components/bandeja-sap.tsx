@@ -628,6 +628,10 @@ export function BandejaSap({ rows, setRows, className }: Props) {
       ps_operador: safeStr(getAny(row, "ps_operador", "PS_OPERADOR")),
       senasa: safeStr(getAny(row, "senasa", "SENASA")),
       ps_linea: safeStr(getAny(row, "ps_linea", "PS_LINEA")),
+      fecha: safeStr(getFecha(row)).slice(0, 10),
+      partida_registral: safeStr(getAny(row, "p_registral", "P_REGISTRAL")),
+      cert_vehicular: safeStr(getAny(row, "cer_vehicular", "CER_VEHICULAR")),
+      nombre_transportista: safeStr(getAny(row, "transportista", "TRANSPORTISTA")),
     });
     setEditOpen(true);
   }
@@ -654,6 +658,13 @@ export function BandejaSap({ rows, setRows, className }: Props) {
         data.ps_operador = (editValues.ps_operador || "").trim();
         data.senasa = (editValues.senasa || "").trim();
         data.ps_linea = (editValues.ps_linea || "").trim();
+      }
+
+      if (editCampo === "fecha") data.fecha = (editValues.fecha || "").trim();
+      if (editCampo === "transporte_legales") {
+        data.partida_registral = (editValues.partida_registral || "").trim();
+        data.cert_vehicular = (editValues.cert_vehicular || "").trim();
+        data.nombre_transportista = (editValues.nombre_transportista || "").trim();
       }
 
       await editarRegistro(Number(id), editCampo, data, editMotivo?.trim() || undefined, role);
@@ -1195,6 +1206,8 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                   <SelectItem value="transportista">Transportista</SelectItem>
                   <SelectItem value="termografos">Termógrafos</SelectItem>
                   <SelectItem value="precintos">Precintos</SelectItem>
+                  <SelectItem value="fecha">Fecha a mostrar SAP</SelectItem>
+                  <SelectItem value="transporte_legales">Fe de Erratas Legales (Partida/Cert.)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1284,6 +1297,43 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                   <Input
                     value={editValues.ps_linea || ""}
                     onChange={(e) => setEditValues((p) => ({ ...p, ps_linea: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {editCampo === "fecha" && (
+              <div className="grid gap-2">
+                <Label>Fecha SAP (YYYY-MM-DD)</Label>
+                <Input
+                  type="date"
+                  value={editValues.fecha || ""}
+                  onChange={(e) => setEditValues((p) => ({ ...p, fecha: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {editCampo === "transporte_legales" && (
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label>Razón Social (Transportista)</Label>
+                  <Input
+                    value={editValues.nombre_transportista || ""}
+                    onChange={(e) => setEditValues((p) => ({ ...p, nombre_transportista: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Partida Registral MTC</Label>
+                  <Input
+                    value={editValues.partida_registral || ""}
+                    onChange={(e) => setEditValues((p) => ({ ...p, partida_registral: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Certificado Vehicular (Registro MTC)</Label>
+                  <Input
+                    value={editValues.cert_vehicular || ""}
+                    onChange={(e) => setEditValues((p) => ({ ...p, cert_vehicular: e.target.value.toUpperCase() }))}
                   />
                 </div>
               </div>

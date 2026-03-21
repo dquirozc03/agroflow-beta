@@ -360,7 +360,9 @@ export type EditCampoRegistro =
   | "dni_chofer"
   | "transportista"
   | "termografos"
-  | "precintos";
+  | "precintos"
+  | "fecha"
+  | "transporte_legales";
 
 /**
  * Mapa de rol de usuario (auth) al valor que espera el backend (X-User-Role).

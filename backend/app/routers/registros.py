@@ -525,6 +525,8 @@ EDITABLES = {
     "transportista",
     "termografos",
     "precintos",
+    "fecha",
+    "transporte_legales",
 }
 
 
@@ -726,6 +728,30 @@ def editar_registro_controlado(
             reg.ps_linea = normalizar(data.get("ps_linea"))
 
         reg.senasa_ps_linea = construir_senasa_ps_linea(reg.senasa, reg.ps_linea)
+
+    # 7) FECHA A MOSTRAR PARA SAP (Cierra Brecha De Turnos)
+    elif campo == "fecha":
+        fecha_str = (data.get("fecha") or "").strip()
+        if not fecha_str:
+            raise HTTPException(status_code=422, detail="Debes enviar fecha YYYY-MM-DD")
+        try:
+            # Recrea DateTime en medianoche (o usa el timezone adecuado dependiendo de backend)
+            # asume timezone limit en schema: DateTime(timezone=True)
+            zona = ZoneInfo("America/Lima")
+            reg.fecha_registro = datetime.strptime(fecha_str, "%Y-%m-%d").replace(hour=12, minute=0, second=0, tzinfo=zona)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Formato de fecha inválido. Usa YYYY-MM-DD. Error: {e}")
+
+    # 8) DATOS LEGALES (Afecta directamente los catalogos atados)
+    elif campo == "transporte_legales":
+        if "partida_registral" in data and reg.transportista:
+            reg.transportista.partida_registral = normalizar(data.get("partida_registral"))
+        if "nombre_transportista" in data and reg.transportista:
+            reg.transportista.nombre_transportista = normalizar(data.get("nombre_transportista"))
+        if "cert_vehicular" in data and reg.vehiculo:
+            reg.vehiculo.cert_vehicular = normalizar(data.get("cert_vehicular"))
+        
+        db.flush()
 
     else:
         raise HTTPException(status_code=422, detail=f"Campo no editable: {campo}")
