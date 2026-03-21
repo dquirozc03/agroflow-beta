@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import re
 
 from app.database import get_db
+from app.utils.unicidad import format_container_number, normalizar
 from app.configuracion import settings
 from app.models.ref_posicionamiento import RefPosicionamiento
 from app.models.ref_booking_dam import RefBookingDam
@@ -170,7 +171,7 @@ def sync_posicionamiento(
         row.destino_booking = normalizar(it.destino_booking)
         row.pais_booking = normalizar(it.pais_booking)
         
-        row.nro_fcl = normalizar(it.nro_fcl)
+        row.nro_fcl = format_container_number(it.nro_fcl)
         row.deposito_retiro = normalizar(it.deposito_retiro)
         row.operador = normalizar(it.operador)
         row.naviera = normalizar(it.naviera)
@@ -344,8 +345,12 @@ def sync_posicionamiento_raw(
                     setattr(db_row, field, db_val)
                 except: setattr(db_row, field, None)
             else:
-                final_val = normalizar(str(val)) if val not in [None, ""] else None
+                raw_str = str(val).strip() if val not in [None, "", "NULL"] else None
                 
+                if field == "nro_fcl" and raw_str:
+                    final_val = format_container_number(raw_str)
+                else:
+                    final_val = normalizar(raw_str)
                 # REGLA ESPECIAL: SI ES CLIENTE Y TIENE GUION
                 if field == "cliente" and final_val and "-" in final_val:
                     partes = [p.strip() for p in final_val.split("-", 1)]
@@ -595,7 +600,8 @@ def sync_asignacion_raw(
 
             # Contenedor y Validacion (Solo si existe Posicionamiento previo)
             if "contenedor" in col_indices:
-                cont_asignacion = normalizar(str(row[col_indices["contenedor"]] or "").strip())
+                raw_cont = str(row[col_indices["contenedor"]] or "").strip()
+                cont_asignacion = format_container_number(raw_cont)
                 db_dam.ce_awb = cont_asignacion
                 db_dam.awb = cont_asignacion
                 

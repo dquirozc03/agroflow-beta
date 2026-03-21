@@ -7,7 +7,7 @@ import { Loader2, XCircle, CheckCircle2 } from "lucide-react";
 import { getBookingRefs } from "@/lib/api";
 import { toast } from "sonner";
 import type { FormState } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatContainerNumber } from "@/lib/utils";
 
 interface Props {
   form: FormState;
@@ -47,7 +47,7 @@ export const CardEmbarque = React.memo(function CardEmbarque({
         return {
           ...prev,
           o_beta: (refs.orden_beta_final as string) || (refs.o_beta_inicial as string) || prev.o_beta,
-          awb: (refs.awb as string) || prev.awb,
+          awb: refs.awb ? formatContainerNumber(refs.awb as string) : prev.awb,
           dam: (refs.dam as string) || prev.dam,
           dni: refs.licencia ? String(refs.licencia) : prev.dni,
           placas_tracto: n_tracto,

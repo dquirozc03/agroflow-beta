@@ -22,7 +22,7 @@ from app.models.ref_posicionamiento import RefPosicionamiento
 from app.models.ref_booking_dam import RefBookingDam
 from app.schemas.operacion import RegistroCrear, RegistroRespuesta, FilaSapRespuesta
 from app.schemas.historial import RegistroListado, HistorialResponse
-from app.utils.unicidad import normalizar, dividir_por_slash, unir_por_slash
+from app.utils.unicidad import normalizar, dividir_por_slash, unir_por_slash, format_container_number
 from app.utils.audit import registrar_evento
 
 router = APIRouter(prefix="/api/v1/registros", tags=["Registros"])
@@ -303,7 +303,7 @@ def crear_registro(
 
         o_beta_norm = normalizar(payload.o_beta)
         booking_norm = normalizar(payload.booking)
-        awb_norm = normalizar(payload.awb)
+        awb_norm = format_container_number(payload.awb)
 
         termografos_norm = unir_por_slash(dividir_por_slash(payload.termografos))
         ps_beta_norm = unir_por_slash(dividir_por_slash(payload.ps_beta))
