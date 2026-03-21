@@ -223,7 +223,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
 
     # Filas de la Tabla 1
     data1 = [
-        [VBL(str(posic.orden_beta_final or "").upper()), Paragraph(f"<div align='right'><b>{str(posic.booking or '').upper()}</b></div>", style_val_bold)],
+        [VBL(str(posic.orden_beta_final or "").upper()), ""],
         [L("EMBARCADOR"), V("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
         [L("DIRECCIÓN"), V("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
         [L("OPERADOR LOGISTICO"), VBL(str(posic.operador or "").upper())],
