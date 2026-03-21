@@ -121,8 +121,8 @@ export function HistorialRegistros() {
         { header: "PRECINTO ADUANA", key: "ps_aduana", width: 18 },
         { header: "PRECINTO OPERADOR", key: "ps_operador", width: 18 },
         { header: "SENASA/LINEA", key: "ps_linea", width: 20 },
-        { header: "PARTIDA REGISTRAL", key: "p_registral", width: 20 },
-        { header: "CERT. VEHICULAR", key: "cer_vehicular", width: 20 },
+        { header: "PARTIDA REGISTRAL (REGISTRO MTC)", key: "p_registral", width: 25 },
+        { header: "TARJETA ÚNICA DE CIRCULACIÓN MTC", key: "cer_vehicular", width: 30 },
       ];
 
       worksheet.columns = columns;

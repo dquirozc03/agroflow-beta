@@ -331,8 +331,8 @@ function DetailPanel({
         <Field label="PRECINTO ADUANA" value={row.ps_aduana} copiedField={copiedField} onCopy={handleCopy} />
         <Field label="PRECINTO OPERADOR" value={row.ps_operador} copiedField={copiedField} onCopy={handleCopy} />
         <Field label="SENASA/PS LÍNEA" value={row.senasa_ps_linea} copiedField={copiedField} onCopy={handleCopy} />
-        <Field label="PARTIDA REGISTRAL" value={row.p_registral} copiedField={copiedField} onCopy={handleCopy} />
-        <Field label="CERTIFICADO VEHICULAR" value={row.cer_vehicular} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="Partida registral (Registro MTC)" value={row.p_registral} copiedField={copiedField} onCopy={handleCopy} />
+        <Field label="Tarjeta única de circulación MTC" value={row.cer_vehicular} copiedField={copiedField} onCopy={handleCopy} />
       </div>
 
       <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
@@ -428,8 +428,8 @@ export function BandejaSap({ rows, setRows, className }: Props) {
       { key: "PS_ADUANA", label: "PRECINTO ADUANA", w: "w-[180px]" },
       { key: "PS_OPERADOR", label: "PRECINTO OPERADOR", w: "w-[190px]" },
       { key: "SENASA_PS_LINEA", label: "PRECINTO SENASA/LINEA", w: "w-[210px]" },
-      { key: "P_REGISTRAL", label: "PARTIDA REGISTRAL", w: "w-[190px]" },
-      { key: "CER_VEHICULAR", label: "CERTIFICADO VEHICULAR (REGISTRO MTC)", w: "w-[210px]" },
+      { key: "P_REGISTRAL", label: "Partida registral (Registro MTC)", w: "w-[240px]" },
+      { key: "CER_VEHICULAR", label: "Tarjeta única de circulación MTC", w: "w-[260px]" },
     ],
     [],
   );
@@ -1312,7 +1312,7 @@ export function BandejaSap({ rows, setRows, className }: Props) {
                   <SelectItem value="termografos">Termógrafos</SelectItem>
                   <SelectItem value="precintos">Precintos</SelectItem>
                   <SelectItem value="fecha">Fecha a mostrar SAP</SelectItem>
-                  <SelectItem value="transporte_legales">Fe de Erratas Legales (Partida/Cert.)</SelectItem>
+                  <SelectItem value="transporte_legales">Fe de Erratas Legales (Partida/Tarjeta MTC)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

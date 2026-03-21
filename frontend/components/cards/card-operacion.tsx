@@ -266,7 +266,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Partida Registral (Obligatoria para Guías de Remisión)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Partida registral (Registro MTC)</label>
                 <input
                   className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-blue-500 focus:border-blue-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
                   placeholder="Ej: 1510197 CNG" value={form.transportista_partida}
@@ -303,7 +303,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Tracto (Registro MTC)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Tarjeta única de circulación MTC (Tracto)</label>
                 <input
                   className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
                   placeholder="Ej: C-TR-12345" value={form.vehiculo_cert_tracto}
@@ -311,7 +311,7 @@ export const CardOperacion = React.memo(function CardOperacion({ form, setForm, 
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Cert. Carreta (Registro MTC)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Tarjeta única de circulación MTC (Carreta)</label>
                 <input
                   className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus:ring-amber-500 focus:border-amber-500 py-2 px-3 outline-none text-sm text-slate-700 dark:text-slate-200"
                   placeholder="Ej: C-CA-67890" value={form.vehiculo_cert_carreta}
