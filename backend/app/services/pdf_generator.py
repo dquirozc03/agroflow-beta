@@ -281,7 +281,7 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         [L("COLD TREAMENT"), VBL(posic.ct_option or "NO")],
         [L("CANTIDAD"), V(f"{total_unidades} CAJAS APROX.")],
         [L("VALOR FOB APROXIMADO"), V(f"USD {getattr(posic, 'valor_fob', '34,560.00') or '34,560.00'}")],
-        [L("OBSERVACIONES"), V(posic.observaciones)],
+        [L("OBSERVACIONES"), V(observaciones)],
     ]
     
     table1 = Table(data1, colWidths=[5.5*cm, 13.1*cm])
