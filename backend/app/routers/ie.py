@@ -34,6 +34,7 @@ def get_ie_history(
     end_date: date = None,
     page: int = 1,
     limit: int = 20,
+    status: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Obtiene el historial de IEs generadas"""
@@ -44,6 +45,8 @@ def get_ie_history(
         query = query.filter(func.date(RegistroIE.fecha_generacion) >= start_date)
     if end_date:
         query = query.filter(func.date(RegistroIE.fecha_generacion) <= end_date)
+    if status:
+        query = query.filter(RegistroIE.estado == status)
     
     total = query.count()
     results = query.order_by(RegistroIE.fecha_generacion.desc()).offset((page - 1) * limit).limit(limit).all()

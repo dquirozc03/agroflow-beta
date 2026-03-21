@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, FileText, Download, History, Calendar as CalendarIcon, Loader2, Ban, ChevronLeft, ChevronRight } from "lucide-react";
 import { searchIeBookings, getIeHistory, getDownloadIeUrl, checkIeExists, anularIe, type IeSearchResult, type IeHistoryRecord } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ export default function IePage() {
     const [history, setHistory] = useState<IeHistoryRecord[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [dateFilter, setDateFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ACTIVO");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     
@@ -65,7 +67,8 @@ export default function IePage() {
             const data = await getIeHistory({ 
                 desde: dateFilter || undefined, 
                 limit: 5, 
-                page: page 
+                page: page,
+                estado: statusFilter === "TODO" ? undefined : statusFilter
             });
             setHistory(data.results);
             setTotalPages(Math.max(1, Math.ceil(data.total / 5)));
@@ -74,7 +77,7 @@ export default function IePage() {
         } finally {
             setIsLoadingHistory(false);
         }
-    }, [dateFilter, page]);
+    }, [dateFilter, page, statusFilter]);
 
     useEffect(() => {
         loadHistory();
@@ -283,6 +286,19 @@ export default function IePage() {
                                             className="bg-transparent border-none text-sm focus:ring-0 outline-none"
                                         />
                                     </div>
+                                    <Select 
+                                        value={statusFilter} 
+                                        onValueChange={(val) => { setStatusFilter(val); setPage(1); }}
+                                    >
+                                        <SelectTrigger className="h-9 w-[120px] bg-background">
+                                            <SelectValue placeholder="Estado" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="TODO">Todos</SelectItem>
+                                            <SelectItem value="ACTIVO">Activos</SelectItem>
+                                            <SelectItem value="ANULADO">Anulados</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <Button variant="outline" size="sm" onClick={loadHistory} disabled={isLoadingHistory}>
                                         Actualizar
                                     </Button>

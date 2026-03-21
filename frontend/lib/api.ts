@@ -743,12 +743,14 @@ export async function getIeHistory(params: {
   hasta?: string;
   page?: number;
   limit?: number;
+  estado?: string;
 }): Promise<IeHistoryResponse> {
   const qs = new URLSearchParams();
   if (params.desde) qs.set("start_date", params.desde);
   if (params.hasta) qs.set("end_date", params.hasta);
   if (params.page) qs.set("page", String(params.page));
   if (params.limit) qs.set("limit", String(params.limit));
+  if (params.estado) qs.set("status", params.estado);
 
   return request<IeHistoryResponse>(`/ie/history?${qs.toString()}`, { method: "GET" });
 }
