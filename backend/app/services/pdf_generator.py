@@ -178,22 +178,21 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         pagesize=A4, 
         rightMargin=1.2*cm, 
         leftMargin=1.2*cm, 
-        topMargin=0.4*cm, 
-        bottomMargin=0.4*cm
+        topMargin=0.3*cm, 
+        bottomMargin=0.3*cm
     )
     styles = getSampleStyleSheet()
     
-    # Estilos de Párrafo (Comprimidos al máximo para permitir logo grande)
-    # Estilos de Párrafo
-    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8.5)
-    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10.5)
-    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1, leading=14)
-    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9.5, fontName='Helvetica-Bold', leading=11, alignment=1)
+    # Estilos de Párrafo (Más comprimidos)
+    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8.0)
+    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10.0)
+    style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1, leading=13)
+    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9.5, fontName='Helvetica-Bold', leading=10.5, alignment=1)
     style_header_main = ParagraphStyle('HeaderMain', parent=styles['Normal'], fontSize=12, fontName='Helvetica-Bold', alignment=1, leading=15)
 
     elements = []
 
-    # -- HEADER TABLE (LOGO | TEXT | IMAGE) --
+    # -- HEADER TABLE --
     header_elements = []
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -230,10 +229,10 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
             ('ALIGN', (1,0), (1,0), 'CENTER'),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 0.2*cm))
+        elements.append(Spacer(1, 0.1*cm))
     except Exception as e:
         print(f"Error en header PDF: {e}")
-        elements.append(Spacer(1, 0.5*cm))
+        elements.append(Spacer(1, 0.4*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): 
@@ -296,14 +295,14 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,28), (1,29), BETA_ORANGE), 
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 3.0), 
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.0),
-        ('TOPPADDING', (0,7), (1,8), 6),
-        ('BOTTOMPADDING', (0,7), (1,8), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 2.2), 
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2.2),
+        ('TOPPADDING', (0,7), (1,8), 3.0),
+        ('BOTTOMPADDING', (0,7), (1,8), 3.0),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 0.4*cm)) 
+    elements.append(Spacer(1, 0.2*cm)) 
     
     # -- SECCIÓN FITO --
     data2 = [
@@ -327,8 +326,8 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 3.0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.0),
+        ('TOPPADDING', (0,0), (-1,-1), 2.2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2.2),
     ])
     table2.setStyle(style2)
     elements.append(table2)
