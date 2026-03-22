@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from sqlalchemy import String, Integer, DateTime, func, Float
+from sqlalchemy import String, Integer, DateTime, func, Float, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -76,7 +76,7 @@ class RefPosicionamiento(Base):
     valor_fob: Mapped[str | None] = mapped_column(String(50), nullable=True) # VALOR FOB
     peso_bruto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO BRUTO ESTIMADO
     peso_neto: Mapped[float | None] = mapped_column(Float, nullable=True)  # PESO NETO ESTIMADO
-    packing_ogl_finalizado: Mapped[bool] = mapped_column(sa.Boolean, default=False, server_default='false')
+    packing_ogl_finalizado: Mapped[bool] = mapped_column(Boolean, default=False, server_default='false')
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
