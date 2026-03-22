@@ -10,6 +10,7 @@ from app.configuracion import settings
 from app.models.ref_posicionamiento import RefPosicionamiento
 from app.models.ref_booking_dam import RefBookingDam
 from app.models.catalogos import Transportista, Vehiculo, Chofer
+from app.models.packing_ogl import CuadroPedido
 
 router = APIRouter(prefix="/api/v1/sync", tags=["Sync"])
 
@@ -693,7 +694,8 @@ def sync_pedidos_pallets_raw(
     """
     Endpoint especializado para procesar el Excel 'Pedidos comerciales granada COPIA',
     sumar todos los pallets segmentados en distintas filas bajo una misma Orden Beta,
-    e inyectarlos al Posicionamiento cruzando el número entero de la orden (EJ: '080' hace match con 'BGA080 L')
+    e inyectarlos al Posicionamiento cruzando el número entero de la orden.
+    También pobla la tabla packing_cuadro_pedidos.
     """
     validar_token(x_sync_token)
     if not payload or len(payload) < 2:
@@ -703,81 +705,117 @@ def sync_pedidos_pallets_raw(
         raw_headers = payload[0]
         processed_headers = [fuzzy_key(h) for h in raw_headers]
 
-        col_orden = -1
-        col_pallets = -1
-        match_orden_str = ""
-        match_pallets_str = ""
+        # Mapeo de columnas dinámico
+        col_map = {
+            "orden": -1,
+            "pallets": -1,
+            "product": -1,
+            "peso_caja": -1,
+            "house_gln": -1,
+            "cajas_por_pallet": -1,
+            "notes": -1
+        }
 
         for i, h in enumerate(processed_headers):
-            if "ORDEN" in h and col_orden == -1: 
-                col_orden = i
-                match_orden_str = raw_headers[i]
-            if "TOTAL" in h and "PALLET" in h and col_pallets == -1: 
-                col_pallets = i
-                match_pallets_str = raw_headers[i]
+            if "ORDEN" == h and col_map["orden"] == -1: col_map["orden"] = i
+            if "TOTAL" in h and "PALLET" in h and col_map["pallets"] == -1: col_map["pallets"] = i
+            if "PRODUCT" in h and col_map["product"] == -1: col_map["product"] = i
+            if ("PESO" in h and "CAJA" in h) and col_map["peso_caja"] == -1: col_map["peso_caja"] = i
+            if "HOUSEGLN" in h and col_map["house_gln"] == -1: col_map["house_gln"] = i
+            if "CAJASPORPALLET" in h and col_map["cajas_por_pallet"] == -1: col_map["cajas_por_pallet"] = i
+            if ("ADDITIONAL" in h or "NOTES" in h) and col_map["notes"] == -1: col_map["notes"] = i
 
-        if col_orden == -1 or col_pallets == -1:
-            return {"ok": False, "detail": "Columnas ORDEN o PALLETS no encontradas en el Excel", "headers": processed_headers}
+        if col_map["orden"] == -1:
+            return {"ok": False, "detail": "Columna ORDEN no encontrada", "headers": processed_headers}
 
         import math
         from collections import defaultdict
-        sumas = defaultdict(int)
-        debug_filas_anomalas = []
+        sumas_pallets = defaultdict(int)
+        # Diccionario para guardar el primer rastro de metadatos por orden
+        meta_por_orden = {}
 
-        # 1. Agrupar y sumar matemáticamente todas las filas de la misma ORDEN
+        # 1. Agrupar y sumar
         for row in payload[1:]:
-            if not row or len(row) <= max(col_orden, col_pallets): continue
+            if not row or len(row) <= col_map["orden"]: continue
             
-            val_orden = str(row[col_orden] or "").strip()
-            val_pallets = str(row[col_pallets] or "").strip()
+            val_orden_raw = str(row[col_map["orden"]] or "").strip()
+            if not val_orden_raw: continue
 
-            if not val_orden: continue
+            # Extraer puramente la parte numérica (ej: 080)
+            solo_nums = re.sub(r'\D', '', val_orden_raw)
+            if not solo_nums: continue
+            
+            num_orden = int(solo_nums)
+            
+            # Sumar pallets si existe la columna
+            if col_map["pallets"] != -1 and col_map["pallets"] < len(row):
+                val_pallets = str(row[col_map["pallets"]] or "").strip()
+                clean_pallets = re.sub(r'[^\d\.]', '', val_pallets)
+                if clean_pallets:
+                    try:
+                        qty = int(math.ceil(float(clean_pallets)))
+                        sumas_pallets[num_orden] += qty
+                    except: pass
 
-            # Extraer puramente la parte numérica
-            solo_nums = re.sub(r'\D', '', val_orden)
-            clean_pallets = re.sub(r'[^\d\.]', '', val_pallets)
+            # Metadatos para la tabla CuadroPedido
+            if num_orden not in meta_por_orden:
+                # Formatear Orden Beta (Ej: 080 -> BAM-080)
+                # NOTA: Usamos BAM como prefijo por defecto o intentamos detectar
+                # Por ahora, seguiremos el estándar de la empresa.
+                orden_beta_formatted = f"BAM-{str(num_orden).zfill(3)}"
+                
+                def get_v(key, default=None):
+                    idx = col_map[key]
+                    if idx != -1 and idx < len(row):
+                        return row[idx]
+                    return default
 
-            if not solo_nums or not clean_pallets: 
-                # Guardar en debug si falló al aislar y valia algo
-                if val_orden or val_pallets:
-                    if len(debug_filas_anomalas) < 10:
-                        debug_filas_anomalas.append({"orden": val_orden, "pallets": val_pallets})
-                continue
+                meta_por_orden[num_orden] = {
+                    "orden_beta": orden_beta_formatted,
+                    "product": get_v("product"),
+                    "peso_caja": get_v("peso_caja"),
+                    "house_gln": get_v("house_gln"),
+                    "cajas_por_pallet": get_v("cajas_por_pallet"),
+                    "additional_info": get_v("notes")
+                }
 
-            try:
-                qty = int(math.ceil(float(clean_pallets)))
-                sumas[int(solo_nums)] += qty
-            except Exception as e:
-                if len(debug_filas_anomalas) < 10:
-                    debug_filas_anomalas.append({"error": str(e), "val": clean_pallets})
-
-        upserts = 0
+        # 2. Actualizar RefPosicionamiento (Inyección de Pallets)
+        upserts_pos = 0
         todos_pos = db.query(RefPosicionamiento).all()
-        
-        # 2. Distribuir a la base de datos general
         for pos in todos_pos:
-            # Juntar toda la "basura" de las ordenes beta del posicionamiento (Ej: "BGA080 L  null")
-            text_eval = f"{pos.o_beta_inicial} {pos.orden_beta_final} {pos.status_beta_text} {pos.booking}".upper()
+            text_eval = f"{pos.o_beta_inicial} {pos.orden_beta_final} {pos.booking}".upper()
+            db_nums = [int(n) for n in re.findall(r'\d+', text_eval) if n]
             
-            # Extraer un arreglo de todos los numeros puros hallados en esta fila de base de datos
-            db_nums_strings = re.findall(r'\d+', text_eval)
-            db_num_ints = [int(n) for n in db_nums_strings if n]
+            for num, qty in sumas_pallets.items():
+                if num in db_nums:
+                    pos.total_pallet = qty
+                    upserts_pos += 1
+                    break
+
+        # 3. Actualizar / Insertar en CuadroPedido
+        upserts_cuadro = 0
+        for num, data in meta_por_orden.items():
+            # Buscar si ya existe por orden_beta
+            cp = db.query(CuadroPedido).filter(CuadroPedido.orden_beta == data["orden_beta"]).first()
+            if not cp:
+                cp = CuadroPedido(orden_beta=data["orden_beta"])
+                db.add(cp)
             
-            # 3. Intersectar base de datos numerica vs sumatoria del Excel de hoy
-            for numero_orden, total_pallets in sumas.items():
-                if numero_orden in db_num_ints:
-                    # Si el posicionamiento tiene el "080", inyectamos la sumatoria aquí
-                    pos.total_pallet = total_pallets
-                    upserts += 1
-                    break # Rompemos el ciclo interno, analizamos la siguiente linea DB
+            cp.product = str(data["product"]) if data["product"] else None
+            try: cp.peso_caja = float(data["peso_caja"]) if data["peso_caja"] else None
+            except: pass
+            cp.house_gln = str(data["house_gln"]) if data["house_gln"] else None
+            try: cp.cajas_por_pallet = int(float(data["cajas_por_pallet"])) if data["cajas_por_pallet"] else None
+            except: pass
+            cp.additional_info = str(data["additional_info"]) if data["additional_info"] else None
+            upserts_cuadro += 1
         
         db.commit()
         return {
             "ok": True, 
-            "upserts": upserts, 
-            "sumatoria_calculada": sumas, 
-            "diagnostico_columnas": {"col_orden": match_orden_str, "col_pallets": match_pallets_str},
-            "filas_anomalas": debug_filas_anomalas
+            "posicionamiento_updated": upserts_pos,
+            "cuadro_pedidos_synced": upserts_cuadro,
+            "orders_detected": list(sumas_pallets.keys())
         }
     
     except Exception as e:
