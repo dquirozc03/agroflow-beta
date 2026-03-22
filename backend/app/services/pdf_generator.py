@@ -184,10 +184,11 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     styles = getSampleStyleSheet()
     
     # Estilos de Párrafo (Comprimidos al máximo para permitir logo grande)
-    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8)
-    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10)
+    # Estilos de Párrafo
+    style_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', leading=8.5)
+    style_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, fontName='Helvetica', leading=10.5)
     style_title = ParagraphStyle('Title', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', alignment=1, leading=14)
-    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold', leading=10, alignment=1)
+    style_val_bold = ParagraphStyle('ValBold', parent=styles['Normal'], fontSize=9.5, fontName='Helvetica-Bold', leading=11, alignment=1)
     style_header_main = ParagraphStyle('HeaderMain', parent=styles['Normal'], fontSize=12, fontName='Helvetica-Bold', alignment=1, leading=15)
 
     elements = []
@@ -229,10 +230,10 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
             ('ALIGN', (1,0), (1,0), 'CENTER'),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 0.3*cm))
+        elements.append(Spacer(1, 0.2*cm))
     except Exception as e:
         print(f"Error en header PDF: {e}")
-        elements.append(Spacer(1, 1*cm))
+        elements.append(Spacer(1, 0.5*cm))
 
     def L(txt): return Paragraph(f"<b>{txt}</b>", style_label)
     def V(txt): 
@@ -288,23 +289,21 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
     style1 = TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        # Quitamos fondo orange de la primera fila ya que no hay t??tulo ah??.
         ('BACKGROUND', (0,1), (0,-2), BETA_GRAY),
         ('BACKGROUND', (0,3), (1,3), BETA_ORANGE),
-        ('BACKGROUND', (0,4), (1,5), BETA_GRAY), # Gray for Address and Ubigeo labels
-        ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), # Orange for Fecha y Hora (Shifts to 6)
-        ('BACKGROUND', (0,28), (1,29), BETA_ORANGE), # Filtros y Cold Treatment (Shifts +2 from 26,27)
+        ('BACKGROUND', (0,4), (1,5), BETA_GRAY), 
+        ('BACKGROUND', (0,6), (1,6), BETA_ORANGE), 
+        ('BACKGROUND', (0,28), (1,29), BETA_ORANGE), 
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 4.5), # Aumento de espacio interno
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4.5), # Aumento de espacio interno
-        # Aumentar cuadros de Consignatario (row 7) y Notificado (row 8)
-        ('TOPPADDING', (0,7), (1,8), 8),
-        ('BOTTOMPADDING', (0,7), (1,8), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 3.0), 
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.0),
+        ('TOPPADDING', (0,7), (1,8), 6),
+        ('BOTTOMPADDING', (0,7), (1,8), 6),
     ])
     table1.setStyle(style1)
     elements.append(table1)
-    elements.append(Spacer(1, 1.2*cm)) # Espacio en blanco real sin líneas entre tablas
+    elements.append(Spacer(1, 0.4*cm)) 
     
     # -- SECCIÓN FITO --
     data2 = [
@@ -328,8 +327,8 @@ def generate_ie_pdf(booking: str, db: Session, observaciones: str = None) -> io.
         ('BACKGROUND', (0,1), (0,-1), BETA_GRAY),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 4.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4.5),
+        ('TOPPADDING', (0,0), (-1,-1), 3.0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.0),
     ])
     table2.setStyle(style2)
     elements.append(table2)
