@@ -13,10 +13,14 @@ import {
   AlertCircle, 
   Loader2,
   FileText,
-  Thermometer
+  Thermometer,
+  Package,
+  X,
+  Plus
 } from "lucide-react";
 import { 
   apiGetOglNaves, 
+  apiGetOglOrders,
   apiUploadConfirmacion, 
   apiUploadTermografos, 
   getDownloadOglPackingUrl 
@@ -28,20 +32,26 @@ export default function PackingOglPage() {
   const [naves, setNaves] = useState<string[]>([]);
   const [selectedNave, setSelectedNave] = useState<string>("");
   const [isLoadingNaves, setIsLoadingNaves] = useState(true);
+  const [naveOrders, setNaveOrders] = useState<{ orden: string; booking: string; finalizado: boolean }[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
-  const [confFile, setConfFile] = useState<File | null>(null);
-  const [termFile, setTermFile] = useState<File | null>(null);
+  const [confFiles, setConfFiles] = useState<File[]>([]);
+  const [termFiles, setTermFiles] = useState<File[]>([]);
   
-  const [isUploadingConf, setIsUploadingConf] = useState(false);
-  const [isUploadingTerm, setIsUploadingTerm] = useState(false);
+  const [uploadingStatus, setUploadingStatus] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const [confStatus, setConfStatus] = useState<{ ok?: boolean; orders?: number } | null>(null);
-  const [termStatus, setTermStatus] = useState<{ ok?: boolean; added?: number } | null>(null);
 
   useEffect(() => {
     fetchNaves();
   }, []);
+
+  useEffect(() => {
+    if (selectedNave) {
+      fetchOrders(selectedNave);
+    } else {
+      setNaveOrders([]);
+    }
+  }, [selectedNave]);
 
   async function fetchNaves() {
     try {
@@ -55,48 +65,65 @@ export default function PackingOglPage() {
     }
   }
 
-  const handleUploadConf = async () => {
-    if (!confFile) return;
+  async function fetchOrders(nave: string) {
     try {
-      setIsUploadingConf(true);
-      const res = await apiUploadConfirmacion(confFile);
-      setConfStatus({ ok: true, orders: res.orders.length });
-      toast.success("Confirmación procesada correctamente");
-      // Refrescar naves por si hay nuevas
-      fetchNaves();
-    } catch (e: any) {
-      toast.error(e.message || "Error al subir confirmación");
-      setConfStatus({ ok: false });
+      setIsLoadingOrders(true);
+      const data = await apiGetOglOrders(nave);
+      setNaveOrders(data);
+    } catch (error) {
+      toast.error("Error al cargar órdenes de la nave");
     } finally {
-      setIsUploadingConf(false);
+      setIsLoadingOrders(false);
     }
-  };
+  }
 
-  const handleUploadTerm = async () => {
-    if (!termFile) return;
-    try {
-      setIsUploadingTerm(true);
-      const res = await apiUploadTermografos(termFile);
-      setTermStatus({ ok: true, added: res.added });
-      toast.success("Termógrafos procesados correctamente");
-    } catch (e: any) {
-      toast.error(e.message || "Error al subir termógrafos");
-      setTermStatus({ ok: false });
-    } finally {
-      setIsUploadingTerm(false);
+  const handleProcessAll = async () => {
+    if (confFiles.length === 0 && termFiles.length === 0) return;
+    
+    setUploadingStatus("Iniciando carga...");
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Procesar Confirmaciones
+    for (const file of confFiles) {
+      setUploadingStatus(`Subiendo Confirmación: ${file.name}`);
+      try {
+        await apiUploadConfirmacion(file);
+        successCount++;
+      } catch (e: any) {
+        toast.error(`Error en ${file.name}: ${e.message}`);
+        errorCount++;
+      }
+    }
+
+    // Procesar Termógrafos
+    for (const file of termFiles) {
+      setUploadingStatus(`Subiendo Termógrafo: ${file.name}`);
+      try {
+        await apiUploadTermografos(file);
+        successCount++;
+      } catch (e: any) {
+        toast.error(`Error en ${file.name}: ${e.message}`);
+        errorCount++;
+      }
+    }
+
+    setUploadingStatus(null);
+    if (successCount > 0) {
+      toast.success(`Procesados ${successCount} archivos con éxito`);
+      setConfFiles([]);
+      setTermFiles([]);
+      fetchNaves(); // Refrescar por si cambiaron estados
+      if (selectedNave) fetchOrders(selectedNave);
     }
   };
 
   const handleDownload = async () => {
-    if (!selectedNave) {
-      toast.warning("Selecciona una nave primero");
-      return;
-    }
+    if (!selectedNave) return;
     try {
       setIsGenerating(true);
       const url = getDownloadOglPackingUrl(selectedNave);
       
-      // Trigger download
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `PACKING_LIST_OGL_${selectedNave}.xlsx`);
@@ -104,11 +131,26 @@ export default function PackingOglPage() {
       link.click();
       link.remove();
       
-      toast.success(`Generando Packing List para ${selectedNave}...`);
+      toast.success(`Packing List generado para ${selectedNave}. Las órdenes han sido cerradas.`);
+      
+      // Esperamos un poco y refrescamos para reflejar el cierre de órdenes
+      setTimeout(() => {
+        fetchNaves();
+        setSelectedNave("");
+      }, 2000);
+      
     } catch (e) {
       toast.error("Error al generar el documento");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const removeFile = (type: 'conf' | 'term', index: number) => {
+    if (type === 'conf') {
+      setConfFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setTermFiles(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -119,210 +161,193 @@ export default function PackingOglPage() {
         <AppHeader />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto space-y-8">
+          <div className="max-w-6xl mx-auto space-y-8">
             
-            {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Packing List OGL</h2>
-                <p className="text-slate-500 mt-1">Consolida órdenes por nave en formato oficial</p>
+                <p className="text-slate-500 mt-1">Carga múltiple de archivos y consolidación por nave</p>
               </div>
-              <div className="bg-white p-1 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-1">
-                <Button variant="ghost" className="rounded-xl px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-500 hover:text-primary">
-                  Historial
-                </Button>
-                <Button variant="ghost" className="rounded-xl px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-500 hover:text-primary">
-                  Plantillas
-                </Button>
-              </div>
+              {uploadingStatus && (
+                <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-xl animate-pulse border border-primary/20">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-xs font-bold text-primary truncate max-w-[200px]">{uploadingStatus}</span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Left Column: Uploads */}
               <div className="lg:col-span-2 space-y-6">
                 
-                {/* File Upload: Confirmación */}
-                <div className="group relative bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8 transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20">
-                  <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
-                      <FileText className="h-7 w-7" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-slate-800">Cargar Confirmación</h3>
-                      <p className="text-sm text-slate-500 mt-1">Archivo Excel con IDs de Pallets (HU)</p>
-                      
-                      <div className="mt-6 flex flex-col sm:flex-row items-center gap-4">
-                        <label className="flex-1 w-full cursor-pointer group/label">
-                          <input 
-                            type="file" 
-                            className="hidden" 
-                            accept=".xlsx,.xls" 
-                            onChange={(e) => setConfFile(e.target.files?.[0] || null)}
-                          />
-                          <div className={cn(
-                            "flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border-2 border-dashed transition-all",
-                            confFile ? "border-primary/40 bg-primary/5 text-primary" : "border-slate-200 group-hover/label:border-primary/30 group-hover/label:bg-slate-50 text-slate-400"
-                          )}>
-                            <Upload className="h-5 w-5" />
-                            <span className="font-bold text-sm truncate max-w-[200px]">
-                              {confFile ? confFile.name : "Seleccionar Archivo"}
-                            </span>
-                          </div>
-                        </label>
-                        
-                        <Button 
-                          onClick={handleUploadConf}
-                          disabled={!confFile || isUploadingConf}
-                          className="w-full sm:w-auto rounded-2xl bg-slate-900 border-none hover:bg-primary transition-all px-8 h-[54px] font-bold"
-                        >
-                          {isUploadingConf ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                          Procesar
-                        </Button>
+                {/* ZONA DE CARGA MÚLTIPLE */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl p-8 space-y-8">
+                  
+                  {/* Confirmaciones */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Confirmaciones (.xlsx)</h3>
                       </div>
+                      <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition-colors group">
+                        <Plus className="h-4 w-4 text-slate-600 group-hover:scale-125 transition-transform" />
+                        <input 
+                          type="file" 
+                          multiple 
+                          className="hidden" 
+                          accept=".xlsx"
+                          onChange={(e) => setConfFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
+                        />
+                      </label>
+                    </div>
 
-                      {confStatus?.ok && (
-                        <div className="mt-4 flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-xl animate-in fade-in slide-in-from-top-2">
-                          <CheckCircle2 className="h-5 w-5" />
-                          <span className="text-xs font-bold uppercase tracking-tight">Detectadas {confStatus.orders} órdenes con éxito</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {confFiles.length === 0 && (
+                        <div className="col-span-full border-2 border-dashed border-slate-100 rounded-2xl py-8 flex flex-col items-center justify-center text-slate-300">
+                          <Upload className="h-8 w-8 mb-2 opacity-50" />
+                          <span className="text-xs font-bold uppercase tracking-widest">Arrastra archivos aquí</span>
                         </div>
                       )}
+                      {confFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 group">
+                          <div className="flex items-center gap-3 truncate">
+                            <FileSpreadsheet className="h-4 w-4 text-blue-400 shrink-0" />
+                            <span className="text-[11px] font-bold text-slate-600 truncate">{file.name}</span>
+                          </div>
+                          <button onClick={() => removeFile('conf', idx)} className="text-slate-400 hover:text-red-500 transition-colors">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
 
-                {/* File Upload: Termógrafos */}
-                <div className="group relative bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8 transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20">
-                  <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600 transition-transform group-hover:scale-110">
-                      <Thermometer className="h-7 w-7" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-slate-800">Cargar Termógrafos</h3>
-                      <p className="text-sm text-slate-500 mt-1">Archivo Excel con códigos de temperatura</p>
-                      
-                      <div className="mt-6 flex flex-col sm:flex-row items-center gap-4">
-                        <label className="flex-1 w-full cursor-pointer group/label">
-                          <input 
-                            type="file" 
-                            className="hidden" 
-                            accept=".xlsx,.xls" 
-                            onChange={(e) => setTermFile(e.target.files?.[0] || null)}
-                          />
-                          <div className={cn(
-                            "flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border-2 border-dashed transition-all",
-                            termFile ? "border-orange-200 bg-orange-50 text-orange-600" : "border-slate-200 group-hover/label:border-orange-200 group-hover/label:bg-slate-50 text-slate-400"
-                          )}>
-                            <Upload className="h-5 w-5" />
-                            <span className="font-bold text-sm truncate max-w-[200px]">
-                              {termFile ? termFile.name : "Seleccionar Archivo"}
-                            </span>
-                          </div>
-                        </label>
-                        
-                        <Button 
-                          onClick={handleUploadTerm}
-                          disabled={!termFile || isUploadingTerm}
-                          className="w-full sm:w-auto rounded-2xl bg-slate-900 border-none hover:bg-orange-600 transition-all px-8 h-[54px] font-bold"
-                        >
-                          {isUploadingTerm ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                          Procesar
-                        </Button>
+                  {/* Termógrafos */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                          <Thermometer className="h-5 w-5" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Termógrafos (.xlsx)</h3>
                       </div>
+                      <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition-colors group">
+                        <Plus className="h-4 w-4 text-slate-600 group-hover:scale-125 transition-transform" />
+                        <input 
+                          type="file" 
+                          multiple 
+                          className="hidden" 
+                          accept=".xlsx"
+                          onChange={(e) => setTermFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
+                        />
+                      </label>
+                    </div>
 
-                      {termStatus?.ok && (
-                        <div className="mt-4 flex items-center gap-2 text-orange-600 bg-orange-50 p-3 rounded-xl animate-in fade-in slide-in-from-top-2 border border-orange-100">
-                          <CheckCircle2 className="h-5 w-5" />
-                          <span className="text-xs font-bold uppercase tracking-tight">Sincronizados {termStatus.added} códigos de termógrafo</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {termFiles.length === 0 && (
+                        <div className="col-span-full border-2 border-dashed border-slate-100 rounded-2xl py-8 flex flex-col items-center justify-center text-slate-300">
+                          <Upload className="h-8 w-8 mb-2 opacity-50" />
+                          <span className="text-xs font-bold uppercase tracking-widest">Arrastra archivos aquí</span>
                         </div>
                       )}
+                      {termFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <div className="flex items-center gap-3 truncate">
+                            <FileSpreadsheet className="h-4 w-4 text-orange-400 shrink-0" />
+                            <span className="text-[11px] font-bold text-slate-600 truncate">{file.name}</span>
+                          </div>
+                          <button onClick={() => removeFile('term', idx)} className="text-slate-400 hover:text-red-500 transition-colors">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
 
+                  <Button 
+                    onClick={handleProcessAll}
+                    disabled={(confFiles.length === 0 && termFiles.length === 0) || !!uploadingStatus}
+                    className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-primary transition-all font-black uppercase tracking-widest text-xs"
+                  >
+                    {uploadingStatus ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Upload className="h-5 w-5 mr-2" />}
+                    Procesar Todo ({confFiles.length + termFiles.length} archivos)
+                  </Button>
+                </div>
               </div>
 
-              {/* Right Column: Generation */}
               <div className="space-y-6">
-                <div className="sticky top-8 bg-gradient-to-br from-primary to-green-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary/20 overflow-hidden group">
-                  <div className="absolute -right-8 -bottom-8 opacity-20 transition-transform group-hover:scale-125 duration-700">
-                    <FileSpreadsheet width={200} height={200} />
-                  </div>
-                  
-                  <div className="relative z-10">
-                    <h3 className="text-2xl font-black italic tracking-tighter">GENERACIÓN</h3>
-                    <p className="text-white/80 text-sm font-bold mt-2 leading-tight">Selecciona la nave para consolidar las órdenes OGL</p>
+                <div className="bg-gradient-to-br from-primary to-green-600 rounded-[2.5rem] p-8 text-white shadow-2xl">
+                    <h3 className="text-2xl font-black italic tracking-tighter">CONSOLIDACIÓN</h3>
                     
-                    <div className="mt-8 space-y-5">
+                    <div className="mt-8 space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[2px] text-white/60 ml-1">Barco / Nave</label>
-                        <div className="relative">
-                          <select 
-                            value={selectedNave}
-                            onChange={(e) => setSelectedNave(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-white/40 glass-effect transition-all"
-                            disabled={isLoadingNaves}
-                          >
-                            <option value="" className="text-slate-900">Seleccionar nave...</option>
-                            {naves.map(n => (
-                              <option key={n} value={n} className="text-slate-900">{n}</option>
-                            ))}
-                          </select>
-                          <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <Ship className="h-4 w-4 text-white/60" />
-                          </div>
-                        </div>
+                        <label className="text-[10px] font-black uppercase tracking-[2px] text-white/60 ml-1">Elegir Nave</label>
+                        <select 
+                          value={selectedNave}
+                          onChange={(e) => setSelectedNave(e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-white/40 glass-effect transition-all"
+                          disabled={isLoadingNaves}
+                        >
+                          <option value="" className="text-slate-900">Seleccionar...</option>
+                          {naves.map(n => (
+                            <option key={n} value={n} className="text-slate-900">{n}</option>
+                          ))}
+                        </select>
                       </div>
 
-                      {isLoadingNaves && (
-                        <div className="flex items-center justify-center py-2 animate-pulse">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Cargando naves...</span>
+                      {/* Órdenes de la Nave */}
+                      {selectedNave && (
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
+                           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
+                              <span>Órdenes Detectadas</span>
+                              <span>Estado</span>
+                           </div>
+                           <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                              {isLoadingOrders ? (
+                                <div className="flex items-center gap-2 py-4 justify-center">
+                                   <Loader2 className="h-4 w-4 animate-spin" />
+                                </div>
+                              ) : (
+                                naveOrders.map((o, i) => (
+                                  <div key={i} className="flex items-center justify-between bg-white/10 p-2 rounded-lg">
+                                     <div className="flex items-center gap-2">
+                                        <Package className="h-3 w-3 text-white/50" />
+                                        <span className="text-[11px] font-bold">{o.orden}</span>
+                                     </div>
+                                     {o.finalizado ? (
+                                       <span className="text-[8px] px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded border border-green-500/30 font-black">CERRADA</span>
+                                     ) : (
+                                       <span className="text-[8px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-300 rounded border border-yellow-500/30 font-black">PENDIENTE</span>
+                                     )}
+                                  </div>
+                                ))
+                              )}
+                           </div>
                         </div>
                       )}
 
                       <Button 
                         onClick={handleDownload}
-                        disabled={!selectedNave || isGenerating}
-                        className="w-full h-16 rounded-2xl bg-white text-primary hover:bg-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-sm uppercase tracking-[1px] shadow-xl shadow-black/10 group/btn"
+                        disabled={!selectedNave || isGenerating || naveOrders.length === 0}
+                        className="w-full h-16 rounded-2xl bg-white text-primary hover:bg-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-sm uppercase tracking-[1px] shadow-xl"
                       >
-                        {isGenerating ? (
-                          <Loader2 className="h-6 w-6 animate-spin" />
-                        ) : (
-                          <>
-                            Generar Packing List
-                            <Download className="h-5 w-5 ml-2 transition-transform group-hover/btn:translate-y-1" />
-                          </>
-                        )}
+                        {isGenerating ? <Loader2 className="h-6 w-6 animate-spin" /> : "Generar Packing List"}
+                        <Download className="h-5 w-5 ml-2" />
                       </Button>
                     </div>
-
-                    <div className="mt-8 pt-8 border-t border-white/10 flex items-start gap-4">
-                      <div className="h-10 w-10 shrink-0 rounded-full bg-white/10 flex items-center justify-center flex-col gap-0.5">
-                         <AlertCircle className="h-5 w-5 text-white/80" />
-                      </div>
-                      <p className="text-[10px] font-bold text-white/70 leading-relaxed uppercase tracking-tight">
-                        Asegúrate de haber procesado el cuadro de pedidos desde OneDrive antes de generar.
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-lg shadow-slate-200/50">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-4">Estado del Sistema</h4>
-                   <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                         <span className="text-xs font-bold text-slate-600">Base OGL</span>
-                         <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                         <span className="text-xs font-bold text-slate-600">Sync OneDrive</span>
-                         <span className="inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                         <span className="text-xs font-bold text-slate-600">Mapeo Plantillas</span>
-                         <span className="text-[10px] font-black p-1 px-2 bg-slate-100 rounded-lg text-slate-400">OK</span>
-                      </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-[2.5rem] p-8 flex items-start gap-4">
+                   <AlertCircle className="h-6 w-6 text-blue-500 shrink-0" />
+                   <div>
+                      <h4 className="text-xs font-black text-blue-700 uppercase tracking-widest mb-1">Nota de Seguridad</h4>
+                      <p className="text-[10px] font-medium text-blue-600 leading-relaxed uppercase tracking-tight">
+                         Al generar el archivo, las órdenes se marcan como <strong>Finalizadas</strong>. 
+                         Esto bloquea nuevas cargas para estos IDs y archiva el proceso.
+                      </p>
                    </div>
                 </div>
               </div>

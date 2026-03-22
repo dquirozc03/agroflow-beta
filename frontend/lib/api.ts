@@ -779,6 +779,12 @@ export async function apiGetOglNaves(): Promise<string[]> {
   return request<string[]>("/packing-ogl/naves", { method: "GET" });
 }
 
+export async function apiGetOglOrders(nave: string): Promise<{ orden: string; booking: string; finalizado: boolean }[]> {
+  return request<{ orden: string; booking: string; finalizado: boolean }[]>(`/packing-ogl/orders?nave=${encodeURIComponent(nave)}`, {
+    method: "GET",
+  });
+}
+
 export async function apiUploadConfirmacion(file: File): Promise<{ ok: boolean; orders: string[]; pallets_added: number }> {
   const fd = new FormData();
   fd.append("file", file);

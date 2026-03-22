@@ -32,6 +32,7 @@ class PackingConfirmacion(Base):
     lote_ogl: Mapped[Optional[str]] = mapped_column(String(100), nullable=True) # LOTE CLIENTE (OGL)
     total_cajas: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Quantity per grower (cartons)
     codigo_trazabilidad: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    archivo_nombre: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     
     actualizado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

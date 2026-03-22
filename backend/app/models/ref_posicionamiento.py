@@ -74,8 +74,9 @@ class RefPosicionamiento(Base):
     incoterm: Mapped[str | None] = mapped_column(String(50), nullable=True) # INCOTERM
     flete: Mapped[str | None] = mapped_column(String(50), nullable=True) # FLETE
     valor_fob: Mapped[str | None] = mapped_column(String(50), nullable=True) # VALOR FOB
-    peso_bruto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO BRUTO (TOTAL)
-    peso_neto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO NETO (TOTAL)
+    peso_bruto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO BRUTO ESTIMADO
+    peso_neto: Mapped[float | None] = mapped_column(Float, nullable=True)  # PESO NETO ESTIMADO
+    packing_ogl_finalizado: Mapped[bool] = mapped_column(sa.Boolean, default=False, server_default='false')
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

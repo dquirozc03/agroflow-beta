@@ -31,7 +31,7 @@ def format_order(num: int) -> str:
 
 @router.get("/naves")
 def get_ogl_naves(db: Session = Depends(get_db)):
-    """Lista naves únicas que tienen órdenes de clientes OGL"""
+    """Lista naves únicas que tienen órdenes de clientes OGL y NO están finalizadas"""
     # Filtramos clientes OGL en CatClienteIE
     ogl_clients = db.query(CatClienteIE).filter(CatClienteIE.nombre_comercial.ilike("%OGL%")).all()
     if not ogl_clients:
@@ -39,27 +39,48 @@ def get_ogl_naves(db: Session = Depends(get_db)):
     
     ogl_names = [c.nombre_comercial for c in ogl_clients]
     
-    # Buscamos naves en posicionamiento para esos clientes
+    # Buscamos naves en posicionamiento para esos clientes que NO estén finalizadas
+    # Si alguna orden de la nave está pendiente, mostramos la nave.
     naves = db.query(RefPosicionamiento.nave).filter(
         RefPosicionamiento.cliente.in_(ogl_names),
         RefPosicionamiento.nave.isnot(None),
-        RefPosicionamiento.nave != ""
+        RefPosicionamiento.nave != "",
+        RefPosicionamiento.packing_ogl_finalizado == False
     ).distinct().all()
     
     return [n[0] for n in naves if n[0]]
 
+@router.get("/orders")
+def get_ogl_orders(nave: str, db: Session = Depends(get_db)):
+    """Lista las órdenes OGL (pendientes y finalizadas) para una nave específica"""
+    ogl_clients = db.query(CatClienteIE).filter(CatClienteIE.nombre_comercial.ilike("%OGL%")).all()
+    ogl_names = [c.nombre_comercial for c in ogl_clients]
+    
+    rows = db.query(RefPosicionamiento).filter(
+        RefPosicionamiento.nave == nave,
+        RefPosicionamiento.cliente.in_(ogl_names)
+    ).all()
+    
+    return [
+        {
+            "orden": r.orden_beta_final or format_order(clean_numeric(r.o_beta_inicial)),
+            "booking": r.booking,
+            "finalizado": r.packing_ogl_finalizado
+        }
+        for r in rows
+    ]
+
 @router.post("/upload-confirmacion")
 async def upload_confirmacion(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Parsea el Excel de Confirmación y puebla la DB"""
+    """Parsea el Excel de Confirmación y puebla la DB. Bloquea si la orden ya está finalizada."""
     content = await file.read()
     wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
     if "FORMATO" not in wb.sheetnames:
         raise HTTPException(status_code=400, detail="No se encontró la hoja 'FORMATO'")
     
     sheet = wb["FORMATO"]
-    header_row = 6 # Según inspección
+    header_row = 6
     
-    # Limpiar confirmaciones anteriores? (Opcional, mejor por orden)
     processed_orders = set()
     rows_added = 0
     
@@ -69,10 +90,23 @@ async def upload_confirmacion(file: UploadFile = File(...), db: Session = Depend
         
         if not order_raw or not pallet_id: continue
         
-        # Formatear orden
         num_order = clean_numeric(order_raw)
         if not num_order: continue
         order_beta = format_order(num_order)
+
+        # VALIDACIÓN: ¿Está ya finalizada en el posicionamiento?
+        # Buscamos en posicionamiento cualquier coincidencia con este número de orden
+        pos = db.query(RefPosicionamiento).filter(
+            (RefPosicionamiento.orden_beta_final == order_beta) | 
+            (RefPosicionamiento.o_beta_inicial.ilike(f"%{num_order}%"))
+        ).filter(RefPosicionamiento.packing_ogl_finalizado == True).first()
+        
+        if pos:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"La orden {order_beta} ya fue finalizada en un Packing List previo. No se pueden modificar sus datos."
+            )
+
         processed_orders.add(order_beta)
         
         # Upsert Pallet
@@ -90,6 +124,7 @@ async def upload_confirmacion(file: UploadFile = File(...), db: Session = Depend
         conf.lote_ogl = str(sheet.cell(row=r, column=15).value or "").strip()
         conf.codigo_trazabilidad = str(sheet.cell(row=r, column=16).value or "").strip()
         conf.calibre = str(sheet.cell(row=r, column=23).value or "").strip()
+        conf.archivo_nombre = file.filename
         
         try: conf.total_cajas = int(sheet.cell(row=r, column=33).value or 0)
         except: pass
@@ -186,28 +221,57 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
     sheet["B16"] = main_order.etd_booking
     sheet["B17"] = main_order.eta_booking
     
-    # 4. Detalle de Pallets (Iterativo)
+    # 4. Pre-carga de datos para evitar N+1 queries
+    all_order_keys = []
+    all_bookings = []
+    
+    # Marcamos las órdenes como FINALIZADAS para que no se puedan volver a subir archivos para ellas
+    for posic in orders:
+        posic.packing_ogl_finalizado = True
+        
+        order_key = posic.orden_beta_final or format_order(clean_numeric(posic.o_beta_inicial))
+        all_order_keys.append(order_key)
+        all_bookings.append(posic.booking)
+
+    db.commit() # Guardamos el estado finalizado
+
+    # Queries masivas
+    cuadros_map = {cp.orden_beta: cp for cp in db.query(CuadroPedido).filter(CuadroPedido.orden_beta.in_(all_order_keys)).all()}
+    
+    # Confirmaciones agrupadas por orden
+    confs_list = db.query(PackingConfirmacion).filter(PackingConfirmacion.orden_beta.in_(all_order_keys)).all()
+    confs_map = {}
+    for c in confs_list:
+        if c.orden_beta not in confs_map: confs_map[c.orden_beta] = []
+        confs_map[c.orden_beta].append(c)
+        
+    dams_map = {d.booking: d for d in db.query(RefBookingDam).filter(RefBookingDam.booking.in_(all_bookings)).all()}
+    
+    # Termógrafos agrupados por orden
+    terms_list = db.query(PackingTermografo).filter(PackingTermografo.orden_beta.in_(all_order_keys)).all()
+    terms_map = {}
+    for t in terms_list:
+        if t.orden_beta not in terms_map: terms_map[t.orden_beta] = []
+        terms_map[t.orden_beta].append(t)
+
+    # 5. Detalle de Pallets (Iterativo sobre data pre-cargada)
     current_row = 21
     total_pallets_all = 0
     
     for posic in orders:
         order_key = posic.orden_beta_final or format_order(clean_numeric(posic.o_beta_inicial))
         
-        # Info del Cuadro de Pedidos
-        cp = db.query(CuadroPedido).filter(CuadroPedido.orden_beta == order_key).first()
+        cp = cuadros_map.get(order_key)
+        confirmaciones = confs_map.get(order_key, [])
+        dam = dams_map.get(posic.booking)
         
-        # Info de Confirmaciones (Pallets reales)
-        confirmaciones = db.query(PackingConfirmacion).filter(PackingConfirmacion.orden_beta == order_key).all()
-        
-        # Booking DAM (Para contenedor)
-        dam = db.query(RefBookingDam).filter(RefBookingDam.booking == posic.booking).first()
         cont_no = f"MMAU {dam.dam}" if dam and dam.dam else (posic.nro_fcl or "")
         
-        # --- CÁLCULO DE PESOS (Igual que en la IE) ---
+        # --- CÁLCULO DE PESOS ---
         total_u = 0
         try: total_u = int(re.sub(r'[^0-9]', '', str(posic.total_unidades or "0")))
         except: pass
-
+        
         # Peso Caja: Prioridad CuadroPedidos -> cj_kg -> Default 3.8
         peso_caja_val = 3.8
         if cp and cp.peso_caja:
@@ -220,16 +284,16 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         p_neto_total = float(posic.peso_neto or (total_u * peso_caja_val))
         p_bruto_total = float(posic.peso_bruto or (p_neto_total + (total_u * 0.4)))
         
-        # Peso por pallet individual
         total_p_en_orden = float(posic.total_pallet or len(confirmaciones) or 1)
         peso_bruto_pallet = (p_bruto_total / total_p_en_orden) if total_p_en_orden > 0 else 0
         
+        # Mapa de termógrafos de ESTA orden para búsqueda rápida
+        terms_de_orden = {str(t.pallet_id).replace('AR-', ''): t for t in terms_map.get(order_key, [])}
+        
         for conf in confirmaciones:
-            # Buscar Termógrafo
-            term = db.query(PackingTermografo).filter(
-                PackingTermografo.orden_beta == order_key,
-                func.replace(PackingTermografo.pallet_id, 'AR-', '') == func.replace(conf.pallet_id, 'GW-', '')
-            ).first()
+            # Buscar Termógrafo usando el mapa pre-cargado
+            conf_clean_id = str(conf.pallet_id).replace('GW-', '')
+            term = terms_de_orden.get(conf_clean_id)
             
             term_txt = f"THERMOGRAPH: {term.codigo_termografo}" if term else ""
             base_notes = cp.additional_info if cp and cp.additional_info else "WITHOUT LABEL"
@@ -273,10 +337,11 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
     wb.save(temp_file)
     temp_file.seek(0)
     
-    filename = f"PACKING_LIST_OGL_{nave.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    clean_nave = re.sub(r'[^a-zA-Z0-9_\-]', '_', nave)
+    filename = f"PACKING_LIST_OGL_{clean_nave}_{datetime.now().strftime('%Y%m%d')}.xlsx"
     
     return StreamingResponse(
         temp_file, 
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
