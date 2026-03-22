@@ -8,7 +8,7 @@ from alembic import context
 # ====== NUEVO: importa settings + Base + modelos ======
 from app.configuracion import settings
 from app.database import Base
-from app.models import catalogos, unicos, operacion, ref_booking_dam, ref_posicionamiento, auth, auditoria, factura, ie_models  # para que Alembic detecte las tablas
+from app.models import catalogos, unicos, operacion, ref_booking_dam, ref_posicionamiento, auth, auditoria, factura, ie_models, packing_ogl  # para que Alembic detecte las tablas
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

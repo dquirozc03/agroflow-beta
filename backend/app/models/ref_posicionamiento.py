@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from sqlalchemy import String, Integer, DateTime, func
+from sqlalchemy import String, Integer, DateTime, func, Float
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -74,6 +74,8 @@ class RefPosicionamiento(Base):
     incoterm: Mapped[str | None] = mapped_column(String(50), nullable=True) # INCOTERM
     flete: Mapped[str | None] = mapped_column(String(50), nullable=True) # FLETE
     valor_fob: Mapped[str | None] = mapped_column(String(50), nullable=True) # VALOR FOB
+    peso_bruto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO BRUTO (TOTAL)
+    peso_neto: Mapped[float | None] = mapped_column(Float, nullable=True) # PESO NETO (TOTAL)
 
     actualizado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
