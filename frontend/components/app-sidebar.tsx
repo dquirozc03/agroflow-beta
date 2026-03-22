@@ -59,6 +59,13 @@ export function AppSidebar() {
         soon: false,
       },
       {
+        name: "Packing List OGL",
+        icon: "inventory",
+        href: "/packing-ogl",
+        active: pathname === "/packing-ogl",
+        soon: false,
+      },
+      {
         name: "Usuarios",
         icon: "group",
         href: "/usuarios",

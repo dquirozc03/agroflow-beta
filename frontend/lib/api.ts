@@ -771,3 +771,33 @@ export function getDownloadIeUrl(booking: string, observaciones?: string): strin
   }
   return url.pathname + url.search;
 }
+
+// ======================
+// PACKING LIST OGL
+// ======================
+export async function apiGetOglNaves(): Promise<string[]> {
+  return request<string[]>("/packing-ogl/naves", { method: "GET" });
+}
+
+export async function apiUploadConfirmacion(file: File): Promise<{ ok: boolean; orders: string[]; pallets_added: number }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  return request<{ ok: boolean; orders: string[]; pallets_added: number }>("/packing-ogl/upload-confirmacion", {
+    method: "POST",
+    body: fd,
+  });
+}
+
+export async function apiUploadTermografos(file: File): Promise<{ ok: boolean; added: number }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  return request<{ ok: boolean; added: number }>("/packing-ogl/upload-termografos", {
+    method: "POST",
+    body: fd,
+  });
+}
+
+export function getDownloadOglPackingUrl(nave: string): string {
+  const url = new URL(`/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`, window.location.origin);
+  return url.pathname;
+}

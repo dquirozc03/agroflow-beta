@@ -64,6 +64,7 @@ export function canSeeModule(role: UserRole | string, moduleName: string): boole
   if (moduleName === "Usuarios") return canManageUsers(role);
   if (moduleName === "LogiCapture") return role !== "documentaria";
   if (moduleName === "Facturas Logísticas") return role !== "asistente_comercial"; // Ya cubierto arriba pero por claridad
+  if (moduleName === "Packing List OGL") return true; // Visible para todos de momento
 
   return true;
 }
