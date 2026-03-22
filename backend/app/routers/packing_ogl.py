@@ -188,11 +188,18 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"No hay órdenes OGL para la nave {nave}")
     
     # 2. Cargar Plantilla
-    template_path = r"backend\assets\templates\FORMATO PL - OGL.xlsx"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # El archivo está en backend/app/routers/packing_ogl.py
+    # Los assets están en backend/assets/templates/
+    template_path = os.path.join(current_dir, "..", "..", "assets", "templates", "FORMATO PL - OGL.xlsx")
+    
     if not os.path.exists(template_path):
-        # Intentamos path absoluto si falla
+        # Fallback por si la estructura cambia o estamos en local dev root
         template_path = os.path.join(os.getcwd(), "backend", "assets", "templates", "FORMATO PL - OGL.xlsx")
         
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=500, detail=f"No se encontró la plantilla en {template_path}")
+
     wb = openpyxl.load_workbook(template_path)
     sheet = wb.active
     
