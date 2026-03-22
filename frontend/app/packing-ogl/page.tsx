@@ -116,7 +116,7 @@ export default function PackingOglPage() {
     <div className="flex h-screen bg-[#f8fafc]">
       <AppSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <AppHeader title="Generación de Packing List OGL" />
+        <AppHeader />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto space-y-8">

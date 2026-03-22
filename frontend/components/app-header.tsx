@@ -51,6 +51,7 @@ export function AppHeader({ onOpenScanner }: Props) {
     if (pathname === "/auditoria") return { name: "Auditoría", icon: "priority_high" };
     if (pathname === "/logistica/facturas") return { name: "Facturas Logísticas", icon: "package_2" };
     if (pathname === "/usuarios") return { name: "Gestión de Usuarios", icon: "group" };
+    if (pathname === "/packing-ogl") return { name: "Packing List OGL", icon: "inventory" };
 
     // Si está en el root
     if (pathname === "/") {
