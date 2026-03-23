@@ -137,6 +137,73 @@ async def upload_confirmacion(file: UploadFile = File(...), db: Session = Depend
     db.commit()
     return {"ok": True, "orders": list(processed_orders), "pallets_added": rows_added}
 
+@router.post("/upload-confirmacion-raw")
+def upload_confirmacion_raw(payload: List[List[Union[str, int, float, None]]], db: Session = Depends(get_db), x_sync_token: str | None = Header(default=None)):
+    """Versión para Power Automate: Recibe matriz de datos (raw) y puebla PackingConfirmacion"""
+    from app.routers.sync import validar_token, fuzzy_key
+    validar_token(x_sync_token)
+    if not payload or len(payload) < 2: return {"ok": False, "detail": "Datos insuficientes"}
+    
+    raw_headers = payload[0]
+    processed_headers = [fuzzy_key(h) for h in raw_headers]
+    
+    col_map = {
+        "orden": -1, "pallet_id": -1, "cosecha": -1, "proceso": -1, 
+        "lote": -1, "trazabilidad": -1, "calibre": -1, "total_cajas": -1, "peso_neto": -1
+    }
+    
+    for i, h in enumerate(processed_headers):
+        if "ORDEN" == h or "PEDIDO" in h: col_map["orden"] = i
+        if "PALLETID" in h or "GW" in h: col_map["pallet_id"] = i
+        if "COSECHA" in h: col_map["cosecha"] = i
+        if "PROCESO" in h: col_map["proceso"] = i
+        if "LOTE" in h: col_map["lote"] = i
+        if "TRAZABILIDAD" in h: col_map["trazabilidad"] = i
+        if "CALIBRE" in h: col_map["calibre"] = i
+        if "TOTALCAJAS" in h: col_map["total_cajas"] = i
+        if "PESONETO" in h: col_map["peso_neto"] = i
+    
+    if col_map["orden"] == -1 or col_map["pallet_id"] == -1:
+        return {"ok": False, "detail": "Columnas ORDEN o PALLET_ID no encontradas", "headers": processed_headers}
+    
+    added = 0
+    for row in payload[1:]:
+        if not row or len(row) <= max(col_map.values()): continue
+        
+        order_raw = row[col_map["orden"]]
+        pallet_id = str(row[col_map["pallet_id"]] or "").strip()
+        if not order_raw or not pallet_id: continue
+        
+        num_order = clean_numeric(order_raw)
+        if not num_order: continue
+        order_beta = str(order_raw).strip().upper()
+        
+        # Upsert
+        conf = db.query(PackingConfirmacion).filter(
+            PackingConfirmacion.orden_beta == order_beta,
+            PackingConfirmacion.pallet_id == pallet_id
+        ).first()
+        
+        if not conf:
+            conf = PackingConfirmacion(orden_beta=order_beta, pallet_id=pallet_id)
+            db.add(conf)
+            
+        def get_v(key): return row[col_map[key]] if col_map[key] != -1 else None
+
+        conf.fecha_cosecha = str(get_v("cosecha")) if get_v("cosecha") else None
+        conf.fecha_proceso = str(get_v("proceso")) if get_v("proceso") else None
+        conf.lote_ogl = str(get_v("lote") or "").strip()
+        conf.codigo_trazabilidad = str(get_v("trazabilidad") or "").strip()
+        conf.calibre = str(get_v("calibre") or "").strip()
+        try: conf.total_cajas = int(float(get_v("total_cajas") or 0))
+        except: pass
+        try: conf.peso_neto = float(get_v("peso_neto") or 0)
+        except: pass
+        added += 1
+        
+    db.commit()
+    return {"ok": True, "pallets_synced": added}
+
 @router.post("/upload-termografos")
 async def upload_termografos(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Puebla tabla de termógrafos"""
@@ -295,9 +362,9 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
                 sheet.cell(row=current_row, column=6).value = cp.product if cp and cp.product else "POMEGRANATE"
                 sheet.cell(row=current_row, column=7).value = posic.variedad
                 sheet.cell(row=current_row, column=8).value = conf.calibre
-                sheet.cell(row=current_row, column=9).value = cp.peso_caja if cp else "3.8 KG"
-                sheet.cell(row=current_row, column=10).value = ""
-                sheet.cell(row=current_row, column=11).value = cp.carton_content if cp else ""
+                sheet.cell(row=current_row, column=9).value = cp.carton_content if cp else "" # Carton Content (Col I)
+                sheet.cell(row=current_row, column=10).value = "" # Packaging Type (Col J)
+                sheet.cell(row=current_row, column=11).value = "" # Supplier Brand (Col K)
                 sheet.cell(row=current_row, column=12).value = ""
                 sheet.cell(row=current_row, column=13).value = final_note
                 sheet.cell(row=current_row, column=14).value = round(peso_bruto_pallet, 3)
