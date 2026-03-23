@@ -12,10 +12,13 @@ from app.models.auth import Usuario
 
 security = HTTPBearer(auto_error=False)
 
-# En desarrollo se usa un valor por defecto; en producción debe estar definido en env (validado al arranque).
-JWT_SECRET = (settings.JWT_SECRET or "dev-secret-cambiar-en-produccion").strip() or "dev-secret-cambiar-en-produccion"
-JWT_ALGORITHM = settings.JWT_ALGORITHM
-JWT_EXPIRE_MINUTES = settings.JWT_EXPIRE_MINUTES
+# Garantizar secreto para JWT en cualquier entorno
+JWT_SECRET = str(settings.JWT_SECRET or "dev-secret-default-agroflow-2026").strip()
+if not JWT_SECRET:
+    JWT_SECRET = "dev-secret-default-agroflow-2026"
+
+JWT_ALGORITHM = str(settings.JWT_ALGORITHM or "HS256")
+JWT_EXPIRE_MINUTES = int(settings.JWT_EXPIRE_MINUTES or 60)
 
 
 def create_access_token(usuario: str, rol: str, user_id: int) -> str:
