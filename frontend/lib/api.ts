@@ -803,7 +803,18 @@ export async function apiUploadTermografos(file: File): Promise<{ ok: boolean; a
   });
 }
 
+export async function apiGetOglFinalizedNaves(): Promise<string[]> {
+  return request<string[]>("/packing-ogl/finalized", { method: "GET" });
+}
+
+export async function apiReopenOglNave(nave: string): Promise<{ ok: boolean; message: string }> {
+  return request<{ ok: boolean; message: string }>(`/packing-ogl/reopen/${encodeURIComponent(nave)}`, {
+    method: "POST",
+  });
+}
+
 export function getDownloadOglPackingUrl(nave: string): string {
-  const url = new URL(`/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`, window.location.origin);
-  return url.pathname;
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  // En frontend usamos relative si coincide, pero para el link.href necesitamos la URL absoluta o relativa al root
+  return `${base}/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`;
 }

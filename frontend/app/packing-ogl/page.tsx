@@ -17,22 +17,29 @@ import {
   Package,
   X,
   Plus,
-  Trash2
+  Trash2,
+  History,
+  RotateCcw,
+  ExternalLink
 } from "lucide-react";
 import { 
   apiGetOglNaves, 
   apiGetOglOrders,
   apiUploadConfirmacion, 
   apiUploadTermografos, 
-  getDownloadOglPackingUrl 
+  getDownloadOglPackingUrl,
+  apiGetOglFinalizedNaves,
+  apiReopenOglNave
 } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function PackingOglPage() {
   const [naves, setNaves] = useState<string[]>([]);
+  const [finalizedNaves, setFinalizedNaves] = useState<string[]>([]);
   const [selectedNave, setSelectedNave] = useState<string>("");
   const [isLoadingNaves, setIsLoadingNaves] = useState(true);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [naveOrders, setNaveOrders] = useState<{ orden: string; booking: string; finalizado: boolean }[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
@@ -60,10 +67,15 @@ export default function PackingOglPage() {
       setIsLoadingNaves(true);
       const data = await apiGetOglNaves();
       setNaves(data);
+      
+      setIsHistoryLoading(true);
+      const hist = await apiGetOglFinalizedNaves();
+      setFinalizedNaves(hist);
     } catch (error) {
       toast.error("Error al cargar naves");
     } finally {
       setIsLoadingNaves(false);
+      setIsHistoryLoading(false);
     }
   }
 
@@ -86,7 +98,6 @@ export default function PackingOglPage() {
     let successCount = 0;
     const newStatus: {name: string, ok: boolean}[] = [];
 
-    // Procesar Confirmaciones
     for (const file of confFiles) {
       setUploadingStatus(`Subiendo Confirmación: ${file.name}`);
       try {
@@ -99,7 +110,6 @@ export default function PackingOglPage() {
       }
     }
 
-    // Procesar Termógrafos
     for (const file of termFiles) {
       setUploadingStatus(`Subiendo Termógrafo: ${file.name}`);
       try {
@@ -116,7 +126,7 @@ export default function PackingOglPage() {
     setProcessedStatus(newStatus);
 
     if (successCount > 0) {
-      toast.success(`Se procesaron ${successCount} archivos. ¡Revisa la lista!`);
+      toast.success(`Se procesaron ${successCount} archivos.`);
       fetchNaves(); 
       if (selectedNave) fetchOrders(selectedNave);
     }
@@ -126,10 +136,9 @@ export default function PackingOglPage() {
     if (!selectedNave) return;
     try {
       setIsGenerating(true);
-      toast.info("Generando Packing List, por favor espera...", { duration: 5000 });
+      toast.info("Generando Packing List...", { duration: 5000 });
       
       const url = getDownloadOglPackingUrl(selectedNave);
-      
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `PACKING_LIST_OGL_${selectedNave}.xlsx`);
@@ -139,16 +148,26 @@ export default function PackingOglPage() {
       
       toast.success(`Packing List generado para ${selectedNave}.`);
       
-      // Bloqueamos por 5 segundos para que no le den clic mil veces mientras descarga
       setTimeout(() => {
         fetchNaves();
-        setSelectedNave("");
         setIsGenerating(false);
       }, 5000);
       
     } catch (e) {
       toast.error("Error al generar el documento");
       setIsGenerating(false);
+    }
+  };
+
+  const handleReopen = async (nave: string) => {
+    if (!confirm(`¿Estás seguro de REABRIR la nave ${nave}? Esto permitirá volver a subir archivos para sus órdenes.`)) return;
+    try {
+      await apiReopenOglNave(nave);
+      toast.success(`Nave ${nave} reabierta con éxito.`);
+      fetchNaves();
+      if (selectedNave === nave) fetchOrders(nave);
+    } catch (error: any) {
+      toast.error("No se pudo reabrir: " + error.message);
     }
   };
 
@@ -168,10 +187,8 @@ export default function PackingOglPage() {
     setConfFiles([]);
     setTermFiles([]);
     setProcessedStatus([]);
-    toast.info("Lista de archivos limpia");
   };
 
-  // Drag & Drop Handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -194,7 +211,7 @@ export default function PackingOglPage() {
         <AppHeader />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl mx-auto space-y-10">
             
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -208,20 +225,18 @@ export default function PackingOglPage() {
                     <span className="text-xs font-bold text-primary truncate max-w-[200px]">{uploadingStatus}</span>
                   </div>
                 )}
-                <Button variant="outline" size="sm" onClick={clearAll} className="rounded-xl font-bold">
+                <Button variant="outline" size="sm" onClick={clearAll} className="rounded-xl font-bold border-slate-200">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Limpiar Todo
+                  Limpiar Lista
                 </Button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-8 text-slate-900">
                 
-                {/* ZONA DE CARGA MÚLTIPLE */}
-                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl p-8 space-y-8">
-                  
+                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl p-8 space-y-10">
                   {/* Confirmaciones */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -233,43 +248,27 @@ export default function PackingOglPage() {
                       </div>
                       <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition-colors group">
                         <Plus className="h-4 w-4 text-slate-600 group-hover:scale-125 transition-transform" />
-                        <input 
-                          type="file" 
-                          multiple 
-                          className="hidden" 
-                          accept=".xlsx"
-                          onChange={(e) => setConfFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
-                        />
+                        <input type="file" multiple className="hidden" accept=".xlsx" onChange={(e) => setConfFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
                       </label>
                     </div>
-
-                    <div 
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, 'conf')}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[100px]"
-                    >
+                    <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'conf')} className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[100px]">
                       {confFiles.length === 0 && (
                         <div className="col-span-full border-2 border-dashed border-slate-100 rounded-2xl py-8 flex flex-col items-center justify-center text-slate-300">
                           <Upload className="h-8 w-8 mb-2 opacity-50" />
-                          <span className="text-xs font-bold uppercase tracking-widest">Arrastra Confirmaciones aquí</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Arrastra Confirmaciones</span>
                         </div>
                       )}
                       {confFiles.map((file, idx) => {
                         const status = processedStatus.find(p => p.name === file.name);
                         return (
-                          <div key={idx} className={cn(
-                            "flex items-center justify-between p-3 rounded-xl border transition-all",
-                            status?.ok ? "bg-green-50 border-green-100" : status?.ok === false ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100"
-                          )}>
+                          <div key={idx} className={cn("flex items-center justify-between p-3 rounded-xl border transition-all", status?.ok ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100")}>
                             <div className="flex items-center gap-3 truncate">
                               <FileSpreadsheet className={cn("h-4 w-4 shrink-0", status?.ok ? "text-green-500" : "text-blue-400")} />
                               <span className="text-[11px] font-bold text-slate-600 truncate">{file.name}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               {status?.ok && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                              <button onClick={() => removeFile('conf', idx)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                <X className="h-4 w-4" />
-                              </button>
+                              <button onClick={() => removeFile('conf', idx)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="h-4 w-4" /></button>
                             </div>
                           </div>
                         );
@@ -288,43 +287,27 @@ export default function PackingOglPage() {
                       </div>
                       <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 p-2 rounded-lg transition-colors group">
                         <Plus className="h-4 w-4 text-slate-600 group-hover:scale-125 transition-transform" />
-                        <input 
-                          type="file" 
-                          multiple 
-                          className="hidden" 
-                          accept=".xlsx"
-                          onChange={(e) => setTermFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
-                        />
+                        <input type="file" multiple className="hidden" accept=".xlsx" onChange={(e) => setTermFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
                       </label>
                     </div>
-
-                    <div 
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, 'term')}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[100px]"
-                    >
+                    <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'term')} className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[100px]">
                       {termFiles.length === 0 && (
                         <div className="col-span-full border-2 border-dashed border-slate-100 rounded-2xl py-8 flex flex-col items-center justify-center text-slate-300">
                           <Upload className="h-8 w-8 mb-2 opacity-50" />
-                          <span className="text-xs font-bold uppercase tracking-widest">Arrastra Termógrafos aquí</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Arrastra Termógrafos</span>
                         </div>
                       )}
                       {termFiles.map((file, idx) => {
                         const status = processedStatus.find(p => p.name === file.name);
                         return (
-                          <div key={idx} className={cn(
-                            "flex items-center justify-between p-3 rounded-xl border transition-all",
-                            status?.ok ? "bg-green-50 border-green-100" : status?.ok === false ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100"
-                          )}>
+                          <div key={idx} className={cn("flex items-center justify-between p-3 rounded-xl border transition-all", status?.ok ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100")}>
                             <div className="flex items-center gap-3 truncate">
                               <FileSpreadsheet className={cn("h-4 w-4 shrink-0", status?.ok ? "text-green-500" : "text-orange-400")} />
                               <span className="text-[11px] font-bold text-slate-600 truncate">{file.name}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                {status?.ok && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                               <button onClick={() => removeFile('term', idx)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                 <X className="h-4 w-4" />
-                               </button>
+                               <button onClick={() => removeFile('term', idx)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="h-4 w-4" /></button>
                             </div>
                           </div>
                         );
@@ -332,75 +315,69 @@ export default function PackingOglPage() {
                     </div>
                   </div>
 
-                  <Button 
-                    onClick={handleProcessAll}
-                    disabled={(confFiles.length === 0 && termFiles.length === 0) || !!uploadingStatus}
-                    className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-primary transition-all font-black uppercase tracking-widest text-xs"
-                  >
+                  <Button onClick={handleProcessAll} disabled={(confFiles.length === 0 && termFiles.length === 0) || !!uploadingStatus} className="w-full h-14 rounded-2xl bg-[#0f172a] hover:bg-primary transition-all font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10">
                     {uploadingStatus ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Upload className="h-5 w-5 mr-2" />}
-                    Procesar Múltiples Archivos ({confFiles.length + termFiles.length})
+                    Cargar y Procesar {confFiles.length + termFiles.length} Archivos
                   </Button>
+                </div>
+
+                {/* HISTORIAL / REABRIR */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-inner p-8 space-y-6">
+                    <div className="flex items-center gap-3">
+                       <div className="p-2 bg-slate-100 text-slate-600 rounded-lg"><History className="h-5 w-5" /></div>
+                       <h3 className="font-extrabold text-slate-800 tracking-tight">Historial de Naves Finalizadas</h3>
+                    </div>
+                    <div className="space-y-3">
+                       {isHistoryLoading ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /> : finalizedNaves.length === 0 ? (
+                         <p className="text-center py-10 text-slate-400 font-bold text-xs uppercase tracking-widest">No hay naves cerradas aún</p>
+                       ) : (
+                         finalizedNaves.map((n, i) => (
+                           <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all">
+                              <div className="flex items-center gap-3">
+                                 <Ship className="h-4 w-4 text-slate-400" />
+                                 <span className="font-bold text-slate-700">{n}</span>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => handleReopen(n)} className="h-10 rounded-xl hover:bg-orange-50 hover:text-orange-600 font-black text-[10px] uppercase tracking-wider transition-all">
+                                 <RotateCcw className="h-3.5 w-3.5 mr-2" />
+                                 Re-abrir Nave
+                              </Button>
+                           </div>
+                         ))
+                       )}
+                    </div>
                 </div>
               </div>
 
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-primary to-green-600 rounded-[2.5rem] p-8 text-white shadow-2xl">
-                    <h3 className="text-2xl font-black italic tracking-tighter">CONSOLIDACIÓN</h3>
-                    
-                    <div className="mt-8 space-y-6">
+                <div className="bg-gradient-to-br from-primary via-[#0ea5e9] to-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-125 transition-transform duration-700"><Ship className="h-40 w-40" /></div>
+                    <h3 className="text-2xl font-black italic tracking-tighter relative z-10">CONSOLIDACIÓN</h3>
+                    <div className="mt-8 space-y-6 relative z-10">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[2px] text-white/60 ml-1">Elegir Nave</label>
-                        <select 
-                          value={selectedNave}
-                          onChange={(e) => setSelectedNave(e.target.value)}
-                          className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-white/40 glass-effect transition-all"
-                          disabled={isLoadingNaves}
-                        >
+                        <label className="text-[10px] font-black uppercase tracking-[2px] text-white/60 ml-1">Elegir Nave Activa</label>
+                        <select value={selectedNave} onChange={(e) => setSelectedNave(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-white/40 glass-effect transition-all" disabled={isLoadingNaves}>
                           <option value="" className="text-slate-900">Seleccionar...</option>
-                          {naves.map(n => (
-                            <option key={n} value={n} className="text-slate-900">{n}</option>
-                          ))}
+                          {naves.map(n => (<option key={n} value={n} className="text-slate-900">{n}</option>))}
                         </select>
                       </div>
-
-                      {/* Órdenes de la Nave */}
                       {selectedNave && (
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
-                           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
-                              <span>Órdenes Detectadas</span>
-                              <span>Estado</span>
-                           </div>
-                           <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                              {isLoadingOrders ? (
-                                <div className="flex items-center gap-2 py-4 justify-center">
-                                   <Loader2 className="h-4 w-4 animate-spin" />
+                        <div className="bg-black/10 rounded-2xl p-4 border border-white/10 space-y-3">
+                           <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-white/60"><span>Órdenes / Booking</span><span>Estado</span></div>
+                           <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                              {isLoadingOrders ? <div className="flex items-center gap-2 py-4 justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div> : naveOrders.length === 0 ? <p className="text-[10px] text-center py-2 opacity-50 font-bold">Sin órdenes OGL</p> : naveOrders.map((o, i) => (
+                                <div key={i} className={cn("flex items-center justify-between p-2.5 rounded-xl border transition-all", o.finalizado ? "bg-white/5 border-white/5" : "bg-white/20 border-white/10")}>
+                                   <div className="flex flex-col">
+                                      <span className="text-[11px] font-black">{o.orden}</span>
+                                      <span className="text-[9px] opacity-60 font-medium">B: {o.booking}</span>
+                                   </div>
+                                   {o.finalizado ? <span className="text-[7px] px-2 py-0.5 bg-green-500/40 text-white rounded-full font-black uppercase tracking-tighter">CERRADA</span> : <span className="text-[7px] px-2 py-0.5 bg-yellow-500/40 text-white rounded-full font-black uppercase tracking-tighter animate-pulse">PENDIENTE</span>}
                                 </div>
-                              ) : (
-                                naveOrders.map((o, i) => (
-                                  <div key={i} className="flex items-center justify-between bg-white/10 p-2 rounded-lg">
-                                     <div className="flex items-center gap-2">
-                                        <Package className="h-3 w-3 text-white/50" />
-                                        <span className="text-[11px] font-bold">{o.orden}</span>
-                                     </div>
-                                     {o.finalizado ? (
-                                       <span className="text-[8px] px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded border border-green-500/30 font-black">CERRADA</span>
-                                     ) : (
-                                       <span className="text-[8px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-300 rounded border border-yellow-500/30 font-black">PENDIENTE</span>
-                                     )}
-                                  </div>
-                                ))
-                              )}
+                              ))}
                            </div>
                         </div>
                       )}
-
-                      <Button 
-                        onClick={handleDownload}
-                        disabled={!selectedNave || isGenerating || naveOrders.length === 0}
-                        className="w-full h-16 rounded-2xl bg-white text-primary hover:bg-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-sm uppercase tracking-[1px] shadow-xl"
-                      >
-                        {isGenerating ? <Loader2 className="h-6 w-6 animate-spin" /> : "Generar Packing List"}
-                        <Download className="h-5 w-5 ml-2" />
+                      <Button onClick={handleDownload} disabled={!selectedNave || isGenerating || naveOrders.length === 0} className="w-full h-16 rounded-2xl bg-white text-primary hover:bg-slate-100 hover:-translate-y-1 active:translate-y-0 transition-all font-black text-sm uppercase tracking-[1px] shadow-2xl shadow-blue-900/40">
+                        {isGenerating ? <Loader2 className="h-6 w-6 animate-spin" /> : <>Generar Packing List<Download className="h-5 w-5 ml-2" /></>}
                       </Button>
                     </div>
                 </div>
@@ -408,17 +385,15 @@ export default function PackingOglPage() {
                 <div className="bg-blue-50 border border-blue-100 rounded-[2.5rem] p-8 flex items-start gap-4">
                    <AlertCircle className="h-6 w-6 text-blue-500 shrink-0" />
                    <div>
-                      <h4 className="text-xs font-black text-blue-700 uppercase tracking-widest mb-1">Nota de Seguridad</h4>
+                      <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest mb-1">Nota sobre Naves</h4>
                       <p className="text-[10px] font-medium text-blue-600 leading-relaxed uppercase tracking-tight">
-                         Al generar el archivo, las órdenes se marcan como <strong>Finalizadas</strong>. 
-                         Esto bloquea nuevas cargas para estos IDs y archiva el proceso.
+                         Las naves pueden repetirse en cada semana. Al generar el Packing, solo se bloquean las <strong>órdenes específicas</strong> procesadas. Si necesitas corregir algo, usa el historial inferior para re-abrir la nave.
                       </p>
                    </div>
                 </div>
               </div>
 
             </div>
-
           </div>
         </main>
       </div>

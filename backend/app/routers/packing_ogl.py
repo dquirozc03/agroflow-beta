@@ -355,3 +355,57 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+@router.get("/finalized")
+def get_ogl_finalized_naves(db: Session = Depends(get_db)):
+    """Lista naves donde todas sus órdenes OGL están finalizadas"""
+    ogl_clients = db.query(CatClienteIE).filter(CatClienteIE.nombre_comercial.ilike("%OGL%")).all()
+    if not ogl_clients: return []
+    ogl_names = [c.nombre_comercial for c in ogl_clients]
+    
+    # Buscamos todas las naves
+    all_naves = db.query(RefPosicionamiento.nave).filter(
+        RefPosicionamiento.cliente.in_(ogl_names),
+        RefPosicionamiento.nave.isnot(None),
+        RefPosicionamiento.nave != ""
+    ).distinct().all()
+    
+    finalized = []
+    for nave_row in all_naves:
+        nave = nave_row[0]
+        # Verificar si TODAS las órdenes de esta nave están finalizadas
+        total = db.query(RefPosicionamiento).filter(
+            RefPosicionamiento.nave == nave,
+            RefPosicionamiento.cliente.in_(ogl_names)
+        ).count()
+        
+        finalizadas = db.query(RefPosicionamiento).filter(
+            RefPosicionamiento.nave == nave,
+            RefPosicionamiento.cliente.in_(ogl_names),
+            RefPosicionamiento.packing_ogl_finalizado == True
+        ).count()
+        
+        if total > 0 and total == finalizadas:
+            finalized.append(nave)
+            
+    return finalized
+
+@router.post("/reopen/{nave}")
+def reopen_ogl_nave(nave: str, db: Session = Depends(get_db)):
+    """Reabre una nave (anula el bloqueo de finalización) parea permitir corregir archivos"""
+    ogl_clients = db.query(CatClienteIE).filter(CatClienteIE.nombre_comercial.ilike("%OGL%")).all()
+    ogl_names = [c.nombre_comercial for c in ogl_clients]
+    
+    rows = db.query(RefPosicionamiento).filter(
+        RefPosicionamiento.nave == nave,
+        RefPosicionamiento.cliente.in_(ogl_names)
+    ).all()
+    
+    if not rows:
+        raise HTTPException(status_code=404, detail="Nave no encontrada")
+        
+    for r in rows:
+        r.packing_ogl_finalizado = False
+        
+    db.commit()
+    return {"ok": True, "message": f"Nave {nave} reabierta con éxito"}
