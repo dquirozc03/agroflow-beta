@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Integer, String, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,7 +15,6 @@ class RegistroEvento(Base):
 
     registro_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("ope_registros.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
