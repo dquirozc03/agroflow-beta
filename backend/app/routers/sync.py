@@ -333,9 +333,9 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
             if ruc_val or nom_trans:
                 trans = None
                 if ruc_val: trans = db.query(Transportista).filter(Transportista.ruc == ruc_val).first()
-                if not trans and nom_trans: trans = db.query(Transportista).filter(Transportista.razon_social == nom_trans).first()
+                if not trans and nom_trans: trans = db.query(Transportista).filter(Transportista.nombre_transportista == nom_trans).first()
                 if not trans and nom_trans:
-                    trans = Transportista(razon_social=nom_trans, ruc=ruc_val)
+                    trans = Transportista(nombre_transportista=nom_trans, ruc=ruc_val or "00000000000", codigo_sap=f"TEMP-{nom_trans[:20]}")
                     db.add(trans); db.flush()
                 if trans: t_id = trans.id
 
@@ -354,7 +354,12 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                 if not chof and lic_val: chof = db.query(Chofer).filter(func.upper(Chofer.licencia) == lic_val.upper()).first()
                 
                 if not chof and nombres_raw:
-                    chof = Chofer(nombre_completo=nombres_raw, dni=dni_val, licencia=lic_val)
+                    # Parseo simple de nombres: PrimerNombre ApellidoPaterno ApellidoMaterno
+                    partes = nombres_raw.split()
+                    p_nom = partes[0] if len(partes) > 0 else "CHOFER"
+                    p_ape = partes[1] if len(partes) > 1 else "PENDIENTE"
+                    m_ape = partes[2] if len(partes) > 2 else None
+                    chof = Chofer(dni=dni_val or f"TEMP-{nombres_raw[:10]}", primer_nombre=p_nom, apellido_paterno=p_ape, apellido_materno=m_ape, licencia=lic_val)
                     db.add(chof); db.flush()
                 if chof:
                     if lic_val: chof.licencia = lic_val
