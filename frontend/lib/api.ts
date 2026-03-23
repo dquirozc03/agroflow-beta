@@ -114,3 +114,12 @@ export async function checkApiHealth(): Promise<boolean> {
 export async function apiMe(): Promise<any> {
   return request<any>("/auth/me");
 }
+
+/** Permite al usuario cambiar su propia contraseña */
+export async function apiUpdateOwnPassword(payload: any): Promise<void> {
+  return request<void>("/auth/cambiar-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}

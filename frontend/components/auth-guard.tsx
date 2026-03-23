@@ -1,17 +1,17 @@
+// frontend/components/auth-guard.tsx
 "use client";
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { WakingOverlay } from "@/components/waking-overlay";
-import { ChangePasswordModal } from "@/components/change-password-modal";
 
-const PUBLIC_PATHS = ["/login", "/scanner"];
+const PUBLIC_PATHS = ["/login"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
+  
   const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
@@ -22,31 +22,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, user, isPublic, router]);
 
-  // Ruta pública (login): siempre mostrar
-  if (isPublic) {
-    return (
-      <>
-        {children}
-        <WakingOverlay />
-      </>
-    );
-  }
+  // Si es una ruta pública, permitir siempre
+  if (isPublic) return <>{children}</>;
 
-  // Ruta protegida: Si está cargando o no hay usuario, no renderizar children (evita flash)
-  if (isLoading) return null;
-  if (!user) return null;
+  // Si está cargando o no hay usuario en ruta protegida, no mostrar nada (evita parpadeo)
+  if (isLoading || !user) return null;
 
-  // Intercepción: Si el usuario requiere cambio de password
-  if (user?.requiere_cambio_password) {
-    router.replace("/login");
-    return null;
-  }
-
-  // Shell inmediato: mostramos la app aunque esté cargando o despertando el backend
-  return (
-    <>
-      {children}
-      <WakingOverlay />
-    </>
-  );
+  // Renderizar la aplicación
+  return <>{children}</>;
 }
