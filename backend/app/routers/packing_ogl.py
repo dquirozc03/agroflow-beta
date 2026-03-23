@@ -258,7 +258,8 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
             if not num_key: continue
             cp = cuadros_map.get(format_order(num_key))
             confirmaciones = confs_map.get(num_key, [])
-            cont_no = posic.nro_fcl or ""
+            # Contenedor sin guion según user:
+            cont_no = (posic.nro_fcl or "").replace("-", "")
             
             # Cálculo de Pesos
             total_u = 0
@@ -280,9 +281,12 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
             for conf in confirmaciones:
                 conf_clean_id = str(conf.pallet_id).replace('GW-', '')
                 term = terms_de_orden.get(conf_clean_id)
-                term_txt = term.codigo_termografo if term else ""
+                # Validar termógrafo (Debe tener letras o números reales)
+                term_raw = str(term.codigo_termografo or "").strip() if term else ""
+                term_txt = term_raw if any(c.isalnum() for c in term_raw) else ""
+                
                 base_notes = cp.additional_info if cp and cp.additional_info else "WITHOUT LABEL"
-                final_note = f"{base_notes} - {term_txt}" if term_txt else base_notes
+                final_note = f"{base_notes} - {term_txt}" if term_txt else (base_notes or "WITHOUT LABEL")
 
                 sheet.cell(row=current_row, column=2).value = ""
                 sheet.cell(row=current_row, column=3).value = conf.pallet_id

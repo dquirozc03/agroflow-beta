@@ -331,7 +331,7 @@ def sync_pedidos_pallets_raw(payload: List[List[Union[str, int, float, None]]], 
             if "PRODUCT" in h: col_map["product"] = i
             if "PESO" in h and "CAJA" in h: col_map["peso_caja"] = i
             if "HOUSEGLN" in h: col_map["house_gln"] = i
-            if "CAJASPORPALLET" in h: col_map["cajas_por_pallet"] = i
+            if "CAJAPORPALLET" in h or "CAJAPORPALET" in h or "CAJAPALLET" in h: col_map["cajas_por_pallet"] = i
             if (("TIPO" in h and "CAJA" in h) or "CARTONCONTENT" in h): col_map["carton_content"] = i
             if ("ADDITIONAL" in h or "NOTES" in h): col_map["notes"] = i
         if col_map["orden"] == -1: return {"ok": False, "detail": "Columna ORDEN no encontrada"}
