@@ -16,7 +16,7 @@ if settings.ENVIRONMENT == "production":
     engine_kwargs["pool_timeout"] = settings.DB_POOL_TIMEOUT
 
 engine = create_engine(
-    settings.DATABASE_URL, 
+    settings.DATABASE_URL.strip(), 
     **engine_kwargs
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
