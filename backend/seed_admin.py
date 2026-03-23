@@ -24,7 +24,7 @@ def seed():
             rol="administrador",
             password_hash=hash_password("Agro2026!"), # Contraseña inicial segura
             activo=True,
-            requiere_cambio_password=True
+            requiere_cambio_password=False
         )
         db.add(nuevo_admin)
         db.commit()
