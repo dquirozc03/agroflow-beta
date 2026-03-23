@@ -4,8 +4,9 @@ from sqlalchemy import text
 if __name__ == "__main__":
     with engine.connect() as conn:
         try:
-            conn.execute(text("ALTER TABLE ie_registros_historial ADD COLUMN estado VARCHAR(50) DEFAULT 'ACTIVO' NOT NULL"))
+            conn.execute(text("ALTER TABLE ie_registros_historial ADD COLUMN IF NOT EXISTS estado VARCHAR(50) DEFAULT 'ACTIVO'"))
+            conn.execute(text("ALTER TABLE packing_cuadro_pedidos ADD COLUMN IF NOT EXISTS carton_content VARCHAR(100)"))
             conn.commit()
-            print("Migration successful")
+            print("Migrations successful")
         except Exception as e:
-            print("Migration failed or already applied:", e)
+            print("Some migrations might have failed or are already applied:", e)
