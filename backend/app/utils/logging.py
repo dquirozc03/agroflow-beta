@@ -1,13 +1,8 @@
 import logging
 import sys
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-
-# Configuración básica
-LOG_PATH = Path("logs")
-LOG_PATH.mkdir(exist_ok=True)
 
 def setup_logging():
+    # Configuración básica en consola para Render/Cloud
     logger = logging.getLogger("agroflow")
     logger.setLevel(logging.INFO)
 
@@ -17,20 +12,15 @@ def setup_logging():
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    # Handler para consola
+    # Handler para consola (Stdout) — Render captura esto automáticamente
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
+    
+    # Limpiamos handlers previos por si acaso (para evitar duplicados en recargas)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+        
     logger.addHandler(console_handler)
-
-    # Handler para archivo (rotativo: 5MB por archivo, máximo 5 backups)
-    file_handler = RotatingFileHandler(
-        LOG_PATH / "agroflow.log",
-        maxBytes=5 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
 
     return logger
 
