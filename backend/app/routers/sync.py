@@ -296,7 +296,8 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
         WHITELIST_MAP = {
             fuzzy_key("BOOKING"): "booking", fuzzy_key("DAM"): "dam", fuzzy_key("CONTENEDOR"): "contenedor",
             fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista", fuzzy_key("RUC"): "ruc", fuzzy_key("CHOFER"): "conductor",
-            fuzzy_key("PLACA DE TRACTO"): "placa_tracto", fuzzy_key("PLACA DE CARRETA"): "placa_carreta", fuzzy_key("LICENCIA"): "licencia"
+            fuzzy_key("PLACA DE TRACTO"): "placa_tracto", fuzzy_key("PLACA DE CARRETA"): "placa_carreta", 
+            fuzzy_key("LICENCIA"): "licencia", fuzzy_key("PLACAS"): "placas"
         }
         col_indices = {WHITELIST_MAP[h]: i for i, h in enumerate(processed_headers) if h in WHITELIST_MAP}
         if "booking" not in col_indices: return {"ok": False, "detail": "No se encontró BOOKING"}
@@ -322,11 +323,7 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                 cont = format_container_number(val_cont)
                 if cont:
                     db_dam.awb = cont
-                    if posic:
-                        if posic.nro_fcl and posic.nro_fcl != cont:
-                            # Opcional: Log discrepancia
-                            pass
-                        posic.nro_fcl = cont
+                    if posic: posic.nro_fcl = cont
 
             # --- 2. Transportista ---
             t_id = None
@@ -368,13 +365,26 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
             p_tracto = normalizar(str(row[col_indices["placa_tracto"]] or "").strip()) if "placa_tracto" in col_indices else None
             p_carreta = normalizar(str(row[col_indices["placa_carreta"]] or "").strip()) if "placa_carreta" in col_indices else None
             
+            # Fallback si vienen juntas en una columna "PLACAS" (Ej: ALX-713/ATE-983)
+            if not p_tracto and "placas" in col_indices:
+                val_pl = str(row[col_indices["placas"]] or "").strip()
+                if val_pl:
+                    # Dividir por /, - o espacio si hay una configuración de placa-placa
+                    splits = re.split(r'[/]', val_pl)
+                    if len(splits) > 1:
+                        p_tracto = splits[0].strip()
+                        p_carreta = splits[1].strip()
+                    else:
+                        p_tracto = val_pl
+
             if p_tracto:
-                clean_p = re.sub(r'[^A-Z0-9]', '', p_tracto)
-                veh = db.query(Vehiculo).filter(Vehiculo.placas == clean_p).first()
+                clean_pt = re.sub(r'[^A-Z0-9]', '', p_tracto.upper())
+                clean_pc = re.sub(r'[^A-Z0-9]', '', p_carreta.upper()) if p_carreta else None
+                veh = db.query(Vehiculo).filter(Vehiculo.placas == clean_pt).first()
                 if not veh:
-                    veh = Vehiculo(placas=clean_p, tipo="TRACTO")
+                    veh = Vehiculo(placas=clean_pt, tipo="TRACTO")
                     db.add(veh); db.flush()
-                veh.placa_carreta = p_carreta
+                if clean_pc: veh.placa_carreta = clean_pc
                 v_id = veh.id
 
             # Vincular a la DAM
