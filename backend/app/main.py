@@ -57,6 +57,16 @@ async def lifespan(app: FastAPI):
         logger.warning("Tabla cat_plantas no existe aún. Omitiendo semillado inicial.")
     except Exception as e:
         logger.error(f"Error en semillado: {e}")
+    
+    # Asegurar columna carton_content
+    try:
+        db.execute(sqlalchemy.text("ALTER TABLE packing_cuadro_pedidos ADD COLUMN IF NOT EXISTS carton_content VARCHAR(100)"))
+        db.commit()
+        logger.info("Columna carton_content verificada/añadida.")
+    except Exception as e:
+        logger.warning(f"No se pudo añadir carton_content automáticamente: {e}")
+        db.rollback()
+    
     finally:
         db.close()
     
