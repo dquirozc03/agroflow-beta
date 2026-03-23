@@ -3,7 +3,7 @@ import openpyxl
 import re
 import io
 from datetime import datetime, date
-from typing import List, Optional
+from typing import List, Optional, Union
 from collections import defaultdict
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Header
 from fastapi.responses import StreamingResponse
