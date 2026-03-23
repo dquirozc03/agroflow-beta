@@ -763,14 +763,6 @@ export async function anularIe(booking: string): Promise<{ ok: boolean; anulados
   return request<{ ok: boolean; anulados: number }>(`/ie/anular/${encodeURIComponent(booking)}`, { method: "PUT" });
 }
 
-export function getDownloadIeUrl(booking: string, observaciones?: string): string {
-  // Retorna la URL relativa para que el navegador inicie la descarga
-  const url = new URL(`/api/v1/ie/generate/${encodeURIComponent(booking)}`, window.location.origin);
-  if (observaciones) {
-      url.searchParams.set("observaciones", observaciones);
-  }
-  return url.pathname + url.search;
-}
 
 // ======================
 // PACKING LIST OGL
@@ -814,7 +806,14 @@ export async function apiReopenOglNave(nave: string): Promise<{ ok: boolean; mes
 }
 
 export function getDownloadOglPackingUrl(nave: string): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  // En frontend usamos relative si coincide, pero para el link.href necesitamos la URL absoluta o relativa al root
-  return `${base}/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`;
+  // Siempre usar la ruta relativa al dominio actual para que pase por el proxy de Next.js
+  return `/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`;
+}
+
+export function getDownloadIeUrl(booking: string, observaciones?: string): string {
+  let url = `/api/v1/ie/generate/${encodeURIComponent(booking)}`;
+  if (observaciones) {
+      url += `?observaciones=${encodeURIComponent(observaciones)}`;
+  }
+  return url;
 }
