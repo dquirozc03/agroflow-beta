@@ -16,9 +16,13 @@ _cors_origins = [
     o.strip() for o in (settings.CORS_ORIGINS or "").split(",") if o.strip()
 ] or _default_origins
 
+# Configuración inteligente de CORS
+_allow_all = "*" in _cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=[] if _allow_all else _cors_origins,
+    allow_origin_regex=".*" if _allow_all else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
