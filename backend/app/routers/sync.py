@@ -384,12 +384,27 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
 
             if p_tracto:
                 clean_pt = re.sub(r'[^A-Z0-9]', '', p_tracto.upper())
-                clean_pc = re.sub(r'[^A-Z0-9]', '', p_carreta.upper()) if p_carreta else None
-                veh = db.query(Vehiculo).filter(Vehiculo.placas == clean_pt).first()
+                # Concatenar para busqueda/guardado de placas
+                p_carreta_val = p_carreta.upper() if p_carreta else None
+                clean_pc = re.sub(r'[^A-Z0-9]', '', p_carreta_val) if p_carreta_val else None
+                full_placas = f"{clean_pt}/{clean_pc}" if clean_pc else clean_pt
+                
+                veh = db.query(Vehiculo).filter(Vehiculo.placas == full_placas).first()
                 if not veh:
-                    veh = Vehiculo(placas=clean_pt, tipo="TRACTO")
+                    # Crear con mínimos requeridos (el usuario completará en el formulario)
+                    veh = Vehiculo(
+                        placas=full_placas,
+                        placa_tracto=clean_pt,
+                        placa_carreta=clean_pc,
+                        largo_tracto=0.0, ancho_tracto=0.0, alto_tracto=0.0,
+                        largo_carreta=0.0, ancho_carreta=0.0, alto_carreta=0.0,
+                        configuracion_vehicular="T3/S3",
+                        peso_neto_tracto=0, peso_neto_carreta=0,
+                        peso_bruto_vehicular=48000
+                    )
                     db.add(veh); db.flush()
-                if clean_pc: veh.placa_carreta = clean_pc
+                else:
+                    if clean_pc: veh.placa_carreta = clean_pc
                 v_id = veh.id
 
             # Vincular a la DAM
