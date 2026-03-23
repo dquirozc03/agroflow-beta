@@ -215,21 +215,21 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
     if cliente_ie and cliente_ie.notificante_bl:
         notify_full = cliente_ie.notificante_bl.split("\n")[0]
     
-    sheet["B2"] = "1101613" # Supplier ID
-    sheet["B3"] = "COMPLEJO AGROINDUSTRIAL BETA S.A."
-    sheet["B4"] = "WK471" # Default según user
-    sheet["B5"] = datetime.now().strftime("%d/%m/%Y")
-    sheet["B6"] = main_order.incoterm
-    sheet["B7"] = "VESSEL"
-    sheet["B8"] = nave
-    sheet["B10"] = "1041374"
-    sheet["B11"] = notify_full
-    sheet["B12"] = "PEPAI"
-    sheet["B13"] = main_order.pol
-    sheet["B14"] = "NLRTM"
-    sheet["B15"] = main_order.destino_booking
-    sheet["B16"] = main_order.etd_booking
-    sheet["B17"] = main_order.eta_booking
+    sheet["C2"] = "1101613" # Supplier ID
+    sheet["C3"] = "COMPLEJO AGROINDUSTRIAL BETA S.A."
+    sheet["C4"] = "WK471" # Default según user
+    sheet["C5"] = datetime.now().strftime("%d/%m/%Y")
+    sheet["C6"] = main_order.incoterm
+    sheet["C7"] = "VESSEL"
+    sheet["C8"] = nave
+    sheet["C10"] = "1041374"
+    sheet["C11"] = notify_full
+    sheet["C12"] = "PEPAI"
+    sheet["C13"] = main_order.pol
+    sheet["C14"] = "NLRTM"
+    sheet["C15"] = main_order.destino_booking
+    sheet["C16"] = main_order.etd_booking
+    sheet["C17"] = main_order.eta_booking
     
     # 4. Normalización y Pre-carga (Cruce Robusto)
     # Ordenamos órdenes numéricamente para que salgan en orden (BAM-01, BAM-02...)
@@ -274,9 +274,9 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         bam_key = format_order(num_key)
         cp = cuadros_map.get(bam_key)
         confirmaciones = confs_map.get(num_key, [])
-        dam = dams_map.get(posic.booking)
         
-        cont_no = f"MMAU {dam.dam}" if dam and dam.dam else (posic.nro_fcl or "")
+        # El número de contenedor ahora se saca puro del posicionamiento (que ya se sincroniza en sync.py)
+        cont_no = posic.nro_fcl or ""
         
         # --- CÁLCULO DE PESOS ---
         total_u = 0
@@ -306,7 +306,7 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
             conf_clean_id = str(conf.pallet_id).replace('GW-', '')
             term = terms_de_orden.get(conf_clean_id)
             
-            term_txt = f"THERMOGRAPH: {term.codigo_termografo}" if term else ""
+            term_txt = term.codigo_termografo if term else ""
             base_notes = cp.additional_info if cp and cp.additional_info else "WITHOUT LABEL"
             final_note = f"{base_notes} - {term_txt}" if term_txt else base_notes
 
@@ -315,12 +315,12 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
             sheet.cell(row=current_row, column=3).value = conf.pallet_id
             sheet.cell(row=current_row, column=4).value = cont_no
             sheet.cell(row=current_row, column=5).value = "" # Article Ref
-            sheet.cell(row=current_row, column=6).value = cp.product if cp else "POMEGRANATE"
+            sheet.cell(row=current_row, column=6).value = cp.product if cp and cp.product else "POMEGRANATE"
             sheet.cell(row=current_row, column=7).value = posic.variedad
             sheet.cell(row=current_row, column=8).value = conf.calibre
             sheet.cell(row=current_row, column=9).value = cp.peso_caja if cp else "3.8 KG"
-            sheet.cell(row=current_row, column=10).value = "" # Pack Type
-            sheet.cell(row=current_row, column=11).value = "" # Brand
+            sheet.cell(row=current_row, column=10).value = "" # Brand (Empty)
+            sheet.cell(row=current_row, column=11).value = cp.carton_content if cp else "" # Carton Content (TIPO DE CAJA)
             sheet.cell(row=current_row, column=12).value = "" # Harvest Product
             sheet.cell(row=current_row, column=13).value = final_note
             sheet.cell(row=current_row, column=14).value = round(peso_bruto_pallet, 3)

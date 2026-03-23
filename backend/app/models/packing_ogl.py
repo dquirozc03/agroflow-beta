@@ -14,6 +14,7 @@ class CuadroPedido(Base):
     peso_caja: Mapped[Optional[float]] = mapped_column(Float, nullable=True) # Carton Content (Peso por caja)
     house_gln: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) # Pack. House GLN
     cajas_por_pallet: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Quantity per pallet
+    carton_content: Mapped[Optional[str]] = mapped_column(String(100), nullable=True) # Tipo de Caja
     additional_info: Mapped[Optional[str]] = mapped_column(String(255), nullable=True) # Notes
     
     actualizado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import re
 
 from app.database import get_db
-from app.utils.unicidad import format_container_number, normalizar
+from app.utils.unicidad import format_container_number
 from app.configuracion import settings
 from app.models.ref_posicionamiento import RefPosicionamiento
 from app.models.ref_booking_dam import RefBookingDam
@@ -24,11 +25,9 @@ def normalize_header(h: str) -> str:
     """Remueve acentos y caracteres especiales para matching robusto"""
     if not h: return ""
     h = str(h).upper().strip()
-    # Reemplazo manual de acentos comunes
     repls = {"Á": "A", "É": "E", "Í": "I", "Ó": "O", "Ú": "U", "Ñ": "N"}
     for k, v in repls.items():
         h = h.replace(k, v)
-    # Solo dejar letras y números
     return re.sub(r'[^A-Z0-9]', '', h)
 
 def fuzzy_key(h: str) -> str:
@@ -44,15 +43,12 @@ class DamItem(BaseModel):
     dam: Optional[str] = None
 
 class PosicionamientoItem(BaseModel):
-    # Identificación y Status
     booking: str = Field(alias="BOOKING")
     status_fcl: Optional[str] = Field(None, alias="STATUS - FCL")
     status_beta_text: Optional[str] = Field(None, alias="O/BETA (STATUS FINAL)")
     planta_empacadora: Optional[str] = Field(None, alias="PLT. EMPACADORA")
     cultivo: Optional[str] = Field(None, alias="CULTIVO")
     nave: Optional[str] = Field(None, alias="NAVE")
-    
-    # Fechas y Tránsito
     etd_booking: Optional[str] = Field(None, alias="ETD BOOKING")
     eta_booking: Optional[str] = Field(None, alias="ETA BOOKING")
     week_eta_booking: Optional[str] = Field(None, alias="WEEK ETA BOOKING")
@@ -63,8 +59,6 @@ class PosicionamientoItem(BaseModel):
     dias_tt_real: Optional[int] = Field(None, alias="DIAS TT. REAL")
     week_debe_arribar: Optional[str] = Field(None, alias="WEEK DEBE ARRIBAR")
     pol: Optional[str] = Field(None, alias="POL")
-    
-    # Órdenes y Cliente
     o_beta_inicial: Optional[str] = Field(None, alias="O/BETA INICIAL")
     orden_beta_final: Optional[str] = Field(None, alias="O/BETA FINAL")
     cliente: Optional[str] = Field(None, alias="CLIENTE")
@@ -73,14 +67,10 @@ class PosicionamientoItem(BaseModel):
     po_number: Optional[str] = Field(None, alias="PO")
     destino_booking: Optional[str] = Field(None, alias="DESTINO (BOOKING)")
     pais_booking: Optional[str] = Field(None, alias="PAIS (BOOKING)")
-    
-    # Equipo
     nro_fcl: Optional[str] = Field(None, alias="N° FCL")
     deposito_retiro: Optional[str] = Field(None, alias="DEPOT DE RETIRO")
     operador: Optional[str] = Field(None, alias="OPERADOR")
     naviera: Optional[str] = Field(None, alias="NAVIERA")
-    
-    # Parámetros Carga
     termoregistros: Optional[str] = Field(None, alias="TERMOREGISTROS")
     ac_option: Optional[str] = Field(None, alias="AC")
     ct_option: Optional[str] = Field(None, alias="C/T")
@@ -88,14 +78,10 @@ class PosicionamientoItem(BaseModel):
     temperatura: Optional[str] = Field(None, alias="T°")
     humedad: Optional[str] = Field(None, alias="HUMEDAD")
     filtros: Optional[str] = Field(None, alias="FILTROS")
-    
-    # Producción
     hora_solicitada_operador: Optional[str] = Field(None, alias="HORA SOLICITADA (OPERADOR)")
     fecha_solicitada_operador: Optional[str] = Field(None, alias="FECHA SOLICITADA (OPERADOR)")
     fecha_real_llenado: Optional[str] = Field(None, alias="FECHA REAL DE LLENADO")
     week_llenado: Optional[str] = Field(None, alias="WEEK LLENADO")
-    
-    # Mercadería
     variedad: Optional[str] = Field(None, alias="VARIEDAD")
     tipo_caja: Optional[str] = Field(None, alias="TIPO DE CAJA")
     etiqueta_caja: Optional[str] = Field(None, alias="ETIQUETA CAJA")
@@ -104,8 +90,6 @@ class PosicionamientoItem(BaseModel):
     cj_kg: Optional[str] = Field(None, alias="CJ/KG")
     total_unidades: Optional[int] = Field(None, alias="TOTAL")
     total_pallet: Optional[int] = Field(None, alias="TOTAL DE PALLETS")
-    
-    # Logística
     incoterm: Optional[str] = Field(None, alias="INCOTERM")
     flete: Optional[str] = Field(None, alias="FLETE")
 
@@ -119,24 +103,20 @@ def sync_posicionamiento(
 ):
     validar_token(x_sync_token)
     items = [payload] if isinstance(payload, PosicionamientoItem) else payload
-
     upserts = 0
     for it in items:
         booking = normalizar(it.booking)
         if not booking: continue
-
         row = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
         if not row:
             row = RefPosicionamiento(booking=booking)
             db.add(row)
         
-        # Mapeo Optimizando (45 campos)
         row.status_fcl = normalizar(it.status_fcl)
         row.status_beta_text = normalizar(it.status_beta_text)
         row.planta_empacadora = normalizar(it.planta_empacadora)
         row.cultivo = normalizar(it.cultivo)
         row.nave = normalizar(it.nave)
-        
         row.etd_booking = normalizar(it.etd_booking)
         row.eta_booking = normalizar(it.eta_booking)
         row.week_eta_booking = normalizar(it.week_eta_booking)
@@ -147,18 +127,14 @@ def sync_posicionamiento(
         row.dias_tt_real = it.dias_tt_real
         row.week_debe_arribar = normalizar(it.week_debe_arribar)
         row.pol = normalizar(it.pol)
-        
         row.o_beta_inicial = normalizar(it.o_beta_inicial)
         row.orden_beta_final = normalizar(it.orden_beta_final)
         
-        # Manejo de Cliente y Recibidor (Separar por '-' ej: OGL-VDH)
         cliente_ref = normalizar(it.cliente)
         recibidor_ref = normalizar(it.recibidor)
-        
         if cliente_ref and "-" in cliente_ref:
             partes = [p.strip() for p in cliente_ref.split("-", 1)]
             row.cliente = partes[0]
-            # Solo sobreescribe recibidor si el original viene vacío
             if not recibidor_ref and len(partes) > 1:
                 row.recibidor = partes[1]
             else:
@@ -171,12 +147,10 @@ def sync_posicionamiento(
         row.po_number = normalizar(it.po_number)
         row.destino_booking = normalizar(it.destino_booking)
         row.pais_booking = normalizar(it.pais_booking)
-        
         row.nro_fcl = format_container_number(it.nro_fcl)
         row.deposito_retiro = normalizar(it.deposito_retiro)
         row.operador = normalizar(it.operador)
         row.naviera = normalizar(it.naviera)
-        
         row.termoregistros = normalizar(it.termoregistros)
         row.ac_option = normalizar(it.ac_option)
         row.ct_option = normalizar(it.ct_option)
@@ -184,12 +158,10 @@ def sync_posicionamiento(
         row.temperatura = normalizar(it.temperatura)
         row.humedad = normalizar(it.humedad)
         row.filtros = normalizar(it.filtros)
-        
         row.hora_solicitada_operador = normalizar(it.hora_solicitada_operador)
         row.fecha_solicitada_operador = normalizar(it.fecha_solicitada_operador)
         row.fecha_real_llenado = normalizar(it.fecha_real_llenado)
         row.week_llenado = normalizar(it.week_llenado)
-        
         row.variedad = normalizar(it.variedad)
         row.tipo_caja = normalizar(it.tipo_caja)
         row.etiqueta_caja = normalizar(it.etiqueta_caja)
@@ -198,12 +170,9 @@ def sync_posicionamiento(
         row.cj_kg = normalizar(it.cj_kg)
         row.total_unidades = normalizar(str(it.total_unidades)) if it.total_unidades is not None else None
         row.total_pallet = it.total_pallet
-        
         row.incoterm = normalizar(it.incoterm)
         row.flete = normalizar(it.flete)
-        
         upserts += 1
-
     db.commit()
     return {"ok": True, "upserts": upserts}
 
@@ -216,12 +185,8 @@ def sync_posicionamiento_raw(
     validar_token(x_sync_token)
     if not payload or len(payload) < 2:
         return {"ok": False, "detail": "Datos insuficientes"}
-
-    # 1. Normalización de cabeceras (Fuzzy Matching Global)
-
     raw_headers = payload[0]
     processed_headers = [fuzzy_key(h) for h in raw_headers]
-    
     WHITELIST_MAP = {
         fuzzy_key("BOOKING"): "booking",
         fuzzy_key("STATUS - FCL"): "status_fcl",
@@ -275,121 +240,39 @@ def sync_posicionamiento_raw(
         fuzzy_key("INCOTERM"): "incoterm",
         fuzzy_key("FLETE"): "flete"
     }
-
     col_indices = {}
-    matched_debug = {}
     for i, h in enumerate(processed_headers):
         if h in WHITELIST_MAP:
             f = WHITELIST_MAP[h]
-            if f not in col_indices: 
-                col_indices[f] = i
-                matched_debug[f] = raw_headers[i]
-
+            if f not in col_indices: col_indices[f] = i
     if "booking" not in col_indices:
-        return {
-            "ok": False, 
-            "detail": "No se encontró la columna BOOKING",
-            "headers_detected": processed_headers,
-            "raw_headers": raw_headers
-        }
-
+        return {"ok": False, "detail": "No se encontró BOOKING"}
     upserts = 0
-    errors = []
-    
-    # 3. Procesar filas
-    first_row_received = payload[1] if len(payload) > 1 else None
     for row_idx in range(1, len(payload)):
         row = payload[row_idx]
         if not row: continue
-        
-        # Booking index
-        b_idx = col_indices["booking"]
-        val_booking = str(row[b_idx] or "").strip()
-        
-        # LIMPIEZA ULTRA AGRESIVA
-        # 1. Quitar cualquier cosa que no sea letra o número al final (espacios raros, saltos de línea)
+        val_booking = str(row[col_indices["booking"]] or "").strip()
         clean_booking = re.sub(r'[^A-Z0-9]+$', '', val_booking, flags=re.I)
-        # 2. Quitar específicamente el sufijo L o AL si quedó (sin importar mayúsculas)
         clean_booking = re.sub(r'(AL|L)$', '', clean_booking, flags=re.I)
-        
         booking = normalizar(clean_booking)
-        
-        if not booking or len(booking) < 3: 
-            continue
-        
+        if not booking or len(booking) < 3: continue
         db_row = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
         if not db_row:
-            # VALIDACIÓN: Solo crear si la fila trae algún dato útil aparte del booking
-            # (Ignorar valores 'SIN CAMBIOS' o celdas vacías)
-            has_useful_data = False
-            for field, idx in col_indices.items():
-                if field == "booking": continue
-                val_raw = str(row[idx] or "").strip().upper()
-                if val_raw and val_raw not in ["", "NULL", "SIN CAMBIOS", "0"]:
-                    has_useful_data = True
-                    break
-            
-            if not has_useful_data:
-                continue # Saltar esta fila, no crear stub vacío
-            
             db_row = RefPosicionamiento(booking=booking)
             db.add(db_row)
-        
-        # Mapear el resto de campos
         for field, idx in col_indices.items():
             if field == "booking": continue
             val = row[idx] if idx < len(row) else None
-            
             if field in ["dias_tt_booking", "dias_tt_real", "total_pallet"]:
-                try:
-                    db_val = int(float(val)) if val not in [None, ""] else None
-                    setattr(db_row, field, db_val)
-                except: setattr(db_row, field, None)
+                try: setattr(db_row, field, int(float(val)))
+                except: pass
             else:
-                raw_str = str(val).strip() if val not in [None, "", "NULL"] else None
-                
-                if field == "nro_fcl" and raw_str:
-                    final_val = format_container_number(raw_str)
-                else:
-                    final_val = normalizar(raw_str)
-                # REGLA ESPECIAL: SI ES CLIENTE Y TIENE GUION
-                if field == "cliente" and final_val and "-" in final_val:
-                    partes = [p.strip() for p in final_val.split("-", 1)]
-                    setattr(db_row, "cliente", partes[0])
-                    # Solo asigna al recibidor si el campo recibidor no viene ya en el excel
-                    if "recibidor" not in col_indices and len(partes) > 1:
-                        setattr(db_row, "recibidor", partes[1])
-                else:
-                    # Evitar sobreescribir si ya se asignó por la regla de arriba
-                    if field == "recibidor" and getattr(db_row, "cliente", None) and "-" in str(row[col_indices.get("cliente", -1)] or ""):
-                        # Si ya se asignó arriba por split, solo sobreescribe si el valor actual no es nulo
-                        if final_val:
-                            setattr(db_row, field, final_val)
-                    else:
-                        setattr(db_row, field, final_val)
-        
-        upserts += 1
-
+                setattr(db_row, field, normalizar(str(val)) if val not in [None, ""] else None)
     db.commit()
-    return {
-        "ok": True, 
-        "upserts": upserts, 
-        "version": "v1.3-deep-debug",
-        "matched_columns": len(col_indices),
-        "debug": {
-            "first_row_received": first_row_received,
-            "matched_mapping": matched_debug,
-            "processed_headers": processed_headers,
-            "raw_headers": raw_headers
-        }
-    }
+    return {"ok": True, "upserts": upserts}
 
 @router.post("/dams")
-def sync_dams(
-    payload: Union[DamItem, List[DamItem]],
-    db: Session = Depends(get_db),
-    x_sync_token: str | None = Header(default=None),
-):
+def sync_dams(payload: Union[DamItem, List[DamItem]], db: Session = Depends(get_db), x_sync_token: str | None = Header(default=None)):
     validar_token(x_sync_token)
     items = [payload] if isinstance(payload, DamItem) else payload
     upserts = 0
@@ -397,427 +280,104 @@ def sync_dams(
         booking = normalizar(it.booking)
         if not booking: continue
         row = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
-        if not row:
-            row = RefBookingDam(booking=booking)
-            db.add(row)
-        row.awb = normalizar(it.awb)
-        row.dam = normalizar(it.dam)
+        if not row: row = RefBookingDam(booking=booking); db.add(row)
+        row.awb = normalizar(it.awb); row.dam = normalizar(it.dam)
         upserts += 1
     db.commit()
     return {"ok": True, "upserts": upserts}
+
 @router.post("/asignacion/raw")
-def sync_asignacion_raw(
-    payload: List[List[Union[str, int, float, None]]],
-    db: Session = Depends(get_db),
-    x_sync_token: str | None = Header(default=None),
-):
+def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: Session = Depends(get_db), x_sync_token: str | None = Header(default=None)):
     validar_token(x_sync_token)
-    if not payload or len(payload) < 2:
-        return {"ok": False, "detail": "Datos insuficientes"}
-
+    if not payload or len(payload) < 2: return {"ok": False, "detail": "Datos insuficientes"}
     try:
-        # 1. Normalización de cabeceras (Fuzzy Matching)
-        import re
-        import traceback
-        def fuzzy_key(h: str) -> str:
-            return re.sub(r'[^A-Z0-9]', '', str(h or "").upper())
-
         raw_headers = payload[0]
         processed_headers = [fuzzy_key(h) for h in raw_headers]
-        
         WHITELIST_MAP = {
-            fuzzy_key("BOOKING"): "booking",
-            fuzzy_key("DAM"): "dam",
-            fuzzy_key("CONTENEDOR"): "contenedor",
-            fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista",
-            fuzzy_key("EMPRESA DA TRANAPORTE"): "transportista",
-            fuzzy_key("TRANSPORTISTA"): "transportista",
-            fuzzy_key("RUC"): "ruc",
-            fuzzy_key("CONDUCTOR"): "conductor",
-            fuzzy_key("CHOFER"): "conductor",
-            fuzzy_key("PLACAS"): "placas", # A veces la mandan combinada
-            fuzzy_key("PLACA DE TRACTO"): "placa_tracto",
-            fuzzy_key("PLACA TRACTO"): "placa_tracto",
-            fuzzy_key("PLACA DA CARRETA"): "placa_carreta",   
-            fuzzy_key("PLACA DE CARRETA"): "placa_carreta",   
-            fuzzy_key("PLACA CARRETA"): "placa_carreta",   
-            fuzzy_key("LICENCIA"): "licencia",
-            fuzzy_key("DNI"): "licencia",
-            # Soporte para columnas separadas de nombres/apellidos
-            fuzzy_key("APELLIDOS"): "apellidos", 
-            fuzzy_key("NOMBRE"): "nombres",
-            fuzzy_key("NOMBRES"): "nombres",
+            fuzzy_key("BOOKING"): "booking", fuzzy_key("DAM"): "dam", fuzzy_key("CONTENEDOR"): "contenedor",
+            fuzzy_key("EMPRESA DE TRANSPORTE"): "transportista", fuzzy_key("RUC"): "ruc", fuzzy_key("CHOFER"): "conductor",
+            fuzzy_key("PLACA DE TRACTO"): "placa_tracto", fuzzy_key("PLACA DE CARRETA"): "placa_carreta", fuzzy_key("LICENCIA"): "licencia"
         }
-
-        col_indices = {}
-        for i, h in enumerate(processed_headers):
-            if h in WHITELIST_MAP:
-                f = WHITELIST_MAP[h]
-                if f not in col_indices: 
-                    col_indices[f] = i
-
-        if "booking" not in col_indices:
-            return {"ok": False, "detail": "No se encontró la columna BOOKING"}
-            
-        def parse_chofer_name(raw_name: str, surnames_raw: str = ""):
-            if not raw_name and not surnames_raw: return "", {}
-            
-            # Caso A: Columnas separadas (Lo más preciso)
-            if raw_name and surnames_raw:
-                n_words = [w.upper() for w in raw_name.split() if w.strip()]
-                s_words = [w.upper() for w in surnames_raw.split() if w.strip()]
-                
-                pn = " ".join(n_words)
-                ap = s_words[0] if s_words else "-"
-                am = s_words[1] if len(s_words) > 1 else ""
-                
-                am_init = f"{am[0]}." if am else ""
-                return f"{pn} {ap} {am_init}".strip(), {
-                    "primer_nombre": pn,
-                    "apellido_paterno": ap,
-                    "apellido_materno": am
-                }
-
-            # Caso B: Una sola columna con coma "Apellidos, Nombres"
-            if "," in raw_name:
-                parts = raw_name.split(",", 1)
-                s_words = [w.upper().strip() for w in parts[0].split() if w.strip()]
-                n_words = [w.upper().strip() for w in parts[1].split() if w.strip()]
-                
-                pn = " ".join(n_words)
-                ap = s_words[0] if s_words else "-"
-                am = s_words[1] if len(s_words) > 1 else ""
-                
-                am_init = f"{am[0]}." if am else ""
-                return f"{pn} {ap} {am_init}".strip(), {
-                    "primer_nombre": pn,
-                    "apellido_paterno": ap,
-                    "apellido_materno": am
-                }
-
-            # Caso C: Texto plano sin separador (Guess)
-            raw_name = raw_name.replace('.', ' ')
-            words = [w.strip().upper() for w in raw_name.split() if w.strip()]
-            if not words: return "", {}
-            
-            if len(words) == 1:
-                return words[0], {"primer_nombre": words[0], "apellido_paterno": "-"}
-            
-            if len(words) == 2:
-                # ¿Será Apellido Nombre? Difícil saber. Asumimos Nombre Apellido.
-                return f"{words[0]} {words[1]}", {"primer_nombre": words[0], "apellido_paterno": words[1]}
-
-            # Si hay 3 o más, asumimos NOMBRES + AP + AM (más común hoy)
-            am = words[-1]
-            ap = words[-2]
-            pn = " ".join(words[:-2])
-            
-            am_init = f"{am[0]}." if am else ""
-            return f"{pn} {ap} {am_init}".strip(), {
-                "primer_nombre": pn,
-                "apellido_paterno": ap,
-                "apellido_materno": am
-            }
-
+        col_indices = {WHITELIST_MAP[h]: i for i, h in enumerate(processed_headers) if h in WHITELIST_MAP}
+        if "booking" not in col_indices: return {"ok": False, "detail": "No se encontró BOOKING"}
         upserts = 0
-        for row_idx in range(1, len(payload)):
-            row = payload[row_idx]
-            if not row or len(row) <= max(col_indices.values(), default=-1): continue
-            
-            # Booking
-            b_idx = col_indices["booking"]
-            val_booking = str(row[b_idx] or "").strip()
-            val_booking = re.sub(r'[^A-Z0-9]+$', '', val_booking, flags=re.I)
-            val_booking = re.sub(r'(AL|L)$', '', val_booking, flags=re.I)
-            booking = normalizar(val_booking)
+        for row in payload[1:]:
+            booking = normalizar(str(row[col_indices["booking"]] or "").strip())
             if not booking: continue
-
-            # Posicionamiento (IMPORTANTE: Solo buscar, NO crear si no existe)
             posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
-
-            # DAM (Este sí se crea siempre para tener el registro de transporte)
             db_dam = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
-            if not db_dam:
-                db_dam = RefBookingDam(booking=booking)
-                db.add(db_dam)
-
-            # DAM Cleaning
-            if "dam" in col_indices:
-                raw_dam = str(row[col_indices["dam"]] or "").strip()
-                clean_dam = re.sub(r'(40-)0+', r'\1', raw_dam)
-                if clean_dam: db_dam.dam = clean_dam
-
-            # Transportista
-            t_id = None
-            if "ruc" in col_indices or "transportista" in col_indices:
-                idx_ruc = col_indices.get("ruc", -1)
-                idx_trans = col_indices.get("transportista", -1)
-                
-                ruc = str(row[idx_ruc] or "").strip() if idx_ruc >= 0 and idx_ruc < len(row) else ""
-                nombre_t = str(row[idx_trans] or "").strip().upper() if idx_trans >= 0 and idx_trans < len(row) else ""
-                
-                t = None
-                if ruc:
-                    t = db.query(Transportista).filter(Transportista.ruc == ruc).first()
-                elif nombre_t:
-                    t = db.query(Transportista).filter(Transportista.nombre_transportista == nombre_t).first()
-                    
-                if not t and (ruc or nombre_t):
-                    safe_name = nombre_t if nombre_t else "DESCONOCIDO"
-                    # Generar un RUC falso (pero único para esa empresa) si no hay RUC
-                    fake_ruc = ruc if ruc else f"S/RUC-{hash(safe_name) % 10000000}" 
-                    t = Transportista(ruc=fake_ruc[:20], nombre_transportista=safe_name, codigo_sap=f"AUTO-{fake_ruc[:20]}")
-                    db.add(t)
-                    db.flush()
-                
-                if t:
-                    t_id = t.id
-                    # Actualizar nombre si cambió en el Excel
-                    if nombre_t and t.nombre_transportista != nombre_t:
-                        t.nombre_transportista = nombre_t
-                        db.flush()
-                    db_dam.transportista = t.nombre_transportista
-
-            # Licencia y Chofer
-            if any(k in col_indices for k in ["licencia", "conductor", "nombres", "apellidos"]):
-                idx_lic = col_indices.get("licencia", -1)
-                idx_cond = col_indices.get("conductor", -1)
-                idx_nom = col_indices.get("nombres", -1)
-                idx_ape = col_indices.get("apellidos", -1)
-                
-                raw_lic = str(row[idx_lic] or "").strip().upper() if idx_lic >= 0 and idx_lic < len(row) else ""
-                raw_cond = str(row[idx_cond] or "").strip() if idx_cond >= 0 and idx_cond < len(row) else ""
-                raw_nom = str(row[idx_nom] or "").strip() if idx_nom >= 0 and idx_nom < len(row) else ""
-                raw_ape = str(row[idx_ape] or "").strip() if idx_ape >= 0 and idx_ape < len(row) else ""
-                
-                dni = re.sub(r'[^\d]', '', raw_lic)
-                
-                if dni:
-                    db_dam.licencia = dni # Esto alimenta el frontend DNI del chofer
-                
-                # Intentamos parsear nombres (priorizando columnas separadas si existen)
-                input_name = raw_nom if raw_nom else raw_cond
-                formated_name, kwargs_chofer = parse_chofer_name(input_name, raw_ape)
-                
-                if formated_name:
-                    db_dam.chofer = formated_name
-                    
-                if dni and kwargs_chofer:
-                    c = db.query(Chofer).filter(Chofer.dni == dni).first()
-                    if not c:
-                        c = Chofer(dni=dni, licencia=raw_lic, **kwargs_chofer)
-                        db.add(c)
-                        db.flush()
-                    else:
-                        # ACTUALIZACIÓN: Si el chofer ya existe, actualizamos sus nombres 
-                        # por si se corrigieron en el Excel
-                        for k, v in kwargs_chofer.items():
-                            setattr(c, k, v)
-                        if raw_lic:
-                            c.licencia = raw_lic
-                        db.flush()
-
-            # Placas
-            clean_placas = ""
-            tracto = ""
-            carreta = ""
-
-            if "placas" in col_indices:
-                raw_placas = str(row[col_indices["placas"]] or "").strip().upper()
-                clean_placas = re.sub(r'[^A-Z0-9/]', '', raw_placas)
-                if clean_placas:
-                    p_parts = clean_placas.split('/')
-                    tracto = p_parts[0] if len(p_parts) > 0 else ""
-                    carreta = p_parts[1] if len(p_parts) > 1 else None
-            else:
-                raw_t = str(row[col_indices.get("placa_tracto")] or "").strip().upper() if "placa_tracto" in col_indices else ""
-                raw_c = str(row[col_indices.get("placa_carreta")] or "").strip().upper() if "placa_carreta" in col_indices else ""
-                
-                tracto = re.sub(r'[^A-Z0-9]', '', raw_t)
-                carreta = re.sub(r'[^A-Z0-9]', '', raw_c) if raw_c else None
-                
-                if tracto:
-                    clean_placas = tracto
-                    if carreta:
-                        clean_placas += f"/{carreta}"
-
-            if clean_placas:
-                db_dam.placas = clean_placas # Para autocompletar en el Frontend
-                
-                if tracto:
-                    v = db.query(Vehiculo).filter(Vehiculo.placas == clean_placas).first()
-                    if not v:
-                        v = Vehiculo(
-                            placas=clean_placas, placa_tracto=tracto[:20], placa_carreta=carreta[:20] if carreta else None,
-                            transportista_id=t_id, largo_tracto=0, ancho_tracto=0, alto_tracto=0,
-                            largo_carreta=0, ancho_carreta=0, alto_carreta=0,
-                            configuracion_vehicular="T3/S3", peso_neto_tracto=0, peso_neto_carreta=0, peso_bruto_vehicular=48000
-                        )
-                        db.add(v)
-                        db.flush()
-                    else:
-                        # Si ya existía pero no se le había asignado empresa o cambió, la forzamos
-                        if t_id and v.transportista_id != t_id:
-                            v.transportista_id = t_id
-                            db.flush()
-
-            # Contenedor y Validacion (Solo si existe Posicionamiento previo)
+            if not db_dam: db_dam = RefBookingDam(booking=booking); db.add(db_dam)
+            if "dam" in col_indices: db_dam.dam = normalizar(str(row[col_indices["dam"]] or "").strip())
             if "contenedor" in col_indices:
-                raw_cont = str(row[col_indices["contenedor"]] or "").strip()
-                cont_asignacion = format_container_number(raw_cont)
-                db_dam.ce_awb = cont_asignacion
-                db_dam.awb = cont_asignacion
-                
-                if posic:
-                    if posic.nro_fcl and cont_asignacion:
-                        # Alerta si el contenedor del excel de posicionamiento difiere del de asignación
-                        db_dam.alerta_discrepancia = int(posic.nro_fcl != cont_asignacion)
-                    
-                    if not posic.nro_fcl and cont_asignacion:
-                        # Si posicionamiento no tenía contenedor, lo llenamos con el de asignación
-                        posic.nro_fcl = cont_asignacion
-
+                cont = format_container_number(str(row[col_indices["contenedor"]] or "").strip())
+                db_dam.awb = cont
+                if posic: posic.nro_fcl = cont
             upserts += 1
-
         db.commit()
         return {"ok": True, "upserts": upserts}
-    except Exception as e:
-        db.rollback()
-        return {"ok": False, "error": str(e)}
+    except Exception as e: db.rollback(); return {"ok": False, "error": str(e)}
 
 @router.post("/posicionamiento/pedidos-pallets/raw")
-def sync_pedidos_pallets_raw(
-    payload: List[List[Union[str, int, float, None]]],
-    db: Session = Depends(get_db),
-    x_sync_token: str | None = Header(default=None),
-):
-    """
-    Endpoint especializado para procesar el Excel 'Pedidos comerciales granada COPIA',
-    sumar todos los pallets segmentados en distintas filas bajo una misma Orden Beta,
-    e inyectarlos al Posicionamiento cruzando el número entero de la orden.
-    También pobla la tabla packing_cuadro_pedidos.
-    """
+def sync_pedidos_pallets_raw(payload: List[List[Union[str, int, float, None]]], db: Session = Depends(get_db), x_sync_token: str | None = Header(default=None)):
     validar_token(x_sync_token)
-    if not payload or len(payload) < 2:
-        return {"ok": False, "detail": "Datos insuficientes en tabla PEDIDOS"}
-
+    if not payload or len(payload) < 2: return {"ok": False, "detail": "Datos insuficientes"}
     try:
         raw_headers = payload[0]
         processed_headers = [fuzzy_key(h) for h in raw_headers]
-
-        # Mapeo de columnas dinámico
-        col_map = {
-            "orden": -1,
-            "pallets": -1,
-            "product": -1,
-            "peso_caja": -1,
-            "house_gln": -1,
-            "cajas_por_pallet": -1,
-            "notes": -1
-        }
-
+        col_map = {"orden": -1, "pallets": -1, "product": -1, "peso_caja": -1, "house_gln": -1, "cajas_por_pallet": -1, "carton_content": -1, "notes": -1}
         for i, h in enumerate(processed_headers):
-            if "ORDEN" == h and col_map["orden"] == -1: col_map["orden"] = i
-            if "TOTAL" in h and "PALLET" in h and col_map["pallets"] == -1: col_map["pallets"] = i
-            if "PRODUCT" in h and col_map["product"] == -1: col_map["product"] = i
-            if ("PESO" in h and "CAJA" in h) and col_map["peso_caja"] == -1: col_map["peso_caja"] = i
-            if "HOUSEGLN" in h and col_map["house_gln"] == -1: col_map["house_gln"] = i
-            if "CAJASPORPALLET" in h and col_map["cajas_por_pallet"] == -1: col_map["cajas_por_pallet"] = i
-            if ("ADDITIONAL" in h or "NOTES" in h) and col_map["notes"] == -1: col_map["notes"] = i
-
-        if col_map["orden"] == -1:
-            return {"ok": False, "detail": "Columna ORDEN no encontrada", "headers": processed_headers}
-
+            if "ORDEN" == h: col_map["orden"] = i
+            if "TOTAL" in h and "PALLET" in h: col_map["pallets"] = i
+            if "PRODUCT" in h: col_map["product"] = i
+            if "PESO" in h and "CAJA" in h: col_map["peso_caja"] = i
+            if "HOUSEGLN" in h: col_map["house_gln"] = i
+            if "CAJASPORPALLET" in h: col_map["cajas_por_pallet"] = i
+            if (("TIPO" in h and "CAJA" in h) or "CARTONCONTENT" in h): col_map["carton_content"] = i
+            if ("ADDITIONAL" in h or "NOTES" in h): col_map["notes"] = i
+        if col_map["orden"] == -1: return {"ok": False, "detail": "Columna ORDEN no encontrada"}
         import math
         from collections import defaultdict
         sumas_pallets = defaultdict(int)
-        # Diccionario para guardar el primer rastro de metadatos por orden
         meta_por_orden = {}
-
-        # 1. Agrupar y sumar
         for row in payload[1:]:
             if not row or len(row) <= col_map["orden"]: continue
-            
             val_orden_raw = str(row[col_map["orden"]] or "").strip()
-            if not val_orden_raw: continue
-
-            # Extraer puramente la parte numérica (ej: 080)
             solo_nums = re.sub(r'\D', '', val_orden_raw)
             if not solo_nums: continue
-            
             num_orden = int(solo_nums)
-            
-            # Sumar pallets si existe la columna
             if col_map["pallets"] != -1 and col_map["pallets"] < len(row):
-                val_pallets = str(row[col_map["pallets"]] or "").strip()
-                clean_pallets = re.sub(r'[^\d\.]', '', val_pallets)
-                if clean_pallets:
-                    try:
-                        qty = int(math.ceil(float(clean_pallets)))
-                        sumas_pallets[num_orden] += qty
-                    except: pass
-
-            # Metadatos para la tabla CuadroPedido
+                try: sumas_pallets[num_orden] += int(math.ceil(float(re.sub(r'[^\d\.]', '', str(row[col_map["pallets"]])))))
+                except: pass
             if num_orden not in meta_por_orden:
-                # Formatear Orden Beta (Ej: 080 -> BAM-080)
-                # NOTA: Usamos BAM como prefijo por defecto o intentamos detectar
-                # Por ahora, seguiremos el estándar de la empresa.
-                orden_beta_formatted = f"BAM-{str(num_orden).zfill(3)}"
-                
-                def get_v(key, default=None):
+                def get_v(key): 
                     idx = col_map[key]
-                    if idx != -1 and idx < len(row):
-                        return row[idx]
-                    return default
-
+                    return row[idx] if idx != -1 and idx < len(row) else None
                 meta_por_orden[num_orden] = {
-                    "orden_beta": orden_beta_formatted,
-                    "product": get_v("product"),
-                    "peso_caja": get_v("peso_caja"),
-                    "house_gln": get_v("house_gln"),
-                    "cajas_por_pallet": get_v("cajas_por_pallet"),
-                    "additional_info": get_v("notes")
+                    "orden_beta": f"BAM-{str(num_orden).zfill(3)}",
+                    "product": get_v("product"), "peso_caja": get_v("peso_caja"),
+                    "house_gln": get_v("house_gln"), "cajas_por_pallet": get_v("cajas_por_pallet"),
+                    "carton_content": get_v("carton_content"), "additional_info": get_v("notes")
                 }
-
-        # 2. Actualizar RefPosicionamiento (Inyección de Pallets)
         upserts_pos = 0
         todos_pos = db.query(RefPosicionamiento).all()
         for pos in todos_pos:
             text_eval = f"{pos.o_beta_inicial} {pos.orden_beta_final} {pos.booking}".upper()
             db_nums = [int(n) for n in re.findall(r'\d+', text_eval) if n]
-            
             for num, qty in sumas_pallets.items():
-                if num in db_nums:
-                    pos.total_pallet = qty
-                    upserts_pos += 1
-                    break
-
-        # 3. Actualizar / Insertar en CuadroPedido
+                if num in db_nums: pos.total_pallet = qty; upserts_pos += 1; break
         upserts_cuadro = 0
         for num, data in meta_por_orden.items():
-            # Buscar si ya existe por orden_beta
             cp = db.query(CuadroPedido).filter(CuadroPedido.orden_beta == data["orden_beta"]).first()
-            if not cp:
-                cp = CuadroPedido(orden_beta=data["orden_beta"])
-                db.add(cp)
-            
+            if not cp: cp = CuadroPedido(orden_beta=data["orden_beta"]); db.add(cp)
             cp.product = str(data["product"]) if data["product"] else None
-            try: cp.peso_caja = float(data["peso_caja"]) if data["peso_caja"] else None
+            try: cp.peso_caja = float(data["peso_caja"])
             except: pass
             cp.house_gln = str(data["house_gln"]) if data["house_gln"] else None
-            try: cp.cajas_por_pallet = int(float(data["cajas_por_pallet"])) if data["cajas_por_pallet"] else None
+            try: cp.cajas_por_pallet = int(float(data["cajas_por_pallet"]))
             except: pass
+            cp.carton_content = str(data["carton_content"]) if data["carton_content"] else None
             cp.additional_info = str(data["additional_info"]) if data["additional_info"] else None
             upserts_cuadro += 1
-        
         db.commit()
-        return {
-            "ok": True, 
-            "posicionamiento_updated": upserts_pos,
-            "cuadro_pedidos_synced": upserts_cuadro,
-            "orders_detected": list(sumas_pallets.keys())
-        }
-    
-    except Exception as e:
-        db.rollback()
-        return {"ok": False, "error": str(e)}
+        return {"ok": True, "posicionamiento_updated": upserts_pos, "cuadro_pedidos_synced": upserts_cuadro}
+    except Exception as e: db.rollback(); return {"ok": False, "error": str(e)}
