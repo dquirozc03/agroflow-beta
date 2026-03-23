@@ -126,6 +126,8 @@ export default function PackingOglPage() {
     if (!selectedNave) return;
     try {
       setIsGenerating(true);
+      toast.info("Generando Packing List, por favor espera...", { duration: 5000 });
+      
       const url = getDownloadOglPackingUrl(selectedNave);
       
       const link = document.createElement("a");
@@ -135,16 +137,17 @@ export default function PackingOglPage() {
       link.click();
       link.remove();
       
-      toast.success(`Packing List generado para ${selectedNave}. Las órdenes han sido cerradas.`);
+      toast.success(`Packing List generado para ${selectedNave}.`);
       
+      // Bloqueamos por 5 segundos para que no le den clic mil veces mientras descarga
       setTimeout(() => {
         fetchNaves();
         setSelectedNave("");
-      }, 2000);
+        setIsGenerating(false);
+      }, 5000);
       
     } catch (e) {
       toast.error("Error al generar el documento");
-    } finally {
       setIsGenerating(false);
     }
   };

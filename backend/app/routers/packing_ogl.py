@@ -4,6 +4,7 @@ import re
 import io
 from datetime import datetime, date
 from typing import List, Optional
+from collections import defaultdict
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -228,48 +229,48 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
     sheet["B16"] = main_order.etd_booking
     sheet["B17"] = main_order.eta_booking
     
-    # 4. Pre-carga de datos para evitar N+1 queries
-    all_order_keys = []
-    all_bookings = []
-    
-    # Marcamos las órdenes como FINALIZADAS para que no se puedan volver a subir archivos para ellas
+    # 4. Normalización y Pre-carga (Cruce Robusto)
+    # Ordenamos órdenes numéricamente para que salgan en orden (BAM-01, BAM-02...)
+    orders.sort(key=lambda x: clean_numeric(x.orden_beta_final or x.o_beta_inicial) or 0)
+
+    all_normalized_nums = []
     for posic in orders:
         posic.packing_ogl_finalizado = True
-        
-        order_key = posic.orden_beta_final or format_order(clean_numeric(posic.o_beta_inicial))
-        all_order_keys.append(order_key)
-        all_bookings.append(posic.booking)
+        num = clean_numeric(posic.orden_beta_final or posic.o_beta_inicial)
+        if num: all_normalized_nums.append(num)
+    db.commit()
 
-    db.commit() # Guardamos el estado finalizado
+    # Buscamos en las tablas usando el formato BAM-XXX (zfill 3) que es el estándar de guardado
+    target_keys = [format_order(n) for n in all_normalized_nums]
 
-    # Queries masivas
-    cuadros_map = {cp.orden_beta: cp for cp in db.query(CuadroPedido).filter(CuadroPedido.orden_beta.in_(all_order_keys)).all()}
+    cuadros_map = {c.orden_beta: c for c in db.query(CuadroPedido).filter(CuadroPedido.orden_beta.in_(target_keys)).all()}
     
-    # Confirmaciones agrupadas por orden
-    confs_list = db.query(PackingConfirmacion).filter(PackingConfirmacion.orden_beta.in_(all_order_keys)).all()
-    confs_map = {}
-    for c in confs_list:
-        if c.orden_beta not in confs_map: confs_map[c.orden_beta] = []
-        confs_map[c.orden_beta].append(c)
+    # Cruce por número normalizado (int) para evitar fallos de ceros a la izquierda
+    confs_all = db.query(PackingConfirmacion).filter(PackingConfirmacion.orden_beta.in_(target_keys)).all()
+    confs_map = defaultdict(list)
+    for c in confs_all:
+        c_num = clean_numeric(c.orden_beta)
+        if c_num: confs_map[c_num].append(c)
         
     dams_map = {d.booking: d for d in db.query(RefBookingDam).filter(RefBookingDam.booking.in_(all_bookings)).all()}
     
-    # Termógrafos agrupados por orden
-    terms_list = db.query(PackingTermografo).filter(PackingTermografo.orden_beta.in_(all_order_keys)).all()
-    terms_map = {}
-    for t in terms_list:
-        if t.orden_beta not in terms_map: terms_map[t.orden_beta] = []
-        terms_map[t.orden_beta].append(t)
+    terms_all = db.query(PackingTermografo).filter(PackingTermografo.orden_beta.in_(target_keys)).all()
+    terms_map = defaultdict(list)
+    for t in terms_all:
+        t_num = clean_numeric(t.orden_beta)
+        if t_num: terms_map[t_num].append(t)
 
     # 5. Detalle de Pallets (Iterativo sobre data pre-cargada)
     current_row = 21
     total_pallets_all = 0
     
     for posic in orders:
-        order_key = posic.orden_beta_final or format_order(clean_numeric(posic.o_beta_inicial))
+        num_key = clean_numeric(posic.orden_beta_final or posic.o_beta_inicial)
+        if not num_key: continue
         
-        cp = cuadros_map.get(order_key)
-        confirmaciones = confs_map.get(order_key, [])
+        bam_key = format_order(num_key)
+        cp = cuadros_map.get(bam_key)
+        confirmaciones = confs_map.get(num_key, [])
         dam = dams_map.get(posic.booking)
         
         cont_no = f"MMAU {dam.dam}" if dam and dam.dam else (posic.nro_fcl or "")
@@ -295,7 +296,7 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         peso_bruto_pallet = (p_bruto_total / total_p_en_orden) if total_p_en_orden > 0 else 0
         
         # Mapa de termógrafos de ESTA orden para búsqueda rápida
-        terms_de_orden = {str(t.pallet_id).replace('AR-', ''): t for t in terms_map.get(order_key, [])}
+        terms_de_orden = {str(t.pallet_id).replace('AR-', ''): t for t in terms_map.get(num_key, [])}
         
         for conf in confirmaciones:
             # Buscar Termógrafo usando el mapa pre-cargado
