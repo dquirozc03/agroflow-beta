@@ -301,12 +301,15 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
         }
         col_indices = {WHITELIST_MAP[h]: i for i, h in enumerate(processed_headers) if h in WHITELIST_MAP}
         if "booking" not in col_indices: return {"ok": False, "detail": "No se encontró BOOKING"}
-        
         upserts = 0
         for row in payload[1:]:
             if not row or len(row) <= col_indices["booking"]: continue
             booking = normalizar(str(row[col_indices["booking"]] or "").strip())
             if not booking: continue
+            
+            # Inicializar variables para asegurarnos que existan al asignar al final
+            nom_trans, nombres_raw, full_placas, lic_val = None, None, None, None
+            t_id, c_id, v_id = None, None, None
             
             # --- 1. DAM y Contenedor ---
             posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
@@ -323,10 +326,10 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                 cont = format_container_number(val_cont)
                 if cont:
                     db_dam.awb = cont
+                    db_dam.ce_awb = cont
                     if posic: posic.nro_fcl = cont
 
             # --- 2. Transportista ---
-            t_id = None
             ruc_val = normalizar(str(row[col_indices["ruc"]] or "").strip()) if "ruc" in col_indices else None
             nom_trans = normalizar(str(row[col_indices["transportista"]] or "").strip()) if "transportista" in col_indices else None
             
@@ -340,7 +343,6 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                 if trans: t_id = trans.id
 
             # --- 3. Chofer ---
-            c_id = None
             cond_val = str(row[col_indices["conductor"]] or "").strip() if "conductor" in col_indices else ""
             lic_val = normalizar(str(row[col_indices["licencia"]] or "").strip()) if "licencia" in col_indices else None
             
@@ -354,7 +356,6 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                 if not chof and lic_val: chof = db.query(Chofer).filter(func.upper(Chofer.licencia) == lic_val.upper()).first()
                 
                 if not chof and nombres_raw:
-                    # Parseo simple de nombres: PrimerNombre ApellidoPaterno ApellidoMaterno
                     partes = nombres_raw.split()
                     p_nom = partes[0] if len(partes) > 0 else "CHOFER"
                     p_ape = partes[1] if len(partes) > 1 else "PENDIENTE"
@@ -366,15 +367,12 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                     c_id = chof.id
 
             # --- 4. Vehículo ---
-            v_id = None
             p_tracto = normalizar(str(row[col_indices["placa_tracto"]] or "").strip()) if "placa_tracto" in col_indices else None
             p_carreta = normalizar(str(row[col_indices["placa_carreta"]] or "").strip()) if "placa_carreta" in col_indices else None
             
-            # Fallback si vienen juntas en una columna "PLACAS" (Ej: ALX-713/ATE-983)
             if not p_tracto and "placas" in col_indices:
                 val_pl = str(row[col_indices["placas"]] or "").strip()
                 if val_pl:
-                    # Dividir por /, - o espacio si hay una configuración de placa-placa
                     splits = re.split(r'[/]', val_pl)
                     if len(splits) > 1:
                         p_tracto = splits[0].strip()
@@ -384,18 +382,14 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
 
             if p_tracto:
                 clean_pt = re.sub(r'[^A-Z0-9]', '', p_tracto.upper())
-                # Concatenar para busqueda/guardado de placas
                 p_carreta_val = p_carreta.upper() if p_carreta else None
                 clean_pc = re.sub(r'[^A-Z0-9]', '', p_carreta_val) if p_carreta_val else None
                 full_placas = f"{clean_pt}/{clean_pc}" if clean_pc else clean_pt
                 
                 veh = db.query(Vehiculo).filter(Vehiculo.placas == full_placas).first()
                 if not veh:
-                    # Crear con mínimos requeridos (el usuario completará en el formulario)
                     veh = Vehiculo(
-                        placas=full_placas,
-                        placa_tracto=clean_pt,
-                        placa_carreta=clean_pc,
+                        placas=full_placas, placa_tracto=clean_pt, placa_carreta=clean_pc,
                         largo_tracto=0.0, ancho_tracto=0.0, alto_tracto=0.0,
                         largo_carreta=0.0, ancho_carreta=0.0, alto_carreta=0.0,
                         configuracion_vehicular="T3/S3",
@@ -407,10 +401,18 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
                     if clean_pc: veh.placa_carreta = clean_pc
                 v_id = veh.id
 
-            # Vincular a la DAM
-            if t_id: db_dam.transportista_id = t_id
-            if c_id: db_dam.chofer_id = c_id
-            if v_id: db_dam.vehiculo_id = v_id
+            # Vincular a la DAM (Campos de texto para autocompletado en el frontend)
+            db_dam.licencia = lic_val
+            db_dam.chofer = nombres_raw
+            db_dam.placas = full_placas
+            db_dam.transportista = nom_trans
+            
+            # Vincular por ID si las columnas existen en el modelo (evitar crash si no)
+            try:
+                if t_id: db_dam.transportista_id = t_id
+                if c_id: db_dam.chofer_id = c_id
+                if v_id: db_dam.vehiculo_id = v_id
+            except: pass
                 
             upserts += 1
         db.commit()
