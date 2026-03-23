@@ -89,14 +89,7 @@ def actualizar_usuario(
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
-    """Login real: valida usuario/contraseña contra la BD. Máximo 3 intentos, luego bloqueo."""
-    try:
-        login_rate_limit(request)
-    except HTTPException:
-        raise
-    except Exception:
-        pass
-    
+    """Login real: valida usuario/contraseña contra la BD."""
     user = auth_service.autenticar_usuario(db, payload)
     token = create_access_token(usuario=user.usuario, rol=user.rol, user_id=user.id)
     
