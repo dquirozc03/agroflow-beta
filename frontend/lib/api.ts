@@ -1,8 +1,6 @@
 // frontend/lib/api.ts
-// Cliente API profesional para LogiCapture - Update: 2026-02-27 11:27
-// - Usa /api/v1/* (same-origin) y pasa por el gateway de Next (app/api/v1/[...path]/route.ts)
-// - Envía Authorization: Bearer <token> cuando hay sesión
-// - En 401 dispara onUnauthorized (logout)
+// Cliente API AgroFlow V2 - Limpio y Compatible
+// Mantiene solo la lógica de autenticación y peticiones base.
 
 const TOKEN_KEY = "nexo-token";
 
@@ -15,9 +13,7 @@ export function setStoredToken(token: string | null) {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // ignore
-  }
+  } catch { /* ignore */ }
 }
 
 let onUnauthorized: (() => void) | null = null;
@@ -28,7 +24,6 @@ export function setOnUnauthorized(cb: () => void) {
 export class ApiError extends Error {
   status: number;
   body: any;
-
   constructor(message: string, status: number, body: any) {
     super(message);
     this.name = "ApiError";
@@ -37,41 +32,26 @@ export class ApiError extends Error {
   }
 }
 
-/** True si el error indica backend dormido/inaccesible (Render Free, etc.). */
+/** True si el error indica backend dormido/inaccesible. */
 export function isBackendUnreachable(e: unknown): boolean {
   if (e instanceof ApiError) {
     if (e.status === 502 || e.status === 503) return true;
-    if (e.status === 500) {
-      const msg = String(e.body?.detail ?? e.message ?? "").toLowerCase();
-      if (msg.includes("internal server error") || msg.includes("no se pudo conectar")) return true;
-    }
   }
   if (e instanceof TypeError && (e.message?.includes("fetch") || e.message?.includes("Failed to fetch")))
     return true;
-  const msg = String((e as Error)?.message ?? "");
-  // Si es un ApiError con un mensaje vacío, NO reintentar a menos que sea 500/502/503 (handled above)
-  if (e instanceof ApiError && msg === "") return false;
-  return msg.includes("fetch") || msg.includes("Failed") || msg.includes("network") || msg === "";
+  const msg = String((e as Error)?.message ?? "").toLowerCase();
+  return msg.includes("fetch") || msg.includes("failed") || msg.includes("network");
 }
 
 async function parseBody(res: Response) {
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
-    try {
-      return await res.json();
-    } catch {
-      return null;
-    }
+    try { return await res.json(); } catch { return null; }
   }
-  try {
-    return await res.text();
-  } catch {
-    return null;
-  }
+  try { return await res.text(); } catch { return null; }
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  // Asegurar que el path empiece con / y no termine con /
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = cleanPath.startsWith("/api/v1") ? cleanPath : `/api/v1${cleanPath}`;
   const token = getStoredToken();
@@ -91,729 +71,46 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const body = await parseBody(res);
     let msg = `Error ${res.status}: ${res.statusText}`;
-
-    if (typeof body === "string" && body) {
-      msg = body;
-    } else if (body?.detail) {
-      if (Array.isArray(body.detail)) {
-        // Manejar errores de validación de FastAPI (422)
-        msg = body.detail[0]?.msg || JSON.stringify(body.detail);
-      } else {
-        msg = body.detail;
-      }
+    if (body?.detail) {
+      msg = Array.isArray(body.detail) ? body.detail[0]?.msg : body.detail;
     }
-
     throw new ApiError(msg, res.status, body);
   }
 
-  const body = await parseBody(res);
-  return body as T;
+  return parseBody(res);
 }
 
-function json<T>(path: string, data?: any, method: string = "GET") {
-  return request<T>(path, {
-    method,
+// === ENDPOINTS DE AUTENTICACION ===
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  usuario: string; // ID o username según backend
+  nombre: string;
+  rol: string;
+  requiere_cambio_password: boolean;
+}
+
+/** Inicia sesión en el backend */
+export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
+  return request<LoginResponse>("/auth/login", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: data ? JSON.stringify(data) : undefined,
+    body: JSON.stringify({ usuario, password }),
   });
 }
 
-// ======================
-// AUTH (login real)
-// ======================
-export type LoginResponse = {
-  access_token: string;
-  token_type: string;
-  usuario: string;
-  nombre: string;
-  rol: string;
-  requiere_cambio_password?: boolean;
-};
-
-export type MeResponse = {
-  id?: number;
-  usuario: string;
-  nombre: string;
-  rol: string;
-  requiere_cambio_password?: boolean;
-};
-
-export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
-  const res = await json<LoginResponse>("/auth/login", { usuario, password }, "POST");
-  return res;
-}
-
-export async function apiUpdateOwnPassword(payload: any): Promise<{ ok: boolean; mensaje: string }> {
-  return await json<{ ok: boolean; mensaje: string }>("/auth/cambiar-password-propia", payload, "POST");
-}
-
-export async function apiUpdateUser(id: number, payload: any): Promise<Usuario> {
-  return await json<Usuario>(`/auth/usuarios/${id}`, payload, "PATCH");
-}
-
-export async function apiResetUserPassword(id: number, nueva: string): Promise<{ ok: boolean; mensaje: string }> {
-  return await json<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${id}/password-reset`, { nueva_password: nueva }, "PATCH");
-}
-
-export async function apiMe(): Promise<MeResponse> {
-  return request<MeResponse>("/auth/me", { method: "GET" });
-}
-
-/** Desbloquea un usuario (solo administrador). */
-export async function apiDesbloquearUsuario(usuario: string): Promise<{ ok: boolean; mensaje: string }> {
-  return request<{ ok: boolean; mensaje: string }>(
-    `/auth/usuarios/${encodeURIComponent(usuario)}/desbloquear`,
-    { method: "PATCH" }
-  );
-}
-
-// ======================
-// GESTIÓN DE USUARIOS
-// ======================
-export type Usuario = {
-  id: number;
-  usuario: string;
-  nombre: string;
-  rol: string;
-  activo: boolean;
-};
-
-export type UsuarioCreate = {
-  usuario: string;
-  nombre: string;
-  rol: string;
-  password: string;
-};
-
-export async function listUsers(): Promise<Usuario[]> {
-  return request<Usuario[]>("/auth/usuarios", { method: "GET" });
-}
-
-export async function createUser(payload: UsuarioCreate): Promise<Usuario> {
-  return json<Usuario>("/auth/usuarios", payload, "POST");
-}
-
-export async function toggleUserStatus(usuarioId: number): Promise<{ ok: boolean; mensaje: string }> {
-  return request<{ ok: boolean; mensaje: string }>(`/auth/usuarios/${usuarioId}`, { method: "DELETE" });
-}
-
-// ======================
-// Chat (consultas en lenguaje natural)
-// ======================
-export async function chatPregunta(pregunta: string): Promise<{ respuesta: string }> {
-  return json<{ respuesta: string }>("/chat/pregunta", { pregunta }, "POST");
-}
-
-// ======================
-// HEALTH (para AppHeader)
-// Backend real: GET /api/v1/health  (app/routers/health.py)
-// ======================
+/** Verifica si el backend está vivo */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const r = await request<{ ok: boolean; db_ok?: boolean }>(`/health`, {
-      method: "GET",
-    });
-    return Boolean(r?.ok);
+    const res = await fetch("/health");
+    return res.ok;
   } catch {
     return false;
   }
 }
 
-// ======================
-// REFERENCIAS POR BOOKING
-// Backend real: GET /api/v1/ref/booking/{booking}
-// ======================
-export type BookingRefs = {
-  booking: string;
-  status_fcl?: string | null;
-  orden_beta_final?: string | null;
-  planta_empacadora?: string | null;
-  cultivo?: string | null;
-
-  booking_limpio?: string | null;
-  nave?: string | null;
-
-  etd_booking?: string | null;
-  eta_booking?: string | null;
-  week_eta_booking?: string | null;
-  dias_tt_booking?: number | null;
-
-  etd_final?: string | null;
-  eta_final?: string | null;
-  week_eta_real?: string | null;
-  dias_tt_real?: number | null;
-  week_debe_arribar?: string | null;
-  pol?: string | null;
-
-  o_beta_inicial?: string | null;
-  o_beta_cambio_1?: string | null;
-  motivo_cambio_1?: string | null;
-  o_beta_cambio_2?: string | null;
-  motivo_cambio_2?: string | null;
-  area_responsable?: string | null;
-
-  detalle_adicional?: string | null;
-  deposito_vacio?: string | null;
-  nro_contenedor?: string | null;
-  tipo_contenedor?: string | null;
-
-  awb?: string | null;
-  dam?: string | null;
-
-  licencia?: string | null;
-  chofer?: string | null;
-  placas?: string | null;
-  transportista?: string | null;
-};
-
-export async function getBookingRefs(booking: string): Promise<BookingRefs> {
-  const b = encodeURIComponent((booking || "").trim());
-  return request<BookingRefs>(`/ref/booking/${b}`, { method: "GET" });
-}
-
-// ======================
-// REGISTROS OPERATIVOS
-// Backend real:
-// - POST   /api/v1/registros
-// - POST   /api/v1/registros/{id}/cerrar   (histórico: alias de PROCESAR)
-// - POST   /api/v1/registros/{id}/procesar (dominio)
-// - GET    /api/v1/registros/{id}/sap
-// - PATCH  /api/v1/registros/{id}/editar
-// - POST   /api/v1/registros/{id}/anular
-// - GET    /api/v1/registros/historial
-// - GET    /api/v1/registros/procesados   (para Bandeja SAP > Procesados)
-// ======================
-export type RegistroCreatePayload = {
-  o_beta?: string | null;
-  booking?: string | null;
-  awb?: string | null;
-
-  dni: string;
-  placas: string;
-
-  ruc?: string | null;
-  codigo_sap?: string | null;
-
-  // Variables Extra para Actualización de Vehículo (Si faltan en la DB)
-  marca?: string | null;
-  cert_tracto?: string | null;
-  cert_carreta?: string | null;
-  configuracion_vehicular?: string;
-  largo_tracto?: number;
-  ancho_tracto?: number;
-  alto_tracto?: number;
-  largo_carreta?: number;
-  ancho_carreta?: number;
-  alto_carreta?: number;
-
-  termografos?: string | null;
-  ps_beta?: string | null;
-  ps_aduana?: string | null;
-  ps_operador?: string | null;
-
-  senasa?: string | null;
-  ps_linea?: string | null;
-};
-
-export async function createRegistro(
-  payload: RegistroCreatePayload,
-): Promise<{ id: number }> {
-  return json<{ id: number }>(`/registros`, payload, "POST");
-}
-
-export async function apiValidarValor(tipo: string, valor: string): Promise<{ valido: boolean; mensaje: string; valor: string }> {
-  const qs = new URLSearchParams();
-  qs.set("tipo", tipo);
-  qs.set("valor", valor);
-  return request<{ valido: boolean; mensaje: string; valor: string }>(`/registros/validar-valor?${qs.toString()}`, {
-    method: "GET",
-  });
-}
-
-// Lo que tu backend devuelve hoy en cerrar/procesar:
-// {"estado":"procesado","awbs_liberados":true} o {"estado":"ya estaba procesado"}
-export type ProcesarResponse = {
-  estado: string;
-  awbs_liberados?: boolean;
-};
-
-export async function cerrarRegistro(registroId: number): Promise<ProcesarResponse> {
-  return json<ProcesarResponse>(`/registros/${registroId}/cerrar`, undefined, "POST");
-}
-
-// Opcional PRO: usa el endpoint de dominio (alias)
-export async function procesarRegistro(registroId: number): Promise<ProcesarResponse> {
-  return json<ProcesarResponse>(`/registros/${registroId}/procesar`, undefined, "POST");
-}
-
-export type SapFila = Record<string, any>;
-export async function getRegistroSap(registroId: number): Promise<SapFila> {
-  return request<SapFila>(`/registros/${registroId}/sap`, { method: "GET" });
-}
-
-/**
- * Campos editables en /registros/{id}/editar
- */
-export type EditCampoRegistro =
-  | "booking"
-  | "awb"
-  | "dni_chofer"
-  | "transportista"
-  | "termografos"
-  | "precintos"
-  | "fecha"
-  | "transporte_legales";
-
-/**
- * Mapa de rol de usuario (auth) al valor que espera el backend (X-User-Role).
- * administrador -> admin, supervisor_facturacion -> editor.
- */
-export function getBackendRoleForEdit(role: string | undefined): string | null {
-  if (!role) return null;
-  if (role === "administrador") return "admin";
-  if (role === "supervisor_facturacion") return "editor";
-  return null;
-}
-
-export async function editarRegistro(
-  registroId: number,
-  campo: EditCampoRegistro,
-  data: Record<string, unknown>,
-  motivo?: string,
-  userRole?: string,
-) {
-  const backendRole = userRole ? getBackendRoleForEdit(userRole) : null;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (backendRole) headers["X-User-Role"] = backendRole;
-
-  return request(
-    `/registros/${registroId}/editar`,
-    {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ campo, data, motivo: motivo ?? null }),
-    },
-  );
-}
-
-/** True si el usuario puede editar registros según su rol de auth. */
-export function puedeEditarRegistros(userRole: string | undefined): boolean {
-  return userRole === "administrador" || userRole === "supervisor_facturacion";
-}
-
-export async function anularRegistro(registroId: number, motivo: string) {
-  return json(`/registros/${registroId}/anular`, { motivo }, "POST");
-}
-
-export type RegistroListado = {
-  id: number;
-  fecha_registro: string;
-  estado: string;
-  booking?: string | null;
-  o_beta?: string | null;
-  awb?: string | null;
-  dam?: string | null;
-  dni?: string | null;
-  chofer?: string | null;
-  placas?: string | null;
-  marca?: string | null;
-  licencia?: string | null;
-  transportista?: string | null;
-  codigo_sap?: string | null;
-  termografos?: string | null;
-  ps_beta?: string | null;
-  ps_aduana?: string | null;
-  ps_operador?: string | null;
-  senasa_ps_linea?: string | null;
-  p_registral?: string | null;
-  cer_vehicular?: string | null;
-  processed_at?: string | null;
-  anulado_at?: string | null;
-};
-
-export type HistorialResponse = {
-  items: RegistroListado[];
-  total: number;
-};
-
-export async function listRegistros(params?: {
-  desde?: string; // YYYY-MM-DD
-  hasta?: string; // YYYY-MM-DD
-  limit?: number;
-  offset?: number;
-  estado?: string;
-  search?: string;
-}): Promise<HistorialResponse> {
-  const qs = new URLSearchParams();
-  if (params?.desde) qs.set("desde", params.desde);
-  if (params?.hasta) qs.set("hasta", params.hasta);
-  if (params?.limit != null) qs.set("limit", String(params.limit));
-  if (params?.offset != null) qs.set("offset", String(params.offset));
-  if (params?.estado) qs.set("estado", params.estado);
-  if (params?.search) qs.set("search", params.search);
-  const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  return request<HistorialResponse>(`/registros/historial${suffix}`, {
-    method: "GET",
-  });
-}
-
-// ======================
-// PROCESADOS (para Bandeja SAP > Procesados)
-// Backend real: GET /api/v1/registros/procesados?fecha=YYYY-MM-DD&limit=...&offset=...
-// ======================
-export type ProcesadoSapItem = {
-  registro_id: number;
-  estado: string | null;
-  processed_at: string | null;
-
-  // Campos estilo SAP (tu UI usa getAny(...,"BOOKING", etc))
-  FECHA: string;
-  O_BETA: string;
-  BOOKING: string;
-  AWB: string;
-  MARCA: string;
-  PLACAS: string;
-  DNI: string;
-  CHOFER: string;
-  LICENCIA: string;
-  TERMOGRAFOS: string;
-  CODIGO_SAP: string;
-  TRANSPORTISTA: string;
-  PS_BETA: string;
-  PS_ADUANA: string;
-  PS_OPERADOR: string;
-  SENASA_PS_LINEA: string;
-  N_DAM: string;
-  P_REGISTRAL: string;
-  CER_VEHICULAR: string;
-};
-
-export type ProcesadosResponse = {
-  items: ProcesadoSapItem[];
-  total: number;
-};
-
-export async function listProcesados(params: {
-  fecha: string; // YYYY-MM-DD
-  fecha_fin?: string; // YYYY-MM-DD
-  limit?: number;
-  offset?: number;
-}): Promise<ProcesadosResponse> {
-  const qs = new URLSearchParams();
-  qs.set("fecha", params.fecha);
-  if (params.fecha_fin) qs.set("fecha_fin", params.fecha_fin);
-  if (params.limit != null) qs.set("limit", String(params.limit));
-  if (params.offset != null) qs.set("offset", String(params.offset));
-  return request<ProcesadosResponse>(`/registros/procesados?${qs.toString()}`, {
-    method: "GET",
-  });
-}
-
-export async function listPendientes(): Promise<ProcesadosResponse> {
-  return request<ProcesadosResponse>(`/registros/pendientes`, {
-    method: "GET",
-  });
-}
-
-// ======================
-// Dashboard estadísticas
-// ======================
-export type DashboardStatsPorDia = {
-  fecha: string;
-  total: number;
-  pendientes: number;
-  procesados: number;
-  anulados: number;
-};
-
-export type DashboardStatsPorEstado = { estado: string; total: number };
-export type DashboardStatsPorTransportista = { nombre: string; total: number };
-
-export type DashboardStatsResponse = {
-  por_dia: DashboardStatsPorDia[];
-  por_estado: DashboardStatsPorEstado[];
-  por_transportista: DashboardStatsPorTransportista[];
-  total_registros: number;
-};
-
-export async function getDashboardStats(params?: {
-  desde?: string;
-  hasta?: string;
-  dias?: number;
-}): Promise<DashboardStatsResponse> {
-  const qs = new URLSearchParams();
-  if (params?.desde) qs.set("desde", params.desde);
-  if (params?.hasta) qs.set("hasta", params.hasta);
-  if (params?.dias != null) qs.set("dias", String(params.dias));
-  const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  return request<DashboardStatsResponse>(`/registros/dashboard-stats${suffix}`, { method: "GET" });
-}
-
-// ======================
-// OCR
-// Backend real: POST /api/v1/ocr/extraer?tipo=...
-// ======================
-export type TipoOCR =
-  | "DNI"
-  | "PS_BETA"
-  | "TERMOGRAFO"
-  | "BOOKING"
-  | "O_BETA"
-  | "AWB";
-
-export type OcrResponse = {
-  tipo: TipoOCR;
-  texto: string;
-  valores_detectados: string[];
-  mejor_valor: string | null;
-};
-
-export async function extractOcr(tipo: TipoOCR, file: File): Promise<OcrResponse> {
-  const fd = new FormData();
-  fd.append("archivo", file);
-
-  return request<OcrResponse>(`/ocr/extraer?tipo=${encodeURIComponent(tipo)}`, {
-    method: "POST",
-    body: fd,
-  });
-}
-
-// ======================
-// VEHÍCULOS (por placas, con transportista asociado)
-// Backend real: GET /api/v1/vehiculos/por-placas?placas=...
-// ======================
-export type Transportista = {
-  id: number;
-  ruc: string;
-  codigo_sap: string;
-  nombre_transportista: string;
-  partida_registral?: string | null;
-  estado?: string | null;
-};
-
-export type VehiculoConTransportista = {
-  id: number;
-  placa_tracto: string;
-  placa_carreta: string | null;
-  placas: string;
-  marca: string | null;
-  cert_vehicular: string | null;
-  cert_tracto: string | null;
-  cert_carreta: string | null;
-  configuracion_vehicular: string;
-  largo_tracto: number;
-  ancho_tracto: number;
-  alto_tracto: number;
-  largo_carreta: number;
-  ancho_carreta: number;
-  alto_carreta: number;
-  transportista: Transportista | null;
-  /** True si la placa carreta pertenece a otro transportista (el que manda es el del tracto). */
-  carreta_distinto_transportista: boolean;
-  /** Nombre del transportista de la carreta cuando es distinto. */
-  carreta_transportista_nombre: string | null;
-};
-
-/**
- * Busca por placa TRACTO (obligatoria) y opcional CARRETA.
- * El transportista es el del tracto. Si la carreta es de otro transportista, viene la alerta.
- */
-export async function getVehiculoPorTractoCarreta(
-  tracto: string,
-  carreta?: string | null,
-): Promise<VehiculoConTransportista> {
-  const qs = new URLSearchParams();
-  qs.set("tracto", (tracto || "").trim().toUpperCase());
-  if (carreta && (carreta as string).trim()) {
-    qs.set("carreta", (carreta as string).trim().toUpperCase());
-  }
-  return request<VehiculoConTransportista>(`/vehiculos/por-placas?${qs.toString()}`, {
-    method: "GET",
-  });
-}
-
-// ======================
-// TRANSPORTISTAS
-// Backend real: GET /api/v1/transportistas/buscar?texto=...
-// ======================
-export async function searchTransportistas(
-  texto: string,
-  limit: number = 20,
-): Promise<Transportista[]> {
-  const qs = new URLSearchParams();
-  qs.set("texto", (texto || "").trim());
-  qs.set("limit", String(limit));
-  return request<Transportista[]>(`/transportistas/buscar?${qs.toString()}`, {
-    method: "GET",
-  });
-}
-// ======================
-// AUDITORÍA
-// Backend real: GET /api/v1/auditoria
-// ======================
-export type AuditLog = {
-  id: number;
-  registro_id: number;
-  accion: string;
-  motivo?: string | null;
-  usuario?: string | null;
-  creado_en: string; // ISO date
-  antes?: any;
-  despues?: any;
-};
-
-export async function getAuditLogs(params?: {
-  limit?: number;
-  offset?: number;
-  usuario?: string;
-  accion?: string;
-}): Promise<AuditLog[]> {
-  const qs = new URLSearchParams();
-  if (params?.limit) qs.set("limit", String(params.limit));
-  if (params?.usuario) qs.set("usuario", params.usuario);
-  if (params?.accion) qs.set("accion", params.accion);
-
-  return request<AuditLog[]>(`/auditoria?${qs.toString()}`, { method: "GET" });
-}
-
-// ======================
-// AGROFLOW OPS
-// Backend real: GET /api/v1/agroflow/booking/{booking}
-// ======================
-export type AgroflowBookingData = {
-  booking: string;
-  naviera: string | null;
-  nave: string | null;
-  pol: string | null;
-  pod: string | null;
-  temperatura: string | null;
-  ventilacion: string | null;
-  planta_llenado: string | null;
-  hora_posicionamiento: string | null;
-  ac_option: boolean;
-  ct_option: boolean;
-  operador_logistico: string | null;
-  cultivo: string | null;
-  es_reprogramado: boolean;
-};
-
-export async function getAgroflowBooking(booking: string): Promise<AgroflowBookingData> {
-  const b = encodeURIComponent((booking || "").trim().toUpperCase());
-  return request<AgroflowBookingData>(`/agroflow/booking/${b}`, { method: "GET" });
-}
-
-export async function getLogisticaFacturas(): Promise<any[]> {
-  return request<any[]>("agroflow/logistica/facturas", { method: "GET" });
-}
-// ======================
-// INSTRUCCIONES DE EMBARQUE (IE)
-// ======================
-export type IeSearchResult = {
-  booking: string;
-  cultivo: string;
-  cliente: string;
-  orden_beta: string;
-};
-
-export type IeHistoryRecord = {
-  id: number;
-  booking: string;
-  o_beta: string | null;
-  cultivo: string | null;
-  cliente: string | null;
-  fecha_generacion: string;
-  creado_por: string | null;
-  estado: string;
-};
-
-export type IeHistoryResponse = {
-  total: number;
-  page: number;
-  limit: number;
-  results: IeHistoryRecord[];
-};
-
-export async function searchIeBookings(q: string): Promise<IeSearchResult[]> {
-  const query = encodeURIComponent(q.trim());
-  return request<IeSearchResult[]>(`/ie/search?q=${query}`, { method: "GET" });
-}
-
-export async function getIeHistory(params: {
-  desde?: string;
-  hasta?: string;
-  page?: number;
-  limit?: number;
-  estado?: string;
-}): Promise<IeHistoryResponse> {
-  const qs = new URLSearchParams();
-  if (params.desde) qs.set("start_date", params.desde);
-  if (params.hasta) qs.set("end_date", params.hasta);
-  if (params.page) qs.set("page", String(params.page));
-  if (params.limit) qs.set("limit", String(params.limit));
-  if (params.estado) qs.set("status", params.estado);
-
-  return request<IeHistoryResponse>(`/ie/history?${qs.toString()}`, { method: "GET" });
-}
-
-export async function checkIeExists(booking: string): Promise<{ exists: boolean }> {
-  return request<{ exists: boolean }>(`/ie/check/${encodeURIComponent(booking)}`, { method: "GET" });
-}
-
-export async function anularIe(booking: string): Promise<{ ok: boolean; anulados: number }> {
-  return request<{ ok: boolean; anulados: number }>(`/ie/anular/${encodeURIComponent(booking)}`, { method: "PUT" });
-}
-
-
-// ======================
-// PACKING LIST OGL
-// ======================
-export async function apiGetOglNaves(): Promise<string[]> {
-  return request<string[]>("/packing-ogl/naves", { method: "GET" });
-}
-
-export async function apiGetOglOrders(nave: string): Promise<{ orden: string; booking: string; finalizado: boolean }[]> {
-  return request<{ orden: string; booking: string; finalizado: boolean }[]>(`/packing-ogl/orders?nave=${encodeURIComponent(nave)}`, {
-    method: "GET",
-  });
-}
-
-export async function apiUploadConfirmacion(file: File): Promise<{ ok: boolean; orders: string[]; pallets_added: number }> {
-  const fd = new FormData();
-  fd.append("file", file);
-  return request<{ ok: boolean; orders: string[]; pallets_added: number }>("/packing-ogl/upload-confirmacion", {
-    method: "POST",
-    body: fd,
-  });
-}
-
-export async function apiUploadTermografos(file: File): Promise<{ ok: boolean; added: number }> {
-  const fd = new FormData();
-  fd.append("file", file);
-  return request<{ ok: boolean; added: number }>("/packing-ogl/upload-termografos", {
-    method: "POST",
-    body: fd,
-  });
-}
-
-export async function apiGetOglFinalizedNaves(): Promise<string[]> {
-  return request<string[]>("/packing-ogl/finalized", { method: "GET" });
-}
-
-export async function apiReopenOglNave(nave: string): Promise<{ ok: boolean; message: string }> {
-  return request<{ ok: boolean; message: string }>(`/packing-ogl/reopen/${encodeURIComponent(nave)}`, {
-    method: "POST",
-  });
-}
-
-export function getDownloadOglPackingUrl(nave: string): string {
-  // Siempre usar la ruta relativa al dominio actual para que pase por el proxy de Next.js
-  return `/api/v1/packing-ogl/generate/${encodeURIComponent(nave)}`;
-}
-
-export function getDownloadIeUrl(booking: string, observaciones?: string): string {
-  let url = `/api/v1/ie/generate/${encodeURIComponent(booking)}`;
-  if (observaciones) {
-      url += `?observaciones=${encodeURIComponent(observaciones)}`;
-  }
-  return url;
+/** Obtiene datos del usuario actual mediante el token */
+export async function apiMe(): Promise<any> {
+  return request<any>("/auth/me");
 }

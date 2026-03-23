@@ -47,12 +47,6 @@ export function AppHeader({ onOpenScanner }: Props) {
   const tab = searchParams?.get("tab") || "";
 
   const getModuleInfo = () => {
-    if (pathname === "/ie") return { name: "Instrucciones de Embarque", icon: "description" };
-    if (pathname === "/auditoria") return { name: "Auditoría", icon: "priority_high" };
-    if (pathname === "/logistica/facturas") return { name: "Facturas Logísticas", icon: "package_2" };
-    if (pathname === "/usuarios") return { name: "Gestión de Usuarios", icon: "group" };
-    if (pathname === "/packing-ogl") return { name: "Packing List OGL", icon: "inventory" };
-
     // Si está en el root
     if (pathname === "/") {
       if (tab === "dashboard" || tab === "") return { name: "Dashboard Gerencial", icon: "dashboard" };
