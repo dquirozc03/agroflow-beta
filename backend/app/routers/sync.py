@@ -300,22 +300,96 @@ def sync_asignacion_raw(payload: List[List[Union[str, int, float, None]]], db: S
         }
         col_indices = {WHITELIST_MAP[h]: i for i, h in enumerate(processed_headers) if h in WHITELIST_MAP}
         if "booking" not in col_indices: return {"ok": False, "detail": "No se encontró BOOKING"}
+        
         upserts = 0
         for row in payload[1:]:
+            if not row or len(row) <= col_indices["booking"]: continue
             booking = normalizar(str(row[col_indices["booking"]] or "").strip())
             if not booking: continue
+            
+            # --- 1. DAM y Contenedor ---
             posic = db.query(RefPosicionamiento).filter(RefPosicionamiento.booking == booking).first()
             db_dam = db.query(RefBookingDam).filter(RefBookingDam.booking == booking).first()
-            if not db_dam: db_dam = RefBookingDam(booking=booking); db.add(db_dam)
-            if "dam" in col_indices: db_dam.dam = normalizar(str(row[col_indices["dam"]] or "").strip())
+            if not db_dam:
+                db_dam = RefBookingDam(booking=booking)
+                db.add(db_dam)
+            
+            if "dam" in col_indices:
+                db_dam.dam = normalizar(str(row[col_indices["dam"]] or "").strip())
+            
             if "contenedor" in col_indices:
-                cont = format_container_number(str(row[col_indices["contenedor"]] or "").strip())
-                db_dam.awb = cont
-                if posic: posic.nro_fcl = cont
+                val_cont = str(row[col_indices["contenedor"]] or "").strip()
+                cont = format_container_number(val_cont)
+                if cont:
+                    db_dam.awb = cont
+                    if posic:
+                        if posic.nro_fcl and posic.nro_fcl != cont:
+                            # Opcional: Log discrepancia
+                            pass
+                        posic.nro_fcl = cont
+
+            # --- 2. Transportista ---
+            t_id = None
+            ruc_val = normalizar(str(row[col_indices["ruc"]] or "").strip()) if "ruc" in col_indices else None
+            nom_trans = normalizar(str(row[col_indices["transportista"]] or "").strip()) if "transportista" in col_indices else None
+            
+            if ruc_val or nom_trans:
+                trans = None
+                if ruc_val: trans = db.query(Transportista).filter(Transportista.ruc == ruc_val).first()
+                if not trans and nom_trans: trans = db.query(Transportista).filter(Transportista.razon_social == nom_trans).first()
+                if not trans and nom_trans:
+                    trans = Transportista(razon_social=nom_trans, ruc=ruc_val)
+                    db.add(trans); db.flush()
+                if trans: t_id = trans.id
+
+            # --- 3. Chofer ---
+            c_id = None
+            cond_val = str(row[col_indices["conductor"]] or "").strip() if "conductor" in col_indices else ""
+            lic_val = normalizar(str(row[col_indices["licencia"]] or "").strip()) if "licencia" in col_indices else None
+            
+            if cond_val:
+                dni = re.search(r'\d{8,}', cond_val)
+                dni_val = dni.group(0) if dni else None
+                nombres_raw = re.sub(r'\d+', '', cond_val).replace('-', '').strip()
+                
+                chof = None
+                if dni_val: chof = db.query(Chofer).filter(Chofer.dni == dni_val).first()
+                if not chof and lic_val: chof = db.query(Chofer).filter(func.upper(Chofer.licencia) == lic_val.upper()).first()
+                
+                if not chof and nombres_raw:
+                    chof = Chofer(nombre_completo=nombres_raw, dni=dni_val, licencia=lic_val)
+                    db.add(chof); db.flush()
+                if chof:
+                    if lic_val: chof.licencia = lic_val
+                    c_id = chof.id
+
+            # --- 4. Vehículo ---
+            v_id = None
+            p_tracto = normalizar(str(row[col_indices["placa_tracto"]] or "").strip()) if "placa_tracto" in col_indices else None
+            p_carreta = normalizar(str(row[col_indices["placa_carreta"]] or "").strip()) if "placa_carreta" in col_indices else None
+            
+            if p_tracto:
+                clean_p = re.sub(r'[^A-Z0-9]', '', p_tracto)
+                veh = db.query(Vehiculo).filter(Vehiculo.placas == clean_p).first()
+                if not veh:
+                    veh = Vehiculo(placas=clean_p, tipo="TRACTO")
+                    db.add(veh); db.flush()
+                veh.placa_carreta = p_carreta
+                v_id = veh.id
+
+            # Vincular a la DAM
+            if t_id: db_dam.transportista_id = t_id
+            if c_id: db_dam.chofer_id = c_id
+            if v_id: db_dam.vehiculo_id = v_id
+                
             upserts += 1
         db.commit()
         return {"ok": True, "upserts": upserts}
-    except Exception as e: db.rollback(); return {"ok": False, "error": str(e)}
+    except Exception as e: 
+        db.rollback()
+        import traceback
+        print(traceback.format_exc())
+        return {"ok": False, "error": str(e)}
 
 @router.post("/posicionamiento/pedidos-pallets/raw")
 def sync_pedidos_pallets_raw(payload: List[List[Union[str, int, float, None]]], db: Session = Depends(get_db), x_sync_token: str | None = Header(default=None)):
