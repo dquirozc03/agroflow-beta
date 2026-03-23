@@ -103,7 +103,7 @@ export async function apiLogin(usuario: string, password: string): Promise<Login
 /** Verifica si el backend está vivo */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const res = await fetch("/health");
+    const res = await fetch("/api/v1/health");
     return res.ok;
   } catch {
     return false;
