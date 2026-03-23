@@ -254,6 +254,7 @@ def generate_packing_ogl(nave: str, db: Session = Depends(get_db)):
         c_num = clean_numeric(c.orden_beta)
         if c_num: confs_map[c_num].append(c)
         
+    all_bookings = [o.booking for o in orders if o.booking]
     dams_map = {d.booking: d for d in db.query(RefBookingDam).filter(RefBookingDam.booking.in_(all_bookings)).all()}
     
     terms_all = db.query(PackingTermografo).filter(PackingTermografo.orden_beta.in_(target_keys)).all()
