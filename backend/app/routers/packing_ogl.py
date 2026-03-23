@@ -32,7 +32,7 @@ def format_order(num: int) -> str:
 
 @router.get("/naves")
 def get_ogl_naves(db: Session = Depends(get_db)):
-    """Lista naves únicas que tienen órdenes de clientes OGL y NO están finalizadas"""
+    """Lista naves únicas que tienen órdenes de clientes OGL"""
     # Filtramos clientes OGL en CatClienteIE
     ogl_clients = db.query(CatClienteIE).filter(CatClienteIE.nombre_comercial.ilike("%OGL%")).all()
     if not ogl_clients:
@@ -40,13 +40,12 @@ def get_ogl_naves(db: Session = Depends(get_db)):
     
     ogl_names = [c.nombre_comercial for c in ogl_clients]
     
-    # Buscamos naves en posicionamiento para esos clientes que NO estén finalizadas
-    # Si alguna orden de la nave está pendiente, mostramos la nave.
+    # Buscamos naves en posicionamiento para esos clientes
+    # El usuario quiere ver las naves así estén finalizadas para poder ver el historial o descargar de nuevo
     naves = db.query(RefPosicionamiento.nave).filter(
         RefPosicionamiento.cliente.in_(ogl_names),
         RefPosicionamiento.nave.isnot(None),
-        RefPosicionamiento.nave != "",
-        RefPosicionamiento.packing_ogl_finalizado == False
+        RefPosicionamiento.nave != ""
     ).distinct().all()
     
     return [n[0] for n in naves if n[0]]
@@ -93,19 +92,20 @@ async def upload_confirmacion(file: UploadFile = File(...), db: Session = Depend
         
         num_order = clean_numeric(order_raw)
         if not num_order: continue
-        order_beta = format_order(num_order)
+        
+        # User wants to preserve his exact format (BG-004, etc.)
+        order_beta = str(order_raw).strip().upper()
 
-        # VALIDACIÓN: ¿Está ya finalizada en el posicionamiento?
-        # Buscamos en posicionamiento cualquier coincidencia con este número de orden
+        # VALIDACIÓN: ¿Está ya finalizada? (Usando el número puramente para el cruce)
         pos = db.query(RefPosicionamiento).filter(
-            (RefPosicionamiento.orden_beta_final == order_beta) | 
-            (RefPosicionamiento.o_beta_inicial.ilike(f"%{num_order}%"))
+            (RefPosicionamiento.o_beta_inicial.ilike(f"%{num_order}%")) |
+            (RefPosicionamiento.orden_beta_final.ilike(f"%{num_order}%"))
         ).filter(RefPosicionamiento.packing_ogl_finalizado == True).first()
         
         if pos:
             raise HTTPException(
                 status_code=403, 
-                detail=f"La orden {order_beta} ya fue finalizada en un Packing List previo. No se pueden modificar sus datos."
+                detail=f"La orden {order_beta} ya fue finalizada en un Packing List previo."
             )
 
         processed_orders.add(order_beta)
@@ -155,7 +155,9 @@ async def upload_termografos(file: UploadFile = File(...), db: Session = Depends
         
         num_order = clean_numeric(order_raw)
         if not num_order: continue
-        order_beta = format_order(num_order)
+        
+        # Preservar el nombre tal cual viene en el excel
+        order_beta = str(order_raw).strip().upper()
         
         # Upsert Termografo
         term = db.query(PackingTermografo).filter(
