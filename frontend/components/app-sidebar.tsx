@@ -103,24 +103,25 @@ export function AppSidebar() {
     <aside
       className={cn(
         "relative flex flex-col h-full transition-all duration-700 ease-[cubic-bezier(0.2,1,0.2,1)]",
-        "bg-black/30 dark:bg-black/40 border-r border-white/5",
+        "bg-[#0f172a] border-r border-white/5",
         collapsed ? "w-24" : "w-[340px]"
       )}
     >
-      {/* Botón de Salida Superior (Invisible en el mockup pero está el icono) */}
-      <button className="absolute right-6 top-10 text-white/50 hover:text-white transition-colors">
-        <LogOut className="h-5 w-5" />
-      </button>
+      {/* Glow Decor Layer */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
 
       {/* Header Logo (Exacto al Mockup) */}
-      <div className="flex h-32 items-center gap-4 px-10">
-        <div className="h-10 w-10 flex items-center justify-center">
-          <Sprout className="text-indigo-400 h-8 w-8" />
+      <div className="flex h-32 items-center gap-4 px-10 relative z-10">
+        <div className="h-12 w-12 flex items-center justify-center bg-indigo-500 rounded-2xl shadow-xl shadow-indigo-500/20">
+          <Sprout className="text-white h-7 w-7" />
         </div>
         {!collapsed && (
-          <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-700">
+          <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-700">
             <span className="font-black text-[22px] text-white tracking-widest leading-none">
               AGROFLOW <span className="text-indigo-400">V2</span>
+            </span>
+            <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] mt-1.5 ml-0.5">
+               MANAGEMENT PRO
             </span>
           </div>
         )}

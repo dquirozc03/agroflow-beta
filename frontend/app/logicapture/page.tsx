@@ -134,13 +134,13 @@ export default function LogicCapturePerfectionPage() {
       <main className="flex-1 overflow-y-auto lc-scroll px-10 pb-16">
         <div className="max-w-[1600px] mx-auto space-y-12 mt-4">
           
-          {/* Dashboard Header 1:1 (Style: Farm Overview) */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-white/10 pb-10">
+          {/* Dashboard Header 1:1 (STYLE: FARM OVERVIEW) */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-slate-100 pb-10">
             <div className="space-y-1">
-              <h1 className="text-[54px] font-black text-slate-800 dark:text-white leading-[1.1] tracking-tighter">
-                LogiCapture <span className="text-indigo-400">Hub</span>
+              <h1 className="text-[58px] font-black text-slate-900 leading-[1.1] tracking-tighter">
+                LogiCapture <span className="text-indigo-500">Hub</span>
               </h1>
-              <p className="text-slate-500 font-bold text-lg tracking-tight">Registro Operativo · AgroFlow V2</p>
+              <p className="text-slate-400 font-bold text-lg tracking-tight uppercase tracking-[0.2em] ml-1">Registro Operativo · AgroFlow V2</p>
             </div>
 
             {/* Selector de Modo OCR (Style: Floating Pill) */}

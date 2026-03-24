@@ -46,23 +46,21 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen antialiased selection:bg-indigo-500/20 text-slate-800 relative flex items-center justify-center p-8",
+        "min-h-screen antialiased selection:bg-indigo-500/20 text-slate-800 relative flex items-center justify-center p-8 bg-[#eef1f5]",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
         _outfit.variable,
         _outfit.className
       )}>
-        {/* Greenhouse Background Overlay (Exacto al mockup) */}
-        <div 
-          className="fixed inset-0 z-0 bg-cover bg-center brightness-[0.7]"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?q=80&w=2574&auto=format&fit=crop')" }}
-        >
-          <div className="absolute inset-0 backdrop-blur-md bg-black/10" />
+        {/* Background Atmosphere (Luz real) */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-200/40 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-100/30 blur-[120px] rounded-full" />
         </div>
 
-        {/* LA GRAN CÁPSULA (Contenedor Maestro V2) */}
-        <div className="relative z-10 w-full max-w-[1800px] h-[92vh] flex overflow-hidden rounded-[3.5rem] bg-white/5 backdrop-blur-3xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/20">
+        {/* LA GRAN CÁPSULA (LUMINOSA) */}
+        <div className="relative z-10 w-full max-w-[1700px] h-[92vh] flex overflow-hidden rounded-[3.5rem] bg-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-white/50 ring-1 ring-black/5">
           <Providers>
             <AuthGuard>
               {children}
