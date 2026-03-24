@@ -15,32 +15,37 @@ import {
   FileText,
   BadgeCheck,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Target
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { cn } from "@/lib/utils";
 
-// --- Subcomponentes de UI Minimalista (Estilo V2 Clean) ---
+// --- Subcomponentes de UI 1:1 (John McClane Edition) ---
 
-function CleanCard({ title, icon: Icon, children }: any) {
+function DashboardCard({ title, icon: Icon, children, dark = false }: any) {
   return (
     <div className={cn(
-      "group relative overflow-hidden rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl p-8 transition-all duration-500",
-      "hover:border-indigo-500/30 hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)]"
+      "relative overflow-hidden rounded-[2.5rem] border p-8 transition-all duration-500",
+      dark 
+        ? "bg-slate-900/95 border-white/5 text-white shadow-2xl" 
+        : "bg-white/80 border-white/60 text-slate-800 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.05)] backdrop-blur-xl hover:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.08)]"
     )}>
-      {/* Glow Sutil de Fondo */}
-      <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-indigo-500/5 blur-[80px] group-hover:bg-indigo-500/10 transition-all" />
-      
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-500 shadow-sm">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "h-10 w-10 rounded-[1rem] flex items-center justify-center text-white",
+            dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-500 shadow-xl shadow-indigo-500/20"
+          )}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <h3 className={cn(
+            "text-sm font-black uppercase tracking-[0.2em]",
+            dark ? "text-slate-100" : "text-slate-400"
+          )}>
             {title}
           </h3>
-          <div className="h-0.5 w-8 bg-indigo-500/0 group-hover:w-12 group-hover:bg-indigo-500/50 transition-all duration-500 mt-1" />
         </div>
       </div>
       <div className="space-y-6">
@@ -50,26 +55,28 @@ function CleanCard({ title, icon: Icon, children }: any) {
   );
 }
 
-function InputMinimal({ label, placeholder, icon: Icon }: any) {
+function InputPill({ label, placeholder, icon: Icon, dark = false }: any) {
   return (
-    <div className="group space-y-2 w-full">
-      <div className="flex items-center justify-between px-1">
-        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest transition-colors group-focus-within:text-indigo-500">
-          {label}
-        </label>
-      </div>
+    <div className="space-y-2 group">
+      <label className={cn(
+        "text-[10px] font-black uppercase tracking-widest ml-2",
+        dark ? "text-slate-500" : "text-slate-400"
+      )}>
+        {label}
+      </label>
       <div className="relative">
         <input 
           type="text" 
           placeholder={placeholder}
           className={cn(
-            "w-full bg-white/50 dark:bg-slate-900/30 border border-slate-200 dark:border-white/5 rounded-2xl py-3 px-5 outline-none transition-all duration-300",
-            "placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-200 font-medium",
-            "focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/40 focus:ring-[6px] focus:ring-indigo-500/5 shadow-sm"
+            "w-full rounded-[1.5rem] py-3.5 px-6 outline-none transition-all duration-300 font-bold text-sm",
+            dark 
+            ? "bg-white/5 border border-white/5 focus:bg-white/10 text-white placeholder-slate-700 focus:border-indigo-500/50" 
+            : "bg-slate-50 border border-slate-100 focus:bg-white text-slate-900 placeholder-slate-300 focus:border-indigo-500/40 focus:ring-8 focus:ring-indigo-500/5 shadow-sm"
           )}
         />
         {Icon && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-700 group-focus-within:text-indigo-500/50 transition-colors">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300">
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -78,48 +85,35 @@ function InputMinimal({ label, placeholder, icon: Icon }: any) {
   );
 }
 
-function MultiTagInput({ label, placeholder }: any) {
+function TagSystem({ label, placeholder, dark = false }: any) {
   const [tags, setTags] = useState<string[]>([]);
-  const [inputValue, setInputValue] = useState("");
-
-  const addTag = () => {
-    const val = inputValue.trim();
-    if (val) {
-      setTags([...tags, val]);
-      setInputValue("");
-    }
-  };
-
   return (
-    <div className="group space-y-2 w-full">
-      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-indigo-500">
+    <div className="space-y-2">
+      <label className={cn("text-[10px] font-black uppercase tracking-widest ml-2", dark ? "text-slate-500" : "text-slate-400")}>
         {label}
       </label>
       <div className={cn(
-        "flex flex-wrap gap-2 items-center w-full min-h-[54px] bg-white/50 dark:bg-slate-900/30 border border-slate-200 dark:border-white/5 rounded-2xl px-4 py-2.5 transition-all duration-300 shadow-sm",
-        "focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:border-indigo-500/40 focus-within:ring-[6px] focus-within:ring-indigo-500/5"
+        "flex flex-wrap gap-2 items-center min-h-[56px] rounded-[1.5rem] px-4 py-3 border transition-all shadow-sm",
+        dark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"
       )}>
         {tags.map((tag, i) => (
-          <span key={i} className="flex items-center gap-2 pl-3 pr-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-[11px] font-black text-slate-600 dark:text-slate-300 animate-in zoom-in duration-300">
+          <span key={i} className="flex items-center gap-2 pl-4 pr-2 py-1.5 bg-indigo-500 text-white rounded-xl text-[11px] font-bold shadow-lg shadow-indigo-500/20">
             {tag}
-            <button 
-              onClick={() => setTags(tags.filter((_, idx) => idx !== i))}
-              className="p-1 hover:bg-red-500 hover:text-white rounded-md transition-colors"
-            >
-              <Plus className="h-3 w-3 rotate-45" />
-            </button>
+            <Plus className="h-3 w-3 rotate-45 cursor-pointer hover:scale-125" onClick={() => setTags(tags.filter((_, idx) => idx !== i))} />
           </span>
         ))}
         <input 
           type="text" 
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
           placeholder={tags.length === 0 ? placeholder : ""}
-          className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-slate-300 dark:placeholder:text-slate-700 min-w-[120px]"
+          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-500"
           onKeyDown={(e) => {
             if (e.key === "/" || e.key === "Enter") {
               e.preventDefault();
-              addTag();
+              const val = (e.target as HTMLInputElement).value.trim();
+              if (val) {
+                setTags([...tags, val]);
+                (e.target as HTMLInputElement).value = "";
+              }
             }
           }}
         />
@@ -130,117 +124,105 @@ function MultiTagInput({ label, placeholder }: any) {
 
 // --- Componente Principal ---
 
-export default function LogicCaptureMinimalPage() {
+export default function LogicCapturePerfectionPage() {
   const [ocrMode, setOcrMode] = useState<"booking" | "contenedor">("contenedor");
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#fafafa] dark:bg-[#07090e]">
-      <AppSidebar />
+    <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-1000">
+      <AppHeader title="LOGICAPTURE V2" onOpenScanner={() => {}} />
 
-      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <AppHeader title="LogicCapture V2" onOpenScanner={() => {}} />
+      <main className="flex-1 overflow-y-auto lc-scroll px-10 pb-16">
+        <div className="max-w-[1600px] mx-auto space-y-12 mt-4">
+          
+          {/* Dashboard Header 1:1 (Style: Farm Overview) */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-white/10 pb-10">
+            <div className="space-y-1">
+              <h1 className="text-[54px] font-black text-slate-800 dark:text-white leading-[1.1] tracking-tighter">
+                LogiCapture <span className="text-indigo-400">Hub</span>
+              </h1>
+              <p className="text-slate-500 font-bold text-lg tracking-tight">Registro Operativo · AgroFlow V2</p>
+            </div>
 
-        <main className="flex-1 overflow-y-auto lc-scroll p-10 lg:p-14">
-          <div className="max-w-[1600px] mx-auto space-y-12 animate-in fade-in duration-1000">
+            {/* Selector de Modo OCR (Style: Floating Pill) */}
+            <div className="flex bg-white/80 dark:bg-slate-950/20 p-2 rounded-[2rem] border border-white dark:border-white/5 shadow-2xl backdrop-blur-xl">
+              <button 
+                onClick={() => setOcrMode("contenedor")}
+                className={cn(
+                  "flex items-center gap-2 px-10 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all",
+                  ocrMode === "contenedor" 
+                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 scale-[1.03]" 
+                  : "text-slate-400 hover:text-slate-700"
+                )}
+              >
+                <Target className="h-4 w-4" />
+                Detección Contenedor
+              </button>
+              <button 
+                onClick={() => setOcrMode("booking")}
+                className={cn(
+                  "flex items-center gap-2 px-10 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all",
+                  ocrMode === "booking" 
+                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 scale-[1.03]" 
+                  : "text-slate-400 hover:text-slate-700"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                Detección Booking
+              </button>
+            </div>
+          </div>
+
+          {/* Grid de Contenido (Módulos de Información) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             
-            {/* Header de la Aplicación */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-slate-200 dark:border-white/5 pb-12">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">
-                  <Zap className="h-3 w-3" />
-                  Módulo de Inteligencia
-                </div>
-                <h1 className="text-6xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Logi<span className="text-slate-300 dark:text-slate-700">Capture</span>
-                </h1>
-                <p className="text-slate-400 dark:text-slate-600 text-lg max-w-xl font-medium">Sincronización avanzada de datos de embarque con inteligencia OCR integrada.</p>
+            {/* PANEL 1 (STYLE: DARK MAP CARD) */}
+            <DashboardCard title="Parámetros de Embarque" icon={FileText} dark={true}>
+              <InputPill label="Nº de Booking" placeholder="Ingresar booking..." icon={Hash} dark={true} />
+              <InputPill label="ID de Contenedor" placeholder="Referencia oficial..." icon={Container} dark={true} />
+              <InputPill label="Nº de Orden Beta" placeholder="Orden de embarque..." dark={true} />
+              <div className="h-28 bg-white/5 rounded-[2rem] border border-white/5 flex items-center justify-center text-slate-700 italic text-[11px] font-black uppercase tracking-widest">
+                <Scan className="h-6 w-6 mr-3 text-indigo-400 animate-pulse" />
+                Analizando Estándar SAP...
               </div>
+            </DashboardCard>
 
-              {/* Selector de Modo OCR Minimalista */}
-              <div className="flex bg-slate-100/50 dark:bg-slate-900/50 p-1.5 rounded-3xl border border-slate-200/50 dark:border-white/5 shadow-sm">
-                <button 
-                  onClick={() => setOcrMode("contenedor")}
-                  className={cn(
-                    "flex items-center gap-2 px-8 py-3 rounded-[1.25rem] font-black text-[11px] tracking-widest transition-all uppercase",
-                    ocrMode === "contenedor" 
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl shadow-black/5 scale-[1.02]" 
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  )}
-                >
-                  <Container className={cn("h-4 w-4", ocrMode === "contenedor" ? "text-indigo-500" : "")} />
-                  Contenedor
-                </button>
-                <button 
-                  onClick={() => setOcrMode("booking")}
-                  className={cn(
-                    "flex items-center gap-2 px-8 py-3 rounded-[1.25rem] font-black text-[11px] tracking-widest transition-all uppercase",
-                    ocrMode === "booking" 
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl shadow-black/5 scale-[1.02]" 
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  )}
-                >
-                  <BookOpen className={cn("h-4 w-4", ocrMode === "booking" ? "text-indigo-500" : "")} />
-                  Booking
-                </button>
+            <DashboardCard title="Gestión de Unidad" icon={Truck}>
+              <InputPill label="DNI del Chofer" placeholder="Escaneo inteligente..." icon={Zap} />
+              <div className="grid grid-cols-2 gap-4">
+                <InputPill label="Tracto" placeholder="000-XXX" />
+                <InputPill label="Carreta" placeholder="000-XXX" />
               </div>
-            </div>
+              <InputPill label="Transportista" placeholder="Empresa asignada..." icon={BookOpen} />
+              <InputPill label="Precinto BETA" placeholder="Precinto oficial de planta..." icon={BadgeCheck} />
+            </DashboardCard>
 
-            {/* Grid de Contenido */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              
-              <CleanCard title="Datos de Embarque" icon={FileText}>
-                <InputMinimal label="Nº de Booking" placeholder="Ingresar booking..." icon={Hash} />
-                <InputMinimal label="ID Contenedor" placeholder="Cargar contenedor..." icon={Container} />
-                <InputMinimal label="Nº Orden Beta" placeholder="Asignar orden..." />
-                <InputMinimal label="Nº de Dam" placeholder="Referencia DAM..." />
-              </CleanCard>
-
-              <CleanCard title="Unidad Operativa" icon={Truck}>
-                <InputMinimal label="DNI Chofer" placeholder="Escaneo automático..." icon={Zap} />
-                <div className="grid grid-cols-2 gap-4">
-                  <InputMinimal label="Placa Tracto" placeholder="000-XXX" />
-                  <InputMinimal label="Placa Carreta" placeholder="000-XXX" />
-                </div>
-                <InputMinimal label="Transportista" placeholder="Empresa asignada..." icon={BookOpen} />
-                <InputMinimal label="Precinto BETA" placeholder="Cierre de unidad..." />
-              </CleanCard>
-
-              <CleanCard title="Precintos de Seguridad" icon={ShieldCheck}>
-                <MultiTagInput label="Aduana" placeholder="Ingrese nros y use /" />
-                <MultiTagInput label="Operador" placeholder="Ingrese nros y use /" />
-                <MultiTagInput label="Senasa / Línea" placeholder="Ingrese nros y use /" />
-                <MultiTagInput label="Termógrafos" placeholder="Identificadores..." />
-              </CleanCard>
-
-            </div>
-
-            {/* Panel de Acción Flotante */}
-            <div className="relative group bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200 dark:border-white/5 p-10 rounded-[3rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 transition-all hover:border-indigo-500/20">
-              <div className="flex items-center gap-6">
-                <div className="h-14 w-14 rounded-3xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 ring-1 ring-emerald-500/20">
-                  <BadgeCheck className="h-7 w-7" />
-                </div>
-                <div>
-                  <h4 className="text-xl font-black text-slate-900 dark:text-white mb-1">Verificación Completa</h4>
-                  <p className="text-slate-500 font-medium">Todos los parámetros críticos han sido validados.</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 w-full md:w-auto">
-                <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-5 rounded-[1.5rem] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100">
-                  <RotateCcw className="h-4 w-4" />
-                  LIMPIAR
-                </button>
-                <button className="flex-[2] md:flex-none flex items-center justify-center gap-3 px-12 py-5 rounded-[1.5rem] bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-lg shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98]">
-                  FINALIZAR REGISTRO
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
+            <DashboardCard title="Niveles de Seguridad" icon={ShieldCheck}>
+              <TagSystem label="Lote de Aduana" placeholder="Usar / para separar" />
+              <TagSystem label="Lote de Operador" placeholder="Usar / para separar" />
+              <TagSystem label="Senasa / Línea" placeholder="Ingreso múltiple..." />
+              <TagSystem label="Sensores Térmicos" placeholder="ID de termógrafo..." />
+            </DashboardCard>
 
           </div>
-        </main>
-      </div>
+
+          {/* GRAN BOTÓN DE CIERRE (Estilo Flomsters / Central Button) */}
+          <div className="flex items-center justify-between bg-indigo-600 p-6 rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(79,70,229,0.5)] group transform hover:scale-[1.01] transition-all cursor-pointer">
+            <div className="flex items-center gap-6 px-4 text-white">
+              <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center border border-white/10">
+                <BadgeCheck className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h4 className="text-2xl font-black italic tracking-tighter">CONCLUIR CAPTURA</h4>
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60">Sincronización instantánea con Base de Datos</p>
+              </div>
+            </div>
+            <div className="h-16 w-16 bg-white text-indigo-600 rounded-full flex items-center justify-center mr-4 shadow-xl group-hover:rotate-45 transition-all">
+              <Plus className="h-10 w-10" />
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   );
 }

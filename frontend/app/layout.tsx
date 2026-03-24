@@ -46,30 +46,32 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-[#f1f3f6] dark:bg-[#07090e] antialiased selection:bg-indigo-500/20 text-slate-800 relative",
+        "min-h-screen antialiased selection:bg-indigo-500/20 text-slate-800 relative flex items-center justify-center p-8",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
         _outfit.variable,
         _outfit.className
       )}>
-        {/* Atmosphere Decor Layer (Neblina tecnológica más profunda) */}
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 blur-[150px] rounded-full animate-pulse" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-emerald-500/5 blur-[150px] rounded-full" />
-          {/* Sutil textura de cristal */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay" />
+        {/* Greenhouse Background Overlay (Exacto al mockup) */}
+        <div 
+          className="fixed inset-0 z-0 bg-cover bg-center brightness-[0.7]"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?q=80&w=2574&auto=format&fit=crop')" }}
+        >
+          <div className="absolute inset-0 backdrop-blur-md bg-black/10" />
         </div>
 
-        <div className="relative z-10">
+        {/* LA GRAN CÁPSULA (Contenedor Maestro V2) */}
+        <div className="relative z-10 w-full max-w-[1800px] h-[92vh] flex overflow-hidden rounded-[3.5rem] bg-white/5 backdrop-blur-3xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/20">
           <Providers>
             <AuthGuard>
               {children}
-              <SessionTimeout />
-              <Toaster position="top-right" richColors />
             </AuthGuard>
           </Providers>
         </div>
+        
+        {/* Toaster & Overlays (Fuera de la cápsula) */}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
