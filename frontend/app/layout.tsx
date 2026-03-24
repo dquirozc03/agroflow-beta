@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "AgroFlow | V2 Integrated",
   description:
     "Sistema Central de Control Operativo AgroFlow.",
+  icons: {
+    icon: "/Icono_AgroFlow.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -34,7 +37,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning className="light">
       <head>
         <title>AgroFlow | Dashboard</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/Icono_AgroFlow.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
