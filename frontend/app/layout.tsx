@@ -1,6 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Public_Sans, Outfit } from "next/font/google";
+import { Inter, JetBrains_Mono, Public_Sans, Outfit, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
@@ -10,22 +10,17 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const _publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-public-sans" });
-const _jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-});
 const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-
+const _spaceG = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-g" });
 
 export const metadata: Metadata = {
   title: "AgroFlow | V2 Integrated",
   description:
-    "Sistema Central de Control Operativo BETA.",
+    "Sistema Central de Control Operativo AgroFlow.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#f6f8fa",
   width: "device-width",
   initialScale: 1,
 };
@@ -38,22 +33,19 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className="light">
       <head>
-        <title>AgroFlow | V2</title>
+        <title>AgroFlow | Dashboard</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-white antialiased selection:bg-emerald-100 text-slate-900",
+        "min-h-screen bg-[#f6f8fa] antialiased selection:bg-emerald-100 text-slate-900 font-['Inter']",
         _inter.variable,
-        _publicSans.variable,
-        _jetbrains.variable,
         _outfit.variable,
-        _outfit.className
+        _spaceG.variable
       )}>
         <Providers>
-          {/* Ajuste: Solo aplicamos Flex al layout una vez autenticado, para no romper el Login */}
           <AuthGuard>
             {children}
           </AuthGuard>
