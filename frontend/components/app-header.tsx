@@ -33,9 +33,10 @@ const ENV = process.env.NEXT_PUBLIC_ENV || "DEV";
 
 interface Props {
   onOpenScanner?: () => void;
+  title?: string;
 }
 
-export function AppHeader({ onOpenScanner }: Props) {
+export function AppHeader({ onOpenScanner, title }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -89,7 +90,7 @@ export function AppHeader({ onOpenScanner }: Props) {
         <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10 animate-in fade-in slide-in-from-left-2 duration-300">
           <span className="material-symbols-outlined text-[18px] text-primary notranslate">{moduleInfo.icon}</span>
           <span className="text-[13px] font-black text-primary tracking-tight">
-            {moduleInfo.name}
+            {title || moduleInfo.name}
           </span>
         </div>
       </div>

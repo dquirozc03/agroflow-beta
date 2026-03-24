@@ -34,9 +34,9 @@ export function AppSidebar() {
       {
         name: "LogiCapture V2",
         icon: Box,
-        href: "#",
-        active: false,
-        soon: true,
+        href: "/logicapture",
+        active: pathname === "/logicapture",
+        soon: false,
       },
       {
         name: "Informes Profesionales",
