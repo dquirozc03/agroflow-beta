@@ -18,7 +18,8 @@ import {
   BarChart3,
   Search,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
