@@ -9,74 +9,67 @@ import {
   ShieldCheck, 
   Thermometer, 
   Hash, 
-  ChevronRight,
   Plus,
-  Trash2,
   FileText,
   BadgeCheck,
   Zap,
-  RotateCcw,
-  Target
+  Target,
+  Layers,
+  Settings,
+  Cpu,
+  BarChart3,
+  Search
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { cn } from "@/lib/utils";
 
-// --- Subcomponentes de UI 1:1 (John McClane Edition) ---
+// --- Componentes UI Stitch Edition (Bento Style) ---
 
-function DashboardCard({ title, icon: Icon, children, dark = false }: any) {
+function BentoCard({ title, subtitle, icon: Icon, children, className }: any) {
   return (
     <div className={cn(
-      "relative overflow-hidden rounded-[2.5rem] border p-8 transition-all duration-500",
-      dark 
-        ? "bg-slate-900/95 border-white/5 text-white shadow-2xl" 
-        : "bg-white/80 border-white/60 text-slate-800 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.05)] backdrop-blur-xl hover:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.08)]"
+      "bg-[#131313] rounded-2xl p-8 border border-white/5 relative overflow-hidden group hover:border-[#b6a0ff]/20 transition-all duration-500",
+      className
     )}>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className={cn(
-            "h-10 w-10 rounded-[1rem] flex items-center justify-center text-white",
-            dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-500 shadow-xl shadow-indigo-500/20"
-          )}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <h3 className={cn(
-            "text-sm font-black uppercase tracking-[0.2em]",
-            dark ? "text-slate-100" : "text-slate-400"
-          )}>
+      {/* Background Micro-Glow Layer */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-[#b6a0ff]/5 blur-[60px] rounded-full pointer-events-none" />
+      
+      <div className="flex justify-between items-start mb-10 relative z-10">
+        <div>
+          <h2 className="font-['Space_Grotesk'] text-2xl font-black tracking-tighter text-white mb-1 uppercase italic">
             {title}
-          </h3>
+          </h2>
+          <p className="text-[#adaaaa] text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+            {subtitle}
+          </p>
+        </div>
+        <div className="h-10 w-10 bg-[#b6a0ff]/10 rounded-xl flex items-center justify-center text-[#b6a0ff] shadow-[0_0_15px_rgba(182,160,255,0.1)]">
+           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <div className="space-y-6">
+
+      <div className="space-y-6 relative z-10">
         {children}
       </div>
     </div>
   );
 }
 
-function InputPill({ label, placeholder, icon: Icon, dark = false }: any) {
+function StitchInput({ label, placeholder, icon: Icon }: any) {
   return (
-    <div className="space-y-2 group">
-      <label className={cn(
-        "text-[10px] font-black uppercase tracking-widest ml-2",
-        dark ? "text-slate-500" : "text-slate-400"
-      )}>
+    <div className="space-y-2.5">
+      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#adaaaa] ml-2 block">
         {label}
       </label>
       <div className="relative">
         <input 
           type="text" 
           placeholder={placeholder}
-          className={cn(
-            "w-full rounded-[1.5rem] py-3.5 px-6 outline-none transition-all duration-300 font-bold text-sm",
-            dark 
-            ? "bg-white/5 border border-white/5 focus:bg-white/10 text-white placeholder-slate-700 focus:border-indigo-500/50" 
-            : "bg-slate-50 border border-slate-100 focus:bg-white text-slate-900 placeholder-slate-300 focus:border-indigo-500/40 focus:ring-8 focus:ring-indigo-500/5 shadow-sm"
-          )}
+          className="w-full bg-[#1a1a1a] rounded-xl py-3.5 px-6 outline-none border border-white/5 focus:border-[#b6a0ff] text-sm font-bold text-white placeholder-slate-800 transition-all"
         />
         {Icon && (
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-800 group-focus-within:text-[#b6a0ff]">
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -85,27 +78,24 @@ function InputPill({ label, placeholder, icon: Icon, dark = false }: any) {
   );
 }
 
-function TagSystem({ label, placeholder, dark = false }: any) {
+function MultiTagStitch({ label, placeholder }: any) {
   const [tags, setTags] = useState<string[]>([]);
   return (
-    <div className="space-y-2">
-      <label className={cn("text-[10px] font-black uppercase tracking-widest ml-2", dark ? "text-slate-500" : "text-slate-400")}>
+    <div className="space-y-2.5">
+      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#adaaaa] ml-2 block">
         {label}
       </label>
-      <div className={cn(
-        "flex flex-wrap gap-2 items-center min-h-[56px] rounded-[1.5rem] px-4 py-3 border transition-all shadow-sm",
-        dark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"
-      )}>
+      <div className="flex flex-wrap gap-2 items-center min-h-[56px] rounded-xl px-5 py-3.5 bg-[#1a1a1a] border border-white/5">
         {tags.map((tag, i) => (
-          <span key={i} className="flex items-center gap-2 pl-4 pr-2 py-1.5 bg-indigo-500 text-white rounded-xl text-[11px] font-bold shadow-lg shadow-indigo-500/20">
+          <span key={i} className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-[#b6a0ff] to-[#7e51ff] text-[#000000] rounded-lg text-[10px] font-black shadow-lg">
             {tag}
-            <Plus className="h-3 w-3 rotate-45 cursor-pointer hover:scale-125" onClick={() => setTags(tags.filter((_, idx) => idx !== i))} />
+            <Plus className="h-3.5 w-3.5 rotate-45 cursor-pointer opacity-70 hover:opacity-100" onClick={() => setTags(tags.filter((_, idx) => idx !== i))} />
           </span>
         ))}
         <input 
           type="text" 
           placeholder={tags.length === 0 ? placeholder : ""}
-          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-500"
+          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-[#adaaaa] placeholder-slate-800"
           onKeyDown={(e) => {
             if (e.key === "/" || e.key === "Enter") {
               e.preventDefault();
@@ -122,104 +112,134 @@ function TagSystem({ label, placeholder, dark = false }: any) {
   );
 }
 
-// --- Componente Principal ---
+// --- Componente Principal: LogiCapture Hub ---
 
-export default function LogicCapturePerfectionPage() {
+export default function LogicCaptureStitchPage() {
   const [ocrMode, setOcrMode] = useState<"booking" | "contenedor">("contenedor");
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-1000">
-      <AppHeader title="LOGICAPTURE V2" onOpenScanner={() => {}} />
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0e0e0e]">
+      <AppHeader title="AGRICULTURE HUB" onOpenScanner={() => {}} />
 
-      <main className="flex-1 overflow-y-auto lc-scroll px-10 pb-16">
-        <div className="max-w-[1600px] mx-auto space-y-12 mt-4">
+      <main className="flex-1 overflow-y-auto p-10 lc-scroll">
+        <div className="max-w-[1600px] mx-auto space-y-10">
           
-          {/* Dashboard Header 1:1 (STYLE: FARM OVERVIEW) */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-slate-100 pb-10">
-            <div className="space-y-1">
-              <h1 className="text-[58px] font-black text-slate-900 leading-[1.1] tracking-tighter">
-                LogiCapture <span className="text-indigo-500">Hub</span>
-              </h1>
-              <p className="text-slate-400 font-bold text-lg tracking-tight uppercase tracking-[0.2em] ml-1">Registro Operativo · AgroFlow V2</p>
-            </div>
-
-            {/* Selector de Modo OCR (Style: Floating Pill) */}
-            <div className="flex bg-white/80 dark:bg-slate-950/20 p-2 rounded-[2rem] border border-white dark:border-white/5 shadow-2xl backdrop-blur-xl">
-              <button 
-                onClick={() => setOcrMode("contenedor")}
-                className={cn(
-                  "flex items-center gap-2 px-10 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all",
-                  ocrMode === "contenedor" 
-                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 scale-[1.03]" 
-                  : "text-slate-400 hover:text-slate-700"
-                )}
-              >
-                <Target className="h-4 w-4" />
-                Detección Contenedor
-              </button>
-              <button 
-                onClick={() => setOcrMode("booking")}
-                className={cn(
-                  "flex items-center gap-2 px-10 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all",
-                  ocrMode === "booking" 
-                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 scale-[1.03]" 
-                  : "text-slate-400 hover:text-slate-700"
-                )}
-              >
-                <FileText className="h-4 w-4" />
-                Detección Booking
-              </button>
-            </div>
-          </div>
-
-          {/* Grid de Contenido (Módulos de Información) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {/* Dashboard Hub: Bento Grid Analysis */}
+          <div className="grid grid-cols-12 gap-10">
             
-            {/* PANEL 1 (STYLE: DARK MAP CARD) */}
-            <DashboardCard title="Parámetros de Embarque" icon={FileText} dark={true}>
-              <InputPill label="Nº de Booking" placeholder="Ingresar booking..." icon={Hash} dark={true} />
-              <InputPill label="ID de Contenedor" placeholder="Referencia oficial..." icon={Container} dark={true} />
-              <InputPill label="Nº de Orden Beta" placeholder="Orden de embarque..." dark={true} />
-              <div className="h-28 bg-white/5 rounded-[2rem] border border-white/5 flex items-center justify-center text-slate-700 italic text-[11px] font-black uppercase tracking-widest">
-                <Scan className="h-6 w-6 mr-3 text-indigo-400 animate-pulse" />
-                Analizando Estándar SAP...
+            {/* HERO CARD (Style: Sensor Network Status) */}
+            <BentoCard 
+              title="Sincronización Operativa" 
+              subtitle="Real-time telemetry / OCR Processing" 
+              icon={Cpu}
+              className="col-span-12 lg:col-span-8"
+            >
+              <div className="flex justify-between items-center bg-[#b6a0ff]/5 p-5 border border-[#b6a0ff]/20 rounded-2xl mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-[#b6a0ff] rounded-xl flex items-center justify-center text-[#340090] shadow-[0_0_15px_#b6a0ff]">
+                    <Target className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-['Space_Grotesk'] font-black uppercase text-lg italic">Modo de Detección</h3>
+                    <p className="text-[10px] text-[#adaaaa] font-black uppercase tracking-widest">IA Conectada / Precisión 99.8%</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                   <button onClick={() => setOcrMode("contenedor")} className={cn("px-6 py-2.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all", ocrMode === "contenedor" ? "bg-[#b6a0ff] text-[#000000]" : "bg-[#262626] text-[#adaaaa]")}>Contenedor</button>
+                   <button onClick={() => setOcrMode("booking")} className={cn("px-6 py-2.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all", ocrMode === "booking" ? "bg-[#b6a0ff] text-[#000000]" : "bg-[#262626] text-[#adaaaa]")}>Booking</button>
+                </div>
               </div>
-            </DashboardCard>
 
-            <DashboardCard title="Gestión de Unidad" icon={Truck}>
-              <InputPill label="DNI del Chofer" placeholder="Escaneo inteligente..." icon={Zap} />
+              {/* Controles de Datos (Doble Columna) */}
+              <div className="grid grid-cols-2 gap-8 mt-10">
+                <div className="space-y-6">
+                  <StitchInput label="Nº de Booking" placeholder="STICH-BK-000" icon={Hash} />
+                  <StitchInput label="ID Contenedor" placeholder="BETA-HUB-CN" icon={Container} />
+                </div>
+                <div className="space-y-6">
+                  <StitchInput label="Orden Beta" placeholder="OB-PRE-2024" icon={FileText} />
+                  <StitchInput label="ID DAM" placeholder="DMN-PE-ALPHA" icon={Layers} />
+                </div>
+              </div>
+            </BentoCard>
+
+            {/* SIDE PANEL: Recent Alerts / Activity Style */}
+            <BentoCard 
+              title="Unidad Operativa" 
+              subtitle="Vehicle & Driver Analysis" 
+              icon={Truck}
+              className="col-span-12 lg:col-span-4"
+            >
+              <div className="p-5 rounded-2xl bg-[#ff6e84]/5 border border-[#ff6e84]/20 mb-6">
+                <p className="text-[10px] font-black text-[#ff6e84] uppercase tracking-widest mb-1 italic">Estado de Carga</p>
+                <p className="text-sm font-bold text-white tracking-tight leading-relaxed">Esperando validación de Pesaje de Planta para concluir registro.</p>
+              </div>
+              <StitchInput label="DNI Chofer" placeholder="Escaneo Inteligente" icon={Zap} />
               <div className="grid grid-cols-2 gap-4">
-                <InputPill label="Tracto" placeholder="000-XXX" />
-                <InputPill label="Carreta" placeholder="000-XXX" />
+                 <StitchInput label="Placa Tracto" placeholder="000-XXX" />
+                 <StitchInput label="Placa Carreta" placeholder="000-XXX" />
               </div>
-              <InputPill label="Transportista" placeholder="Empresa asignada..." icon={BookOpen} />
-              <InputPill label="Precinto BETA" placeholder="Precinto oficial de planta..." icon={BadgeCheck} />
-            </DashboardCard>
+              <StitchInput label="Empresa" placeholder="Empresa de Transporte" icon={BookOpen} />
+            </BentoCard>
 
-            <DashboardCard title="Niveles de Seguridad" icon={ShieldCheck}>
-              <TagSystem label="Lote de Aduana" placeholder="Usar / para separar" />
-              <TagSystem label="Lote de Operador" placeholder="Usar / para separar" />
-              <TagSystem label="Senasa / Línea" placeholder="Ingreso múltiple..." />
-              <TagSystem label="Sensores Térmicos" placeholder="ID de termógrafo..." />
-            </DashboardCard>
+            {/* SECCIÓN PRECINTOS (Bento Footer Row) */}
+            <BentoCard 
+              title="Precintos de Seguridad" 
+              subtitle="Security Protocol Validation" 
+              icon={ShieldCheck}
+              className="col-span-12 lg:col-span-8"
+            >
+              <div className="grid grid-cols-2 gap-8">
+                 <div className="space-y-6">
+                   <MultiTagStitch label="Precinto Aduana" placeholder="Usar / para separar" />
+                   <MultiTagStitch label="Precinto Operador" placeholder="Ingreso múltiple" />
+                   <MultiTagStitch label="Precinto Senasa" placeholder="ID de Validción" />
+                 </div>
+                 <div className="space-y-6">
+                   <MultiTagStitch label="Precinto Línea" placeholder="Ingreso múltiple" />
+                   <MultiTagStitch label="Precinto BETA" placeholder="Precinto oficial Planta" />
+                   <MultiTagStitch label="Termógrafos" placeholder="Identificación Térmica" />
+                 </div>
+              </div>
+            </BentoCard>
+
+            {/* CHART / STATUS CARD (Environmental Metrics Style) */}
+            <BentoCard 
+              title="Estadísticas Beta" 
+              subtitle="Live Performance Tracking" 
+              icon={BarChart3}
+              className="col-span-12 lg:col-span-4"
+            >
+              <div className="h-44 w-full flex items-center justify-center bg-[#b6a0ff]/5 border border-[#b6a0ff]/10 rounded-2xl">
+                 {/* SVG Line Mockup */}
+                 <svg className="w-full h-full p-4" viewBox="0 0 400 150">
+                    <path d="M0,130 Q50,110 100,120 T200,80 T300,100 T430,40" fill="none" stroke="#b6a0ff" strokeWidth="4" />
+                    <path d="M0,130 Q50,110 100,120 T200,80 T300,100 T430,40" fill="transparent" stroke="#b6a0ff" strokeWidth="15" strokeOpacity="0.1" />
+                 </svg>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] font-black text-[#adaaaa] uppercase mb-1">Precisión Hub</p>
+                    <p className="text-xl font-['Space_Grotesk'] font-black text-white italic tracking-tighter">99.9%</p>
+                 </div>
+                 <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
+                    <p className="text-[10px] font-black text-[#adaaaa] uppercase mb-1">Carga Segura</p>
+                    <p className="text-xl font-['Space_Grotesk'] font-black text-[#8eff71] italic tracking-tighter">OK</p>
+                 </div>
+              </div>
+            </BentoCard>
 
           </div>
 
-          {/* GRAN BOTÓN DE CIERRE (Estilo Flomsters / Central Button) */}
-          <div className="flex items-center justify-between bg-indigo-600 p-6 rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(79,70,229,0.5)] group transform hover:scale-[1.01] transition-all cursor-pointer">
-            <div className="flex items-center gap-6 px-4 text-white">
-              <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center border border-white/10">
-                <BadgeCheck className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h4 className="text-2xl font-black italic tracking-tighter">CONCLUIR CAPTURA</h4>
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60">Sincronización instantánea con Base de Datos</p>
-              </div>
-            </div>
-            <div className="h-16 w-16 bg-white text-indigo-600 rounded-full flex items-center justify-center mr-4 shadow-xl group-hover:rotate-45 transition-all">
-              <Plus className="h-10 w-10" />
-            </div>
-          </div>
+          {/* GRAN BOTÓN MAESTRO (Deploy Action) */}
+          <button className="w-full relative group">
+             <div className="bg-gradient-to-r from-[#b6a0ff] via-[#7e51ff] to-[#b6a0ff] h-20 rounded-[2rem] flex items-center justify-center shadow-[0_20px_50px_-10px_#b6a0ff60] transition-all group-hover:scale-[1.01] group-active:scale-95">
+                <span className="font-['Space_Grotesk'] font-black text-[#000000] text-2xl uppercase italic tracking-tighter">
+                   Desplegar Registro Logístico
+                </span>
+             </div>
+             <div className="absolute inset-0 bg-[#b6a0ff]/20 blur-2xl group-hover:blur-3xl transition-all rounded-full opacity-50" />
+          </button>
 
         </div>
       </main>

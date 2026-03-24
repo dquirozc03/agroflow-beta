@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#5fb83d",
+  themeColor: "#0e0e0e",
   width: "device-width",
   initialScale: 1,
 };
@@ -36,31 +36,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className="dark">
       <head>
         <title>AgroFlow | Gestión Logística</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen antialiased selection:bg-indigo-500/20 text-slate-800 relative flex items-center justify-center p-8 bg-[#eef1f5]",
+        "min-h-screen bg-[#0e0e0e] antialiased selection:bg-[#b6a0ff]/20 text-white relative font-['Manrope']",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
         _outfit.variable,
         _outfit.className
       )}>
-        {/* Background Atmosphere (Luz real) */}
-        <div className="fixed inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-200/40 blur-[120px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-100/30 blur-[120px] rounded-full" />
+        {/* Stitch Atmosphere Layer */}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#b6a0ff]/5 blur-[120px] rounded-full" />
         </div>
 
-        {/* LA GRAN CÁPSULA (LUMINOSA) */}
-        <div className="relative z-10 w-full max-w-[1700px] h-[92vh] flex overflow-hidden rounded-[3.5rem] bg-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] border border-white/50 ring-1 ring-black/5">
+        <div className="relative z-10 flex h-screen w-full overflow-hidden">
           <Providers>
             <AuthGuard>
               {children}
@@ -68,8 +66,8 @@ export default function RootLayout({
           </Providers>
         </div>
         
-        {/* Toaster & Overlays (Fuera de la cápsula) */}
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors theme="dark" />
+        <SessionTimeout />
       </body>
     </html>
   );

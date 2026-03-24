@@ -3,20 +3,20 @@
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Sprout,
   LayoutDashboard,
   Box,
-  FileText,
-  Users,
-  Truck,
-  Building2,
-  RefreshCw,
+  Droplets,
+  Thermometer,
+  Brain,
+  Cpu,
+  Package,
+  FileBarChart,
+  HelpCircle,
   LogOut,
-  ChevronDown,
-  Bell,
-  Settings
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  Sprout
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -29,132 +29,124 @@ interface NavItem {
   soon: boolean;
 }
 
-function SidebarItem({ m, collapsed }: { m: NavItem, collapsed: boolean }) {
-  return (
-    <a
-      key={m.name}
-      href={m.href}
-      className={cn(
-        "flex items-center gap-5 px-6 py-4 rounded-2xl transition-all duration-700 relative group",
-        m.active
-          ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-[0_10px_25px_-5px_rgba(79,70,229,0.4)]"
-          : "text-slate-400 hover:text-white"
-      )}
-    >
-      {/* EL PUNTO CYAN (The Blue Glow Dot - Exacto al mockup) */}
-      {m.active && (
-        <div className="absolute -left-1.5 top-1/2 -translate-y-1/2">
-          <div className="h-3 w-3 rounded-full bg-[#00f2ff] shadow-[0_0_15px_#00f2ff,0_0_5px_#fff] animate-pulse" />
-        </div>
-      )}
-      
-      <m.icon className={cn(
-        "h-5 w-5 min-w-[1.25rem] transition-transform duration-500",
-        m.active ? "text-white" : "group-hover:scale-110"
-      )} />
-      
-      {!collapsed && (
-        <span className={cn(
-          "text-[13px] tracking-tight flex-1",
-          m.active ? "font-black" : "font-bold"
-        )}>
-          {m.name}
-        </span>
-      )}
-
-      {collapsed && (
-        <div className="absolute left-24 px-4 py-2 bg-slate-900 border border-white/10 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 pointer-events-none shadow-2xl z-[100] backdrop-blur-xl">
-          {m.name.toUpperCase()}
-        </div>
-      )}
-    </a>
-  );
-}
-
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const navGroups = useMemo(() => [
-    {
-      label: "Control",
-      items: [
-        { name: "Dashboard", icon: LayoutDashboard, href: "/", active: pathname === "/", soon: false },
-      ]
-    },
-    {
-      label: "Operación",
-      items: [
-        { name: "LogiCapture", icon: Box, href: "/logicapture", active: pathname === "/logicapture", soon: false },
-      ]
-    },
-    {
-      label: "Maestros",
-      items: [
-        { name: "Choferes", icon: Users, href: "#", active: false, soon: true },
-        { name: "Vehículos", icon: Truck, href: "#", active: false, soon: true },
-        { name: "Transportistas", icon: Building2, href: "#", active: false, soon: true },
-      ]
-    }
+  const navItems = useMemo(() => [
+    { name: "Dashboard", icon: LayoutDashboard, href: "/", active: pathname === "/", soon: false },
+    { name: "LogiCapture", icon: Box, href: "/logicapture", active: pathname === "/logicapture", soon: false },
+    { name: "Irrigación", icon: Droplets, href: "#", active: false, soon: true },
+    { name: "Climatología", icon: Thermometer, href: "#", active: false, soon: true },
+    { name: "Análisis AI", icon: Brain, href: "#", active: false, soon: true },
+    { name: "Sensores", icon: Cpu, href: "#", active: false, soon: true },
+    { name: "Recursos", icon: Package, href: "#", active: false, soon: true },
+    { name: "Reportes", icon: FileBarChart, href: "#", active: false, soon: true },
   ], [pathname]);
 
   return (
-    <aside
+    <aside 
       className={cn(
-        "relative flex flex-col h-full transition-all duration-700 ease-[cubic-bezier(0.2,1,0.2,1)]",
-        "bg-[#0f172a] border-r border-white/5",
-        collapsed ? "w-24" : "w-[340px]"
+        "flex flex-col h-screen bg-[#131313]/90 backdrop-blur-3xl border-r border-white/5 transition-all duration-500 relative z-40 font-['Manrope']",
+        collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* Glow Decor Layer */}
-      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
-
-      {/* Header Logo (Exacto al Mockup) */}
-      <div className="flex h-32 items-center gap-4 px-10 relative z-10">
-        <div className="h-12 w-12 flex items-center justify-center bg-indigo-500 rounded-2xl shadow-xl shadow-indigo-500/20">
-          <Sprout className="text-white h-7 w-7" />
-        </div>
-        {!collapsed && (
-          <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-700">
-            <span className="font-black text-[22px] text-white tracking-widest leading-none">
-              AGROFLOW <span className="text-indigo-400">V2</span>
-            </span>
-            <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] mt-1.5 ml-0.5">
-               MANAGEMENT PRO
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Navegación por Grupos */}
-      <nav className="flex-1 px-6 space-y-8 overflow-y-auto lc-scroll">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            {!collapsed && (
-              <h4 className="px-6 text-[10px] font-black text-white/30 uppercase tracking-[0.4em] mb-4">
-                {group.label}
-              </h4>
-            )}
-            <div className="space-y-1.5">
-              {group.items.map((m) => (
-                <SidebarItem key={m.name} m={m} collapsed={collapsed} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Botón de Colapso Flotante */}
-      <button
+      {/* Botón de Colapso (Integrado Minimalista) */}
+      <button 
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-[#00f2ff] shadow-[0_0_15px_#00f2ff] flex items-center justify-center text-slate-900 transition-transform active:scale-95"
+        className="absolute -right-3 top-24 h-6 w-6 rounded-full bg-[#b6a0ff] text-[#000000] flex items-center justify-center shadow-[0_0_15px_#b6a0ff] scale-75 hover:scale-100 transition-transform z-50 focus:outline-none"
       >
-        {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
 
-      <div className="p-8">
-        {/* Espacio reservado para el footer del sidebar si fuera necesario */}
+      {/* Header Logo (Banda Sprout) */}
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-10 overflow-hidden">
+          <div className="min-w-[40px] h-10 rounded-xl bg-[#b6a0ff] flex items-center justify-center shadow-[0_0_20px_rgba(182,160,255,0.3)]">
+            <Sprout className="text-[#340090] h-6 w-6 fill-current" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500 whitespace-nowrap">
+              <h1 className="font-['Space_Grotesk'] font-black text-[#b6a0ff] text-lg leading-tight">
+                AGROFLOW
+              </h1>
+              <p className="text-[10px] text-[#adaaaa] tracking-widest uppercase font-black">
+                V2.0 PRO System
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Navegación (Stitch Sytle) */}
+        <nav className="space-y-1">
+          {navItems.map((m) => (
+            <a
+              key={m.name}
+              href={m.href}
+              className={cn(
+                "flex items-center gap-4 px-4 py-3.5 transition-all duration-300 relative group text-sm",
+                m.active
+                  ? "bg-gradient-to-r from-[#b6a0ff]/20 to-transparent text-[#b6a0ff] border-l-4 border-[#b6a0ff]"
+                  : "text-[#adaaaa] hover:text-white hover:bg-[#262626]/40 hover:translate-x-1"
+              )}
+            >
+              <m.icon className={cn(
+                "h-5 w-5 transition-transform",
+                m.active ? "text-[#b6a0ff]" : "group-hover:scale-110"
+              )} />
+              
+              {!collapsed && (
+                <span className={cn(
+                  "font-headline tracking-tight",
+                  m.active ? "font-black" : "font-medium"
+                )}>
+                  {m.name}
+                </span>
+              )}
+
+              {collapsed && (
+                <div className="absolute left-16 px-3 py-1.5 bg-[#b6a0ff] text-[#000000] text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+                  {m.name.toUpperCase()}
+                </div>
+              )}
+            </a>
+          ))}
+        </nav>
+      </div>
+
+      {/* Footer (Deploy Action) */}
+      <div className="mt-auto p-6 space-y-4">
+        {!collapsed && (
+          <button className="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-[#b6a0ff] to-[#7e51ff] text-[#000000] font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(182,160,255,0.4)] active:scale-95 transition-all">
+            Nueva Tarea
+          </button>
+        )}
+
+        <div className="pt-4 border-t border-white/5 space-y-2">
+          <div className={cn(
+            "flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-xl cursor-pointer group",
+            collapsed ? "justify-center" : ""
+          )}>
+            <div className="min-w-[32px] h-8 rounded-lg bg-[#262626] border border-white/5 flex items-center justify-center text-[#b6a0ff] font-black text-xs">
+               {user?.nombre?.[0] || "A"}
+            </div>
+            {!collapsed && (
+              <p className="flex-1 text-[11px] font-bold text-[#adaaaa] truncate">{user?.nombre || "Admin"}</p>
+            )}
+          </div>
+
+          <button 
+            onClick={logout}
+            className={cn(
+              "flex w-full items-center gap-3 px-4 py-2 text-[#ff6e84] hover:bg-[#ff6e84]/10 rounded-xl transition-colors",
+              collapsed ? "justify-center" : ""
+            )}
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span className="text-xs font-black uppercase tracking-widest">Cerrar Sesión</span>}
+          </button>
+        </div>
       </div>
     </aside>
   );
