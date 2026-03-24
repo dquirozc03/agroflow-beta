@@ -53,21 +53,21 @@ export default function RootLayout({
         _outfit.variable,
         _outfit.className
       )}>
-        {/* Stitch Atmosphere Layer */}
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#b6a0ff]/5 blur-[120px] rounded-full" />
-        </div>
+        <Providers>
+          {/* Stitch Atmosphere Layer */}
+          <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#b6a0ff]/5 blur-[120px] rounded-full" />
+          </div>
 
-        <div className="relative z-10 flex h-screen w-full overflow-hidden">
-          <Providers>
+          <div className="relative z-10 flex h-screen w-full overflow-hidden">
             <AuthGuard>
               {children}
             </AuthGuard>
-          </Providers>
-        </div>
-        
-        <Toaster position="top-right" richColors theme="dark" />
-        <SessionTimeout />
+          </div>
+          
+          <Toaster position="top-right" richColors theme="dark" />
+          <SessionTimeout />
+        </Providers>
       </body>
     </html>
   );
