@@ -46,20 +46,30 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-background antialiased selection:bg-primary/20 text-slate-800",
+        "min-h-screen bg-[#f1f3f6] dark:bg-[#07090e] antialiased selection:bg-indigo-500/20 text-slate-800 relative",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
         _outfit.variable,
         _outfit.className
       )}>
-        <Providers>
-          <AuthGuard>
-            {children}
-            <SessionTimeout />
-            <Toaster position="top-right" richColors />
-          </AuthGuard>
-        </Providers>
+        {/* Atmosphere Decor Layer (Neblina tecnológica más profunda) */}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 blur-[150px] rounded-full animate-pulse" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-emerald-500/5 blur-[150px] rounded-full" />
+          {/* Sutil textura de cristal */}
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay" />
+        </div>
+
+        <div className="relative z-10">
+          <Providers>
+            <AuthGuard>
+              {children}
+              <SessionTimeout />
+              <Toaster position="top-right" richColors />
+            </AuthGuard>
+          </Providers>
+        </div>
       </body>
     </html>
   );

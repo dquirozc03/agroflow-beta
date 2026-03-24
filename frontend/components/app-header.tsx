@@ -87,9 +87,9 @@ export function AppHeader({ onOpenScanner, title }: Props) {
           <img src="/Logo_Beta.png" alt="Beta" className="h-14 w-auto hover:opacity-80 transition-opacity" />
         </div>
 
-        <div className="hidden md:flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-1.5 border border-primary/10 animate-in fade-in slide-in-from-left-2 duration-300">
-          <span className="material-symbols-outlined text-[18px] text-primary notranslate">{moduleInfo.icon}</span>
-          <span className="text-[13px] font-black text-primary tracking-tight">
+        <div className="hidden md:flex items-center gap-2 rounded-xl bg-indigo-500/5 px-3 py-1.5 border border-indigo-500/10 animate-in fade-in slide-in-from-left-2 duration-300">
+          <span className="material-symbols-outlined text-[18px] text-indigo-500 notranslate">{moduleInfo.icon}</span>
+          <span className="text-[13px] font-black text-indigo-500 tracking-tight">
             {title || moduleInfo.name}
           </span>
         </div>
