@@ -19,13 +19,13 @@ const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 
 export const metadata: Metadata = {
-  title: "AgroFlow · V2 Light Generation",
+  title: "AgroFlow · BETA Integrated System",
   description:
-    "Sistema AgroFlow V2 con estética minimalista de nueva generación.",
+    "Sistema Logístico BETA con navegación horizontal inteligente.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#f1f5f9",
   width: "device-width",
   initialScale: 1,
 };
@@ -38,14 +38,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className="light">
       <head>
-        <title>AgroFlow | Next Gen</title>
+        <title>AgroFlow | Operaciones</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-[#f8fafc] antialiased selection:bg-indigo-100 text-slate-900 relative font-['Manrope']",
+        "min-h-screen bg-[#f1f5f9] antialiased selection:bg-emerald-100 text-slate-900 relative font-['Inter']",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
@@ -53,13 +53,7 @@ export default function RootLayout({
         _outfit.className
       )}>
         <Providers>
-          {/* Atmosphere Layer (Light Generation) */}
-          <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-100/40 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-50/50 blur-[120px] rounded-full" />
-          </div>
-
-          <div className="relative z-10 flex h-screen w-full overflow-hidden">
+          <div className="relative z-10 flex flex-col h-screen w-full overflow-hidden">
             <AuthGuard>
               {children}
             </AuthGuard>

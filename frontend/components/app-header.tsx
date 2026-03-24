@@ -9,7 +9,13 @@ import {
   MapPin, 
   Plus,
   HelpCircle,
-  Search
+  Search,
+  LayoutDashboard,
+  FolderOpen,
+  ClipboardList,
+  BarChart3,
+  LogOut,
+  Sprout
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,72 +24,98 @@ interface Props {
   title?: string;
 }
 
+function NavItem({ name, icon: Icon, active, href }: any) {
+  return (
+    <a 
+      href={href}
+      className={cn(
+        "flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all relative group",
+        active 
+          ? "text-emerald-600 bg-emerald-50/50 font-bold" 
+          : "text-slate-500 hover:text-slate-900"
+      )}
+    >
+      <Icon className={cn("h-4.5 w-4.5", active ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-900")} />
+      <span className="text-sm tracking-tight">{name}</span>
+      {active && (
+        <div className="absolute -bottom-4 left-4 right-4 h-1 bg-emerald-500 rounded-full" />
+      )}
+    </a>
+  );
+}
+
 export function AppHeader({ onOpenScanner, title }: Props) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
 
   return (
-    <header className="flex justify-between items-center w-full px-12 py-8 sticky top-0 z-20 bg-white/40 backdrop-blur-3xl border-b border-slate-100/50">
+    <header className="flex h-20 items-center justify-between px-10 bg-white border-b border-slate-100 relative z-50">
       
-      {/* SECTOR IZQUIERDO: Breadcrumbs / Modulo (Minimal Capsule) */}
-      <div className="flex items-center gap-10">
-        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-[1.5rem] border border-slate-100 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.03)] group cursor-pointer hover:border-indigo-2 transition-all">
-          <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="font-['Space_Grotesk'] font-black text-[13px] tracking-tight text-slate-800 uppercase italic">
-            {title || "DASHBOARD"}
+      {/* IZQUIERDA: Marca y Navegación Principal */}
+      <div className="flex items-center gap-12">
+        {/* LOGO (Style: Stitch) */}
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-200">
+             <Sprout className="text-white h-5 w-5 fill-current" />
+          </div>
+          <span className="font-extrabold text-[#022c22] text-xl tracking-tighter">
+            Logi<span className="text-emerald-600">Capture</span>
           </span>
-          <ChevronDown className="h-4 w-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
         </div>
 
-        {/* Buscador Integrado (Next-Gen Search) */}
-        <div className="relative group hidden lg:block">
-           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-           <input 
-              type="text" 
-              placeholder="Buscar registros..." 
-              className="pl-11 pr-6 py-3 rounded-2xl bg-slate-50 border border-slate-100 outline-none w-64 text-sm font-bold text-slate-600 focus:bg-white focus:border-indigo-500/30 focus:shadow-xl transition-all"
-           />
-        </div>
+        {/* TOP NAV TABS (Referencia Calcada) */}
+        <nav className="flex items-center gap-2 ml-4">
+           <NavItem name="Dashboard" icon={LayoutDashboard} active={pathname === "/"} href="/" />
+           <NavItem name="Projects" icon={FolderOpen} active={false} href="#" />
+           <NavItem name="Operativo" icon={ClipboardList} active={pathname === "/logicapture"} href="/logicapture" />
+           <NavItem name="Reports" icon={BarChart3} active={false} href="#" />
+           <NavItem name="Settings" icon={Settings} active={false} href="#" />
+        </nav>
       </div>
 
-      {/* SECTOR DERECHO: Herramientas y Perfil Light Edition */}
-      <div className="flex items-center gap-10">
+      {/* DERECHA: Buscador y Perfil John McClane Edition */}
+      <div className="flex items-center gap-6">
         
-        {/* Notificaciones & Alerts */}
-        <div className="flex items-center gap-3">
-          <button className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center relative shadow-sm">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-3 right-3 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white"></span>
-          </button>
-          <button className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center shadow-sm">
-            <Settings className="h-5 w-5" />
+        {/* Buscador Integrado (Borde Redondo) */}
+        <div className="relative group lg:block hidden">
+           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500" />
+           <input 
+              type="text" 
+              placeholder="Search data..." 
+              className="pl-11 pr-5 py-2.5 rounded-full bg-slate-50 border border-slate-100 outline-none w-64 text-sm font-medium text-slate-600 focus:bg-white focus:border-emerald-500/30 transition-all shadow-sm"
+           />
+        </div>
+
+        {/* Acciones y Notificaciones */}
+        <div className="flex items-center gap-2">
+          <button className="h-10 w-10 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors relative">
+             <Bell className="h-5 w-5" />
+             <span className="absolute top-2 right-2 h-2 w-2 bg-rose-500 rounded-full border-2 border-white"></span>
           </button>
         </div>
 
-        {/* Perfil John McClane Light Style */}
-        <div className="flex items-center gap-5 border-l border-slate-100 pl-10 group cursor-pointer">
+        {/* PERFIL (Referencia John McClane Style) */}
+        <div className="flex items-center gap-3 border-l border-slate-100 pl-6 group/user cursor-pointer">
           <div className="text-right hidden sm:block">
-            <p className="text-[11px] font-black font-['Space_Grotesk'] leading-none text-slate-800 uppercase tracking-tighter italic">
-              {user?.nombre || "Administrador"}
+            <p className="text-xs font-bold text-slate-800 leading-none">
+              {user?.nombre || "Maria Silva"}
             </p>
-            <p className="text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black mt-2 opacity-80 leading-none">
-              {user?.rol || "Supervisor Alpha"}
+            <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mt-1.5 leading-none">
+               Online Status
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm group-hover:scale-105 transition-transform overflow-hidden relative">
-             <div className="h-full w-full rounded-xl bg-slate-50 flex items-center justify-center text-indigo-600 font-black text-sm">
-                {user?.nombre?.[0] || "A"}
+          <div className="w-10 h-10 rounded-full border-2 border-emerald-100 bg-slate-50 flex items-center justify-center p-0.5 overflow-hidden group-hover/user:border-emerald-500 transition-all">
+             {/* Avatar placeholder o inicial */}
+             <div className="h-full w-full rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-black text-[11px]">
+                {user?.nombre?.[0] || "U"}
              </div>
-             <div className="absolute bottom-1 right-1 h-2.5 w-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm" />
           </div>
+          <ChevronDown className="h-4 w-4 text-slate-300 group-hover/user:text-emerald-500" />
         </div>
 
-        {/* Acción Maestro (Floating Plus Light) */}
-        <button 
-           onClick={onOpenScanner}
-           className="h-14 w-14 rounded-[1.5rem] bg-indigo-600 shadow-[0_20px_40px_-10px_rgba(79,70,229,0.4)] flex items-center justify-center text-white active:scale-95 hover:bg-indigo-700 transition-all ml-2"
-        >
-          <Plus className="h-7 w-7" />
+        {/* Botón Logout Directo */}
+        <button onClick={logout} className="p-2.5 text-slate-300 hover:text-rose-500 transition-colors hover:bg-rose-50 rounded-lg">
+           <LogOut className="h-5 w-5" />
         </button>
 
       </div>
