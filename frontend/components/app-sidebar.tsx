@@ -15,6 +15,7 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sprout,
   Scan,
   Users,
@@ -116,7 +117,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col min-w-0">
             <p className="text-xs font-bold text-slate-900 truncate uppercase mt-0.5">{user?.nombre || "Sat Naing"}</p>
-            <p className="text-[10px] text-slate-400 font-medium truncate">{user?.email || "satnaingdev@gmail.com"}</p>
+            <p className="text-[10px] text-slate-400 font-medium truncate">{user?.usuario || "agroflow_admin"}</p>
           </div>
           <button onClick={logout} className="ml-auto p-1.5 text-slate-300 hover:text-slate-900">
              <ChevronDown className="h-4 w-4" />
