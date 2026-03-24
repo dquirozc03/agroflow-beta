@@ -17,7 +17,8 @@ import {
   Layers,
   ChevronRight,
   ChevronDown,
-  Info
+  Info,
+  Sprout
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
