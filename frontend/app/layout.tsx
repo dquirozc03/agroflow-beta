@@ -19,13 +19,13 @@ const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 
 export const metadata: Metadata = {
-  title: "AgroFlow · BETA Integrated System",
+  title: "AgroFlow | Shadcn Lite Edition",
   description:
-    "Sistema Logístico BETA con navegación horizontal inteligente.",
+    "Sistema modular AgroFlow V2 basado en la estética Shadcn/UI.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f1f5f9",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
 };
@@ -38,14 +38,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className="light">
       <head>
-        <title>AgroFlow | Operaciones</title>
+        <title>AgroFlow | Dashboard</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-[#f1f5f9] antialiased selection:bg-emerald-100 text-slate-900 relative font-['Inter']",
+        "min-h-screen bg-white antialiased selection:bg-slate-200 text-slate-900 relative font-['Inter']",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
@@ -53,7 +53,7 @@ export default function RootLayout({
         _outfit.className
       )}>
         <Providers>
-          <div className="relative z-10 flex flex-col h-screen w-full overflow-hidden">
+          <div className="relative z-10 flex h-screen w-full overflow-hidden">
             <AuthGuard>
               {children}
             </AuthGuard>
