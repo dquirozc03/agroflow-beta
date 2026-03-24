@@ -15,113 +15,144 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Sprout,
   Scan,
-  Users,
-  MessageSquare,
+  MoreHorizontal,
+  ShieldCheck,
   Settings,
   HelpCircle,
-  FileCode,
-  ShieldAlert
+  Activity
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
-interface SidebarSection {
-  title: string;
-  items: any[];
-}
-
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
-  const sections: SidebarSection[] = useMemo(() => [
-    {
-      title: "General",
-      items: [
-        { name: "Dashboard", icon: LayoutDashboard, href: "/", active: pathname === "/" },
-        { name: "LogiCapture", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
-        { name: "Apps", icon: Box, href: "#", active: false },
-        { name: "Chats", icon: MessageSquare, href: "#", active: false, badge: 3 },
-        { name: "Users", icon: Users, href: "#", active: false },
-      ]
-    },
-    {
-      title: "Pages",
-      items: [
-        { name: "Auth", icon: ShieldAlert, href: "#", active: false },
-        { name: "Errors", icon: FileCode, href: "#", active: false },
-      ]
-    },
-    {
-      title: "Other",
-      items: [
-        { name: "Settings", icon: Settings, href: "#", active: false },
-        { name: "Help Center", icon: HelpCircle, href: "#", active: false },
-      ]
-    }
+  const navItems = useMemo(() => [
+    { name: "Dashboard", icon: LayoutDashboard, href: "/", active: pathname === "/", soon: false },
+    { name: "LogiCapture Pro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture", soon: false },
+    { name: "Irrigación Hub", icon: Droplets, href: "#", active: false, soon: true },
+    { name: "Climatología", icon: Thermometer, href: "#", active: false, soon: true },
+    { name: "Sistemas AI", icon: Brain, href: "#", active: false, soon: true },
+    { name: "Hardware Sensores", icon: Cpu, href: "#", active: false, soon: true },
+    { name: "Reportes Expert", icon: FileBarChart, href: "#", active: false, soon: true },
   ], [pathname]);
 
   return (
-    <aside className="w-64 h-screen flex flex-col bg-[#f9fafb] border-r border-slate-200/60 p-4 transition-all overflow-hidden relative">
-      
-      {/* Brand Header Style: Shadcn Admin */}
-      <div className="flex items-center gap-3 px-3 py-6 mb-4">
-        <div className="h-8 w-8 bg-black rounded-lg flex items-center justify-center text-white shadow-lg">
-           <Sprout className="h-5 w-5" />
+    <aside 
+      className={cn(
+        "flex flex-col h-screen transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] relative z-50 bg-[#0f172a] border-r border-[#1e293b] shadow-[40px_0_80px_-20px_rgba(0,0,0,0.5)]",
+        collapsed ? "w-24" : "w-80"
+      )}
+    >
+      {/* Botón de Colapso (Style: Obsidian Marker) */}
+      <button 
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3 top-10 h-7 w-7 rounded-lg bg-[#0f172a] border border-[#1e293b] text-slate-500 flex items-center justify-center hover:text-emerald-400 shadow-xl z-50 transition-all hover:scale-110 active:scale-95 group"
+      >
+        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </button>
+
+      {/* Header Logo (Obsidian Tech Style) */}
+      <div className="p-10">
+        <div className={cn("flex items-center gap-5 transition-all", collapsed ? "justify-center" : "")}>
+          <div className="h-12 w-12 min-w-[3rem] rounded-2xl bg-[#0f172a] border border-emerald-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.15)] relative group overflow-hidden">
+            <div className="absolute inset-0 bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors" />
+            <Sprout className="text-emerald-500 h-7 w-7 fill-current relative z-10" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col animate-in fade-in slide-in-from-left-6 duration-700">
+              <h1 className="font-['Space_Grotesk'] font-extrabold text-white text-2xl tracking-tighter leading-none italic uppercase">
+                Agro<span className="text-emerald-500">Flow</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                 <p className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.4em] leading-none">V2 Expert Mode</p>
+              </div>
+            </div>
+          )}
         </div>
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-900 text-sm leading-none tracking-tight">Shadcn Admin</span>
-          <span className="text-[10px] text-slate-400 font-medium mt-1">Vite + ShadcnUI</span>
-        </div>
-        <div className="ml-auto hidden group-hover:block">
-           <ChevronDown className="h-4 w-4 text-slate-400" />
-        </div>
+
+        {/* Navegación Vertical Obsidian Pro */}
+        <nav className="mt-16 space-y-3">
+          {navItems.map((m) => (
+            <a
+              key={m.name}
+              href={m.href}
+              className={cn(
+                "flex items-center gap-5 rounded-2xl transition-all duration-400 relative group overflow-hidden",
+                collapsed ? "justify-center h-14 w-14 mx-auto" : "px-5 py-4",
+                m.active
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_10px_30px_-10px_rgba(16,185,129,0.2)]"
+                  : "text-slate-500 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <m.icon className={cn(
+                "h-5 w-5 transition-transform duration-300",
+                m.active ? "text-emerald-400" : "group-hover:scale-125 group-hover:text-emerald-500"
+              )} />
+              
+              {!collapsed && (
+                <span className={cn(
+                  "text-[14px] tracking-tight transition-all",
+                  m.active ? "font-extrabold" : "font-semibold"
+                )}>
+                  {m.name}
+                </span>
+              )}
+
+              {/* Indicador Activo (Side Marker High-Tech) */}
+              {m.active && !collapsed && (
+                <div className="absolute right-0 top-3 bottom-3 w-1.5 bg-emerald-500 rounded-l-full shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
+              )}
+
+              {collapsed && (
+                <div className="absolute left-24 px-4 py-3 bg-emerald-950 text-emerald-400 text-[11px] font-black rounded-xl border border-emerald-500/30 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap pointer-events-none z-50 shadow-2xl">
+                  {m.name.toUpperCase()}
+                </div>
+              )}
+            </a>
+          ))}
+        </nav>
       </div>
 
-      {/* Nav Content Sectioned */}
-      <nav className="flex-1 space-y-8 px-2 overflow-y-auto lc-scroll">
-        {sections.map((section) => (
-          <div key={section.title} className="space-y-1">
-             <p className="px-2 text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-widest">{section.title}</p>
-             {section.items.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm group",
-                    item.active 
-                      ? "bg-white text-black shadow-sm border border-slate-200/50" 
-                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
-                  )}
-                >
-                  <item.icon className={cn("h-4.5 w-4.5", item.active ? "text-black" : "text-slate-400 group-hover:text-slate-900")} />
-                  <span className={cn(item.active ? "font-bold" : "font-medium")}>{item.name}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-black text-white text-[10px] h-5 w-5 flex items-center justify-center rounded-full font-bold">{item.badge}</span>
-                  )}
-                  {item.active && <ChevronRight className="ml-auto h-4 w-4 text-slate-400" />}
-                </a>
-             ))}
-          </div>
-        ))}
-      </nav>
+      {/* Footer Acceso Operativo & Perfil Premium */}
+      <div className="mt-auto p-10 space-y-8">
+        {!collapsed && (
+           <button className="w-full py-5 rounded-[1.25rem] bg-emerald-600 text-white font-extrabold text-[12px] uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-500/20 active:scale-95 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <span className="flex items-center justify-center gap-3 relative z-10">
+                 <Zap className="h-4 w-4 text-white fill-current" />
+                 Nueva Operación
+              </span>
+           </button>
+        )}
 
-      {/* Footer Perfil John McClane Style (Calcado Referencia) */}
-      <div className="mt-auto px-1 pt-6 border-t border-slate-200/60">
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-100 transition-all cursor-pointer group/user">
-          <div className="h-9 w-9 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 font-bold text-xs ring-1 ring-slate-200">
-             {user?.nombre?.[0] || "SN"}
+        {/* Perfil Obsidian Detail (John McClane Status) */}
+        <div className={cn(
+          "flex items-center gap-5 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all cursor-pointer group/user overflow-hidden relative",
+          collapsed ? "justify-center" : ""
+        )}>
+          <div className="h-10 w-10 min-w-[2.5rem] rounded-[0.8rem] bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-emerald-500 font-extrabold text-sm shadow-inner group-hover/user:bg-emerald-500 group-hover/user:text-white transition-all">
+             {user?.nombre?.[0] || "A"}
           </div>
-          <div className="flex flex-col min-w-0">
-            <p className="text-xs font-bold text-slate-900 truncate uppercase mt-0.5">{user?.nombre || "Sat Naing"}</p>
-            <p className="text-[10px] text-slate-400 font-medium truncate">{user?.usuario || "agroflow_admin"}</p>
-          </div>
-          <button onClick={logout} className="ml-auto p-1.5 text-slate-300 hover:text-slate-900">
-             <ChevronDown className="h-4 w-4" />
-          </button>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-black text-white truncate leading-none uppercase tracking-tight">{user?.nombre || "Admin"}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                 <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-widest leading-none">Online Mode</span>
+              </div>
+            </div>
+          )}
+          {!collapsed && (
+             <button onClick={logout} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+               <LogOut className="h-5 w-5" />
+             </button>
+          )}
         </div>
       </div>
     </aside>

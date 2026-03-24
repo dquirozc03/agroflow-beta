@@ -19,9 +19,9 @@ const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 
 export const metadata: Metadata = {
-  title: "AgroFlow | Shadcn Lite Edition",
+  title: "AgroFlow | V2 Integrated",
   description:
-    "Sistema modular AgroFlow V2 basado en la estética Shadcn/UI.",
+    "Sistema Central de Control Operativo BETA.",
 };
 
 export const viewport: Viewport = {
@@ -38,14 +38,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className="light">
       <head>
-        <title>AgroFlow | Dashboard</title>
+        <title>AgroFlow | V2</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-white antialiased selection:bg-slate-200 text-slate-900 relative font-['Inter']",
+        "min-h-screen bg-white antialiased selection:bg-emerald-100 text-slate-900",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
@@ -53,11 +53,10 @@ export default function RootLayout({
         _outfit.className
       )}>
         <Providers>
-          <div className="relative z-10 flex h-screen w-full overflow-hidden">
-            <AuthGuard>
-              {children}
-            </AuthGuard>
-          </div>
+          {/* Ajuste: Solo aplicamos Flex al layout una vez autenticado, para no romper el Login */}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
           
           <Toaster position="top-right" richColors theme="light" />
           <SessionTimeout />
