@@ -19,13 +19,13 @@ const _outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 
 export const metadata: Metadata = {
-  title: "AgroFlow · Área comercial y exportaciones",
+  title: "AgroFlow · V2 Light Generation",
   description:
-    "Sistema AgroFlow para el área comercial y exportaciones. LogiCapture: registro operativo, bandeja SAP e historial. Por Nexora Technologies.",
+    "Sistema AgroFlow V2 con estética minimalista de nueva generación.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e0e0e",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
 };
@@ -36,17 +36,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning className="dark">
+    <html lang="es" suppressHydrationWarning className="light">
       <head>
-        <title>AgroFlow | Gestión Logística</title>
+        <title>AgroFlow | Next Gen</title>
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn(
-        "min-h-screen bg-[#0e0e0e] antialiased selection:bg-[#b6a0ff]/20 text-white relative font-['Manrope']",
+        "min-h-screen bg-[#f8fafc] antialiased selection:bg-indigo-100 text-slate-900 relative font-['Manrope']",
         _inter.variable,
         _publicSans.variable,
         _jetbrains.variable,
@@ -54,9 +53,10 @@ export default function RootLayout({
         _outfit.className
       )}>
         <Providers>
-          {/* Stitch Atmosphere Layer */}
+          {/* Atmosphere Layer (Light Generation) */}
           <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#b6a0ff]/5 blur-[120px] rounded-full" />
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-100/40 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-50/50 blur-[120px] rounded-full" />
           </div>
 
           <div className="relative z-10 flex h-screen w-full overflow-hidden">
@@ -65,7 +65,7 @@ export default function RootLayout({
             </AuthGuard>
           </div>
           
-          <Toaster position="top-right" richColors theme="dark" />
+          <Toaster position="top-right" richColors theme="light" />
           <SessionTimeout />
         </Providers>
       </body>
