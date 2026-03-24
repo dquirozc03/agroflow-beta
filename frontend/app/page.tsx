@@ -1,63 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppHeader } from "@/components/app-header";
+import React from "react";
 
-export default function AgroFlowV2Home() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-slate-500 animate-pulse font-medium">Cargando AgroFlow V2...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
+export default function Home() {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <AppSidebar />
-
-      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <AppHeader onOpenScanner={() => {}} />
-
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto lc-scroll bg-[#f8fafd] dark:bg-[#0f172a] p-8">
-          <div className="max-w-4xl mx-auto w-full space-y-6">
-            <header className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Bienvenido, {user?.nombre || "Usuario"}
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400">
-                AgroFlow V2: Iniciando la reconstrucción profesional del sistema.
-              </p>
-            </header>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-                <h3 className="text-lg font-semibold mb-2">Estado del Sistema</h3>
-                <p className="text-sm text-slate-500">
-                  Backend: Conectado (Auth Only)<br />
-                  Fase: 0 - Reinicio Selectivo
-                </p>
-              </div>
-            </div>
-          </div>
-        </main>
+    <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="p-10 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 animate-in zoom-in-95 duration-700">
+         <h1 className="text-3xl font-black text-[#022c22] italic tracking-tighter">
+           Login <span className="text-emerald-500">Exitoso</span>
+         </h1>
+         <p className="text-xs font-bold text-slate-400 mt-4 uppercase tracking-[0.2em]">Punto de reinicio de AgroFlow V2</p>
       </div>
     </div>
   );
