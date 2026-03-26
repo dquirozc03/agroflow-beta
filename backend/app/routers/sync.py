@@ -237,7 +237,10 @@ async def sync_pedidos_raw(
             raise HTTPException(status_code=400, detail="El payload enviado como texto no es un JSON válido.")
     
     # 1. Validación de Seguridad
-    if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
+    received_token = x_sync_token.strip() if x_sync_token else None
+    expected_token = settings.SYNC_TOKEN.strip() if settings.SYNC_TOKEN else None
+
+    if not received_token or received_token != expected_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de sincronización inválido."
