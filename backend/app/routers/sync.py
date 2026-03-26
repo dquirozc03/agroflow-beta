@@ -67,6 +67,7 @@ COLUMN_MAPPING_PEDIDOS = {
     "CAJA POR PALLET": "caja_por_pallet",
     "TOTAL PALLETS": "total_pallets",
     "TOTAL PALLET": "total_pallets",
+    "TOTAL PALLETS FCL": "total_pallets",
     "PALLETS": "total_pallets",
     "PALLET": "total_pallets",
     "CANTIDAD PALLETS": "total_pallets",
