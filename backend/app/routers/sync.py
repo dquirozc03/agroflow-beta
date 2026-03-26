@@ -261,54 +261,51 @@ async def sync_pedidos_raw(
         if clean_target in excel_headers:
             mapping_indices[db_col] = excel_headers.index(clean_target)
 
-    # 3. RECARGA TOTAL: Limpiar tabla primero
+    # 3. RECARGA TOTAL Entrenada (Atómica)
     try:
+        # Iniciamos el proceso
         db.query(PedidoComercial).delete()
+        
+        # 4. Procesamiento de Filas
+        mappings = []
+        errores = 0
+        numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS"]
+        null_values = ["", "-", "N/A", "NONE", "NULL", "#¡VALOR!", "#VALUE!", "#DIV/0!"]
+
+        for row in data_rows:
+            try:
+                pedido_data = {}
+                for db_col, idx in mapping_indices.items():
+                    if idx < len(row):
+                        val = str(row[idx]).strip()
+                        if not val or val.upper() in null_values:
+                            pedido_data[db_col] = None
+                        elif db_col in numeric_cols:
+                            try:
+                                pedido_data[db_col] = float(val.replace(',', ''))
+                            except:
+                                pedido_data[db_col] = 0
+                        else:
+                            pedido_data[db_col] = val.upper()
+                
+                if pedido_data:
+                    mappings.append(pedido_data)
+            except:
+                errores += 1
+
+        # 5. Inserción y Commit Único
+        if mappings:
+            db.bulk_insert_mappings(PedidoComercial, mappings)
+        
         db.commit()
+        
+        return {
+            "status": "success",
+            "mensaje": f"Sincronización atómica exitosa. {len(mappings)} filas importadas.",
+            "errores_omitidos": errores
+        }
+
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error limpiando tabla: {str(e)}")
-
-    # 4. Inserción Masiva (Optimizado para Velocidad Extrema)
-    mappings = []
-    errores = 0
-    
-    # Columnas numéricas para cast
-    numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS"]
-
-    for row in data_rows:
-        try:
-            pedido_data = {}
-            for db_col, idx in mapping_indices.items():
-                if idx < len(row):
-                    val = row[idx]
-                    if not val or str(val).strip().upper() in ["", "-", "N/A", "NONE", "NULL"]:
-                        pedido_data[db_col] = None
-                    elif db_col in numeric_cols:
-                        try:
-                            pedido_data[db_col] = float(str(val).replace(',', '').strip())
-                        except:
-                            pedido_data[db_col] = 0
-                    else:
-                        # Convertir a MAYÚSCULAS
-                        pedido_data[db_col] = str(val).strip().upper()
-            
-            if pedido_data:
-                mappings.append(pedido_data)
-        except:
-            errores += 1
-
-    if mappings:
-        try:
-            db.bulk_insert_mappings(PedidoComercial, mappings)
-            db.commit()
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(status_code=500, detail=f"Error insertando datos: {str(e)}")
-
-    return {
-        "status": "success",
-        "mensaje": f"Recarga total exitosa. {len(mappings)} filas importadas.",
-        "columnas_detectadas": list(mapping_indices.keys()),
-        "errores_omisión": errores
-    }
+        logger.error(f"Error en sincronización atómica: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fallo en la sincronización: {str(e)}")
