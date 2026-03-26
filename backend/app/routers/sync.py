@@ -66,6 +66,11 @@ COLUMN_MAPPING_PEDIDOS = {
     "ADDITIONAL INFORMATION": "additional_info",
     "CAJA POR PALLET": "caja_por_pallet",
     "TOTAL PALLETS": "total_pallets",
+    "TOTAL PALLET": "total_pallets",
+    "PALLETS": "total_pallets",
+    "PALLET": "total_pallets",
+    "CANTIDAD PALLETS": "total_pallets",
+    "NRO PALLETS": "total_pallets",
     "TOTAL CAJAS": "total_cajas",
     "INCOTERM": "incoterm",
     "TIPO PRECIO": "tipo_precio",
@@ -284,6 +289,18 @@ async def sync_pedidos_raw(
         clean_target = clean_header(excel_col)
         if clean_target in excel_headers:
             mapping_indices[db_col] = excel_headers.index(clean_target)
+
+    # Lógica de respaldo para Total Pallets si no se encontró exacta
+    if "total_pallets" not in mapping_indices:
+        for i, h in enumerate(excel_headers):
+            if "PALLET" in h and "TOTAL" in h:
+                mapping_indices["total_pallets"] = i
+                break
+    if "total_pallets" not in mapping_indices:
+        for i, h in enumerate(excel_headers):
+            if h == "PALLETS" or h == "PALLET":
+                mapping_indices["total_pallets"] = i
+                break
 
     # 3. RECARGA TOTAL Entrenada (Atómica)
     try:
