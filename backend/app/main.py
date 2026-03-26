@@ -29,7 +29,10 @@ app.add_middleware(
 )
 
 # Routers
+from app.routers import auth, sync
+
 app.include_router(auth.router)
+app.include_router(sync.router)
 
 @app.get("/health")
 @app.get("/api/v1/health")
