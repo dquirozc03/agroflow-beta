@@ -95,21 +95,35 @@ async def sync_posicionamiento_raw(
     if not payload or len(payload) < 2:
         return {"status": "error", "mensaje": "El payload no contiene datos suficientes.", "procesados": 0, "errores": 0}
 
-    # 2. Análisis de Cabeceras (Insensible a Mayúsculas)
-    excel_headers = [h.strip() if h else "" for h in payload[0]]
-    excel_headers_upper = [h.upper() for h in excel_headers]
+    # 2. Análisis de Cabeceras (Robustez Extrema)
+    import re
+    
+    def clean_header(h: str):
+        if not h: return ""
+        # Eliminar espacios múltiples, saltos de línea y trim
+        return re.sub(r'\s+', ' ', str(h).strip()).upper()
+
+    excel_headers_cleaned = [clean_header(h) for h in payload[0]]
     data_rows = payload[1:]
     
     mapping_indices = {}
+    columnas_detectadas = []
+    
     for excel_col, db_col in COLUMN_MAPPING.items():
-        excel_col_upper = excel_col.upper()
-        if excel_col_upper in excel_headers_upper:
-            mapping_indices[db_col] = excel_headers_upper.index(excel_col_upper)
+        clean_target = clean_header(excel_col)
+        if clean_target in excel_headers_cleaned:
+            idx = excel_headers_cleaned.index(clean_target)
+            mapping_indices[db_col] = idx
+            columnas_detectadas.append(f"{excel_col} -> {db_col}")
 
     if "BOOKING" not in mapping_indices:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Estructura de Excel inválida: No se encontró la columna crítica 'Booking'. Detectadas: {excel_headers}"
+            detail={
+                "error": "No se encontró la columna crítica 'Booking'",
+                "cabeceras_recibidas": excel_headers_cleaned,
+                "mapeo_esperado": [clean_header(k) for k in COLUMN_MAPPING.keys()]
+            }
         )
 
     # 3. Procesamiento Masivo con Blindaje
@@ -150,6 +164,7 @@ async def sync_posicionamiento_raw(
     return {
         "status": "success" if errores == 0 else "partial_success",
         "mensaje": f"Sincronización finalizada. {procesados} éxitos, {errores} errores.",
+        "columnas_mapeadas": columnas_detectadas,
         "procesados": procesados,
         "errores": errores,
         "detalle_errores": detalle_errores[:10] # Mostrar los primeros 10 para debug
