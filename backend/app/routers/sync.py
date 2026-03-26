@@ -7,6 +7,9 @@ from app.configuracion import settings
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 import logging
+import re
+import json
+from dateutil.parser import parse as parse_date
 
 logger = logging.getLogger(__name__)
 
@@ -266,8 +269,8 @@ async def sync_pedidos_raw(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error limpiando tabla: {str(e)}")
 
-    # 4. Inserción Masiva
-    nuevos_pedidos = []
+    # 4. Inserción Masiva (Optimizado para Velocidad Extrema)
+    mappings = []
     errores = 0
     
     # Columnas numéricas para cast
@@ -291,13 +294,13 @@ async def sync_pedidos_raw(
                         pedido_data[db_col] = str(val).strip().upper()
             
             if pedido_data:
-                nuevos_pedidos.append(PedidoComercial(**pedido_data))
+                mappings.append(pedido_data)
         except:
             errores += 1
 
-    if nuevos_pedidos:
+    if mappings:
         try:
-            db.bulk_save_objects(nuevos_pedidos)
+            db.bulk_insert_mappings(PedidoComercial, mappings)
             db.commit()
         except Exception as e:
             db.rollback()
@@ -305,7 +308,7 @@ async def sync_pedidos_raw(
 
     return {
         "status": "success",
-        "mensaje": f"Recarga total exitosa. {len(nuevos_pedidos)} filas importadas.",
+        "mensaje": f"Recarga total exitosa. {len(mappings)} filas importadas.",
         "columnas_detectadas": list(mapping_indices.keys()),
         "errores_omisión": errores
     }
