@@ -269,18 +269,27 @@ async def sync_pedidos_raw(
         # Iniciamos el proceso
         db.query(PedidoComercial).delete()
         
-        # 4. Procesamiento de Filas
+        # 4. Procesamiento de Filas (Filtro de Alto Rendimiento)
         mappings = []
         errores = 0
         numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS"]
-        null_values = ["", "-", "N/A", "NONE", "NULL", "#¡VALOR!", "#VALUE!", "#DIV/0!"]
+        null_values = {"", "-", "N/A", "NONE", "NULL", "#¡VALOR!", "#VALUE!", "#DIV/0!"}
 
-        for row in data_rows:
+        # Limitamos a 5000 filas para evitar abusos de memoria y saltamos vacías
+        for row in data_rows[:5000]:
+            if not row or not any(str(c).strip() for c in row if c is not None):
+                continue
+                
             try:
                 pedido_data = {}
                 for db_col, idx in mapping_indices.items():
                     if idx < len(row):
-                        val = str(row[idx]).strip()
+                        raw_val = row[idx]
+                        if raw_val is None:
+                            pedido_data[db_col] = None
+                            continue
+                            
+                        val = str(raw_val).strip()
                         if not val or val.upper() in null_values:
                             pedido_data[db_col] = None
                         elif db_col in numeric_cols:
@@ -296,7 +305,7 @@ async def sync_pedidos_raw(
             except:
                 errores += 1
 
-        # 5. Inserción y Commit Único
+        # 5. Inserción Masiva
         if mappings:
             db.bulk_insert_mappings(PedidoComercial, mappings)
         
