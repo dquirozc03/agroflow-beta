@@ -22,9 +22,9 @@ class PedidoComercial(Base):
     product = Column(String(150), nullable=True)
     peso_por_caja = Column(Numeric(10, 2), nullable=True)
     additional_info = Column(String(500), nullable=True)
-    caja_por_pallet = Column(Numeric(10, 2), nullable=True)
-    total_pallets = Column(Numeric(10, 2), nullable=True)
-    total_cajas = Column(Numeric(10, 2), nullable=True)
+    caja_por_pallet = Column(Integer, nullable=True)
+    total_pallets = Column(Integer, nullable=True)
+    total_cajas = Column(Integer, nullable=True)
     incoterm = Column(String(50), nullable=True)
     tipo_precio = Column(String(50), nullable=True)
     

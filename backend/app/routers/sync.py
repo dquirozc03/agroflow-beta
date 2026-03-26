@@ -48,22 +48,28 @@ COLUMN_MAPPING_PEDIDOS = {
     "PO": "po",
     "CULTIVO": "cultivo",
     "CLIENTE GENERAL": "cliente",
+    "CLIENTE": "cliente",
     "CONSIGNATARIO": "consignatario",
     "RECIBIDOR": "recibidor",
     "POR ID ORIGEN": "port_id_orig",
     "PAIS ": "pais",
+    "PAIS": "pais",
     "POD": "pod",
     "POD ID DESTINO": "port_id_dest",
+    "POD DESTINO": "port_id_dest",
     "PRESENTACION ": "presentacion",
+    "PRESENTACION": "presentacion",
     "VARIEDAD": "variedad",
     "PRODUCT": "product",
     "PESO POR CAJA ": "peso_por_caja",
+    "PESO POR CAJA": "peso_por_caja",
     "ADDITIONAL INFORMATION": "additional_info",
     "CAJA POR PALLET": "caja_por_pallet",
     "TOTAL PALLETS": "total_pallets",
     "TOTAL CAJAS": "total_cajas",
     "INCOTERM": "incoterm",
-    "TIPO PRECIO": "tipo_precio"
+    "TIPO PRECIO": "tipo_precio",
+    "TIPO DE PRECIO": "tipo_precio"
 }
 
 from dateutil.parser import parse as parse_date
@@ -254,7 +260,21 @@ async def sync_pedidos_raw(
     import re
     def clean_header(h: str):
         if not h: return ""
-        return re.sub(r'\s+', ' ', str(h).strip()).upper()
+        # Limpieza profunda: mayúsculas y solo caracteres A-Z-0-9
+        return re.sub(r'[^A-Z0-9]', '', str(h).upper())
+
+    def extract_numeric(val: Any) -> float:
+        """Extrae el primer número de una cadena (ej: '3.8 KG' -> 3.8)"""
+        if val is None: return 0.0
+        s = str(val).replace(',', '').strip()
+        # Buscamos algo que parezca número (int o float)
+        match = re.search(r'(\d+(\.\d+)?)', s)
+        if match:
+            try:
+                return float(match.group(1))
+            except:
+                return 0.0
+        return 0.0
 
     excel_headers = [clean_header(h) for h in payload[0]]
     data_rows = payload[1:]
@@ -294,10 +314,13 @@ async def sync_pedidos_raw(
                         if not val or val.upper() in null_values:
                             pedido_data[db_col] = None
                         elif db_col in numeric_cols:
-                            try:
-                                pedido_data[db_col] = float(val.replace(',', ''))
-                            except:
-                                pedido_data[db_col] = 0
+                            # Usamos el extractor inteligente
+                            num_val = extract_numeric(raw_val)
+                            # Si es entero según el modelo, lo castamos
+                            if db_col != "peso_por_caja":
+                                pedido_data[db_col] = int(num_val)
+                            else:
+                                pedido_data[db_col] = num_val
                         else:
                             pedido_data[db_col] = val.upper()
                 

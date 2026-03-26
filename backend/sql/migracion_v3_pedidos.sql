@@ -1,4 +1,4 @@
--- Script de creación para la tabla pedidos_comerciales (Unificado a minúsculas)
+-- Script de creación para la tabla pedidos_comerciales (Optimizado para tipos enteros)
 DROP TABLE IF EXISTS pedidos_comerciales;
 
 CREATE TABLE IF NOT EXISTS pedidos_comerciales (
@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS pedidos_comerciales (
     product VARCHAR(150),
     peso_por_caja NUMERIC(10, 2),
     additional_info TEXT,
-    caja_por_pallet NUMERIC(10, 2),
-    total_pallets NUMERIC(10, 2),
-    total_cajas NUMERIC(10, 2),
+    caja_por_pallet INTEGER,
+    total_pallets INTEGER,
+    total_cajas INTEGER,
     incoterm VARCHAR(50),
     tipo_precio VARCHAR(50),
     fecha_actualizacion TIMESTAMPTZ DEFAULT NOW()
