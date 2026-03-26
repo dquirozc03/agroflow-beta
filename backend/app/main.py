@@ -29,10 +29,11 @@ app.add_middleware(
 )
 
 # Routers
-from app.routers import auth, sync
+from app.routers import auth, sync, maestros
 
 app.include_router(auth.router)
 app.include_router(sync.router)
+app.include_router(maestros.router)
 
 @app.get("/health")
 @app.get("/api/v1/health")

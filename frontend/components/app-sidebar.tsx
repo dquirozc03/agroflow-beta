@@ -24,7 +24,8 @@ import {
   BarChart3,
   Truck,
   Users,
-  UserRound
+  UserRound,
+  FileUp
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -50,7 +51,8 @@ export function AppSidebar() {
     {
       label: "Datos Maestros",
       items: [
-        { name: "Transportistas", icon: Truck, href: "#", active: false },
+        { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
+        { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
         { name: "Vehículos", icon: Tractor, href: "#", active: false },
         { name: "Choferes", icon: Users, href: "#", active: false },
       ]
