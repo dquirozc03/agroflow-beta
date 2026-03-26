@@ -58,20 +58,23 @@ async def sync_posicionamiento_raw(
     if not payload or len(payload) < 2:
         return {"status": "error", "mensaje": "El payload no contiene datos suficientes (mínimo header + 1 fila).", "procesados": 0, "errores": 0}
 
-    # 2. Análisis de Cabeceras
+    # 2. Análisis de Cabeceras (Insensible a Mayúsculas)
     excel_headers = [h.strip() if h else "" for h in payload[0]]
+    excel_headers_upper = [h.upper() for h in excel_headers]
     data_rows = payload[1:]
     
     # Mapear qué columna de la BD está en qué índice del Excel
     mapping_indices = {}
     for excel_col, db_col in COLUMN_MAPPING.items():
-        if excel_col in excel_headers:
-            mapping_indices[db_col] = excel_headers.index(excel_col)
+        # Buscamos la columna de Excel en mayúsculas para máxima flexibilidad
+        excel_col_upper = excel_col.upper()
+        if excel_col_upper in excel_headers_upper:
+            mapping_indices[db_col] = excel_headers_upper.index(excel_col_upper)
 
     if "BOOKING" not in mapping_indices:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Estructura de Excel inválida: No se encontró la columna crítica 'Booking'."
+            detail=f"Estructura de Excel inválida: No se encontró la columna crítica 'Booking'. Cabeceras detectadas: {excel_headers}"
         )
 
     # 3. Procesamiento Masivo con Lógica de Upsert
