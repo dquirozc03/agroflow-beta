@@ -94,7 +94,7 @@ export function AppSidebar() {
       </button>
 
       {/* Navegación Vertical con Secciones */}
-      <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-4 sidebar-scroll">
         {sections.map((section, sIdx) => (
           <div key={section.label} className={cn("mb-6", sIdx === 0 ? "mt-2" : "")}>
             {!isCollapsed && (

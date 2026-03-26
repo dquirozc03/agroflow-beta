@@ -146,14 +146,29 @@
   background: rgba(255, 255, 255, 0.32);
 }
 
-/* Firefox */
-.lc-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.28) rgba(0, 0, 0, 0.06);
+/* Scrollbar minimalista para el Sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
 }
 
-.dark .lc-scroll {
-  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.5);
+}
+
+/* Firefox */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.2) transparent;
 }
 
 
