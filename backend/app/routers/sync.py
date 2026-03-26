@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import insert
 from app.database import get_db
 from app.configuracion import settings
 from app.models.posicionamiento import Posicionamiento
+from app.models.pedido import PedidoComercial
 import logging
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,31 @@ COLUMN_MAPPING = {
     "FECHA SOLICITADA (OPERADOR)": "FECHA_PROGRAMADA",
     "HORA SOLICITADA (OPERADOR)": "HORA_PROGRAMADA",
     "CAJAS VACIAS (SI/NO)": "CAJAS_VACIAS"
+}
+
+# Mapeo de columnas: Nombre Exacto en Excel (Pedidos) -> Nombre en la Base de Datos
+COLUMN_MAPPING_PEDIDOS = {
+    "PLANTA": "PLANTA",
+    "ORDEN": "ORDEN_BETA",
+    "PO": "PO",
+    "CULTIVO": "CULTIVO",
+    "CLIENTE GENERAL": "CLIENTE",
+    "CONSIGNATARIO": "CONSIGNATARIO",
+    "RECIBIDOR": "RECIBIDOR",
+    "POR ID ORIGEN": "PORT_ID_ORIGEN",
+    "PAIS": "PAIS",
+    "POD": "POD",
+    "POD ID DESTINO": "PORT_ID_DESTINO",
+    "PRESENTACION": "PRESENTACION",
+    "VARIEDAD": "VARIEDAD",
+    "PRODUCT": "PRODUCT",
+    "PESO POR CAJA": "PESO_POR_CAJA",
+    "ADDITIONAL INFORMATION": "ADDITIONAL_INFO",
+    "CAJA POR PALLET": "CAJA_POR_PALLET",
+    "TOTAL PALLETS": "TOTAL_PALLETS",
+    "TOTAL CAJAS": "TOTAL_CAJAS",
+    "INCOTERM": "INCOTERM",
+    "TIPO DE PRECIO": "TIPO_PRECIO"
 }
 
 from dateutil.parser import parse as parse_date
@@ -178,4 +204,93 @@ async def sync_posicionamiento_raw(
         "procesados": procesados,
         "errores": errores,
         "detalle_errores": detalle_errores[:10] # Mostrar los primeros 10 para debug
+    }
+
+@router.post("/pedidos/raw")
+async def sync_pedidos_raw(
+    payload: List[List[str]],
+    x_sync_token: str = Header(None, alias="X-Sync-Token"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para sincronización de Pedidos Comerciales.
+    Estrategia: RECARGA TOTAL (Delete & Insert).
+    Convierte todo el texto a MAYÚSCULAS.
+    """
+    
+    # 1. Validación de Seguridad
+    if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de sincronización inválido."
+        )
+
+    if not payload or len(payload) < 2:
+        return {"status": "error", "mensaje": "Payload vacío.", "procesados": 0}
+
+    # 2. Análisis de Cabeceras
+    import re
+    def clean_header(h: str):
+        if not h: return ""
+        return re.sub(r'\s+', ' ', str(h).strip()).upper()
+
+    excel_headers = [clean_header(h) for h in payload[0]]
+    data_rows = payload[1:]
+    
+    mapping_indices = {}
+    for excel_col, db_col in COLUMN_MAPPING_PEDIDOS.items():
+        clean_target = clean_header(excel_col)
+        if clean_target in excel_headers:
+            mapping_indices[db_col] = excel_headers.index(clean_target)
+
+    # 3. RECARGA TOTAL: Limpiar tabla primero
+    try:
+        db.query(PedidoComercial).delete()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error limpiando tabla: {str(e)}")
+
+    # 4. Inserción Masiva
+    nuevos_pedidos = []
+    errores = 0
+    
+    # Columnas numéricas para cast
+    numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS"]
+
+    for row in data_rows:
+        try:
+            pedido_data = {}
+            for db_col, idx in mapping_indices.items():
+                if idx < len(row):
+                    val = row[idx]
+                    if not val or str(val).strip().upper() in ["", "-", "N/A", "NONE", "NULL"]:
+                        pedido_data[db_col] = None
+                    elif db_col in numeric_cols:
+                        try:
+                            pedido_data[db_col] = float(str(val).replace(',', '').strip())
+                        except:
+                            pedido_data[db_col] = 0
+                    else:
+                        # Convertir a MAYÚSCULAS
+                        pedido_data[db_col] = str(val).strip().upper()
+            
+            if pedido_data:
+                nuevos_pedidos.append(PedidoComercial(**pedido_data))
+        except:
+            errores += 1
+
+    if nuevos_pedidos:
+        try:
+            db.bulk_save_objects(nuevos_pedidos)
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error insertando datos: {str(e)}")
+
+    return {
+        "status": "success",
+        "mensaje": f"Recarga total exitosa. {len(nuevos_pedidos)} filas importadas.",
+        "columnas_detectadas": list(mapping_indices.keys()),
+        "errores_omisión": errores
     }
