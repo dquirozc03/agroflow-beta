@@ -21,7 +21,10 @@ import {
   Layers,
   Settings,
   Map,
-  BarChart3
+  BarChart3,
+  Truck,
+  Users,
+  UserRound
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -31,13 +34,34 @@ export function AppSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const navItems = useMemo(() => [
-    { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/" },
-    { name: "Mis Campos", icon: Map, href: "#", active: false },
-    { name: "Maquinaria", icon: Tractor, href: "#", active: false },
-    { name: "LogiCapture", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
-    { name: "Analítica", icon: BarChart3, href: "#", active: false },
-    { name: "Configuración", icon: Settings, href: "#", active: false },
+  const sections = useMemo(() => [
+    {
+      label: "General",
+      items: [
+        { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/" },
+      ]
+    },
+    {
+      label: "LogiCapture",
+      items: [
+        { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
+      ]
+    },
+    {
+      label: "Datos Maestros",
+      items: [
+        { name: "Transportistas", icon: Truck, href: "#", active: false },
+        { name: "Vehículos", icon: Tractor, href: "#", active: false },
+        { name: "Choferes", icon: Users, href: "#", active: false },
+      ]
+    },
+    {
+      label: "Sistema",
+      items: [
+        { name: "Analítica", icon: BarChart3, href: "#", active: false },
+        { name: "Configuración", icon: Settings, href: "#", active: false },
+      ]
+    }
   ], [pathname]);
 
   return (
@@ -48,7 +72,7 @@ export function AppSidebar() {
       
       {/* Brand Logo & Toggle */}
       <div className={cn(
-        "flex items-center gap-3 mb-12 mt-8 transition-all duration-500",
+        "flex items-center gap-3 mb-10 mt-8 transition-all duration-500",
         isCollapsed ? "justify-center px-0" : "px-8"
       )}>
         <div className="h-10 w-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
@@ -69,39 +93,53 @@ export function AppSidebar() {
         {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </button>
 
-      {/* Navegación Vertical Premium */}
-      <nav className="flex-1 space-y-2 px-4">
-        {navItems.map((m) => (
-          <a
-            key={m.name}
-            href={m.href}
-            title={isCollapsed ? m.name : ""}
-            className={cn(
-              "flex items-center gap-4 py-3.5 rounded-2xl transition-all group relative overflow-hidden",
-              isCollapsed ? "justify-center px-0" : "px-5",
-              m.active
-                ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/20"
-                : "text-emerald-100/40 hover:text-white hover:bg-white/5"
-            )}
-          >
-            <m.icon className={cn(
-              "h-5 w-5 transition-transform duration-300",
-              m.active ? "text-white scale-110" : "text-emerald-500/50 group-hover:scale-110 group-hover:text-emerald-400"
-            )} />
+      {/* Navegación Vertical con Secciones */}
+      <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
+        {sections.map((section, sIdx) => (
+          <div key={section.label} className={cn("mb-6", sIdx === 0 ? "mt-2" : "")}>
             {!isCollapsed && (
-              <span className={cn(
-                "text-sm tracking-tight animate-in fade-in duration-500",
-                m.active ? "font-bold" : "font-medium"
-              )}>
-                {m.name}
-              </span>
+              <p className="px-5 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/40 animate-in fade-in duration-700">
+                {section.label}
+              </p>
             )}
-            {m.active && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full shadow-[0_0_10px_white]" />
+            {isCollapsed && (
+              <div className="h-px bg-emerald-900/30 mx-4 mb-4" />
             )}
-          </a>
+            <nav className="space-y-1">
+              {section.items.map((m) => (
+                <a
+                  key={m.name}
+                  href={m.href}
+                  title={isCollapsed ? m.name : ""}
+                  className={cn(
+                    "flex items-center gap-4 py-3 rounded-2xl transition-all group relative overflow-hidden",
+                    isCollapsed ? "justify-center px-0" : "px-5",
+                    m.active
+                      ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/20"
+                      : "text-emerald-100/40 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <m.icon className={cn(
+                    "h-5 w-5 transition-transform duration-300",
+                    m.active ? "text-white scale-110" : "text-emerald-500/50 group-hover:scale-110 group-hover:text-emerald-400"
+                  )} />
+                  {!isCollapsed && (
+                    <span className={cn(
+                      "text-[13px] tracking-tight animate-in fade-in duration-500",
+                      m.active ? "font-bold" : "font-medium"
+                    )}>
+                      {m.name}
+                    </span>
+                  )}
+                  {m.active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-r-full shadow-[0_0_10px_white]" />
+                  )}
+                </a>
+              ))}
+            </nav>
+          </div>
         ))}
-      </nav>
+      </div>
 
       {/* Footer & Perfil */}
       <div className={cn(
