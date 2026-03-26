@@ -56,12 +56,22 @@ def clean_data_value(val: str, db_column: str):
         except:
             return 0
 
-    # 2. Manejo de Fechas (ETD, ETA, FECHA_PROGRAMADA)
+    # 2. Manejo de Fechas (ETD, ETA, FECHA_PROGRAMADA - Soporte Español)
     if db_column in ["ETD", "ETA", "FECHA_PROGRAMADA"]:
         try:
-            return parse_date(val_str).date()
-        except:
-            logger.warning(f"No se pudo parsear fecha: {val_str} para {db_column}")
+            # Traducción básica de meses en español a inglés para el parser
+            meses_es_en = {
+                "ENE": "JAN", "FEB": "FEB", "MAR": "MAR", "ABR": "APR", "MAY": "MAY", "JUN": "JUN",
+                "JUL": "JUL", "AGO": "AUG", "SEP": "SEP", "OCT": "OCT", "NOV": "NOV", "DIC": "DEC"
+            }
+            temp_val = val_str.upper()
+            for es, en in meses_es_en.items():
+                if es in temp_val:
+                    temp_val = temp_val.replace(es, en)
+            
+            return parse_date(temp_val).date()
+        except Exception as e:
+            logger.warning(f"No se pudo parsear fecha: {val_str} para {db_column}: {str(e)}")
             return None
 
     # 3. Manejo de Horas (HORA_PROGRAMADA)
