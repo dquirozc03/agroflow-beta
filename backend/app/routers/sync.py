@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Header, Depends, HTTPException, status
-from typing import List
+from fastapi import APIRouter, Header, Depends, HTTPException, status, Body
+from typing import List, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from app.database import get_db
@@ -111,14 +111,22 @@ def clean_data_value(val: str, db_column: str):
 
 @router.post("/posicionamiento/raw")
 async def sync_posicionamiento_raw(
-    payload: List[List[str]],
+    payload: Any = Body(...),
     x_sync_token: str = Header(None, alias="X-Sync-Token"),
     db: Session = Depends(get_db)
 ):
     """
     Endpoint de nivel profesional para sincronización masiva desde Excel.
-    Incluye blindaje de tipos de datos y recolección de errores por fila.
     """
+    # Robustez contra Power Automate: Si llega como string, lo parseamos
+    if isinstance(payload, str):
+        try:
+            import json
+            payload = json.loads(payload)
+        except Exception:
+            raise HTTPException(status_code=400, detail="El payload enviado como texto no es un JSON válido.")
+
+    # ... continuación del código ...
     
     # 1. Validación de Seguridad (Inge Daniel Sync Token)
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
@@ -208,7 +216,7 @@ async def sync_posicionamiento_raw(
 
 @router.post("/pedidos/raw")
 async def sync_pedidos_raw(
-    payload: List[List[str]],
+    payload: Any = Body(...),
     x_sync_token: str = Header(None, alias="X-Sync-Token"),
     db: Session = Depends(get_db)
 ):
@@ -217,6 +225,13 @@ async def sync_pedidos_raw(
     Estrategia: RECARGA TOTAL (Delete & Insert).
     Convierte todo el texto a MAYÚSCULAS.
     """
+    # Robustez contra Power Automate: Si llega como string, lo parseamos
+    if isinstance(payload, str):
+        try:
+            import json
+            payload = json.loads(payload)
+        except Exception:
+            raise HTTPException(status_code=400, detail="El payload enviado como texto no es un JSON válido.")
     
     # 1. Validación de Seguridad
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
