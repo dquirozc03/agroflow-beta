@@ -11,29 +11,29 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/sync", tags=["sincronizacion"])
 
-# Mapeo de columnas: Nombre en Excel (Inge Daniel) -> Nombre en la Base de Datos
+# Mapeo de columnas: Nombre Exacto en Excel (Inge Daniel) -> Nombre en la Base de Datos
 COLUMN_MAPPING = {
-    "Planta de Llenado": "PLANTA_LLENADO",
-    "Cultivo": "CULTIVO",
-    "Booking": "BOOKING",
-    "Nave": "NAVE",
-    "ETD (Booking)": "ETD",
-    "ETA (Booking)": "ETA",
+    "PLT. EMPACADORA": "PLANTA_LLENADO",
+    "CULTIVO": "CULTIVO",
+    "BOOKING LIMPIO": "BOOKING",
+    "NAVE": "NAVE",
+    "ETD BOOKING": "ETD",
+    "ETA BOOKING": "ETA",
     "POL": "POL",
-    "Orden Beta": "ORDEN_BETA",
-    "Precinto de Senasa": "PRECINTO_SENASA",
-    "Operador Logistico": "OPERADOR_LOGISTICO",
-    "Naviera": "NAVIERA",
-    "Termoregistros": "TERMOREGISTROS",
+    "O/BETA FINAL": "ORDEN_BETA",
+    "PRECINTO SENASA (SI/NO)": "PRECINTO_SENASA",
+    "OPERADOR": "OPERADOR_LOGISTICO",
+    "NAVIERA": "NAVIERA",
+    "TERMOREGISTROS": "TERMOREGISTROS",
     "AC": "AC",
     "C/T": "CT",
-    "Ventilación": "VENTILACION",
-    "Temperatura": "TEMPERATURA",
-    "Humedad": "HUMEDAD",
-    "Filtros": "FILTROS",
-    "Fecha Programada de embarque": "FECHA_PROGRAMADA",
-    "Hora programada": "HORA_PROGRAMADA",
-    "Cajas Vacías": "CAJAS_VACIAS"
+    "VENT": "VENTILACION",
+    "T°": "TEMPERATURA",
+    "HUMEDAD": "HUMEDAD",
+    "FILTROS": "FILTROS",
+    "FECHA SOLICITADA (OPERADOR)": "FECHA_PROGRAMADA",
+    "HORA SOLICITADA (OPERADOR)": "HORA_PROGRAMADA",
+    "CAJAS VACIAS (SI/NO)": "CAJAS_VACIAS"
 }
 
 @router.post("/posicionamiento/raw")
