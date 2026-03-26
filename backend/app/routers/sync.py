@@ -42,27 +42,28 @@ COLUMN_MAPPING = {
 
 # Mapeo de columnas: Nombre Exacto en Excel (Pedidos) -> Nombre en la Base de Datos
 COLUMN_MAPPING_PEDIDOS = {
-    "PLANTA": "PLANTA",
-    "ORDEN": "ORDEN_BETA",
-    "PO": "PO",
-    "CULTIVO": "CULTIVO",
-    "CLIENTE GENERAL": "CLIENTE",
-    "CONSIGNATARIO": "CONSIGNATARIO",
-    "RECIBIDOR": "RECIBIDOR",
-    "POR ID ORIGEN": "PORT_ID_ORIGEN",
-    "PAIS": "PAIS",
-    "POD": "POD",
-    "POD ID DESTINO": "PORT_ID_DESTINO",
-    "PRESENTACION": "PRESENTACION",
-    "VARIEDAD": "VARIEDAD",
-    "PRODUCT": "PRODUCT",
-    "PESO POR CAJA": "PESO_POR_CAJA",
-    "ADDITIONAL INFORMATION": "ADDITIONAL_INFO",
-    "CAJA POR PALLET": "CAJA_POR_PALLET",
-    "TOTAL PALLETS": "TOTAL_PALLETS",
-    "TOTAL CAJAS": "TOTAL_CAJAS",
-    "INCOTERM": "INCOTERM",
-    "TIPO DE PRECIO": "TIPO_PRECIO"
+    "ZONA": "planta",
+    "PLANTA": "planta",
+    "ORDEN": "orden_beta",
+    "PO": "po",
+    "CULTIVO": "cultivo",
+    "CLIENTE GENERAL": "cliente",
+    "CONSIGNATARIO": "consignatario",
+    "RECIBIDOR": "recibidor",
+    "POR ID ORIGEN": "port_id_orig",
+    "PAIS ": "pais",
+    "POD": "pod",
+    "POD ID DESTINO": "port_id_dest",
+    "PRESENTACION ": "presentacion",
+    "VARIEDAD": "variedad",
+    "PRODUCT": "product",
+    "PESO POR CAJA ": "peso_por_caja",
+    "ADDITIONAL INFORMATION": "additional_info",
+    "CAJA POR PALLET": "caja_por_pallet",
+    "TOTAL PALLETS": "total_pallets",
+    "TOTAL CAJAS": "total_cajas",
+    "INCOTERM": "incoterm",
+    "TIPO PRECIO": "tipo_precio"
 }
 
 from dateutil.parser import parse as parse_date
@@ -272,7 +273,7 @@ async def sync_pedidos_raw(
         # 4. Procesamiento de Filas (Filtro de Alto Rendimiento)
         mappings = []
         errores = 0
-        numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS"]
+        numeric_cols = ["peso_por_caja", "caja_por_pallet", "total_pallets", "total_cajas"]
         null_values = {"", "-", "N/A", "NONE", "NULL", "#¡VALOR!", "#VALUE!", "#DIV/0!"}
 
         # Limitamos a 5000 filas para evitar abusos de memoria y saltamos vacías

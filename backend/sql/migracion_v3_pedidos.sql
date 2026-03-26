@@ -1,30 +1,30 @@
--- Script de creación para la tabla PEDIDOS_COMERCIALES
--- Generado para el entorno DEV
+-- Script de creación para la tabla pedidos_comerciales (Unificado a minúsculas)
+DROP TABLE IF EXISTS pedidos_comerciales;
 
 CREATE TABLE IF NOT EXISTS pedidos_comerciales (
-    ID SERIAL PRIMARY KEY,
-    PLANTA VARCHAR(100),
-    ORDEN_BETA VARCHAR(50),
-    PO VARCHAR(100),
-    CULTIVO VARCHAR(50),
-    CLIENTE VARCHAR(200),
-    CONSIGNATARIO VARCHAR(200),
-    RECIBIDOR VARCHAR(200),
-    PORT_ID_ORIGEN VARCHAR(100),
-    PAIS VARCHAR(100),
-    POD VARCHAR(100),
-    PORT_ID_DESTINO VARCHAR(100),
-    PRESENTACION VARCHAR(100),
-    VARIEDAD VARCHAR(100),
-    PRODUCT VARCHAR(150),
-    PESO_POR_CAJA NUMERIC(10, 2),
-    ADDITIONAL_INFO TEXT,
-    CAJA_POR_PALLET NUMERIC(10, 2),
-    TOTAL_PALLETS NUMERIC(10, 2),
-    TOTAL_CAJAS NUMERIC(10, 2),
-    INCOTERM VARCHAR(50),
-    TIPO_PRECIO VARCHAR(50),
-    FECHA_ACTUALIZACION TIMESTAMPTZ DEFAULT NOW()
+    id SERIAL PRIMARY KEY,
+    planta VARCHAR(100),
+    orden_beta VARCHAR(50),
+    po VARCHAR(100),
+    cultivo VARCHAR(50),
+    cliente VARCHAR(200),
+    consignatario VARCHAR(200),
+    recibidor VARCHAR(200),
+    port_id_orig VARCHAR(100),
+    pais VARCHAR(100),
+    pod VARCHAR(100),
+    port_id_dest VARCHAR(100),
+    presentacion VARCHAR(100),
+    variedad VARCHAR(100),
+    product VARCHAR(150),
+    peso_por_caja NUMERIC(10, 2),
+    additional_info TEXT,
+    caja_por_pallet NUMERIC(10, 2),
+    total_pallets NUMERIC(10, 2),
+    total_cajas NUMERIC(10, 2),
+    incoterm VARCHAR(50),
+    tipo_precio VARCHAR(50),
+    fecha_actualizacion TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Índices para mejorar el rendimiento de cruce con Posicionamientos
