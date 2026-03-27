@@ -52,6 +52,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTermTransportista, setSearchTermTransportista] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -69,7 +70,12 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
           alto: editingData.alto_tracto || editingData.alto_carreta || "",
           estado: editingData.estado || "ACTIVO"
         });
+        // Sincronizar nombre en el buscador
+        if (editingData.transportista) {
+          setSearchTermTransportista(editingData.transportista.nombre_transportista);
+        }
       } else {
+        setSearchTermTransportista("");
         setFormData({
            transportista_id: "",
            placa: "",
@@ -250,18 +256,64 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Transportista Propietario</label>
                   <div className="relative group">
-                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                     <select 
-                       required
-                       value={formData.transportista_id}
-                       onChange={e => setFormData({...formData, transportista_id: e.target.value})}
-                       className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm appearance-none"
-                     >
-                        <option value="">Seleccione Transportista...</option>
-                        {transportistas.filter(t => t.nombre_transportista.toLowerCase().includes(searchTermTransportista.toLowerCase()) || t.ruc.includes(searchTermTransportista)).map(t => (
-                           <option key={t.id} value={t.id}>{t.ruc} - {t.nombre_transportista}</option>
-                        ))}
-                     </select>
+                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors z-10" />
+                     <input 
+                       type="text"
+                       placeholder="Buscar por Nombre o RUC..."
+                       value={searchTermTransportista}
+                       onFocus={() => setIsDropdownOpen(true)}
+                       onChange={e => {
+                         setSearchTermTransportista(e.target.value);
+                         setIsDropdownOpen(true);
+                       }}
+                       className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
+                     />
+                     
+                     {/* Dropdown de Resultados */}
+                     {isDropdownOpen && (
+                       <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl py-2 z-[150] max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                          {transportistas.filter(t => 
+                            t.nombre_transportista.toLowerCase().includes(searchTermTransportista.toLowerCase()) || 
+                            t.ruc.includes(searchTermTransportista)
+                          ).length > 0 ? (
+                            transportistas.filter(t => 
+                              t.nombre_transportista.toLowerCase().includes(searchTermTransportista.toLowerCase()) || 
+                              t.ruc.includes(searchTermTransportista)
+                            ).map(t => (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({...formData, transportista_id: t.id.toString()});
+                                  setSearchTermTransportista(t.nombre_transportista);
+                                  setIsDropdownOpen(false);
+                                }}
+                                className="w-full px-5 py-3 text-left hover:bg-emerald-50 transition-colors flex flex-col gap-0.5"
+                              >
+                                <span className="text-sm font-bold text-slate-800">{t.nombre_transportista}</span>
+                                <span className="text-[10px] text-slate-400 font-bold tracking-widest">RUC: {t.ruc}</span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-5 py-4 text-center text-slate-400 text-xs font-medium">
+                               No se encontraron transportistas
+                            </div>
+                          )}
+                       </div>
+                     )}
+
+                     {/* Overlay para cerrar dropdown al hacer click fuera */}
+                     {isDropdownOpen && (
+                        <div 
+                          className="fixed inset-0 z-[140]" 
+                          onClick={() => {
+                            // Si cerramos sin seleccionar, restauramos el nombre si hay un ID
+                            const selected = transportistas.find(t => t.id.toString() === formData.transportista_id);
+                            if (selected) setSearchTermTransportista(selected.nombre_transportista);
+                            setIsDropdownOpen(false);
+                          }} 
+                        />
+                     )}
                   </div>
                </div>
 
