@@ -37,34 +37,42 @@ class OCRService:
         return Image.fromarray(blurred)
 
     def extract_text(self, image_bytes, is_pdf=False):
-        """Extrae texto de bytes de imagen o PDF."""
+        """Extrae texto con varios intentos (Original y Procesado)."""
         try:
             images = []
             if is_pdf:
-                # Convertimos PDF a lista de imágenes
                 images = convert_from_bytes(image_bytes)
             else:
                 images = [Image.open(io.BytesIO(image_bytes))]
 
-            full_text = ""
+            full_results = []
             for i, img in enumerate(images):
-                logger.info(f"Procesando página/imagen {i+1}...")
+                # Intento 1: Con procesamiento OpenCV (mejor para fotos)
                 processed_img = self.preprocess_image(img)
-                text = pytesseract.image_to_string(processed_img, config=self.config)
-                full_text += text + "\n"
+                text_p = pytesseract.image_to_string(processed_img, config=self.config)
+                
+                # Intento 2: Con la imagen original (mejor para scans claros)
+                text_o = pytesseract.image_to_string(img, config=self.config)
+                
+                full_results.append(text_p)
+                full_results.append(text_o)
             
-            logger.info(f"Texto extraído ({len(full_text)} caracteres)")
-            return full_text
+            combined_text = "\n---\n".join(full_results)
+            logger.info(f"Texto extraído ({len(combined_text)} caracteres)")
+            return combined_text
         except Exception as e:
             logger.error(f"Error en extracción de texto: {e}")
             return ""
 
     def parse_transportista_data(self, text):
-        """Heurística avanzada para extraer datos sin depender de etiquetas fijas."""
-        # Limpieza profunda
-        clean_text = re.sub(r'[|\[\]]', '', text)
-        lines = [l.strip() for l in clean_text.split('\n') if len(l.strip()) > 2]
-        
+        """Heurística avanzada: Detecta RUCs y Empresas incluso con errores de OCR comunes."""
+        # Limpieza global (letras que el OCR confunde con números en el bloque del RUC)
+        # Reemplazamos O por 0 y I por 1 solo en bloques que parecen números
+        def fix_ocr_errors(t):
+            # Traducir O/I solo si están rodeados de números o parecen serlo
+            fixed = t.replace('O', '0').replace('o', '0').replace('I', '1').replace('i', '1').replace('l', '1').replace('S', '5').replace('s', '5').replace('B', '8')
+            return fixed
+
         data = {
             "nombre_transportista": None,
             "ruc": None,
@@ -73,44 +81,40 @@ class OCRService:
             "placa": None
         }
 
-        # --- 1. Buscador Heurístico de RUC (Cualquier bloque de 11 dígitos que empiece con 10 o 20) ---
-        # Buscamos en el texto limpio total (quitando espacios y guiones)
-        all_digits = re.sub(r'[^0-9]', '', clean_text)
-        ruc_matches = re.findall(r'(?:10|20)\d{9}', all_digits)
+        # 1. Buscar RUC (11 dígitos) - Super Flexible
+        # Extraemos todos los fragmentos que parezcan números o letras confundibles
+        potential_ruc_text = re.sub(r'[^0-9OolISsB]', '', text)
+        all_fixed = fix_ocr_errors(potential_ruc_text)
+        
+        ruc_matches = re.findall(r'(?:10|20)\d{9}', all_fixed)
         if ruc_matches:
             data["ruc"] = ruc_matches[0]
 
-        # --- 2. Buscador Heurístico de Razón Social ---
-        # Buscamos líneas que contengan siglas de empresas peruanas
-        empresa_patterns = [r'S\.?A\.?C\.?', r'S\.?A\.?$', r'S\.?R\.?L\.?', r'E\.?I\.?R\.?L\.?', r'LOGISTICA', r'TRANSPORTES?']
+        # 2. Nombre del Transportista (Por siglas legales)
+        lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 3]
+        empresa_patterns = [r'S\.?A\.?C\.?', r'S\.?A\.?$', r'S\.?R\.?L\.?', r'E\.?I\.?R\.?L\.?', r'LOGISTIC', r'TRANSPORT', r'INVERSIONES', r'SERVICIOS']
+        
         for line in lines:
             line_up = line.upper()
             if any(re.search(p, line_up) for p in empresa_patterns):
-                # Si la línea tiene "RAZON SOCIAL", limpiamos el prefijo
-                clean_line = re.sub(r'.*SOCIAL[:\s\-]*', '', line, flags=re.IGNORECASE).strip()
-                # Si lo que queda es muy corto, tal vez el nombre está en la siguiente línea
-                if len(clean_line) > 5:
-                    data["nombre_transportista"] = clean_line
+                # Limpiamos etiquetas de la izquierda
+                name = re.sub(r'^(?:NOMBRE|RAZON|SOCIAL|DEL|TRANSPORTISTA)[:\s\-]*', '', line, flags=re.IGNORECASE).strip()
+                if len(name) > 4:
+                    data["nombre_transportista"] = name
                     break
 
-        # --- 3. Partida Registral (Heurística: línea que empieza con 15 o similar después de 'PARTIDA') ---
-        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]+([A-Z0-9]{8,12})', clean_text, re.IGNORECASE)
+        # 3. Partida (Heurística: 8 a 12 caracteres alfanuméricos después de PARTIDA)
+        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]+([A-Z0-9]{8,12})', text, re.IGNORECASE)
         if partida_match:
             data["partida_registral"] = partida_match.group(1)
 
-        # --- 4. Certificado (N° + cadena de ~10-15 caracteres) ---
-        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,14})', clean_text, re.IGNORECASE)
-        if cert_match:
-            data["certificado_vehicular"] = cert_match.group(1)
+        # 4. Certificado y Placa
+        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,14})', text, re.IGNORECASE)
+        if cert_match: data["certificado_vehicular"] = cert_match.group(1)
 
-        # --- 5. Placa (ABC-123 o ABC 123) ---
-        placa_matches = re.findall(r'[A-Z0-9]{3}[- ]?[A-Z0-9]{3}', clean_text)
-        for p in placa_matches:
-            # Una placa suele tener 3 letras y 3 números (o similar)
-            clean_p = re.sub(r'[^A-Z0-9]', '', p)
-            if len(clean_p) == 6:
-                data["placa"] = clean_p
-                break
+        placa_match = re.search(r'([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', text)
+        if placa_match:
+            data["placa"] = re.sub(r'[^A-Z0-9]', '', placa_match.group(0))
 
         return data
 
