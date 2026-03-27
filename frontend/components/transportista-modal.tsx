@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface TransportistaModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
     const apiData = new FormData();
     apiData.append("file", file);
 
-    const ocrPromise = fetch("http://localhost:8000/api/v1/maestros/ocr/transportista", {
+    const ocrPromise = fetch(`${API_BASE_URL}/api/v1/maestros/ocr/transportista`, {
       method: "POST",
       body: apiData
     }).then(async (res) => {
@@ -123,8 +124,8 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
     setIsSubmitting(true);
     
     const url = editingData 
-      ? `http://localhost:8000/api/v1/maestros/transportistas/${editingData.id}` 
-      : "http://localhost:8000/api/v1/maestros/transportistas";
+      ? `${API_BASE_URL}/api/v1/maestros/transportistas/${editingData.id}` 
+      : `${API_BASE_URL}/api/v1/maestros/transportistas`;
     
     const method = editingData ? "PUT" : "POST";
 

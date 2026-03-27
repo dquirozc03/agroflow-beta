@@ -8,6 +8,9 @@ export const MODULE_LOGICAPTURE = "LogiCapture";
 /** Empresa de software que desarrolla el sistema. */
 export const COMPANY_NAME = "Nexora Technologies";
 
+/** URL base para llamadas al backend (Render o Local) */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 /** Roles de usuario (alineados con backend donde aplique). */
 export type UserRole =
   | "administrador"
