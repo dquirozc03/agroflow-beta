@@ -38,7 +38,13 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
 
   useEffect(() => {
     if (editingData) {
-      setFormData(editingData);
+      setFormData({
+        ruc: editingData.ruc || "",
+        nombre_transportista: editingData.nombre_transportista || "",
+        partida_registral: editingData.partida_registral || "",
+        codigo_sap: editingData.codigo_sap || "",
+        estado: editingData.estado || "ACTIVO"
+      });
     } else {
       setFormData({
         ruc: "",

@@ -65,13 +65,9 @@ class OCRService:
             return ""
 
     def parse_transportista_data(self, text):
-        """Heurística avanzada: Detecta RUCs y Empresas incluso con errores de OCR comunes."""
-        # Limpieza global (letras que el OCR confunde con números en el bloque del RUC)
-        # Reemplazamos O por 0 y I por 1 solo en bloques que parecen números
+        """Heurística de alta precisión para MTC: Filtra etiquetas irrelevantes."""
         def fix_ocr_errors(t):
-            # Traducir O/I solo si están rodeados de números o parecen serlo
-            fixed = t.replace('O', '0').replace('o', '0').replace('I', '1').replace('i', '1').replace('l', '1').replace('S', '5').replace('s', '5').replace('B', '8')
-            return fixed
+            return t.replace('O', '0').replace('o', '0').replace('I', '1').replace('i', '1').replace('l', '1').replace('S', '5').replace('B', '8')
 
         data = {
             "nombre_transportista": None,
@@ -81,38 +77,48 @@ class OCRService:
             "placa": None
         }
 
-        # 1. Buscar RUC (11 dígitos) - Super Flexible
-        # Extraemos todos los fragmentos que parezcan números o letras confundibles
-        potential_ruc_text = re.sub(r'[^0-9OolISsB]', '', text)
-        all_fixed = fix_ocr_errors(potential_ruc_text)
-        
-        ruc_matches = re.findall(r'(?:10|20)\d{9}', all_fixed)
-        if ruc_matches:
-            data["ruc"] = ruc_matches[0]
-
-        # 2. Nombre del Transportista (Por siglas legales)
         lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 3]
-        empresa_patterns = [r'S\.?A\.?C\.?', r'S\.?A\.?$', r'S\.?R\.?L\.?', r'E\.?I\.?R\.?L\.?', r'LOGISTIC', r'TRANSPORT', r'INVERSIONES', r'SERVICIOS']
+        clean_text_full = " ".join(lines)
+
+        # --- 1. Buscador de RUC (Prioridad: el que sigue a la palabra RUC) ---
+        ruc_search = re.search(r'RUC[:\s\-]*([0-9\sOlI]{11,15})', clean_text_full, re.IGNORECASE)
+        if ruc_search:
+            raw_ruc = re.sub(r'[^0-9OolISsB]', '', ruc_search.group(1))
+            fixed_ruc = fix_ocr_errors(raw_ruc)
+            if len(fixed_ruc) >= 11:
+                data["ruc"] = fixed_ruc[:11]
+        
+        if not data["ruc"]:
+            all_digits = re.sub(r'[^0-9]', '', clean_text_full[50:]) 
+            ruc_matches = re.findall(r'(?:10|20)\d{9}', all_digits)
+            if ruc_matches: data["ruc"] = ruc_matches[0]
+
+        # --- 2. Razón Social (Excluimos Modalidad/Sustento) ---
+        empresa_patterns = [r'S\.?A\.?C\.?', r'S\.?A\.?$', r'S\.?R\.?L\.?', r'E\.?I\.?R\.?L\.?', r'LOGISTIC', r'TRANSPORT', r'INVERSIONES']
+        exclude_words = ["MODALIDAD", "SUSTENTO", "VIGENTE", "DOCUMENTO", "HASTA", "DESDE"]
         
         for line in lines:
             line_up = line.upper()
-            if any(re.search(p, line_up) for p in empresa_patterns):
-                # Limpiamos etiquetas de la izquierda
+            if any(word in line_up for word in exclude_words):
+                continue
+                
+            if any(re.search(p, line_up) for p in empresa_patterns) or "SOCIAL" in line_up:
                 name = re.sub(r'^(?:NOMBRE|RAZON|SOCIAL|DEL|TRANSPORTISTA)[:\s\-]*', '', line, flags=re.IGNORECASE).strip()
                 if len(name) > 4:
                     data["nombre_transportista"] = name
                     break
 
-        # 3. Partida (Heurística: 8 a 12 caracteres alfanuméricos después de PARTIDA)
-        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]+([A-Z0-9]{8,12})', text, re.IGNORECASE)
+        # --- 3. Partida ---
+        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]*([A-Z0-9]{8,12})', clean_text_full, re.IGNORECASE)
         if partida_match:
             data["partida_registral"] = partida_match.group(1)
 
-        # 4. Certificado y Placa
-        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,14})', text, re.IGNORECASE)
+        # --- 4. Certificado ---
+        cert_match = re.search(r'N[°º\s\-]+([A-Z0-9]{8,15})', clean_text_full, re.IGNORECASE)
         if cert_match: data["certificado_vehicular"] = cert_match.group(1)
 
-        placa_match = re.search(r'([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', text)
+        # --- 5. Placa ---
+        placa_match = re.search(r'([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', clean_text_full)
         if placa_match:
             data["placa"] = re.sub(r'[^A-Z0-9]', '', placa_match.group(0))
 
