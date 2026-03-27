@@ -142,8 +142,8 @@ export default function TransportistasPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 font-['Outfit'] bg-slate-50/10">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Transportista</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">RUC</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Transportista</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">RUC</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
                 </tr>
               </thead>
@@ -164,13 +164,13 @@ export default function TransportistasPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-5 border-r border-slate-100/30">
                        <div className="flex justify-center">
                           <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">{t.ruc}</span>
                        </div>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex items-center justify-center gap-2 outline-none opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="flex items-center justify-center gap-2 outline-none transition-all duration-300">
                         <button 
                           onClick={() => handleEdit(t)}
                           className="h-9 w-9 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-slate-300 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm active:scale-95"

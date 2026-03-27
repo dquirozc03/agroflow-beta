@@ -150,16 +150,16 @@ export default function ChoferesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Identidad Operativa</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Documentación</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Estado</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Identidad Operativa</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Documentación</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Estado</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
                 {filtered.map((c) => (
                   <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-5 border-r border-slate-100/30">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all shadow-sm shrink-0",
@@ -177,7 +177,7 @@ export default function ChoferesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-5 border-r border-slate-100/30">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                            <Contact className="h-3 w-3 text-slate-400" />
@@ -191,7 +191,7 @@ export default function ChoferesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-5 border-r border-slate-100/30">
                        <div className="flex justify-center">
                           <div className={cn(
                              "inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
@@ -203,7 +203,7 @@ export default function ChoferesPage() {
                        </div>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex items-center justify-center gap-2 outline-none opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="flex items-center justify-center gap-2 outline-none transition-all duration-300">
                         <button 
                           onClick={() => handleEdit(c)}
                           className="h-9 w-9 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-slate-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm active:scale-95"
