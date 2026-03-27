@@ -60,54 +60,59 @@ class OCRService:
             return ""
 
     def parse_transportista_data(self, text):
-        """Busca patrones específicos en el texto extraído."""
+        """Busca patrones específicos en el texto extraído con máxima flexibilidad."""
+        # Limpieza inicial: eliminamos pipes y ruidos comunes de OCR en bordes
+        clean_text = text.replace('|', '').replace('[', '').replace(']', '')
+        
         data = {
             "nombre_transportista": None,
             "ruc": None,
             "partida_registral": None,
             "certificado_vehicular": None,
-            "placa": None,
-            "marca": None,
-            "dimensiones": {
-                "largo": None,
-                "ancho": None,
-                "alto": None
-            }
+            "placa": None
         }
 
-        # 1. Buscar RUC (11 dígitos, usualmente empieza con 20)
-        ruc_match = re.search(r'\b(10|20)\d{9}\b', text)
-        if ruc_match:
-            data["ruc"] = ruc_match.group(0)
+        # 1. Buscar RUC (11 dígitos) - Más agresivo: buscamos secuencias de dígitos que sumen 11
+        # Primero quitamos espacios solo para la búsqueda de RUC
+        digits_only = re.sub(r'\D', '', clean_text)
+        ruc_matches = re.findall(r'(10|20)\d{9}', digits_only)
+        if ruc_matches:
+            # Reconstruimos el primer RUC encontrado (10/20 + los 9 dígitos capturados)
+            # Nota: findall con grupos devuelve solo los grupos. Ajustamos:
+            full_ruc_match = re.search(r'(10|20)\d{9}', digits_only)
+            if full_ruc_match:
+                data["ruc"] = full_ruc_match.group(0)
 
-        # 2. Buscar Certificado Vehicular (Patrón: N° 15M...)
-        cert_match = re.search(r'N[°º]\s*([A-Z0-9]+)', text, re.IGNORECASE)
+        # 2. Nombre del Transportista
+        # El MTC pone: NOMBRE O RAZON SOCIAL [ESPACIOS] NOMBRE EMPRESA
+        # O lo pone en la siguiente línea después de DEL TRANSPORTISTA
+        lines = [l.strip() for l in clean_text.split('\n') if l.strip()]
+        for i, line in enumerate(lines):
+            if "RAZON SOCIAL" in line.upper() or "SOCIAL DEL" in line.upper():
+                # Intentamos sacar lo que está a la derecha en la misma línea
+                potential_name = re.sub(r'.*(?:SOCIAL|TRANSPORTISTA)[:\s\-]+', '', line, flags=re.IGNORECASE).strip()
+                if len(potential_name) > 4:
+                    data["nombre_transportista"] = potential_name
+                    break
+                # Si no hay nada a la derecha, probamos con la siguiente línea
+                if i + 1 < len(lines):
+                    data["nombre_transportista"] = lines[i+1].strip()
+                    break
+
+        # 3. Partida Registral
+        partida_match = re.search(r'PARTIDA\s*REGISTRAL[:\s\-]+([A-Z0-9]+)', clean_text, re.IGNORECASE)
+        if partida_match:
+            data["partida_registral"] = partida_match.group(1)
+
+        # 4. Certificado Vehicular
+        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,15})', clean_text, re.IGNORECASE)
         if cert_match:
             data["certificado_vehicular"] = cert_match.group(1)
 
-        # 3. Buscar Placa (Patrón: PLACA N° ABC123)
-        placa_match = re.search(r'PLACA\s*N[°º]?\s*([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', text, re.IGNORECASE)
+        # 5. Placa
+        placa_match = re.search(r'PLACA\s*N[°º\s]+([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', clean_text, re.IGNORECASE)
         if placa_match:
             data["placa"] = re.sub(r'[^A-Z0-9]', '', placa_match.group(1).upper())
-
-        # 4. Buscar Dimensiones (Patrón: LARGO (MTS.) 7.26)
-        largo_match = re.search(r'LARGO\s*\(?MTS\.?\)?\s*(\d+[\.,]\d+)', text, re.IGNORECASE)
-        ancho_match = re.search(r'ANCHO\s*\(?MTS\.?\)?\s*(\d+[\.,]\d+)', text, re.IGNORECASE)
-        alto_match = re.search(r'ALTO\s*\(?MTS\.?\)?\s*(\d+[\.,]\d+)', text, re.IGNORECASE)
-
-        if largo_match: data["dimensiones"]["largo"] = largo_match.group(1).replace(',', '.')
-        if ancho_match: data["dimensiones"]["ancho"] = ancho_match.group(1).replace(',', '.')
-        if alto_match: data["dimensiones"]["alto"] = alto_match.group(1).replace(',', '.')
-
-        # 5. Nombre del Transportista (Usualmente está entre 'RAZON SOCIAL' y 'RUC')
-        name_match = re.search(r'(?:NOMBRE O RAZ[OÓ]N SOCIAL|DEL TRANSPORTISTA)[:\s]+(.*?)(?:\n|RUC|PARTIDA)', text, re.IGNORECASE | re.DOTALL)
-        if name_match:
-            data["nombre_transportista"] = name_match.group(1).strip()
-
-        # 6. Partida Registral
-        partida_match = re.search(r'PARTIDA\s*REGISTRAL[:\s]+(\w+)', text, re.IGNORECASE)
-        if partida_match:
-            data["partida_registral"] = partida_match.group(1)
 
         return data
 
