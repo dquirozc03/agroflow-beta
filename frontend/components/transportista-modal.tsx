@@ -67,8 +67,15 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
     toast.promise(ocrPromise, {
       loading: "Escaneando tarjeta MTC...",
       success: (result: any) => {
+        console.log("--- [DEBUG OCR] Respuesta del Servidor ---", result);
         if (result.data) {
           const { ruc, nombre_transportista, partida_registral } = result.data;
+          
+          if (!ruc && !nombre_transportista) {
+            console.warn("OCR detectó el archivo pero no encontró datos clave.");
+            return "Escaneo completado (Sin datos claros)";
+          }
+
           setFormData(prev => ({
             ...prev,
             ruc: ruc || prev.ruc,
@@ -77,7 +84,7 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
           }));
           return "Datos extraídos exitosamente";
         }
-        return "No se detectaron datos claros";
+        return "No se detectaron datos";
       },
       error: "Error al procesar la imagen",
       finally: () => setIsProcessingOCR(false)
