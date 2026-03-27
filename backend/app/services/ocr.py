@@ -60,9 +60,10 @@ class OCRService:
             return ""
 
     def parse_transportista_data(self, text):
-        """Busca patrones específicos en el texto extraído con máxima flexibilidad."""
-        # Limpieza inicial: eliminamos pipes y ruidos comunes de OCR en bordes
-        clean_text = text.replace('|', '').replace('[', '').replace(']', '')
+        """Heurística avanzada para extraer datos sin depender de etiquetas fijas."""
+        # Limpieza profunda
+        clean_text = re.sub(r'[|\[\]]', '', text)
+        lines = [l.strip() for l in clean_text.split('\n') if len(l.strip()) > 2]
         
         data = {
             "nombre_transportista": None,
@@ -72,47 +73,44 @@ class OCRService:
             "placa": None
         }
 
-        # 1. Buscar RUC (11 dígitos) - Más agresivo: buscamos secuencias de dígitos que sumen 11
-        # Primero quitamos espacios solo para la búsqueda de RUC
-        digits_only = re.sub(r'\D', '', clean_text)
-        ruc_matches = re.findall(r'(10|20)\d{9}', digits_only)
+        # --- 1. Buscador Heurístico de RUC (Cualquier bloque de 11 dígitos que empiece con 10 o 20) ---
+        # Buscamos en el texto limpio total (quitando espacios y guiones)
+        all_digits = re.sub(r'[^0-9]', '', clean_text)
+        ruc_matches = re.findall(r'(?:10|20)\d{9}', all_digits)
         if ruc_matches:
-            # Reconstruimos el primer RUC encontrado (10/20 + los 9 dígitos capturados)
-            # Nota: findall con grupos devuelve solo los grupos. Ajustamos:
-            full_ruc_match = re.search(r'(10|20)\d{9}', digits_only)
-            if full_ruc_match:
-                data["ruc"] = full_ruc_match.group(0)
+            data["ruc"] = ruc_matches[0]
 
-        # 2. Nombre del Transportista
-        # El MTC pone: NOMBRE O RAZON SOCIAL [ESPACIOS] NOMBRE EMPRESA
-        # O lo pone en la siguiente línea después de DEL TRANSPORTISTA
-        lines = [l.strip() for l in clean_text.split('\n') if l.strip()]
-        for i, line in enumerate(lines):
-            if "RAZON SOCIAL" in line.upper() or "SOCIAL DEL" in line.upper():
-                # Intentamos sacar lo que está a la derecha en la misma línea
-                potential_name = re.sub(r'.*(?:SOCIAL|TRANSPORTISTA)[:\s\-]+', '', line, flags=re.IGNORECASE).strip()
-                if len(potential_name) > 4:
-                    data["nombre_transportista"] = potential_name
-                    break
-                # Si no hay nada a la derecha, probamos con la siguiente línea
-                if i + 1 < len(lines):
-                    data["nombre_transportista"] = lines[i+1].strip()
+        # --- 2. Buscador Heurístico de Razón Social ---
+        # Buscamos líneas que contengan siglas de empresas peruanas
+        empresa_patterns = [r'S\.?A\.?C\.?', r'S\.?A\.?$', r'S\.?R\.?L\.?', r'E\.?I\.?R\.?L\.?', r'LOGISTICA', r'TRANSPORTES?']
+        for line in lines:
+            line_up = line.upper()
+            if any(re.search(p, line_up) for p in empresa_patterns):
+                # Si la línea tiene "RAZON SOCIAL", limpiamos el prefijo
+                clean_line = re.sub(r'.*SOCIAL[:\s\-]*', '', line, flags=re.IGNORECASE).strip()
+                # Si lo que queda es muy corto, tal vez el nombre está en la siguiente línea
+                if len(clean_line) > 5:
+                    data["nombre_transportista"] = clean_line
                     break
 
-        # 3. Partida Registral
-        partida_match = re.search(r'PARTIDA\s*REGISTRAL[:\s\-]+([A-Z0-9]+)', clean_text, re.IGNORECASE)
+        # --- 3. Partida Registral (Heurística: línea que empieza con 15 o similar después de 'PARTIDA') ---
+        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]+([A-Z0-9]{8,12})', clean_text, re.IGNORECASE)
         if partida_match:
             data["partida_registral"] = partida_match.group(1)
 
-        # 4. Certificado Vehicular
-        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,15})', clean_text, re.IGNORECASE)
+        # --- 4. Certificado (N° + cadena de ~10-15 caracteres) ---
+        cert_match = re.search(r'N[°º\s]+([A-Z0-9]{10,14})', clean_text, re.IGNORECASE)
         if cert_match:
             data["certificado_vehicular"] = cert_match.group(1)
 
-        # 5. Placa
-        placa_match = re.search(r'PLACA\s*N[°º\s]+([A-Z0-9]{3}[- ]?[A-Z0-9]{3})', clean_text, re.IGNORECASE)
-        if placa_match:
-            data["placa"] = re.sub(r'[^A-Z0-9]', '', placa_match.group(1).upper())
+        # --- 5. Placa (ABC-123 o ABC 123) ---
+        placa_matches = re.findall(r'[A-Z0-9]{3}[- ]?[A-Z0-9]{3}', clean_text)
+        for p in placa_matches:
+            # Una placa suele tener 3 letras y 3 números (o similar)
+            clean_p = re.sub(r'[^A-Z0-9]', '', p)
+            if len(clean_p) == 6:
+                data["placa"] = clean_p
+                break
 
         return data
 
