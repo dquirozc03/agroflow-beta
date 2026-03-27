@@ -35,6 +35,7 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
     estado: "ACTIVO"
   });
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrMode, setOcrMode] = useState<'all' | 'ruc' | 'partida'>('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -83,13 +84,22 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
             return "Escaneo completado (Sin datos claros)";
           }
 
-          setFormData(prev => ({
-            ...prev,
-            ruc: ruc || prev.ruc,
-            nombre_transportista: nombre_transportista || prev.nombre_transportista,
-            partida_registral: partida_registral || prev.partida_registral
-          }));
-          return "Datos extraídos exitosamente";
+          setFormData(prev => {
+            if (ocrMode === 'ruc') {
+              return { ...prev, ruc: ruc || prev.ruc };
+            }
+            if (ocrMode === 'partida') {
+              return { ...prev, partida_registral: partida_registral || prev.partida_registral };
+            }
+            // Modo All (Completo)
+            return {
+              ...prev,
+              ruc: ruc || prev.ruc,
+              nombre_transportista: nombre_transportista || prev.nombre_transportista,
+              partida_registral: partida_registral || prev.partida_registral
+            };
+          });
+          return `Modo ${ocrMode.toUpperCase()} aplicado`;
         }
         return "No se detectaron datos";
       },
@@ -184,28 +194,70 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
                 "p-5 rounded-2xl border-2 border-dashed transition-all flex items-center justify-between group overflow-hidden relative",
                 isProcessingOCR ? "border-emerald-500 bg-emerald-50/20" : "border-slate-100 hover:border-emerald-200 hover:bg-slate-50"
               )}>
-                <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
-                    isProcessingOCR ? "bg-emerald-500 text-white animate-pulse" : "bg-white text-slate-300 group-hover:text-emerald-500 shadow-sm"
-                  )}>
-                    {isProcessingOCR ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                        isProcessingOCR ? "bg-emerald-500 text-white animate-pulse" : "bg-white text-slate-300 group-hover:text-emerald-500 shadow-sm"
+                      )}>
+                        {isProcessingOCR ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">Scanner MTC Inteligente</p>
+                        <p className="text-[10px] text-slate-400 font-medium tracking-tight">Pega una imagen (Ctrl+V) o arrastra la tarjeta</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <div className="h-8 px-3 bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                          <ClipboardCheck className="h-3 w-3" />
+                          Pegar Habilitado
+                       </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">Scanner MTC Inteligente</p>
-                    <p className="text-[10px] text-slate-400 font-medium tracking-tight">Pega una imagen (Ctrl+V) o arrastra la tarjeta</p>
+
+                  {/* Selector de Modo */}
+                  <div className="flex items-center gap-2 p-1 bg-slate-100/50 rounded-xl w-fit relative z-10 transition-all">
+                    <button
+                      type="button"
+                      onClick={() => setOcrMode('all')}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                        ocrMode === 'all' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                      )}
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Completo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOcrMode('ruc')}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                        ocrMode === 'ruc' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                      )}
+                    >
+                      <Fingerprint className="h-3 w-3" />
+                      Solo RUC
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOcrMode('partida')}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                        ocrMode === 'partida' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                      )}
+                    >
+                      <ScrollText className="h-3 w-3" />
+                      Solo Partida
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                   <div className="h-8 px-3 bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                      <ClipboardCheck className="h-3 w-3" />
-                      Pegar Habilitado
-                   </div>
-                </div>
+                
                 <input 
                   type="file" 
                   accept="image/*,.pdf" 
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  className="absolute inset-0 opacity-0 cursor-pointer z-0"
                   onChange={(e) => e.target.files?.[0] && processOCR(e.target.files[0])}
                 />
               </div>
