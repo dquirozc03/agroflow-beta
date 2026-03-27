@@ -142,15 +142,15 @@ export default function TransportistasPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 font-['Outfit'] bg-slate-50/10">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100">Transportista</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100">RUC</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-200/70">Transportista</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-200/70">RUC</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
                 {filtered.map((t) => (
                   <tr key={t.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-5 border-r border-slate-100">
+                    <td className="px-8 py-6 border-r border-slate-200/70">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
@@ -164,12 +164,12 @@ export default function TransportistasPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5 border-r border-slate-100">
+                    <td className="px-8 py-6 border-r border-slate-200/70">
                        <div className="flex justify-center">
                           <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">{t.ruc}</span>
                        </div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-6">
                       <div className="flex items-center justify-center gap-2 outline-none transition-all duration-300">
                         <button 
                           onClick={() => handleEdit(t)}
