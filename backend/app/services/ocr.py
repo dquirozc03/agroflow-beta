@@ -65,12 +65,13 @@ class OCRService:
             return ""
 
     def parse_transportista_data(self, text):
-        """Heurística de alta precisión: Separa etiquetas de valores con mayor rigor."""
+        """Heurística de precisión quirúrgica: Ignora acentos y limpia etiquetas residuales."""
         def fix_ocr_errors(t, is_ruc=False):
             t = t.replace('O', '0').replace('o', '0').replace('I', '1').replace('i', '1').replace('l', '1').replace('S', '5').replace('B', '8')
             if is_ruc:
-                # En transportistas el RUC suele empezar con 20 o 10
-                # Si el OCR leyó un '8' al inicio por error de sombra
+                # Corregir 208 por 206 (error común de sombra en MTC)
+                if t.startswith('208') and len(t) == 11: t = '206' + t[3:]
+                # Si empieza por 80 corregir a 20
                 if t.startswith('80'): t = '20' + t[2:]
             return t
 
@@ -82,53 +83,48 @@ class OCRService:
             "placa": None
         }
 
-        # Limpieza de líneas y detección
-        lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 2]
+        # Limpieza de líneas
+        lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 3]
         clean_text_full = "\n".join(lines)
 
-        # --- 1. Buscador de RUC ---
-        ruc_search = re.search(r'RUC[:\s\-]*([0-9\sOlIBS]{11,15})', clean_text_full, re.IGNORECASE)
+        # --- 1. RUC (Buscamos patrón estricto después de RUC) ---
+        ruc_search = re.search(r'RUC[:\s\-]*([0-9\sOlIBS]{10,15})', clean_text_full, re.IGNORECASE)
         if ruc_search:
             raw_ruc = re.sub(r'[^0-9OolISsB]', '', ruc_search.group(1))
-            fixed_ruc = fix_ocr_errors(raw_ruc, is_ruc=True)
-            if len(fixed_ruc) >= 11:
-                data["ruc"] = fixed_ruc[:11]
+            data["ruc"] = fix_ocr_errors(raw_ruc, is_ruc=True)[:11]
 
-        # --- 2. Razón Social (Limpieza agresiva de etiquetas) ---
-        target_labels = ["NOMBRE O RAZON SOCIAL", "DEL TRANSPORTISTA", "RAZON SOCIAL", "SOCIAL"]
+        # --- 2. Razón Social (Limpieza multi-capa) ---
+        # Patrón que ignora acentos (N[OÓ]MBRE, RAZ[OÓ]N)
+        label_pattern = r'(?i).*(NOMBRE|RAZ[OÓ]N|SOCIAL|TRANSPORTISTA)[:\s\-]*'
+        
         for i, line in enumerate(lines):
             line_up = line.upper()
             if "SOCIAL" in line_up or "TRANSPORTISTA" in line_up:
-                # Caso A: El nombre está en la misma línea
-                # Eliminamos todo lo que coincida con patrones de etiqueta
-                potential_name = line
-                for label in target_labels:
-                    potential_name = re.sub(r'(?i)' + re.escape(label), '', potential_name)
+                # Limpiamos la etiqueta con regex flexible
+                name = re.sub(label_pattern, '', line).strip()
                 
-                potential_name = re.sub(r'^[:\s\-]+', '', potential_name).strip()
-                
-                # Si el resultado es muy corto, probablemente el nombre está en la línea de ABAJO
-                if len(potential_name) < 5 and i+1 < len(lines):
+                # Si el nombre quedó vacío o muy corto, buscamos en la línea de abajo
+                if len(name) < 5 and i+1 < len(lines):
                     next_line = lines[i+1].strip()
                     if not any(x in next_line.upper() for x in ["RUC", "PARTIDA", "MODALIDAD"]):
-                        data["nombre_transportista"] = next_line
-                        break
-                elif len(potential_name) >= 5:
-                    data["nombre_transportista"] = potential_name
+                        name = next_line
+                
+                # Limpieza final de nombre (quitar ruidos típicos de orillas)
+                name = re.sub(r'^[|\[\]\s\-\.]+', '', name)
+                if len(name) > 4:
+                    data["nombre_transportista"] = name.upper()
                     break
 
-        # --- 3. Partida Registral ---
-        # Si capturó AB en vez de 15, intentamos corregir si el resto son números
-        partida_match = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]*([A-Z0-9]{8,12})', clean_text_full, re.IGNORECASE)
-        if partida_match:
-            raw_partida = partida_match.group(1)
-            # Corrección heurística: si empieza con letras raras, tal vez son números mal leídos
-            if raw_partida.startswith('AB'): raw_partida = '15' + raw_partida[2:]
-            data["partida_registral"] = raw_partida
+        # --- 3. Partida ---
+        part_search = re.search(r'PARTIDA\s*(?:REGISTRAL)?[:\s\-]*([A-Z0-9]{8,12})', clean_text_full, re.IGNORECASE)
+        if part_search:
+            p = part_search.group(1)
+            if p.startswith('AB'): p = '15' + p[2:]
+            data["partida_registral"] = p
 
         # --- 4. Certificado ---
-        cert_match = re.search(r'N[°º\s\-]+([A-Z0-9]{8,15})', clean_text_full, re.IGNORECASE)
-        if cert_match: data["certificado_vehicular"] = cert_match.group(1)
+        cert_search = re.search(r'N[°º\s\-]+([A-Z0-9]{8,15})', clean_text_full, re.IGNORECASE)
+        if cert_search: data["certificado_vehicular"] = cert_search.group(1)
 
         return data
 
