@@ -62,3 +62,29 @@ class VehiculoCarreta(Base):
 
     # Relación inversa
     transportista = relationship("Transportista", back_populates="carretas")
+
+class Chofer(Base):
+    __tablename__ = "choferes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dni = Column(String(20), unique=True, index=True, nullable=False)
+    nombres = Column(String(100), nullable=False)
+    apellido_paterno = Column(String(100), nullable=False)
+    apellido_materno = Column(String(100), nullable=True)
+    licencia = Column(String(50), nullable=True)
+    estado = Column(String(20), default="ACTIVO")
+    
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    @property
+    def nombre_operativo(self):
+        """Formato: {Primer Nombre} {Apellido Paterno} {Inicial Materno}."""
+        if not self.nombres or not self.apellido_paterno:
+            return "N/D"
+        
+        primer_nombre = self.nombres.split()[0].upper()
+        ape_pat = self.apellido_paterno.upper()
+        ape_mat_inic = f"{self.apellido_materno[0].upper()}." if self.apellido_materno else ""
+        
+        return f"{primer_nombre} {ape_pat} {ape_mat_inic}".strip()

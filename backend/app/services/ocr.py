@@ -198,4 +198,47 @@ class OCRService:
 
         return data
 
+    def parse_licencia_data(self, text):
+        """Parser especializado en Licencias de Conducir (Brevete PDF/Foto)."""
+        data = {
+            "dni": None,
+            "apellido_paterno": None,
+            "apellido_materno": None,
+            "nombres": None,
+            "licencia": None
+        }
+        
+        lines = [l.strip().upper() for l in text.split('\n') if len(l.strip()) > 3]
+        full_text = "\n".join(lines)
+
+        # 1. DNI (8 dígitos)
+        dni_search = re.search(r'\b(\d{8})\b', full_text)
+        if dni_search: data["dni"] = dni_search.group(1)
+
+        # 2. Licencia (Pattern variable, a veces es el DNI)
+        lic_search = re.search(r'LICENCIA\s*[:\-]*\s*([A-Z0-9\s-]{8,12})', full_text)
+        if lic_search: 
+            data["licencia"] = re.sub(r'[^A-Z0-9]', '', lic_search.group(1)).strip()
+        else:
+            # Fallback: si tenemos DNI, la licencia suele ser el mismo número
+            if data["dni"]: data["licencia"] = data["dni"]
+
+        # 3. Nombres y Apellidos (Basado en etiquetas comunes en licencias peruanas)
+        for i, line in enumerate(lines):
+            if i < len(lines) - 1:
+                # Si la línea dice APELLIDOS, la de abajo suele ser el dato
+                if any(x in line for x in ["APELLIDOS", "APELLIDO"]):
+                    full_aps = lines[i+1].split()
+                    if len(full_aps) >= 2:
+                        data["apellido_paterno"] = full_aps[0]
+                        data["apellido_materno"] = full_aps[1]
+                    elif len(full_aps) == 1:
+                        data["apellido_paterno"] = full_aps[0]
+                
+                # Si la línea dice NOMBRES, la de abajo suele ser el dato
+                if any(x in line for x in ["NOMBRES", "NOMBRE"]):
+                    data["nombres"] = lines[i+1].strip()
+
+        return data
+
 ocr_service = OCRService()

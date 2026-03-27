@@ -54,7 +54,7 @@ export function AppSidebar() {
         { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
         { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
         { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos" },
-        { name: "Choferes", icon: Users, href: "#", active: false },
+        { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes" },
       ]
     },
     {

@@ -7,7 +7,7 @@ import io
 import re
 
 from app.database import get_db
-from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta
+from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer
 from app.utils.logging import logger
 from app.services.ocr import ocr_service
 from pydantic import BaseModel
@@ -26,6 +26,21 @@ class TransportistaResponse(BaseModel):
     partida_registral: Optional[str] = None
     codigo_sap: Optional[str] = None
     estado: str
+    
+    class Config:
+        from_attributes = True
+
+class ChoferCreate(BaseModel):
+    dni: str
+    nombres: str
+    apellido_paterno: str
+    apellido_materno: Optional[str] = None
+    licencia: Optional[str] = None
+    estado: Optional[str] = "ACTIVO"
+
+class ChoferResponse(ChoferCreate):
+    id: int
+    nombre_operativo: str
     
     class Config:
         from_attributes = True
@@ -204,4 +219,59 @@ async def ocr_transportista(
 
     except Exception as e:
         logger.error(f"Error en OCR: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- ENDPOINTS CHOFERES ---
+
+@router.get("/choferes", response_model=List[ChoferResponse])
+def list_choferes(db: Session = Depends(get_db)):
+    return db.query(Chofer).all()
+
+@router.post("/choferes", response_model=ChoferResponse)
+def create_chofer(data: ChoferCreate, db: Session = Depends(get_db)):
+    # Validar DNI único
+    existing = db.query(Chofer).filter(Chofer.dni == data.dni).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"El DNI {data.dni} ya está registrado")
+    
+    new_c = Chofer(**data.model_dump())
+    db.add(new_c)
+    db.commit()
+    db.refresh(new_c)
+    return new_c
+
+@router.put("/choferes/{id}", response_model=ChoferResponse)
+def update_chofer(id: int, data: ChoferCreate, db: Session = Depends(get_db)):
+    c = db.query(Chofer).filter(Chofer.id == id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Chofer no encontrado")
+    
+    for key, value in data.model_dump().items():
+        setattr(c, key, value)
+    
+    db.commit()
+    db.refresh(c)
+    return c
+
+@router.patch("/choferes/{id}/estado")
+def patch_estado_chofer(id: int, estado: str, db: Session = Depends(get_db)):
+    c = db.query(Chofer).filter(Chofer.id == id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Chofer no encontrado")
+    
+    c.estado = estado.upper()
+    db.commit()
+    return {"status": "success", "nuevo_estado": c.estado}
+
+@router.post("/ocr/licencia")
+async def ocr_licencia(file: UploadFile = File(...)):
+    """Scanner de Licencias de Conducir (Brevete)."""
+    try:
+        contents = await file.read()
+        is_pdf = file.filename.lower().endswith('.pdf')
+        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
+        parsed_data = ocr_service.parse_licencia_data(raw_text)
+        return {"status": "success", "data": parsed_data, "raw_text": raw_text}
+    except Exception as e:
+        logger.error(f"Error en OCR Licencia: {e}")
         raise HTTPException(status_code=500, detail=str(e))
