@@ -165,16 +165,16 @@ export default function VehiculosPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 bg-slate-50/10 font-['Outfit']">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Placa / Unidad</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Transportista</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100/30">Estado</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100">Placa / Unidad</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100">Transportista</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-100">Estado</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
                 {filtered.map((v) => (
                   <tr key={`${mode}-${v.id}`} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-5 border-r border-slate-100/30">
+                    <td className="px-8 py-5 border-r border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
@@ -188,10 +188,10 @@ export default function VehiculosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-5 border-r border-slate-100/30">
+                    <td className="px-8 py-5 border-r border-slate-100">
                       <p className="text-xs font-bold text-slate-600">{v.transportista?.nombre_transportista}</p>
                     </td>
-                    <td className="px-8 py-5 border-r border-slate-100/30">
+                    <td className="px-8 py-5 border-r border-slate-100">
                        <div className="flex justify-center">
                           <span className={cn(
                             "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter",
@@ -205,7 +205,7 @@ export default function VehiculosPage() {
                       <div className="flex items-center justify-center gap-2 outline-none transition-all duration-300">
                         <button 
                           onClick={() => { setEditingVehiculo(v); setIsModalOpen(true); }}
-                          className="h-9 w-9 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-slate-300 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm active:scale-95"
+                          className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm active:scale-95"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
