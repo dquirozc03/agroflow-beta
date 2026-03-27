@@ -63,9 +63,11 @@ async def bulk_upload_transportistas(
     """
     Carga masiva de transportistas y vehículos desde el Excel 'ASIGNACION DE UNIDADES'.
     Mapeo:
+    - Columna E (Indice 4): Empresa de Transporte
     - Columna F (Indice 5): RUC
-    - Columna G (Indice 6): Empresa de Transporte
-    - Columna J (Indice 9): Placas (Tracto/Carreta)
+    - Columna G (Indice 6): Licencia
+    - Columna H (Indice 7): Conductor
+    - Columna I (Indice 8): Placas (Tracto/Carreta)
     """
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="El archivo debe ser un Excel (.xlsx o .xls)")
@@ -82,7 +84,9 @@ async def bulk_upload_transportistas(
             try:
                 # Extraer datos por índices corregidos según Excel
                 ruc = str(row[5]).strip() if pd.notna(row[5]) else None
-                nombre = str(row[4]).strip() if pd.notna(row[4]) else None
+                nombre_empresa = str(row[4]).strip() if pd.notna(row[4]) else None
+                licencia_raw = str(row[6]).strip() if pd.notna(row[6]) else None
+                conductor_raw = str(row[7]).strip() if pd.notna(row[7]) else None
                 placas_raw = str(row[8]).strip() if pd.notna(row[8]) else ""
 
                 # Saltar filas vacías o la fila de cabeceras
@@ -94,16 +98,62 @@ async def bulk_upload_transportistas(
                 if not transportista:
                     transportista = Transportista(
                         ruc=ruc,
-                        nombre_transportista=nombre or "DESCONOCIDO",
+                        nombre_transportista=nombre_empresa or "DESCONOCIDO",
                         estado="ACTIVO"
                     )
                     db.add(transportista)
                     db.flush() # Para obtener el ID
                 else:
-                    if nombre:
-                        transportista.nombre_transportista = nombre
+                    if nombre_empresa:
+                        transportista.nombre_transportista = nombre_empresa
                 
-                # 2. Procesar Placas (Tracto/Carreta)
+                # 2. Registrar/Actualizar Chofer
+                if licencia_raw and licencia_raw.lower() != "nan":
+                    # Extraer DNI de la licencia (limpiar caracteres no numéricos)
+                    dni_extract = re.sub(r'[^0-9]', '', licencia_raw)
+                    if len(dni_extract) >= 8:
+                        # Si el DNI es muy largo (ej: 11 dígitos de RUC?), tomamos los últimos 8 o 9
+                        dni_final = dni_extract[-8:] 
+                        
+                        chofer = db.query(Chofer).filter(Chofer.dni == dni_final).first()
+                        
+                        # Parsear nombre: Dividir por espacios
+                        # Suponemos: [Nombres] [ApellidoPaterno] [ApellidoMaterno]
+                        nombres_part = "CONDUCTOR"
+                        ape_pat = "DESCONOCIDO"
+                        ape_mat = ""
+                        
+                        if conductor_raw and conductor_raw.lower() != "nan":
+                            words = conductor_raw.split()
+                            if len(words) >= 3:
+                                # Caso estándar JOSE SANTOS SALCEDO QUISPE
+                                ape_mat = words[-1]
+                                ape_pat = words[-2]
+                                nombres_part = " ".join(words[:-2])
+                            elif len(words) == 2:
+                                ape_pat = words[-1]
+                                nombres_part = words[0]
+                            else:
+                                nombres_part = words[0]
+                        
+                        if not chofer:
+                            chofer = Chofer(
+                                dni=dni_final,
+                                nombres=nombres_part.upper(),
+                                apellido_paterno=ape_pat.upper(),
+                                apellido_materno=ape_mat.upper(),
+                                licencia=licencia_raw.upper(),
+                                estado="ACTIVO"
+                            )
+                            db.add(chofer)
+                        else:
+                            # Actualizar licencia y nombres si cambiaron
+                            chofer.licencia = licencia_raw.upper()
+                            chofer.nombres = nombres_part.upper()
+                            chofer.apellido_paterno = ape_pat.upper()
+                            chofer.apellido_materno = ape_mat.upper()
+
+                # 3. Procesar Placas (Tracto/Carreta)
                 # Formato esperado: PLACA1/PLACA2 o solo PLACA1
                 partes = placas_raw.split('/')
                 placa_t = clean_plate(partes[0]) if len(partes) > 0 else ""

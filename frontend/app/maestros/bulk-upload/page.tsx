@@ -179,7 +179,11 @@ export default function BulkUploadPage() {
               </div>
               <div className="flex gap-4">
                 <div className="h-8 w-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs shrink-0">3</div>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">Las <strong>Placas</strong> deben estar separadas por una barra (ej: <code>ABC-123/DEF-456</code>).</p>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">Las <strong>Placas</strong> deben estar separadas por una barra (ej: <code>ABC-123/DEF-456</code>) en la <strong>Columna I</strong>.</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="h-8 w-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs shrink-0">4</div>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">Los <strong>Choferes</strong> se extraen de las columnas <strong>G (Licencia)</strong> y <strong>H (Nombre)</strong>.</p>
               </div>
             </div>
 
