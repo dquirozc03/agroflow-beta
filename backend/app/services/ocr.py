@@ -144,6 +144,20 @@ class OCRService:
         cert_search = re.search(r'N[°º\s\-]+([A-Z0-9]{8,15})', clean_text_full, re.IGNORECASE)
         if cert_search: data["certificado_vehicular"] = cert_search.group(1)
 
+        # --- 5. LOGICA DE DETECCION DIRECTA (Fallback) ---
+        # Si no se encontró nada con etiquetas, pero el texto es corto, identificamos por patrón
+        if not data["ruc"] and not data["partida_registral"] and len(clean_text_full) < 30:
+            # Buscar algo que parezca un RUC (11 dígitos)
+            maybe_ruc = re.search(r'\b(10|15|17|20)[0-9]{9}\b', clean_text_full)
+            if maybe_ruc:
+                data["ruc"] = maybe_ruc.group(0)
+            
+            # Buscar algo que parezca una Partida (8-12 caracteres alfanuméricos)
+            # Evitamos que sea lo mismo que el RUC
+            maybe_partida = re.search(r'\b[A-Z0-9]{8,12}\b', clean_text_full.upper())
+            if maybe_partida and maybe_partida.group(0) != data["ruc"]:
+                data["partida_registral"] = maybe_partida.group(0)
+
         return data
 
 ocr_service = OCRService()
