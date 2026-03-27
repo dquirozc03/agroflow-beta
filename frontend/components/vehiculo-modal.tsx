@@ -43,6 +43,9 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
     numero_ejes: "",
     peso_neto: "",
     certificado: "",
+    largo: "",
+    ancho: "",
+    alto: "",
     estado: "ACTIVO"
   });
   
@@ -61,6 +64,9 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
           numero_ejes: editingData.numero_ejes?.toString() || "",
           peso_neto: editingData.peso_neto_tracto || editingData.peso_neto_carreta || "",
           certificado: editingData.certificado_vehicular_tracto || editingData.certificado_vehicular_carreta || "",
+          largo: editingData.largo_tracto || editingData.largo_carreta || "",
+          ancho: editingData.ancho_tracto || editingData.ancho_carreta || "",
+          alto: editingData.alto_tracto || editingData.alto_carreta || "",
           estado: editingData.estado || "ACTIVO"
         });
       } else {
@@ -71,6 +77,9 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
            numero_ejes: "",
            peso_neto: "",
            certificado: "",
+           largo: "",
+           ancho: "",
+           alto: "",
            estado: "ACTIVO"
         });
       }
@@ -148,10 +157,16 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
        body.marca = formData.marca;
        body.peso_neto_tracto = parseFloat(formData.peso_neto) || 0;
        body.certificado_vehicular_tracto = formData.certificado;
+       body.largo_tracto = parseFloat(formData.largo) || 0;
+       body.ancho_tracto = parseFloat(formData.ancho) || 0;
+       body.alto_tracto = parseFloat(formData.alto) || 0;
     } else {
        body.placa_carreta = formData.placa;
        body.peso_neto_carreta = parseFloat(formData.peso_neto) || 0;
        body.certificado_vehicular_carreta = formData.certificado;
+       body.largo_carreta = parseFloat(formData.largo) || 0;
+       body.ancho_carreta = parseFloat(formData.ancho) || 0;
+       body.alto_carreta = parseFloat(formData.alto) || 0;
     }
 
     const endpoint = type === "tractos" ? "tractos" : "carretas";
@@ -319,6 +334,33 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
                      </div>
+                  </div>
+               </div>
+
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Medidas (Largo x Ancho x Alto)</label>
+                  <div className="grid grid-cols-3 gap-3">
+                     <input 
+                       type="number" step="0.01"
+                       value={formData.largo}
+                       onChange={e => setFormData({...formData, largo: e.target.value})}
+                       placeholder="LARGO"
+                       className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
+                     />
+                     <input 
+                       type="number" step="0.01"
+                       value={formData.ancho}
+                       onChange={e => setFormData({...formData, ancho: e.target.value})}
+                       placeholder="ANCHO"
+                       className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
+                     />
+                     <input 
+                       type="number" step="0.01"
+                       value={formData.alto}
+                       onChange={e => setFormData({...formData, alto: e.target.value})}
+                       placeholder="ALTO"
+                       className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
+                     />
                   </div>
                </div>
             </div>

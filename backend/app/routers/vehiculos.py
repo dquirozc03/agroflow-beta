@@ -24,11 +24,17 @@ class TractoCreate(VehiculoBase):
     marca: Optional[str] = None
     peso_neto_tracto: Optional[Decimal] = None
     certificado_vehicular_tracto: Optional[str] = None
+    largo_tracto: Optional[Decimal] = None
+    ancho_tracto: Optional[Decimal] = None
+    alto_tracto: Optional[Decimal] = None
 
 class CarretaCreate(VehiculoBase):
     placa_carreta: str
     peso_neto_carreta: Optional[Decimal] = None
     certificado_vehicular_carreta: Optional[str] = None
+    largo_carreta: Optional[Decimal] = None
+    ancho_carreta: Optional[Decimal] = None
+    alto_carreta: Optional[Decimal] = None
 
 class TransportistaMinimal(BaseModel):
     id: int
