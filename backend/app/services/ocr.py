@@ -11,22 +11,30 @@ class OCRService:
     def __init__(self):
         # Configuramos tesseract para español
         self.config = '--psm 3 -l spa'
+        # En Windows, a veces es necesario especificar la ruta explícitamente
+        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
     def preprocess_image(self, image):
-        """Mejora la imagen para un mejor reconocimiento: escala de grises y umbralización."""
+        """Mejora la imagen para un mejor reconocimiento: escala de grises y ajuste de contraste."""
         # Convertir a arreglo numpy (OpenCV)
         img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         
-        # Escala de grises
+        # 1. Redimensionar si es muy pequeña (mejora OCR)
+        height, width = img.shape[:2]
+        if width < 1000:
+            img = cv2.resize(img, (None, None), fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+        # 2. Escala de grises
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Eliminar ruido (opcional, pero sirve para fotos de baja calidad)
-        # gray = cv2.medianBlur(gray, 3)
+        # 3. Aumentar contraste (CLAHE es excelente para documentos con sellos)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(gray)
         
-        # Aplicar umbral adaptativo (hace el texto más negro y el fondo más blanco)
-        thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        # 4. Desenfoque suave para reducir ruido
+        blurred = cv2.GaussianBlur(enhanced, (3, 3), 0)
         
-        return Image.fromarray(thresh)
+        return Image.fromarray(blurred)
 
     def extract_text(self, image_bytes, is_pdf=False):
         """Extrae texto de bytes de imagen o PDF."""
@@ -39,11 +47,13 @@ class OCRService:
                 images = [Image.open(io.BytesIO(image_bytes))]
 
             full_text = ""
-            for img in images:
+            for i, img in enumerate(images):
+                logger.info(f"Procesando página/imagen {i+1}...")
                 processed_img = self.preprocess_image(img)
                 text = pytesseract.image_to_string(processed_img, config=self.config)
                 full_text += text + "\n"
             
+            logger.info(f"Texto extraído ({len(full_text)} caracteres)")
             return full_text
         except Exception as e:
             logger.error(f"Error en extracción de texto: {e}")

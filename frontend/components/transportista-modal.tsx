@@ -56,47 +56,49 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
     const apiData = new FormData();
     apiData.append("file", file);
 
-    try {
-      const response = await fetch("http://localhost:8000/api/v1/maestros/ocr/transportista", {
-        method: "POST",
-        body: apiData
-      });
-      const result = await response.json();
+    const ocrPromise = fetch("http://localhost:8000/api/v1/maestros/ocr/transportista", {
+      method: "POST",
+      body: apiData
+    }).then(async (res) => {
+      if (!res.ok) throw new Error("Error en servidor OCR");
+      return res.json();
+    });
 
-      if (response.ok && result.data) {
-        const { ruc, nombre_transportista, partida_registral } = result.data;
-        setFormData(prev => ({
-          ...prev,
-          ruc: ruc || prev.ruc,
-          nombre_transportista: nombre_transportista || prev.nombre_transportista,
-          partida_registral: partida_registral || prev.partida_registral
-        }));
-        toast.info("Datos extraídos de la tarjeta exitosamente");
-      } else {
-        toast.error("No se pudo extraer información clara de la imagen");
-      }
-    } catch (error) {
-      toast.error("Error al conectar con el servicio de OCR");
-    } finally {
-      setIsProcessingOCR(false);
-    }
+    toast.promise(ocrPromise, {
+      loading: "Escaneando tarjeta MTC...",
+      success: (result: any) => {
+        if (result.data) {
+          const { ruc, nombre_transportista, partida_registral } = result.data;
+          setFormData(prev => ({
+            ...prev,
+            ruc: ruc || prev.ruc,
+            nombre_transportista: nombre_transportista || prev.nombre_transportista,
+            partida_registral: partida_registral || prev.partida_registral
+          }));
+          return "Datos extraídos exitosamente";
+        }
+        return "No se detectaron datos claros";
+      },
+      error: "Error al procesar la imagen",
+      finally: () => setIsProcessingOCR(false)
+    });
   };
 
   const handlePaste = useCallback((e: ClipboardEvent) => {
-    if (!isOpen) return;
+    if (!isOpen || isProcessingOCR) return;
     const items = e.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") !== -1) {
           const blob = items[i].getAsFile();
           if (blob) {
-            toast.loading("Procesando imagen pegada...");
             processOCR(blob);
+            break; // Solo procesamos la primera imagen pegada
           }
         }
       }
     }
-  }, [isOpen]);
+  }, [isOpen, isProcessingOCR]);
 
   useEffect(() => {
     window.addEventListener("paste", handlePaste);
