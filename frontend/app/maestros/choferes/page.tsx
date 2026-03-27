@@ -149,14 +149,14 @@ export default function ChoferesPage() {
           <div className="overflow-x-auto overflow-y-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-50 bg-slate-50/30">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Identidad Operativa</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Documentación</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Acciones</th>
+                <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Identidad Operativa</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Documentación</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Estado</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-100/50 font-['Inter']">
                 {filtered.map((c) => (
                   <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-5">
@@ -192,29 +192,31 @@ export default function ChoferesPage() {
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                       <div className={cn(
-                          "inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                          c.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
-                       )}>
-                          <div className={cn("h-1.5 w-1.5 rounded-full mr-1.5", c.estado === "ACTIVO" ? "bg-emerald-500" : "bg-slate-400")} />
-                          {c.estado}
+                       <div className="flex justify-center">
+                          <div className={cn(
+                             "inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                             c.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+                          )}>
+                             <div className={cn("h-1.5 w-1.5 rounded-full mr-1.5", c.estado === "ACTIVO" ? "bg-emerald-500" : "bg-slate-400")} />
+                             {c.estado}
+                          </div>
                        </div>
                     </td>
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2 outline-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center justify-center gap-2 outline-none opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <button 
                           onClick={() => handleEdit(c)}
-                          className="h-9 w-9 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-all shadow-sm"
+                          className="h-9 w-9 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-slate-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm active:scale-95"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => toggleEstado(c.id, c.estado)}
                           className={cn(
-                            "h-9 w-9 border border-slate-100 rounded-lg flex items-center justify-center transition-all bg-white shadow-sm",
+                            "h-9 w-9 border border-slate-100 rounded-lg flex items-center justify-center transition-all duration-300 bg-white shadow-sm active:scale-95",
                             c.estado === "ACTIVO" 
-                              ? "hover:text-rose-500 text-slate-400" 
-                              : "hover:text-emerald-500 text-slate-400"
+                              ? "hover:bg-rose-500 hover:text-white hover:border-rose-500 text-slate-400" 
+                              : "hover:bg-emerald-500 hover:text-white hover:border-emerald-500 text-slate-400"
                           )}
                         >
                           {c.estado === "ACTIVO" ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -226,7 +228,7 @@ export default function ChoferesPage() {
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-20 text-center">
-                       <p className="text-sm font-bold text-slate-300 uppercase tracking-widest">No se encontraron choferes.</p>
+                       <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron choferes registrados.</p>
                     </td>
                   </tr>
                 )}
