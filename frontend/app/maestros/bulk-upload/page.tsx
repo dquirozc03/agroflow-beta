@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/constants";
 
 export default function BulkUploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -41,7 +42,7 @@ export default function BulkUploadPage() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/maestros/bulk-upload", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/bulk-upload`, {
         method: "POST",
         body: formData,
       });
