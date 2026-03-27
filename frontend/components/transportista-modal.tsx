@@ -89,7 +89,10 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
               return { ...prev, ruc: ruc || prev.ruc };
             }
             if (ocrMode === 'partida') {
-              return { ...prev, partida_registral: partida_registral || prev.partida_registral };
+              // Si no se detectó específicamente como partida, pero estamos en ese modo, 
+              // tomamos el texto crudo limpio como fallback (Captura Libre)
+              const fallback = result.raw_text?.split('\n')[0]?.trim() || "";
+              return { ...prev, partida_registral: partida_registral || fallback || prev.partida_registral };
             }
             // Modo All (Completo)
             return {
