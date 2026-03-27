@@ -19,6 +19,17 @@ class TransportistaCreate(BaseModel):
     codigo_sap: Optional[str] = None
     estado: Optional[str] = "ACTIVO"
 
+class TransportistaResponse(BaseModel):
+    id: int
+    ruc: str
+    nombre_transportista: str
+    partida_registral: Optional[str] = None
+    codigo_sap: Optional[str] = None
+    estado: str
+    
+    class Config:
+        from_attributes = True
+
 router = APIRouter(
     prefix="/api/v1/maestros",
     tags=["Maestros"]
@@ -125,7 +136,7 @@ async def bulk_upload_transportistas(
         logger.error(f"Error crítico en carga masiva: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error procesando el archivo: {str(e)}")
 
-@router.get("/transportistas")
+@router.get("/transportistas", response_model=List[TransportistaResponse])
 def list_transportistas(db: Session = Depends(get_db)):
     return db.query(Transportista).all()
 

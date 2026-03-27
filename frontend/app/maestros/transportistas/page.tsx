@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TransportistaModal } from "@/components/transportista-modal";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface Transportista {
   id: number;
@@ -37,10 +38,14 @@ export default function TransportistasPage() {
   const fetchTransportistas = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/v1/maestros/transportistas");
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas`);
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
       const data = await response.json();
       setTransportistas(data);
     } catch (error) {
+      console.error("Detalle del error al cargar transportistas:", error);
       toast.error("Error al cargar transportistas");
     } finally {
       setIsLoading(false);
@@ -60,7 +65,7 @@ export default function TransportistasPage() {
   const toggleEstado = async (id: number, currentEstado: string) => {
     const nuevoEstado = currentEstado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/maestros/transportistas/${id}/estado?estado=${nuevoEstado}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas/${id}/estado?estado=${nuevoEstado}`, {
         method: "PATCH",
       });
       if (response.ok) {
