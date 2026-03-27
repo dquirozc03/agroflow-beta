@@ -222,15 +222,17 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                      </div>
                   </div>
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">N° DNI</label>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">N° DNI (Auto-generado)</label>
                      <div className="relative group">
                         <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                         <input 
+                          readOnly
                           required
                           value={formData.dni}
                           onChange={e => setFormData({...formData, dni: e.target.value})}
                           placeholder="72505661"
-                          className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-sm tracking-widest"
+                          className="w-full h-12 pl-11 pr-4 bg-slate-100/50 border border-slate-100 rounded-xl focus:outline-none transition-all font-bold text-sm tracking-widest text-slate-500 cursor-not-allowed select-none"
+                          title="Este campo se autocompleta desde la Licencia"
                         />
                      </div>
                   </div>
