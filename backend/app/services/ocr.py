@@ -65,7 +65,7 @@ class OCRService:
             return ""
 
     def parse_transportista_data(self, text):
-        """Heurística de precisión quirúrgica: Ignora acentos y limpia etiquetas residuales."""
+        """Heurística de precisión quirúrgica: Elimina etiquetas y ruidos residuales."""
         def fix_ocr_errors(t, is_ruc=False):
             t = t.replace('O', '0').replace('o', '0').replace('I', '1').replace('i', '1').replace('l', '1').replace('S', '5').replace('B', '8')
             if is_ruc:
@@ -93,24 +93,29 @@ class OCRService:
             raw_ruc = re.sub(r'[^0-9OolISsB]', '', ruc_search.group(1))
             data["ruc"] = fix_ocr_errors(raw_ruc, is_ruc=True)[:11]
 
-        # --- 2. Razón Social (Limpieza multi-capa) ---
-        # Patrón que ignora acentos (N[OÓ]MBRE, RAZ[OÓ]N)
-        label_pattern = r'(?i).*(NOMBRE|RAZ[OÓ]N|SOCIAL|TRANSPORTISTA)[:\s\-]*'
+        # --- 2. Razón Social (Limpieza multi-capa y agresiva) ---
+        # Palabras que NO deben estar en el nombre final (basura de etiquetas)
+        trash_words = ["NOMBRE", "RAZON", "RAZÓN", "SOCIAL", "TRANSPORTISTA", "DEL", "MTC", "TARJETA", "CIRCULACION"]
         
         for i, line in enumerate(lines):
             line_up = line.upper()
             if "SOCIAL" in line_up or "TRANSPORTISTA" in line_up:
-                # Limpiamos la etiqueta con regex flexible
-                name = re.sub(label_pattern, '', line).strip()
+                # Intentamos extraer lo que esté después de SOCIAL o TRANSPORTISTA o los dos puntos
+                name = re.sub(r'(?i).*(SOCIAL|TRANSPORTISTA|[:\-\.])\s*', '', line).strip()
                 
-                # Si el nombre quedó vacío o muy corto, buscamos en la línea de abajo
-                if len(name) < 5 and i+1 < len(lines):
+                # Si el nombre quedó vacío o sospechoso, buscamos en la línea de abajo
+                if len(name) < 4 and i+1 < len(lines):
                     next_line = lines[i+1].strip()
                     if not any(x in next_line.upper() for x in ["RUC", "PARTIDA", "MODALIDAD"]):
                         name = next_line
                 
-                # Limpieza final de nombre (quitar ruidos típicos de orillas)
-                name = re.sub(r'^[|\[\]\s\-\.]+', '', name)
+                # Limpieza iterativa: borramos palabras de etiqueta que hayan quedado
+                for word in trash_words:
+                    name = re.sub(r'(?i)\b' + re.escape(word) + r'\b', '', name).strip()
+                
+                # Limpieza final de caracteres basura al inicio/fin
+                name = re.sub(r'^[|\[\]\s\-\.O0]+', '', name).strip()
+                
                 if len(name) > 4:
                     data["nombre_transportista"] = name.upper()
                     break
