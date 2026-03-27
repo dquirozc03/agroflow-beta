@@ -7,12 +7,25 @@ import io
 from pdf2image import convert_from_bytes
 from app.utils.logging import logger
 
+import platform
+import shutil
+
 class OCRService:
     def __init__(self):
         # Configuramos tesseract para español
         self.config = '--psm 3 -l spa'
-        # En Windows, a veces es necesario especificar la ruta explícitamente
-        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        
+        # Lógica dinámica según el sistema operativo (Ticket Arquitectura)
+        if platform.system() == "Windows":
+            # Fallback desarrollo local en Windows
+            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        else:
+            # Entorno Linux / Docker / Render
+            tesseract_path = shutil.which("tesseract")
+            if tesseract_path:
+                pytesseract.pytesseract.tesseract_cmd = tesseract_path
+            else:
+                logger.error("Tesseract no encontrado en el PATH del sistema Linux")
 
     def preprocess_image(self, image):
         """Mejora la imagen para un mejor reconocimiento: escala de grises y ajuste de contraste."""
