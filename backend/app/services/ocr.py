@@ -160,4 +160,42 @@ class OCRService:
 
         return data
 
+    def parse_tiv_data(self, text):
+        """Parser especializado en Tarjetas de Identificación Vehicular (MTC/SUNARP)."""
+        data = {
+            "placa": None,
+            "marca": None,
+            "modelo": None,
+            "numero_ejes": None,
+            "peso_neto": None
+        }
+        
+        lines = [l.strip().upper() for l in text.split('\n') if len(l.strip()) > 2]
+        full_text = "\n".join(lines)
+
+        # 1. Placa (Regex estricto de Perú: ABC-123 o A1-BC2)
+        placa_search = re.search(r'\b([A-Z0-9]{3}[-\s]?[A-Z0-9]{3})\b', full_text)
+        if placa_search:
+            data["placa"] = re.sub(r'[^A-Z0-9]', '', placa_search.group(1))
+
+        # 2. Marca / Modelo
+        for i, line in enumerate(lines):
+            if "MARCA" in line:
+                data["marca"] = re.sub(r'MARCA\s*[:\-]*\s*', '', line).strip()
+            if "MODELO" in line:
+                data["modelo"] = re.sub(r'MODELO\s*[:\-]*\s*', '', line).strip()
+            if "EJES" in line:
+                ejes_search = re.search(r'(\d+)', line)
+                if ejes_search: data["numero_ejes"] = int(ejes_search.group(1))
+            if "PESO NETO" in line or "P. NETO" in line:
+                peso_search = re.search(r'(\d+[\.,]?\d*)', line)
+                if peso_search:
+                    raw_peso = peso_search.group(1).replace(',', '.')
+                    try:
+                        data["peso_neto"] = float(raw_peso)
+                    except:
+                        pass
+
+        return data
+
 ocr_service = OCRService()
