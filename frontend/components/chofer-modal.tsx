@@ -200,6 +200,28 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
             <div className="space-y-5">
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">N° Licencia</label>
+                     <div className="relative group">
+                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                        <input 
+                          required
+                          value={formData.licencia}
+                          onChange={e => {
+                            const val = e.target.value.toUpperCase();
+                            // Extraer solo números para el DNI (Ej: Q72505661 -> 72505661)
+                            const onlyDigits = val.replace(/\D/g, "");
+                            setFormData({
+                              ...formData, 
+                              licencia: val,
+                              dni: onlyDigits.length >= 8 ? onlyDigits.slice(-8) : onlyDigits
+                            });
+                          }}
+                          placeholder="Q72505661"
+                          className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-sm tracking-widest"
+                        />
+                     </div>
+                  </div>
+                  <div className="space-y-2">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">N° DNI</label>
                      <div className="relative group">
                         <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
@@ -207,19 +229,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                           required
                           value={formData.dni}
                           onChange={e => setFormData({...formData, dni: e.target.value})}
-                          placeholder="88888888"
-                          className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-sm tracking-widest"
-                        />
-                     </div>
-                  </div>
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">N° Licencia</label>
-                     <div className="relative group">
-                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
-                        <input 
-                          value={formData.licencia}
-                          onChange={e => setFormData({...formData, licencia: e.target.value.toUpperCase()})}
-                          placeholder="Q-88888888"
+                          placeholder="72505661"
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-sm tracking-widest"
                         />
                      </div>
