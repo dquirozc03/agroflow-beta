@@ -19,7 +19,14 @@ class Settings(BaseSettings):
 
     # CORS: orígenes permitidos, separados por coma. Si no se define, se usan localhost.
     # Ejemplo producción: CORS_ORIGINS=https://app.tudominio.com,https://www.tudominio.com
-    CORS_ORIGINS: str = ""
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def origins_list(self) -> list[str]:
+        """Convierte el string de CORS_ORIGINS en una lista para el middleware."""
+        if not self.CORS_ORIGINS:
+            return ["http://localhost:3000", "http://127.0.0.1:3000"]
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     # TAREA-B04: Pool de Conexiones para carga alta (AWS / Producción)
     DB_POOL_SIZE: int = 10

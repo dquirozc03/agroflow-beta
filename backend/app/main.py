@@ -10,18 +10,13 @@ app = FastAPI(
     description="Reinicio de AgroFlow con estándares profesionales. Rama DEV."
 )
 
-# CORS
-_default_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
-_cors_origins = [
-    o.strip() for o in (settings.CORS_ORIGINS or "").split(",") if o.strip()
-] or _default_origins
-
-# Configuración inteligente de CORS
-_allow_all = "*" in _cors_origins
+# CORS dinámico según ticket de arquitectura
+_origins = settings.origins_list
+_allow_all = "*" in _origins
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[] if _allow_all else _cors_origins,
+    allow_origins=[] if _allow_all else _origins,
     allow_origin_regex=".*" if _allow_all else None,
     allow_credentials=True,
     allow_methods=["*"],
