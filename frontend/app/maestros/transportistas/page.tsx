@@ -60,7 +60,7 @@ export default function TransportistasPage() {
   const toggleEstado = async (id: number, currentEstado: string) => {
     const nuevoEstado = currentEstado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/maestros/transportistas/${id}/status?status=${nuevoEstado}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/maestros/transportistas/${id}/estado?estado=${nuevoEstado}`, {
         method: "PATCH",
       });
       if (response.ok) {
