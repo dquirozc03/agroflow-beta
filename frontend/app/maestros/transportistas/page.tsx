@@ -4,20 +4,16 @@ import React, { useState, useEffect } from "react";
 import { 
   Truck, 
   Search, 
-  MoreVertical, 
   CheckCircle2, 
   XCircle, 
   Edit2, 
-  Trash2, 
   Plus,
   RefreshCw,
-  LayoutGrid,
-  ShieldCheck,
-  ShieldAlert,
   Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { TransportistaModal } from "@/components/transportista-modal";
 
 interface Transportista {
   id: number;
@@ -30,6 +26,9 @@ export default function TransportistasPage() {
   const [transportistas, setTransportistas] = useState<Transportista[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransportista, setEditingTransportista] = useState<any>(null);
 
   useEffect(() => {
     fetchTransportistas();
@@ -48,10 +47,20 @@ export default function TransportistasPage() {
     }
   };
 
+  const handleCreateNew = () => {
+    setEditingTransportista(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (t: Transportista) => {
+    setEditingTransportista(t);
+    setIsModalOpen(true);
+  };
+
   const toggleEstado = async (id: number, currentEstado: string) => {
     const nuevoEstado = currentEstado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/maestros/transportistas/${id}/estado?estado=${nuevoEstado}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/maestros/transportistas/${id}/status?status=${nuevoEstado}`, {
         method: "PATCH",
       });
       if (response.ok) {
@@ -72,7 +81,13 @@ export default function TransportistasPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header & Acciones */}
+      <TransportistaModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchTransportistas}
+        editingData={editingTransportista}
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22]">Transportistas</h1>
@@ -85,14 +100,15 @@ export default function TransportistasPage() {
            >
               <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
            </button>
-           <button className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
+           <button 
+             onClick={handleCreateNew}
+             className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
               <Plus className="h-5 w-5" />
               Nuevo Transportista
            </button>
         </div>
       </div>
 
-      {/* Buscador y Stats Rápidas */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
          <div className="lg:col-span-3 relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
@@ -110,7 +126,6 @@ export default function TransportistasPage() {
          </div>
       </div>
 
-      {/* Tabla de Resultados */}
       <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4 text-slate-300">
@@ -124,7 +139,6 @@ export default function TransportistasPage() {
                 <tr className="border-b border-slate-50">
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Transportista</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">RUC</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -148,18 +162,12 @@ export default function TransportistasPage() {
                     <td className="px-8 py-5">
                       <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">{t.ruc}</span>
                     </td>
-                    <td className="px-8 py-5">
-                      <div className={cn(
-                        "inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        t.estado === "ACTIVO" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                      )}>
-                        {t.estado === "ACTIVO" ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                        {t.estado}
-                      </div>
-                    </td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2 outline-none">
-                        <button className="h-9 w-9 hover:bg-white hover:border-slate-100 border border-transparent rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-500 transition-all">
+                        <button 
+                          onClick={() => handleEdit(t)}
+                          className="h-9 w-9 hover:bg-white hover:border-slate-100 border border-transparent rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-500 transition-all"
+                        >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button 
@@ -179,7 +187,7 @@ export default function TransportistasPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-8 py-20 text-center">
+                    <td colSpan={3} className="px-8 py-20 text-center">
                        <p className="text-sm font-bold text-slate-400">No se encontraron transportistas.</p>
                     </td>
                   </tr>

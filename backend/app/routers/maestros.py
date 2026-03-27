@@ -9,6 +9,15 @@ import re
 from app.database import get_db
 from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta
 from app.utils.logging import logger
+from app.services.ocr import ocr_service
+from pydantic import BaseModel
+
+class TransportistaCreate(BaseModel):
+    ruc: str
+    nombre_transportista: str
+    partida_registral: Optional[str] = None
+    codigo_sap: Optional[str] = None
+    estado: Optional[str] = "ACTIVO"
 
 router = APIRouter(
     prefix="/api/v1/maestros",
@@ -37,22 +46,21 @@ async def bulk_upload_transportistas(
 
     try:
         contents = await file.read()
-        # Leemos el Excel saltando las primeras 3 filas (donde están los logos/títulos)
+        # 1. Ajuste de lectura: Saltamos hasta las cabeceras reales
         df = pd.read_excel(io.BytesIO(contents), header=None, skiprows=4)
         
-        # Filtrar filas vacías (donde no hay RUC ni Empresa)
-        df = df[df[5].notna() | df[6].notna()]
-
         processed_count = 0
         errors = []
 
         for index, row in df.iterrows():
             try:
+                # Extraer datos por índices corregidos según Excel
                 ruc = str(row[5]).strip() if pd.notna(row[5]) else None
-                nombre = str(row[6]).strip() if pd.notna(row[6]) else None
-                placas_raw = str(row[9]).strip() if pd.notna(row[9]) else ""
+                nombre = str(row[4]).strip() if pd.notna(row[4]) else None
+                placas_raw = str(row[8]).strip() if pd.notna(row[8]) else ""
 
-                if not ruc or ruc == "nan":
+                # Saltar filas vacías o la fila de cabeceras
+                if not ruc or ruc == "nan" or ruc.upper() == "RUC":
                     continue
 
                 # 1. Buscar o Crear Transportista
@@ -130,3 +138,59 @@ def patch_estado_transportista(id: int, estado: str, db: Session = Depends(get_d
     t.estado = estado.upper()
     db.commit()
     return {"status": "success", "nuevo_estado": t.estado}
+
+@router.post("/transportistas")
+def create_transportista(data: TransportistaCreate, db: Session = Depends(get_db)):
+    # Verificar si ya existe el RUC
+    existing = db.query(Transportista).filter(Transportista.ruc == data.ruc).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"El RUC {data.ruc} ya está registrado")
+    
+    new_t = Transportista(**data.model_dump())
+    db.add(new_t)
+    db.commit()
+    db.refresh(new_t)
+    return new_t
+
+@router.put("/transportistas/{id}")
+def update_transportista(id: int, data: TransportistaCreate, db: Session = Depends(get_db)):
+    t = db.query(Transportista).filter(Transportista.id == id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Transportista no encontrado")
+    
+    for key, value in data.model_dump().items():
+        setattr(t, key, value)
+    
+    db.commit()
+    db.refresh(t)
+    return t
+
+@router.post("/ocr/transportista")
+async def ocr_transportista(
+    file: UploadFile = File(...),
+):
+    """
+    Escaneo OCR de una Tarjeta de Circulación del MTC.
+    """
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.pdf')):
+        raise HTTPException(status_code=400, detail="Formato de archivo no soportado (PNG, JPG, PDF)")
+
+    try:
+        contents = await file.read()
+        is_pdf = file.filename.lower().endswith('.pdf')
+        
+        # Extraer texto crudo
+        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
+        
+        # Parsear datos específicos
+        parsed_data = ocr_service.parse_transportista_data(raw_text)
+        
+        return {
+            "status": "success",
+            "data": parsed_data,
+            "raw_text": raw_text # Para depuración
+        }
+
+    except Exception as e:
+        logger.error(f"Error en OCR: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
