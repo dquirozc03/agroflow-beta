@@ -179,9 +179,8 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
 
           <form onSubmit={handleSubmit} className="space-y-6 relative">
             
-            {/* Zona de OCR Inteligente */}
-            {!editingData && (
-              <div className={cn(
+            {/* Zona de OCR Inteligente (Visible en Creación y Edición) */}
+            <div className={cn(
                 "p-5 rounded-2xl border-2 border-dashed transition-all flex items-center justify-between group overflow-hidden relative",
                 isProcessingOCR ? "border-emerald-500 bg-emerald-50/20" : "border-slate-100 hover:border-emerald-200 hover:bg-slate-50"
               )}>
@@ -210,7 +209,6 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
                   onChange={(e) => e.target.files?.[0] && processOCR(e.target.files[0])}
                 />
               </div>
-            )}
 
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2">
@@ -222,8 +220,11 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
                     value={formData.ruc}
                     onChange={e => setFormData({...formData, ruc: e.target.value})}
                     placeholder="20XXXXXXXXX"
-                    className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
+                    className="w-full h-12 pl-11 pr-10 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                    />
+                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 cursor-help group-hover:scale-110 transition-transform">
+                      <Sparkles className="h-4 w-4" />
+                   </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -259,8 +260,11 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
                   value={formData.partida_registral || ""}
                   onChange={e => setFormData({...formData, partida_registral: e.target.value})}
                   placeholder="NÚMERO DE PARTIDA"
-                  className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
+                  className="w-full h-12 pl-11 pr-10 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                  />
+                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 cursor-help group-hover:scale-110 transition-transform">
+                    <Sparkles className="h-4 w-4" />
+                 </div>
               </div>
             </div>
 
