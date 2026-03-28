@@ -997,7 +997,7 @@ export default function BandejaLogiCapture() {
                          <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest uppercase">Paso 2: Formulario de Corrección</h3>
                       </div>
 
-                      <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl space-y-8 relative overflow-hidden">
+                      <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl space-y-8 relative">
                          <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none text-emerald-950">
                             <Edit3 className="h-32 w-32 rotate-12" />
                          </div>
