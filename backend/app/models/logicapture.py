@@ -47,6 +47,9 @@ class LogiCaptureRegistro(Base):
     marca_tracto = Column(String(50), nullable=True)
     cert_tracto = Column(String(50), nullable=True)
     cert_carreta = Column(String(50), nullable=True)
+    nombre_chofer = Column(String(200), nullable=True)
+    licencia_chofer = Column(String(100), nullable=True)
+    partida_registral = Column(String(100), nullable=True)
 
     # Metadatos de Sistema
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now())

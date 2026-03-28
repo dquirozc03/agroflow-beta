@@ -32,6 +32,9 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -83,6 +86,9 @@ export default function BandejaLogiCapture() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("ERROR DE SISTEMA");
   const [isAnularOpen, setIsAnularOpen] = useState(false);
   const [anularReason, setAnularReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
@@ -121,7 +127,8 @@ export default function BandejaLogiCapture() {
       fetchRegistros();
       setIsPanelOpen(false);
     } catch (error) {
-      toast.error("Error al actualizar el sistema");
+      setErrorMessage("No se pudo actualizar el estado del registro. Verifique su conexión.");
+      setIsErrorOpen(true);
     }
   };
 
@@ -172,7 +179,8 @@ export default function BandejaLogiCapture() {
       const data = await response.json();
       setRegistros(data.items || []);
     } catch (error) {
-      toast.error("Error al sincronizar con el Sistema");
+      setErrorMessage("No se pudo sincronizar la bandeja con el sistema central.");
+      setIsErrorOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -203,7 +211,9 @@ export default function BandejaLogiCapture() {
       
       toast.success('Reporte Excel generado correctamente 💎');
     } catch (error) {
-      toast.error('No se pudo generar el reporte premium');
+      setErrorTitle("ERROR DE EXPORTACIÓN");
+      setErrorMessage("No se pudo generar el reporte premium. Verifique que existan datos en el periodo seleccionado o contacte a soporte TI.");
+      setIsErrorOpen(true);
     } finally {
       setTimeout(() => setIsExporting(false), 2500);
     }
@@ -252,10 +262,10 @@ export default function BandejaLogiCapture() {
                   <Button 
                     onClick={handleExportExcel}
                     variant="outline" 
-                    className="rounded-2xl bg-white border-slate-200 font-bold text-emerald-800 hover:bg-emerald-50 hover:border-emerald-300 transition-all gap-2 shadow-sm"
+                    className="rounded-2xl bg-white border-emerald-100 font-black text-emerald-600 hover:bg-emerald-950 hover:text-white hover:border-emerald-950 transition-all gap-2 shadow-sm px-6 h-10 uppercase tracking-widest text-[10px]"
                   >
                      <FileDown className="h-4 w-4" />
-                     Exportar Excel
+                     {isExporting ? "Generando..." : "Exportar Excel"}
                   </Button>
                   <Button 
                     variant="default" 
@@ -697,6 +707,38 @@ export default function BandejaLogiCapture() {
             </div>
          </DialogContent>
       </Dialog>
+       {/* Modal de Error Premium Carlos Style 💎 */}
+       <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
+          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-300">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Error del Sistema</DialogTitle>
+                <DialogDescription>{errorMessage}</DialogDescription>
+             </DialogHeader>
+             <div className="relative p-12 flex flex-col items-center text-center gap-6">
+                <div className="h-24 w-24 bg-rose-50 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+                   <div className="h-16 w-16 bg-rose-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.4)]">
+                      <AlertTriangle className="h-8 w-8 text-white" />
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <h2 className="text-3xl font-black tracking-tighter text-slate-900 font-['Outfit'] uppercase">
+                      {errorTitle}
+                   </h2>
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 leading-relaxed px-4">
+                      {errorMessage}
+                   </p>
+                </div>
+
+                <Button 
+                  onClick={() => setIsErrorOpen(false)}
+                  className="w-full py-7 bg-slate-900 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 mt-4"
+                >
+                   Entendido
+                </Button>
+             </div>
+          </DialogContent>
+       </Dialog>
     </div>
   );
 }

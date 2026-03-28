@@ -14,8 +14,8 @@ _origins = settings.origins_list
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_origins if "*" not in _origins else ["*"],
-    allow_credentials=True if "*" not in _origins else False, # Credentials forbids wildcard
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
