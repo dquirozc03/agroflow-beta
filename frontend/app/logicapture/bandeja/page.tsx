@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -777,7 +777,7 @@ export default function BandejaLogiCapture() {
 
                          onClick={() => handleEditOpen(selectedReg)}
                        >
-                          <Edit3 className="h-4 w-4 mr-2" /> Editar Auditoría
+                          <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
                        </Button>
                     )}
                  </div>
@@ -1131,23 +1131,45 @@ export default function BandejaLogiCapture() {
                                         <Clock className="h-3 w-3 text-amber-500" />
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora de Salida</span>
                                      </div>
-                                     <div className="relative group">
-                                        <input 
-                                          type="time" 
-                                          value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "HH:mm") : ""}
-                                          onChange={(e) => {
-                                             const val = e.target.value;
-                                             if (!val) return;
-                                             const [h, m] = val.split(":");
-                                             const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
-                                             date.setHours(parseInt(h));
-                                             date.setMinutes(parseInt(m));
-                                             setEditData({...editData, fecha_embarque: date.toISOString()});
-                                          }}
-                                          className="w-full h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex items-center justify-center text-3xl font-black text-emerald-950 font-['Outfit'] text-center outline-none focus:border-amber-500 focus:shadow-xl focus:shadow-amber-500/10 transition-all cursor-pointer"
-                                        />
-                                        <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                                           <span className="text-[10px] font-black text-amber-600/60 uppercase tracking-[0.2em]">Formato 24H</span>
+                                     <div className="flex gap-4 h-24 bg-white border-2 border-slate-100 rounded-[2rem] p-6 items-center justify-center hover:border-amber-500 transition-all shadow-inner">
+                                        {/* Horas */}
+                                        <div className="flex-1 flex flex-col items-center">
+                                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">HORA</span>
+                                           <select 
+                                              value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "HH") : "00"}
+                                              onChange={(e) => {
+                                                 const h = e.target.value;
+                                                 const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                 date.setHours(parseInt(h));
+                                                 setEditData({...editData, fecha_embarque: date.toISOString()});
+                                              }}
+                                              className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
+                                           >
+                                              {Array.from({length: 24}).map((_, i) => (
+                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                              ))}
+                                           </select>
+                                        </div>
+                                        
+                                        <span className="text-3xl font-black text-slate-200 self-center mt-4">:</span>
+
+                                        {/* Minutos */}
+                                        <div className="flex-1 flex flex-col items-center">
+                                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">MIN</span>
+                                           <select 
+                                              value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "mm") : "00"}
+                                              onChange={(e) => {
+                                                 const m = e.target.value;
+                                                 const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                 date.setMinutes(parseInt(m));
+                                                 setEditData({...editData, fecha_embarque: date.toISOString()});
+                                              }}
+                                              className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
+                                           >
+                                              {Array.from({length: 60}).map((_, i) => (
+                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                              ))}
+                                           </select>
                                         </div>
                                      </div>
                                   </div>
