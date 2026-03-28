@@ -28,6 +28,7 @@ class LogiCaptureSaveRequest(BaseModel):
     precintoLinea: list[str]
     precintosBeta: list[str]
     termografos: list[str]
+    tratamientoBuque: bool = False
 
 class LookupResponse(BaseModel):
     booking: str
@@ -127,6 +128,12 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
     if existing_cnt:
         raise HTTPException(status_code=400, detail=f"El contenedor {req.contenedor} ya cuenta con un registro de salida activo.")
 
+    # 1.5 Validar Unicidad de Booking (Solo si NO es Tratamiento en Buque)
+    if not req.tratamientoBuque:
+        existing_bk = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == req.booking).first()
+        if existing_bk:
+            raise HTTPException(status_code=400, detail=f"El Booking {req.booking} ya fue registrado anteriormente. Si es una carga compartida, active 'Tratamiento en Buque'.")
+
     # 2. Validar Unicidad de Precintos/Termógrafos
     codes_to_check = (req.precintoAduana + req.precintoOperador + req.precintoSenasa + 
                       req.precintoLinea + req.precintosBeta + req.termografos)
@@ -151,7 +158,8 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         precinto_senasa=req.precintoSenasa,
         precinto_linea=req.precintoLinea,
         precintos_beta=req.precintosBeta,
-        termografos=req.termografos
+        termografos=req.termografos,
+        tratamiento_buque=req.tratamientoBuque
     )
     db.add(new_reg)
     db.commit() # Commit inicial para obtener id

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -12,12 +12,11 @@ class LogiCaptureRegistro(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Datos de Embarque (Identificadores del despacho)
-    # Booking: Un booking puede viajar en varios contenedores, por lo que 
-    # la unicidad real la marca el Contenedor o la DAM para este registro.
     booking = Column(String(50), index=True)
     orden_beta = Column(String(50), index=True) 
-    contenedor = Column(String(50), unique=True, index=True) # Unívoco por registro de salida
-    dam = Column(String(50), unique=True, index=True) # Unívoco para trazabilidad legal
+    contenedor = Column(String(50), unique=True, index=True) 
+    dam = Column(String(50), unique=True, index=True)
+    tratamiento_buque = Column(Boolean, default=False)
     
     # Datos de Transporte
     dni_chofer = Column(String(20))

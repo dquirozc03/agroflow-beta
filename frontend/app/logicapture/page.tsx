@@ -223,6 +223,7 @@ export default function LogiCaptureV2Page() {
     precintoLinea: [] as string[],
     precintosBeta: [] as string[],
     termografos: [] as string[],
+    tratamientoBuque: false,
   });
 
   const [isSearching, setIsSearching] = useState(false);
@@ -456,6 +457,7 @@ export default function LogiCaptureV2Page() {
       precintoLinea: [],
       precintosBeta: [],
       termografos: [],
+      tratamientoBuque: false,
     });
     setValidatedFields([]);
     setFieldErrors({});
@@ -661,6 +663,30 @@ export default function LogiCaptureV2Page() {
                         errorMsg={fieldErrors.dam}
                      />
                   </div>
+
+                  {/* Toggle Tratamiento en Buque Carlos Style */}
+                  {transportMode === "maritimo" && (
+                    <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between bg-emerald-50/20 p-6 rounded-3xl border-dashed border-emerald-500/20">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Tratamiento en Buque</p>
+                          <p className="text-[9px] text-emerald-600/70 font-bold">Activar solo para múltiples contenedores por booking</p>
+                       </div>
+                       <button 
+                          onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                          className={cn(
+                             "w-14 h-8 rounded-full transition-all duration-500 relative flex items-center px-1",
+                             formData.tratamientoBuque ? "bg-emerald-600 shadow-lg shadow-emerald-200" : "bg-slate-200"
+                          )}
+                       >
+                          <div className={cn(
+                             "h-6 w-6 bg-white rounded-full shadow-md transition-all duration-500 flex items-center justify-center",
+                             formData.tratamientoBuque ? "translate-x-6" : "translate-x-0"
+                          )}>
+                             {formData.tratamientoBuque && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                          </div>
+                       </button>
+                    </div>
+                  )}
                </div>
 
                {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
