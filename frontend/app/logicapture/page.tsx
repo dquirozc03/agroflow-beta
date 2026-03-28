@@ -45,13 +45,14 @@ interface MultiInputProps {
   onChange: (newValues: string[]) => void;
   icon: any;
   autoFocus?: boolean;
+  duplicatedValues?: string[];
 }
 
-function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus }: MultiInputProps) {
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus, duplicatedValues = [] }: MultiInputProps) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       const cleanValue = inputValue.trim().toUpperCase();
       if (!cleanValue) return;
@@ -83,14 +84,22 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocu
         <div className="pl-3 pr-1 text-slate-300">
           <Icon className="h-4 w-4" />
         </div>
-        {values.map((v, i) => (
-          <div key={i} className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl text-sm font-bold animate-in zoom-in-95 duration-200">
-            {v}
-            <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors">
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
+        {values.map((v, i) => {
+          const isDuplicated = duplicatedValues.includes(v);
+          return (
+            <div key={i} className={cn(
+               "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold animate-in zoom-in-95 duration-200 border",
+               isDuplicated 
+                  ? "bg-rose-50 border-rose-200 text-rose-700 animate-pulse shadow-sm shadow-rose-100" 
+                  : "bg-emerald-50 border-emerald-100 text-emerald-700"
+            )}>
+               {v}
+               <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors">
+                  <X className="h-3 w-3" />
+               </button>
+            </div>
+          );
+        })}
         <input
           ref={inputRef}
           autoFocus={autoFocus}
@@ -255,6 +264,7 @@ export default function LogiCaptureV2Page() {
   const [validatedFields, setValidatedFields] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [duplicatedCodes, setDuplicatedCodes] = useState<string[]>([]);
 
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
@@ -439,6 +449,31 @@ export default function LogiCaptureV2Page() {
       }
     } catch (error) {
        console.error("Error check unique", error);
+    }
+  };
+
+  const validateSeal = async (field: keyof typeof formData, newValues: string[]) => {
+    const oldValues = formData[field] as string[];
+    updateField(field as string, newValues);
+
+    // Si el array creció, validamos el último elemento
+    if (newValues.length > oldValues.length) {
+       const lastValue = newValues[newValues.length - 1];
+       try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=precinto&value=${lastValue}`);
+          if (!response.ok) return;
+          const data = await response.json();
+          if (data.exists) {
+             setDuplicatedCodes(prev => [...new Set([...prev, lastValue])]);
+             setFieldErrors(prev => ({ ...prev, [field]: `Precinto Duplicado: ${lastValue}` }));
+          } else {
+             setFieldErrors(prev => {
+                const n = { ...prev };
+                delete n[field];
+                return n;
+             });
+          }
+       } catch (e) { console.error(e); }
     }
   };
 
@@ -838,44 +873,50 @@ export default function LogiCaptureV2Page() {
                         label="Precinto Aduana" 
                         placeholder="Ej: AD123" 
                         values={formData.precintoAduana} 
-                        onChange={(v) => updateField("precintoAduana", v)}
+                        onChange={(v) => validateSeal("precintoAduana", v)}
                         icon={ShieldCheck}
+                        duplicatedValues={duplicatedCodes}
                         autoFocus
                      />
                      <MultiInput 
                         label="Precinto Operador" 
                         placeholder="Ej: OP456" 
                         values={formData.precintoOperador} 
-                        onChange={(v) => updateField("precintoOperador", v)}
+                        onChange={(v) => validateSeal("precintoOperador", v)}
                         icon={ShieldCheck}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precinto SENASA" 
                         placeholder="Ej: SE789" 
                         values={formData.precintoSenasa} 
-                        onChange={(v) => updateField("precintoSenasa", v)}
+                        onChange={(v) => validateSeal("precintoSenasa", v)}
                         icon={BadgeCheck}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precinto Línea" 
                         placeholder="Ej: LN012" 
                         values={formData.precintoLinea} 
-                        onChange={(v) => updateField("precintoLinea", v)}
+                        onChange={(v) => validateSeal("precintoLinea", v)}
                         icon={Layers}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precintos BETA" 
                         placeholder="Ej: BT345" 
                         values={formData.precintosBeta} 
-                        onChange={(v) => updateField("precintosBeta", v)}
+                        onChange={(v) => validateSeal("precintosBeta", v)}
                         icon={Zap}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Termógrafos / Key" 
                         placeholder="Ej: T-9999" 
                         values={formData.termografos} 
-                        onChange={(v) => updateField("termografos", v)}
+                        onChange={(v) => validateSeal("termografos", v)}
                         icon={Thermometer}
+                        duplicatedValues={duplicatedCodes}
                      />
                   </div>
 
