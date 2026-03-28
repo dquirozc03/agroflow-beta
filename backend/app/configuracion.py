@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # CORS: orígenes permitidos, separados por coma. Si no se define, se usan localhost.
     # Ejemplo producción: CORS_ORIGINS=https://app.tudominio.com,https://www.tudominio.com
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://agroflow-beta-git-dev-dquirozc03s-projects.vercel.app,*"
 
     @property
     def origins_list(self) -> list[str]:
