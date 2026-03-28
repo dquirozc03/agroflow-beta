@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import io
 from fastapi.responses import StreamingResponse
+from openpyxl.worksheet.table import Table, TableStyleInfo
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
 from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
@@ -453,7 +454,25 @@ def export_to_excel(db: Session = Depends(get_db)):
         df.to_excel(writer, index=False, sheet_name='LogiCapture_Auditoria')
         worksheet = writer.sheets['LogiCapture_Auditoria']
         
-        # Auto-ajuste de columnas Carlos Style 💎
+        # --- Formateo Excel Premium Carlos Style 💎 ---
+        # 1. Crear Objeto Tabla Nativo de Excel (Habilita filtros y bandas)
+        last_col = chr(64 + len(df.columns))
+        last_row = len(df) + 1
+        ref = f"A1:{last_col}{last_row}"
+        tab = Table(displayName="TablaAuditoria", ref=ref)
+        
+        # 2. Estilo de Tabla Esmeralda Sobrio
+        style = TableStyleInfo(
+            name="TableStyleMedium9", 
+            showFirstColumn=False,
+            showLastColumn=False, 
+            showRowStripes=True, 
+            showColumnStripes=False
+        )
+        tab.tableStyleInfo = style
+        worksheet.add_table(tab)
+        
+        # 3. Auto-ajuste de columnas dinámico
         for col in worksheet.columns:
             max_length = 0
             column = col[0].column_letter
@@ -461,10 +480,8 @@ def export_to_excel(db: Session = Depends(get_db)):
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = (max_length + 4)
-            worksheet.column_dimensions[column].width = adjusted_width
+                except: pass
+            worksheet.column_dimensions[column].width = (max_length + 6)
 
     output.seek(0)
     return StreamingResponse(
