@@ -49,6 +49,22 @@ class LogiCaptureSaveRequest(BaseModel):
     licenciaChofer: Optional[str] = None
     partidaRegistral: Optional[str] = None
 
+class LogiCaptureUpdateRequest(BaseModel):
+    precintoAduana: Optional[list[str]] = None
+    precintoOperador: Optional[list[str]] = None
+    precintoSenasa: Optional[list[str]] = None
+    precintoLinea: Optional[list[str]] = None
+    precintosBeta: Optional[list[str]] = None
+    termografos: Optional[list[str]] = None
+    fecha_embarque: Optional[str] = None
+    nombreChofer: Optional[str] = None
+    dni: Optional[str] = None
+    licenciaChofer: Optional[str] = None
+    placaTracto: Optional[str] = None
+    placaCarreta: Optional[str] = None
+    empresa: Optional[str] = None
+    partidaRegistral: Optional[str] = None
+
 class LookupResponse(BaseModel):
     booking: str
     orden_beta: Optional[str] = None
@@ -339,25 +355,38 @@ def get_registro(id: int, db: Session = Depends(get_db)):
     return reg
 
 @router.put("/registros/{id}")
-def update_registro(id: int, req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
-    """Edición de registros (Principalmente para corregir precintos y transporte)."""
+def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depends(get_db)):
+    """Edición técnica de registros (Auditoría Dirigida) 💎."""
     reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
     if not reg:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
-    # Actualizar campos permitidos
-    reg.precinto_aduana = req.precintoAduana
-    reg.precinto_operador = req.precintoOperador
-    reg.precinto_senasa = req.precintoSenasa
-    reg.precinto_linea = req.precintoLinea
-    reg.precintos_beta = req.precintosBeta
-    reg.termografos = req.termografos
+    # 1. Actualizar Precintos si vienen en el body
+    if req.precintoAduana is not None: reg.precinto_aduana = req.precintoAduana
+    if req.precintoOperador is not None: reg.precinto_operador = req.precintoOperador
+    if req.precintoSenasa is not None: reg.precinto_senasa = req.precintoSenasa
+    if req.precintoLinea is not None: reg.precinto_linea = req.precintoLinea
+    if req.precintosBeta is not None: reg.precintos_beta = req.precintosBeta
+    if req.termografos is not None: reg.termografos = req.termografos
     
+    # 2. Fecha de Embarque
     if req.fecha_embarque:
-        reg.fecha_embarque = datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00'))
+        try:
+            reg.fecha_embarque = datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00'))
+        except:
+            pass
+            
+    # 3. Datos Maestros (Auditoría de Transporte)
+    if req.nombreChofer: reg.nombre_chofer = req.nombreChofer
+    if req.dni: reg.dni_chofer = req.dni
+    if req.licenciaChofer: reg.licencia_chofer = req.licenciaChofer
+    if req.placaTracto: reg.placa_tracto = req.placaTracto
+    if req.placaCarreta: reg.placa_carreta = req.placaCarreta
+    if req.empresa: reg.empresa_transporte = req.empresa
+    if req.partidaRegistral: reg.partida_registral = req.partidaRegistral
         
     db.commit()
-    return {"status": "success", "message": "Registro actualizado correctamente"}
+    return {"status": "success", "message": "Datos de auditoría actualizados correctamente 💎"}
 
 @router.patch("/registros/{id}/status")
 def change_registro_status(id: int, status: str, motivo: Optional[str] = None, db: Session = Depends(get_db)):

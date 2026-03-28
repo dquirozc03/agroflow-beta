@@ -1097,7 +1097,7 @@ export default function BandejaLogiCapture() {
                      onClick={handleEditSave}
                      className="px-12 py-7 bg-emerald-950 hover:bg-emerald-900 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-emerald-950/20 active:scale-95 transition-all"
                    >
-                      Aplicar Corrección Auditoría
+                      Aplicar Corrección
                    </Button>
                 </div>
              </div>
