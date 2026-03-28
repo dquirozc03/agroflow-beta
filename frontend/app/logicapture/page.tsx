@@ -295,6 +295,26 @@ export default function LogiCaptureV2Page() {
 
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
+    
+    // Al borrar placa, limpiar empresa y su info de forma reactiva
+    if (field === "placaTracto" && !value) {
+      setFormData(prev => ({ ...prev, empresa: "" }));
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.empresa_info;
+        return next;
+      });
+    }
+
+    // Al borrar DNI, limpiar su info reactivada
+    if (field === "dni" && !value) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.dni_info;
+        return next;
+      });
+    }
+
     // Limpiar error específico al editar
     if (fieldErrors[field]) {
       setFieldErrors(prev => {
