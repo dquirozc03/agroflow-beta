@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ContenedoresModal } from "@/components/contenedores-modal";
+import { DeleteConfirmModal } from "@/components/delete-confirm-modal";
 import { API_BASE_URL } from "@/lib/constants";
 
 interface Embarque {
@@ -32,6 +33,11 @@ export default function ContenedoresDamsPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmbarque, setEditingEmbarque] = useState<any>(null);
+  
+  // Estado para eliminación
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [embarqueToDelete, setEmbarqueToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchEmbarques();
@@ -64,19 +70,29 @@ export default function ContenedoresDamsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Está seguro de eliminar este registro de embarque?")) return;
+  const handleDeleteInit = (id: number) => {
+    setEmbarqueToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!embarqueToDelete) return;
     
+    setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/embarques/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/embarques/${embarqueToDelete}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setEmbarques(embarques.filter(e => e.id !== id));
-        toast.success("Registro eliminado");
+        setEmbarques(embarques.filter(e => e.id !== embarqueToDelete));
+        toast.success("Registro eliminado exitosamente");
+        setIsDeleteModalOpen(false);
       }
     } catch (error) {
-      toast.error("Error al eliminar");
+      toast.error("Error al intentar eliminar");
+    } finally {
+      setIsDeleting(false);
+      setEmbarqueToDelete(null);
     }
   };
 
@@ -95,6 +111,15 @@ export default function ContenedoresDamsPage() {
         editingData={editingEmbarque}
       />
 
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title="¿Eliminar Registro?"
+        message="¿Estás seguro de que deseas borrar este despacho? Esta acción eliminará permanentemente la asociación del Booking y la DAM de la base de datos."
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22]">Contenedores y Dam's</h1>
@@ -111,7 +136,7 @@ export default function ContenedoresDamsPage() {
              onClick={handleCreateNew}
              className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
               <Plus className="h-5 w-5" />
-              Nuevo Embarque
+              Nuevo Registro
            </button>
         </div>
       </div>
@@ -182,7 +207,7 @@ export default function ContenedoresDamsPage() {
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button 
-                          onClick={() => handleDelete(e.id)}
+                          onClick={() => handleDeleteInit(e.id)}
                           className="h-10 w-10 border border-slate-100 rounded-xl flex items-center justify-center transition-all duration-300 bg-white hover:bg-rose-500 hover:text-white hover:border-rose-500 text-slate-400 shadow-sm active:scale-95"
                         >
                           <Trash2 className="h-4 w-4" />
