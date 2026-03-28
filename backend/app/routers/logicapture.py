@@ -4,7 +4,7 @@ from typing import Optional
 from app.database import get_db
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
-from app.models.maestros import Chofer, VehiculoTracto, Transportista
+from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -82,4 +82,17 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
             "nombre_transportista": vehicle.transportista.nombre_transportista,
             "ruc": vehicle.transportista.ruc
         }
+    }
+@router.get("/trailer/{placa}")
+def get_trailer_data(placa: str, db: Session = Depends(get_db)):
+    """Busca carreta en maestros por placa."""
+    clean_placa = placa.strip().upper().replace("-", "")
+    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa).first()
+    
+    if not trailer:
+        raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
+        
+    return {
+        "placa": trailer.placa_carreta,
+        "status": "success"
     }

@@ -219,6 +219,7 @@ export default function LogiCaptureV2Page() {
 
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
+  const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -359,6 +360,22 @@ export default function LogiCaptureV2Page() {
       setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
     } finally {
       setIsLoadingChofer(false);
+    }
+  };
+
+  const handleCarretaBlur = async () => {
+    const placa = (formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
+    if (!placa) return;
+
+    setIsLoadingCarreta(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
+      if (!response.ok) throw new Error("Carreta no registrada en maestros");
+      // No necesitamos info extra por ahora, solo validar existencia
+    } catch (error: any) {
+      setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
+    } finally {
+      setIsLoadingCarreta(false);
     }
   };
 
@@ -570,6 +587,10 @@ export default function LogiCaptureV2Page() {
                         icon={Maximize2} 
                         value={formData.placaCarreta} 
                         onChange={(v) => updateField("placaCarreta", v)} 
+                        onBlur={handleCarretaBlur}
+                        loading={isLoadingCarreta}
+                        error={!!fieldErrors.placaCarreta}
+                        errorMsg={fieldErrors.placaCarreta}
                      />
                      <FormField 
                         label="Empresa Transportes" 
