@@ -408,6 +408,7 @@ export default function LogiCaptureV2Page() {
       updateField("ruc_transportista", data.transportista.ruc_transportista);
       updateField("marca_tracto", data.marca);
       updateField("cert_tracto", data.configuracion_vehicular);
+      updateField("codigo_sap", data.transportista.codigo_sap);
       
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {

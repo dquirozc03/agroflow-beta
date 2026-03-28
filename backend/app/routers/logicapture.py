@@ -115,8 +115,10 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
         "marca": vehicle.marca,
         "transportista": {
             "nombre_transportista": vehicle.transportista.nombre_transportista,
-            "ruc": vehicle.transportista.ruc
-        }
+            "ruc_transportista": vehicle.transportista.ruc,
+            "codigo_sap": vehicle.transportista.codigo_sap
+        },
+        "configuracion_vehicular": vehicle.certificado_vehicular_tracto
     }
 @router.get("/check_unique")
 def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
