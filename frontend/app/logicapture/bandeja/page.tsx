@@ -130,6 +130,10 @@ export default function BandejaLogiCapture() {
     fetchRegistros();
   }, [activeTab, filterPlanta, filterCultivo]);
 
+  // Filtros dinámicos basados en la data real
+  const plantasUnicas = Array.from(new Set(registros.map(r => r.planta).filter(Boolean)));
+  const cultivosUnicos = Array.from(new Set(registros.map(r => r.cultivo).filter(Boolean)));
+
   const handleExportExcel = async () => {
     toast.promise(
       fetch(`${API_BASE_URL}/api/v1/logicapture/export/excel`)
@@ -230,10 +234,11 @@ export default function BandejaLogiCapture() {
                      <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
                         <SelectValue placeholder="Todas las Plantas" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                        <SelectItem value="all">Todas las Plantas</SelectItem>
-                        <SelectItem value="BETA">Planta BETA</SelectItem>
-                        <SelectItem value="TERCEROS">Planta TERCEROS</SelectItem>
+                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl bg-white focus:ring-emerald-500">
+                        <SelectItem value="all" className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer">Todas las Plantas</SelectItem>
+                        {plantasUnicas.map(p => (
+                           <SelectItem key={p} value={p} className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{p}</SelectItem>
+                        ))}
                      </SelectContent>
                   </Select>
                </div>
@@ -244,12 +249,11 @@ export default function BandejaLogiCapture() {
                      <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
                         <SelectValue placeholder="Todos los Cultivos" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                        <SelectItem value="all">Todos los Cultivos</SelectItem>
-                        <SelectItem value="ARANDANO">Arándano</SelectItem>
-                        <SelectItem value="PALTA">Palta</SelectItem>
-                        <SelectItem value="UVA">Uva</SelectItem>
-                        <SelectItem value="ESPARRAGO">Espárrago</SelectItem>
+                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl bg-white focus:ring-emerald-500">
+                        <SelectItem value="all" className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer">Todos los Cultivos</SelectItem>
+                        {cultivosUnicos.map(c => (
+                           <SelectItem key={c} value={c} className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{c}</SelectItem>
+                        ))}
                      </SelectContent>
                   </Select>
                </div>
