@@ -18,8 +18,17 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
-  Eye
+  Eye,
+  Copy,
+  X
 } from "lucide-react";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle,
+  SheetDescription
+} from "@/components/ui/sheet";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { 
@@ -66,6 +75,16 @@ export default function BandejaLogiCapture() {
   const [filterPlanta, setFilterPlanta] = useState("all");
   const [filterCultivo, setFilterCultivo] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedReg, setSelectedReg] = useState<any>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`, {
+      description: "Listo para pegar en SAP",
+      duration: 2000
+    });
+  };
 
   const fetchRegistros = async () => {
     setIsLoading(true);
@@ -281,7 +300,11 @@ export default function BandejaLogiCapture() {
                          r.booking.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          r.contenedor.toLowerCase().includes(searchTerm.toLowerCase())
                       ).map((reg) => (
-                        <TableRow key={reg.id} className="group hover:bg-emerald-50/30 transition-colors border-slate-100 border-b last:border-0 px-6">
+                        <TableRow 
+                          key={reg.id} 
+                          className="group hover:bg-emerald-50/30 transition-colors border-slate-100 border-b last:border-0 px-6 cursor-pointer"
+                          onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
+                        >
                           <TableCell className="p-6 font-medium text-slate-600">
                              <div className="flex flex-col">
                                 <span className="text-sm font-bold text-slate-900 leading-none mb-1">
@@ -322,7 +345,7 @@ export default function BandejaLogiCapture() {
                           <TableCell>
                              {getStatusBadge(reg.status)}
                           </TableCell>
-                          <TableCell className="text-right p-6">
+                          <TableCell className="text-right p-6" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-white hover:shadow-sm">
@@ -331,16 +354,26 @@ export default function BandejaLogiCapture() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
                                 <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
-                                <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer">
-                                  <Eye className="h-4 w-4" /> Ver Detalle
+                                
+                                <DropdownMenuItem 
+                                  className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
+                                  onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
+                                >
+                                  <Eye className="h-4 w-4" /> Ver Detalle (SAP)
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer">
-                                  <Edit3 className="h-4 w-4" /> Editar Auditoría
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
-                                <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer">
-                                  <Trash2 className="h-4 w-4" /> Anular Registro
-                                </DropdownMenuItem>
+
+                                {activeTab === "PROCESADO" && (
+                                   <>
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer">
+                                        <Edit3 className="h-4 w-4" /> Editar Auditoría
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer">
+                                        <Trash2 className="h-4 w-4" /> Anular Registro
+                                      </DropdownMenuItem>
+                                   </>
+                                )}
+                                
                                 {activeTab === "PENDIENTE" && (
                                    <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1">
                                       <CheckCircle2 className="h-4 w-4" /> Cerrar Operación
@@ -360,6 +393,113 @@ export default function BandejaLogiCapture() {
           </div>
         </main>
       </div>
+
+      {/* Panel SAP Lateral Carlos Style */}
+      <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
+        <SheetContent className="w-[450px] sm:w-[550px] bg-slate-50 p-0 border-l border-white shadow-2xl rounded-l-[3rem]">
+           {selectedReg && (
+              <div className="flex flex-col h-full overflow-hidden">
+                 <div className="p-8 bg-white border-b border-slate-100 sticky top-0 z-10 rounded-tl-[3rem]">
+                    <div className="flex items-center justify-between mb-2">
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2">
+                          <CircleDot className="h-3 w-3 animate-pulse" />
+                          PANEL SAP • {selectedReg.status}
+                       </span>
+                       <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(false)} className="rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all">
+                          <X className="h-5 w-5" />
+                       </Button>
+                    </div>
+                    <h2 className="text-3xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit']">
+                       REGISTRO <span className="text-emerald-500">#{selectedReg.id}</span>
+                    </h2>
+                 </div>
+
+                 <div className="flex-1 overflow-y-auto p-8 space-y-6 lc-scroll pb-20">
+                    <div className="space-y-4">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          <CheckCircle2 className="h-3 w-3" /> DATOS PARA COPIADO SAP
+                       </p>
+                       
+                       {[
+                         { label: "ID REGISTRO", value: selectedReg.id, key: "id" },
+                         { label: "FECHA EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
+                         { label: "ORDEN BETA / SAP", value: selectedReg.orden_beta, key: "orden" },
+                         { label: "BOOKING", value: selectedReg.booking, key: "booking" },
+                         { label: "CONTENEDOR", value: selectedReg.contenedor, key: "cnt" },
+                         { label: "DAM / DUA", value: selectedReg.dam, key: "dam" },
+                         { label: "PLACA TRACTO", value: selectedReg.placa_tracto, key: "tracto" },
+                         { label: "PLACA CARRETA", value: selectedReg.placa_carreta, key: "carreta" },
+                         { label: "CHOFER (DNI)", value: selectedReg.dni_chofer, key: "chofer" },
+                         { label: "TRANSPORTISTA", value: selectedReg.empresa_transporte, key: "trans" },
+                       ].map((item) => (
+                          <div key={item.key} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
+                             <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{item.label}</label>
+                                   <p className="text-sm font-bold text-slate-600 tracking-tight">{item.value || "-"}</p>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="rounded-xl opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                                  onClick={() => copyToClipboard(String(item.value), item.label)}
+                                >
+                                   <Copy className="h-4 w-4" />
+                                </Button>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+
+                    {/* Sección de Precintos */}
+                    <div className="space-y-4 mt-8">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          <ShieldCheck className="h-3 w-3" /> PRECINTOS RESTRICCIÓN
+                       </p>
+                       {Object.entries({
+                          "P. ADUANA": selectedReg.precinto_aduana,
+                          "P. OPERADOR": selectedReg.precinto_operador,
+                          "P. SENASA": selectedReg.precinto_senasa,
+                          "P. LINEA": selectedReg.precinto_linea,
+                          "P. BETA": selectedReg.precintos_beta
+                       }).map(([label, codes]: [string, any]) => (
+                          <div key={label} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
+                             <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+                                   <p className="text-xs font-bold text-emerald-700 tracking-widest">
+                                      {Array.isArray(codes) ? codes.join(" • ") : "-"}
+                                   </p>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="rounded-xl opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                                  onClick={() => copyToClipboard(Array.isArray(codes) ? codes.join(", ") : "-", label)}
+                                >
+                                   <Copy className="h-4 w-4" />
+                                </Button>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex gap-4">
+                    {selectedReg.status === "PENDIENTE" ? (
+                       <Button className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20">
+                          Procesar Registro
+                       </Button>
+                    ) : (
+                       <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12">
+                          Descargar PDF
+                       </Button>
+                    )}
+                 </div>
+              </div>
+           )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
