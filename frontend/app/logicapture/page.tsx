@@ -25,7 +25,8 @@ import {
   Sparkles,
   RefreshCw,
   Camera,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -100,9 +101,11 @@ interface FormFieldProps {
   readOnly?: boolean;
   success?: boolean;
   loading?: boolean;
+  error?: boolean;
+  errorMsg?: string;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg }: FormFieldProps) {
   return (
     <div className="space-y-3 group">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-emerald-500 transition-colors">
@@ -123,12 +126,23 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
-            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold"
+            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
+            error && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
           )}
         />
         {success && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in-50">
              <CheckCircle2 className="h-5 w-5" />
+          </div>
+        )}
+        {error && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
+             <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
+             {/* Tooltip Carlos Style */}
+             <div className="absolute bottom-full right-0 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-50 origin-bottom-right">
+                {errorMsg}
+                <div className="absolute top-full right-4 border-8 border-transparent border-t-rose-950" />
+             </div>
           </div>
         )}
       </div>
@@ -176,6 +190,7 @@ export default function LogiCaptureV2Page() {
 
   const [isSearching, setIsSearching] = useState(false);
   const [validatedFields, setValidatedFields] = useState<string[]>([]);
+  const [bookingError, setBookingError] = useState(false);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -186,6 +201,7 @@ export default function LogiCaptureV2Page() {
 
     setIsSearching(true);
     setValidatedFields([]);
+    setBookingError(false);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
@@ -207,6 +223,7 @@ export default function LogiCaptureV2Page() {
       setValidatedFields(["ordenBeta", "dam", "contenedor"]);
       toast.success("Resolución de datos exitosa");
     } catch (error: any) {
+      setBookingError(true);
       toast.error(error.message);
     } finally {
       setIsSearching(false);
@@ -214,6 +231,7 @@ export default function LogiCaptureV2Page() {
   };
 
   const updateField = (field: string, value: any) => {
+    if (field === "booking") setBookingError(false);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -348,6 +366,8 @@ export default function LogiCaptureV2Page() {
                         icon={BookOpen} 
                         value={formData.booking} 
                         onChange={(v) => updateField("booking", v)} 
+                        error={bookingError}
+                        errorMsg="El booking no está registrado en posicionamiento"
                      />
                      <FormField 
                         label="Orden Beta" 
