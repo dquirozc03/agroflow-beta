@@ -423,8 +423,6 @@ export default function BandejaLogiCapture() {
                        {[
                          { label: "ID REGISTRO", value: selectedReg.id, key: "id" },
                          { label: "FECHA EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
-                         { label: "PLANTA LLENADO", value: selectedReg.planta, key: "planta" },
-                         { label: "CULTIVO", value: selectedReg.cultivo, key: "cultivo" },
                          { label: "ORDEN BETA", value: selectedReg.orden_beta, key: "orden" },
                          { label: "BOOKING", value: selectedReg.booking, key: "booking" },
                          { label: "CONTENEDOR", value: selectedReg.contenedor, key: "cnt" },
