@@ -10,15 +10,12 @@ app = FastAPI(
     description="Reinicio de AgroFlow con estándares profesionales. Rama DEV."
 )
 
-# CORS dinámico según ticket de arquitectura
 _origins = settings.origins_list
-_allow_all = "*" in _origins
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[] if _allow_all else _origins,
-    allow_origin_regex=".*" if _allow_all else None,
-    allow_credentials=True,
+    allow_origins=_origins if "*" not in _origins else ["*"],
+    allow_credentials=True if "*" not in _origins else False, # Credentials forbids wildcard
     allow_methods=["*"],
     allow_headers=["*"],
 )
