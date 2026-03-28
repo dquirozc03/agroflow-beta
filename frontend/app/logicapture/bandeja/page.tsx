@@ -1004,26 +1004,12 @@ export default function BandejaLogiCapture() {
 
                          {editSector === 'maestros' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                               <SearchableField 
-                                  label="Chofer (Nombre o DNI)"
-                                  icon={User}
-                                  value={editData.nombre_chofer}
-                                  onChange={(v: string) => setEditData({...editData, nombre_chofer: v})}
-                                  searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
-                                  onSelect={(res: any) => setEditData({
-                                     ...editData, 
-                                     nombre_chofer: res.nombre,
-                                     dni_chofer: res.dni,
-                                     licencia_chofer: res.licencia
-                                  })}
-                                  placeholder="Buscar chofer..."
-                               />
                                <div className="space-y-6">
                                   <SearchableField 
-                                     label="Buscar por DNI"
-                                     icon={ShieldCheck}
-                                     value={editData.dni_chofer}
-                                     onChange={(v: string) => setEditData({...editData, dni_chofer: v})}
+                                     label="Buscar Chofer (Nombre o DNI)"
+                                     icon={Search}
+                                     value={editData.nombre_chofer}
+                                     onChange={(v: string) => setEditData({...editData, nombre_chofer: v})}
                                      searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
                                      onSelect={(res: any) => setEditData({
                                         ...editData, 
@@ -1031,18 +1017,22 @@ export default function BandejaLogiCapture() {
                                         dni_chofer: res.dni,
                                         licencia_chofer: res.licencia
                                      })}
-                                     placeholder="8 dígitos..."
+                                     placeholder="Escriba para buscar..."
                                   />
+                               </div>
+                               <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-3 group/field">
-                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Licencia de Conducir</label>
-                                     <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl h-14 group-hover/field:border-emerald-100 transition-all px-4">
-                                        <Truck className="h-4 w-4 mr-3 text-slate-300 group-focus-within/field:text-emerald-500" />
-                                        <input 
-                                           value={editData.licencia_chofer} 
-                                           onChange={(e) => setEditData({...editData, licencia_chofer: e.target.value.toUpperCase()})}
-                                           placeholder="Ej: Q41..."
-                                           className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 h-full" 
-                                        />
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">DNI (Lectura)</label>
+                                     <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-not-allowed px-4">
+                                        <ShieldCheck className="h-4 w-4 mr-3 text-slate-300" />
+                                        <input value={editData.dni_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900" />
+                                     </div>
+                                  </div>
+                                  <div className="space-y-3 group/field">
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Licencia (Lectura)</label>
+                                     <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-not-allowed px-4">
+                                        <Truck className="h-4 w-4 mr-3 text-slate-300" />
+                                        <input value={editData.licencia_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900" />
                                      </div>
                                   </div>
                                </div>
