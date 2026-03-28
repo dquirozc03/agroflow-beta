@@ -111,7 +111,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-emerald-500 transition-colors">
         {label}
       </label>
-      <div className="relative">
+      <div className={cn("relative", error && "z-20 hover:z-30")}>
         <div className={cn(
           "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
           success ? "text-emerald-500" : "text-slate-300 group-focus-within:text-emerald-500"
@@ -139,7 +139,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
              <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
              {/* Tooltip Carlos Style - Centrado y Preventivo */}
-             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-50 origin-bottom">
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[100] origin-bottom">
                 {errorMsg}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
              </div>
