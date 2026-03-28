@@ -13,6 +13,7 @@ import {
   FileBarChart,
   LogOut,
   Zap,
+  History,
   ChevronLeft,
   ChevronRight,
   Sprout,
@@ -46,6 +47,7 @@ export function AppSidebar() {
       label: "LogiCapture",
       items: [
         { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
+        { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja" },
       ]
     },
     {
