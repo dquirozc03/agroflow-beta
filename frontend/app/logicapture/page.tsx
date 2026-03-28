@@ -143,11 +143,11 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
-            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
+            success && !error && !highlightError && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
             (error || highlightError) && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
           )}
         />
-        {success && (
+        {success && !error && !highlightError && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in-50">
              <CheckCircle2 className="h-5 w-5" />
           </div>
@@ -339,6 +339,9 @@ export default function LogiCaptureV2Page() {
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
     
+    // Al editar un campo, deja de estar validado hasta el siguiente blur/lookup
+    setValidatedFields(prev => prev.filter(f => f !== field));
+    
     // Al borrar placa, limpiar empresa y su info de forma reactiva
     if (field === "placaTracto" && !value) {
       setFormData(prev => ({ ...prev, empresa: "" }));
@@ -422,6 +425,8 @@ export default function LogiCaptureV2Page() {
             ...prev, 
             [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
          }));
+         // Quitamos de validados si es duplicado
+         setValidatedFields(prev => prev.filter(f => f !== field));
       } else {
          // Si existía un error previo de duplicado para este campo, lo borramos
          setFieldErrors(prev => {
@@ -429,6 +434,8 @@ export default function LogiCaptureV2Page() {
             if (next[field]?.includes("Duplicado")) delete next[field];
             return next;
          });
+         // Marcamos como validado
+         setValidatedFields(prev => [...new Set([...prev, field])]);
       }
     } catch (error) {
        console.error("Error check unique", error);
