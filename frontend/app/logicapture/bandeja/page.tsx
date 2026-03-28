@@ -77,13 +77,19 @@ export default function BandejaLogiCapture() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReg, setSelectedReg] = useState<any>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string, label: string, key: string) => {
     navigator.clipboard.writeText(text);
+    setCopiedField(key);
+    
+    // Toast opcional, pero priorizamos el cambio de icono solicitado
     toast.success(`${label} copiado`, {
       description: "Listo para pegar en SAP",
-      duration: 2000
+      duration: 1500
     });
+
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const fetchRegistros = async () => {
@@ -459,42 +465,13 @@ export default function BandejaLogiCapture() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="rounded-xl opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                                  onClick={() => copyToClipboard(String(item.value), item.label)}
+                                  onClick={() => copyToClipboard(String(item.value), item.label, item.key)}
                                 >
-                                   <Copy className="h-4 w-4" />
-                                </Button>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-
-                    {/* Sección de Precintos */}
-                    <div className="space-y-4 mt-8">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                          <ShieldCheck className="h-3 w-3" /> PRECINTOS RESTRICCIÓN
-                       </p>
-                       {Object.entries({
-                          "P. ADUANA": selectedReg.precinto_aduana,
-                          "P. OPERADOR": selectedReg.precinto_operador,
-                          "P. SENASA": selectedReg.precinto_senasa,
-                          "P. LINEA": selectedReg.precinto_linea,
-                          "P. BETA": selectedReg.precintos_beta
-                       }).map(([label, codes]: [string, any]) => (
-                          <div key={label} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
-                             <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</label>
-                                   <p className="text-xs font-bold text-emerald-700 tracking-widest">
-                                      {Array.isArray(codes) ? codes.join(" • ") : "-"}
-                                   </p>
-                                </div>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="rounded-xl opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                                  onClick={() => copyToClipboard(Array.isArray(codes) ? codes.join(", ") : "-", label)}
-                                >
-                                   <Copy className="h-4 w-4" />
+                                   {copiedField === item.key ? (
+                                      <CheckCircle2 className="h-4 w-4 text-emerald-500 animate-in zoom-in" />
+                                   ) : (
+                                      <Copy className="h-4 w-4" />
+                                   )}
                                 </Button>
                              </div>
                           </div>
