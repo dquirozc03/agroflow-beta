@@ -421,7 +421,7 @@ def export_to_excel(db: Session = Depends(get_db)):
         
         senasa_codes = ", ".join(r.precinto_senasa) if r.precinto_senasa else "**"
         linea_codes = ", ".join(r.precinto_linea) if r.precinto_linea else "**"
-        senasa_linea = f"SENASA: {senasa_codes} / PS.LIN: {linea_codes}"
+        senasa_linea = f"{senasa_codes} / PS.LIN: {linea_codes}"
         
         data.append({
             "FECHA EMBARQUE": r.fecha_registro.strftime("%Y-%m-%d") if r.fecha_registro else "-",

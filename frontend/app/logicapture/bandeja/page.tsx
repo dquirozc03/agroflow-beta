@@ -715,7 +715,7 @@ export default function BandejaLogiCapture() {
                          { label: "PRECINTO OPERADOR", value: selectedReg.precinto_operador?.join(" / "), key: "ope" },
                          { 
                             label: "SENASA/PS LÍNEA", 
-                            value: `SENASA: ${selectedReg.precinto_senasa?.join(" / ") || "**"} / PS.LIN: ${selectedReg.precinto_linea?.join(" / ") || "**"}`, 
+                            value: `${selectedReg.precinto_senasa?.join(" / ") || "**"} / PS.LIN: ${selectedReg.precinto_linea?.join(" / ") || "**"}`, 
                             key: "senasa_linea" 
                          },
                          { label: "PARTIDA REGISTRAL", value: selectedReg.partida_registral, key: "partida" },
