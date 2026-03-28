@@ -309,6 +309,21 @@ def update_registro(id: int, req: LogiCaptureSaveRequest, db: Session = Depends(
     db.commit()
     return {"status": "success", "message": "Registro actualizado correctamente"}
 
+@router.patch("/registros/{id}/status")
+def change_registro_status(id: int, status: str, db: Session = Depends(get_db)):
+    """Cambio de estado administrativo (Cerrar/Anular)."""
+    reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    clean_status = status.upper()
+    if clean_status not in ["PENDIENTE", "PROCESADO", "ANULADO"]:
+        raise HTTPException(status_code=400, detail="Estatus no válido")
+        
+    reg.status = clean_status
+    db.commit()
+    return {"status": "success", "message": f"Registro marcado como {clean_status}"}
+
 @router.get("/export/excel")
 def export_to_excel(db: Session = Depends(get_db)):
     """Generación de reporte Excel Premium con formateo de tabla."""

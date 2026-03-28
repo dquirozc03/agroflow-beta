@@ -82,13 +82,28 @@ export default function BandejaLogiCapture() {
     navigator.clipboard.writeText(text);
     setCopiedField(key);
     
-    // Toast opcional, pero priorizamos el cambio de icono solicitado
     toast.success(`${label} copiado`, {
       description: "Listo para pegar en SAP",
       duration: 1500
     });
 
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    toast.promise(
+      fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}/status?status=${newStatus}`, { method: 'PATCH' })
+        .then(async res => {
+           if (!res.ok) throw new Error();
+           await fetchRegistros();
+           setIsPanelOpen(false);
+        }),
+      {
+        loading: 'Actualizando Estatus en el Oráculo...',
+        success: `Registro marcado como ${newStatus} con éxito 💎`,
+        error: 'No se pudo cambiar el estatus del registro'
+      }
+    );
   };
 
   const fetchRegistros = async () => {
@@ -380,7 +395,10 @@ export default function BandejaLogiCapture() {
                                 )}
                                 
                                 {activeTab === "PENDIENTE" && (
-                                   <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1">
+                                   <DropdownMenuItem 
+                                     className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
+                                     onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
+                                   >
                                       <CheckCircle2 className="h-4 w-4" /> Cerrar Operación
                                    </DropdownMenuItem>
                                 )}
@@ -480,8 +498,11 @@ export default function BandejaLogiCapture() {
 
                  <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex gap-4">
                     {selectedReg.status === "PENDIENTE" ? (
-                       <Button className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20">
-                          Procesar Registro
+                       <Button 
+                         className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20"
+                         onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
+                       >
+                          Cerrar Operación (Enviar a Procesados)
                        </Button>
                     ) : (
                        <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12">
