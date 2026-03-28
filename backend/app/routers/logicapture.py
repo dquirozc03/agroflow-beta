@@ -80,6 +80,10 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
         "dam": emb.dam if emb else "PENDIENTE",
         "contenedor": emb.contenedor if emb else "PENDIENTE",
+        # Jalar desde posicionamiento real
+        "planta": pos.PLANTA_LLENADO if pos else None,
+        "cultivo": pos.CULTIVO if pos else None,
+        "codigo_sap": getattr(pos, 'CODIGO_SAP', None), # Si existe en el modelo
         "status": "success"
     }
 

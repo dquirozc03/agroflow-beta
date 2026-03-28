@@ -328,7 +328,9 @@ export default function LogiCaptureV2Page() {
         booking: cleanBooking,
         ordenBeta: result.orden_beta || "",
         dam: cleanDam || "",
-        contenedor: result.contenedor || ""
+        contenedor: result.contenedor || "",
+        planta: result.planta || "",
+        cultivo: result.cultivo || "",
       }));
       
       const found: string[] = [];
