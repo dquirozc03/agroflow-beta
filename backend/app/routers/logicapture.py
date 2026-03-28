@@ -5,12 +5,29 @@ from app.database import get_db
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
 from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
+from app.models.logicapture import LogiCaptureRegistro
 from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/api/v1/logicapture",
     tags=["LogiCapture Core"]
 )
+
+class LogiCaptureSaveRequest(BaseModel):
+    booking: str
+    ordenBeta: str
+    contenedor: str
+    dam: str
+    dni: str
+    placaTracto: str
+    placaCarreta: str
+    empresa: str
+    precintoAduana: list[str]
+    precintoOperador: list[str]
+    precintoSenasa: list[str]
+    precintoLinea: list[str]
+    precintosBeta: list[str]
+    termografos: list[str]
 
 class LookupResponse(BaseModel):
     booking: str
@@ -96,3 +113,27 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
         "placa": trailer.placa_carreta,
         "status": "success"
     }
+
+@router.post("/register")
+def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
+    """Guarda registro final de LogiCapture."""
+    new_reg = LogiCaptureRegistro(
+        booking=req.booking,
+        orden_beta=req.ordenBeta,
+        contenedor=req.contenedor,
+        dam=req.dam,
+        dni_chofer=req.dni,
+        placa_tracto=req.placaTracto,
+        placa_carreta=req.placaCarreta,
+        empresa_transporte=req.empresa,
+        precinto_aduana=req.precintoAduana,
+        precinto_operador=req.precintoOperador,
+        precinto_senasa=req.precintoSenasa,
+        precinto_linea=req.precintoLinea,
+        precintos_beta=req.precintosBeta,
+        termografos=req.termografos
+    )
+    db.add(new_reg)
+    db.commit()
+    db.refresh(new_reg)
+    return {"status": "success", "id": new_reg.id}

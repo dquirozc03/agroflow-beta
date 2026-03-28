@@ -42,18 +42,27 @@ interface MultiInputProps {
   values: string[];
   onChange: (newValues: string[]) => void;
   icon: any;
+  autoFocus?: boolean;
 }
 
-function MultiInput({ label, placeholder, values, onChange, icon: Icon }: MultiInputProps) {
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus }: MultiInputProps) {
   const [inputValue, setInputValue] = useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && inputValue.trim()) {
+    if (e.key === "Enter") {
+      const cleanValue = inputValue.trim().toUpperCase();
+      if (!cleanValue) return;
+
       e.preventDefault();
-      if (!values.includes(inputValue.trim())) {
-        onChange([...values, inputValue.trim()]);
+      // Silencioso: Solo añade si no existe, limpia en cualquier caso
+      if (!values.includes(cleanValue)) {
+        onChange([...values, cleanValue]);
       }
       setInputValue("");
+      
+      // Asegurar que el foco se mantenga para el siguiente escaneo (pistola modo ráfaga)
+      setTimeout(() => inputRef.current?.focus(), 10);
     } else if (e.key === "Backspace" && !inputValue && values.length > 0) {
       onChange(values.slice(0, -1));
     }
@@ -81,6 +90,8 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon }: MultiI
           </div>
         ))}
         <input
+          ref={inputRef}
+          autoFocus={autoFocus}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -379,6 +390,31 @@ export default function LogiCaptureV2Page() {
     }
   };
 
+  const handleSave = async () => {
+    if (!formData.booking || !formData.dam || !formData.contenedor) {
+      toast.error("Complete los datos de embarque antes de guardar");
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) throw new Error("Error al persistir registro");
+      
+      toast.success("Operación guardada y confirmada con éxito");
+      // Opcional: Limpiar pantalla o redirigir
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
       <AppSidebar />
@@ -618,6 +654,7 @@ export default function LogiCaptureV2Page() {
                         values={formData.precintoAduana} 
                         onChange={(v) => updateField("precintoAduana", v)}
                         icon={ShieldCheck}
+                        autoFocus
                      />
                      <MultiInput 
                         label="Precinto Operador" 
@@ -661,9 +698,13 @@ export default function LogiCaptureV2Page() {
                     <button className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300">
                       Guardar como borrador
                     </button>
-                    <button className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative">
+                    <button 
+                       onClick={handleSave}
+                       disabled={isSearching}
+                       className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative disabled:opacity-50"
+                    >
                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                       <span className="relative z-10">Guardar y Confirmar Salida</span>
+                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar y Confirmar Salida"}</span>
                        <ArrowRight className="h-5 w-5 text-emerald-400 group-hover:translate-x-1 transition-transform relative z-10" />
                     </button>
                   </div>
