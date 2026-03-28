@@ -27,6 +27,8 @@ import {
   Camera,
   Loader2,
   AlertTriangle,
+  AlertCircle,
+  Info,
   Ship,
   Plane
 } from "lucide-react";
@@ -272,6 +274,7 @@ export default function LogiCaptureV2Page() {
   const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
   const [showSuccess, setShowSuccess] = useState(false);
   const [successTitle, setSuccessTitle] = useState("");
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -516,11 +519,7 @@ export default function LogiCaptureV2Page() {
   }, []);
 
   const handleSave = async () => {
-    if (!formData.booking || !formData.dam || !formData.contenedor) {
-      toast.error("Complete los datos de embarque antes de guardar");
-      return;
-    }
-
+    setServerError(null);
     setIsSearching(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
@@ -531,7 +530,8 @@ export default function LogiCaptureV2Page() {
 
       if (!response.ok) {
          const errData = await response.json();
-         throw new Error(errData.detail || "Error al persistir registro");
+         setServerError(errData.detail || "Hubo un problema al procesar el registro. Verifique los datos.");
+         return;
       }
       
       const resData = await response.json();
@@ -539,9 +539,7 @@ export default function LogiCaptureV2Page() {
       setShowSuccess(true);
       // Mantenemos la data visible por petición del usuario
     } catch (error: any) {
-      // Para errores, usamos toast pero solo si es un error real de sistema 
-      // (aunque el usuario pida quitarlos, un error crítico debe avisar)
-      toast.error(error.message, { position: "top-center" });
+      setServerError("Error de conexión con el servidor. Intente nuevamente en unos momentos.");
     } finally {
       setIsSearching(false);
     }
@@ -568,6 +566,7 @@ export default function LogiCaptureV2Page() {
     setValidatedFields([]);
     setFieldErrors({});
     setBookingError(false);
+    setServerError(null);
     localStorage.removeItem("logicapture_draft");
     toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
   };
@@ -863,9 +862,18 @@ export default function LogiCaptureV2Page() {
 
                {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
                 <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-3xl border border-slate-100 p-6 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
-                  <div className="flex items-center gap-3 mb-5">
-                     <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
+                  <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                         <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
+                      </div>
+                      {/* Espacio para estatus de la sección */}
+                      {serverError && (
+                         <div className="flex items-center gap-2 text-rose-500 animate-in slide-in-from-right-4 duration-500">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Problema Detectado</span>
+                         </div>
+                      )}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -920,23 +928,54 @@ export default function LogiCaptureV2Page() {
                      />
                   </div>
 
-                  {/* Acciones Finales Carlos Style */}
-                  <div className="mt-16 flex items-center justify-end border-t border-slate-50 pt-10 gap-6">
-                    <button 
-                       onClick={handleSaveDraft}
-                       className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300 px-6 py-3 rounded-2xl hover:bg-emerald-50"
-                    >
-                      Guardar como borrador
-                    </button>
-                    <button 
-                       onClick={handleSave}
-                       disabled={isSearching}
-                       className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative disabled:opacity-50"
-                    >
-                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar Registro"}</span>
-                       <ArrowRight className="h-5 w-5 text-emerald-400 group-hover:translate-x-1 transition-transform relative z-10" />
-                    </button>
+                  {/* PANEL DE ESTATUS AMIGABLE 'CARLOS STYLE' */}
+                  <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+                     <div className="max-w-[60%] min-h-[40px] flex items-center">
+                        {serverError ? (
+                           <div className="flex items-start gap-4 text-rose-700 bg-rose-50/50 p-4 rounded-2xl border border-rose-100/50 animate-in slide-in-from-left-4 duration-500 shadow-sm">
+                              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-800">No se pudo procesar</p>
+                                 <p className="text-sm font-medium leading-tight opacity-90 leading-relaxed">{serverError}</p>
+                              </div>
+                           </div>
+                        ) : isSearching ? (
+                           <div className="flex items-center gap-4 text-emerald-700 animate-pulse">
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Sincronizando con LogiCapture Central...</p>
+                           </div>
+                        ) : (
+                           <div className="flex items-start gap-4 text-slate-400 group-hover:text-emerald-600/50 transition-colors duration-500">
+                              <Info className="h-5 w-5 mt-0.5" />
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Operación Protegida</p>
+                                 <p className="text-[11px] font-medium leading-tight max-w-sm">Verifique que todos los datos sean legibles. El sistema validará la integridad de la operación al guardar.</p>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     <div className="flex items-center gap-4">
+                        <button 
+                           onClick={handleSaveDraft}
+                           className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-all p-3 px-6"
+                        >
+                           Borrador Local
+                        </button>
+                        <button 
+                           onClick={handleSave}
+                           disabled={isSearching}
+                           className={cn(
+                              "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
+                              isSearching 
+                                 ? "bg-slate-100 text-slate-400 cursor-wait" 
+                                 : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
+                           )}
+                        >
+                           {isSearching ? "Sincronizando..." : "Guardar Registro"}
+                           {!isSearching && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                        </button>
+                     </div>
                   </div>
                </div>
 
