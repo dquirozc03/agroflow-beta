@@ -118,18 +118,19 @@ interface FormFieldProps {
   errorMsg?: string;
   onBlur?: () => void;
   helperText?: string;
+  highlightError?: boolean;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText, highlightError }: FormFieldProps) {
   return (
     <div className="space-y-3 group/field">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
         {label}
       </label>
-      <div className={cn("relative group/input", error && "z-20 hover:z-30")}>
+      <div className={cn("relative group/input", (error || highlightError) && "z-20 hover:z-30")}>
         <div className={cn(
           "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
-          success ? "text-emerald-500" : "text-slate-300 group-focus-within:text-emerald-500"
+          success ? "text-emerald-500" : (error || highlightError ? "text-rose-400" : "text-slate-300 group-focus-within:text-emerald-500")
         )}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
         </div>
@@ -143,7 +144,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
             success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
-            error && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
+            (error || highlightError) && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
           )}
         />
         {success && (
@@ -674,15 +675,27 @@ export default function LogiCaptureV2Page() {
             {/* CUERPO DEL FORMULARIO: Columnas de Datos */}
             <div className="grid grid-cols-12 gap-8">
                
-               {/* BLOQUE 1: DATOS DE EMBARQUE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[2.5rem]" />
-                  <div className="flex items-center gap-3 mb-10">
-                     <BadgeCheck className="h-5 w-5 text-emerald-600" />
-                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
-                  </div>
+                {/* BLOQUE 1: DATOS DE EMBARQUE */}
+                <div className="col-span-12 lg:col-span-6 bg-white rounded-[1.75rem] border border-slate-100 p-7 shadow-sm relative">
+                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[1.75rem]" />
+                   <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                         <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                      </div>
+                      
+                      {/* Oráculo de Unicidad: Alerta Centralizada (Reference Drawing) */}
+                      {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
+                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+                           <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
+                           <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">
+                              {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
+                           </span>
+                        </div>
+                      )}
+                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <FormField 
                         label="Booking / Reserva" 
                         placeholder="BK-XXXXXXXX" 
@@ -690,8 +703,9 @@ export default function LogiCaptureV2Page() {
                         value={formData.booking} 
                         onChange={(v) => updateField("booking", v)} 
                         onBlur={() => handleFieldBlur("booking", formData.booking)}
-                        error={bookingError || !!fieldErrors.booking}
-                        errorMsg={bookingError ? "Booking no está registrado en posicionamiento" : fieldErrors.booking}
+                        error={bookingError}
+                        errorMsg="Booking no registrado en posicionamiento"
+                        highlightError={!!fieldErrors.booking}
                      />
                      <FormField 
                         label="Orden Beta" 
@@ -702,8 +716,7 @@ export default function LogiCaptureV2Page() {
                         onBlur={() => handleFieldBlur("ordenBeta", formData.ordenBeta)}
                         readOnly
                         success={validatedFields.includes("ordenBeta")}
-                        error={!!fieldErrors.ordenBeta}
-                        errorMsg={fieldErrors.ordenBeta}
+                        highlightError={!!fieldErrors.ordenBeta}
                      />
                      <FormField 
                         label="Número Contenedor" 
@@ -714,8 +727,7 @@ export default function LogiCaptureV2Page() {
                         onBlur={() => handleFieldBlur("contenedor", formData.contenedor)}
                         readOnly
                         success={validatedFields.includes("contenedor")}
-                        error={!!fieldErrors.contenedor}
-                        errorMsg={fieldErrors.contenedor}
+                        highlightError={!!fieldErrors.contenedor}
                      />
                      <FormField 
                         label="Número DAM" 
@@ -726,8 +738,7 @@ export default function LogiCaptureV2Page() {
                         onBlur={() => handleFieldBlur("dam", formData.dam)}
                         readOnly
                         success={validatedFields.includes("dam")}
-                        error={!!fieldErrors.dam}
-                        errorMsg={fieldErrors.dam}
+                        highlightError={!!fieldErrors.dam}
                      />
                   </div>
 
@@ -757,14 +768,14 @@ export default function LogiCaptureV2Page() {
                </div>
 
                {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2.5rem]" />
-                  <div className="flex items-center gap-3 mb-10">
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2rem]" />
+                  <div className="flex items-center gap-3 mb-6">
                      <Truck className="h-5 w-5 text-slate-900" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Información del Transporte</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <FormField 
                         label="DNI del Chofer" 
                         placeholder="XXXXXXXX" 
@@ -812,13 +823,13 @@ export default function LogiCaptureV2Page() {
                </div>
 
                {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
-                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
-                  <div className="flex items-center gap-3 mb-10">
+                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-[2rem] border border-slate-100 p-7 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
+                  <div className="flex items-center gap-3 mb-6">
                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      <MultiInput 
                         label="Precinto Aduana" 
                         placeholder="Ej: AD123" 
