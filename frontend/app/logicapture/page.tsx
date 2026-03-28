@@ -393,6 +393,28 @@ export default function LogiCaptureV2Page() {
     }
   };
 
+  const handleSaveDraft = () => {
+    localStorage.setItem("logicapture_draft", JSON.stringify({
+      formData,
+      validatedFields,
+      fieldErrors,
+      transportMode
+    }));
+    toast.info("Borrador guardado localmente (Congelado)");
+  };
+
+  useEffect(() => {
+    const draft = localStorage.getItem("logicapture_draft");
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      setFormData(parsed.formData);
+      setValidatedFields(parsed.validatedFields || []);
+      setFieldErrors(parsed.fieldErrors || {});
+      setTransportMode(parsed.transportMode || "maritimo");
+      toast.success("Borrador recuperado automáticamente");
+    }
+  }, []);
+
   const handleSave = async () => {
     if (!formData.booking || !formData.dam || !formData.contenedor) {
       toast.error("Complete los datos de embarque antes de guardar");
@@ -724,7 +746,10 @@ export default function LogiCaptureV2Page() {
 
                   {/* Acciones Finales Carlos Style */}
                   <div className="mt-16 flex items-center justify-end border-t border-slate-50 pt-10 gap-6">
-                    <button className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300">
+                    <button 
+                       onClick={handleSaveDraft}
+                       className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300 px-6 py-3 rounded-2xl hover:bg-emerald-50"
+                    >
                       Guardar como borrador
                     </button>
                     <button 
@@ -733,7 +758,7 @@ export default function LogiCaptureV2Page() {
                        className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative disabled:opacity-50"
                     >
                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar y Confirmar Salida"}</span>
+                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar Registro"}</span>
                        <ArrowRight className="h-5 w-5 text-emerald-400 group-hover:translate-x-1 transition-transform relative z-10" />
                     </button>
                   </div>
