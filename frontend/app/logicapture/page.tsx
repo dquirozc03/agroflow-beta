@@ -26,7 +26,9 @@ import {
   RefreshCw,
   Camera,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Ship,
+  Plane
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -231,6 +233,7 @@ export default function LogiCaptureV2Page() {
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
   const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
+  const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -437,8 +440,34 @@ export default function LogiCaptureV2Page() {
                    </h1>
                 </div>
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] ml-13">
-                  Registro Operativo de Salida de Contenedores
+                  Registro Operativo de Salida - Fase 3
                 </p>
+              </div>
+
+              {/* Selector de Modalidad Carlos Style */}
+              <div className="flex bg-white/50 backdrop-blur-sm p-2 rounded-[1.8rem] border border-slate-100 shadow-sm gap-2">
+                {[
+                  { id: "maritimo", icon: Ship, label: "Marítimo" },
+                  { id: "terrestre", icon: Truck, label: "Terrestre" },
+                  { id: "aereo", icon: Plane, label: "Aéreo" }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setTransportMode(mode.id as any)}
+                    className={cn(
+                      "group relative flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 overflow-hidden",
+                      transportMode === mode.id 
+                        ? "bg-emerald-950 text-white shadow-xl shadow-emerald-900/10 scale-105" 
+                        : "hover:bg-emerald-50 text-slate-400 hover:text-emerald-700"
+                    )}
+                  >
+                    <mode.icon className={cn("h-5 w-5 transition-transform duration-500 group-hover:scale-110", transportMode === mode.id ? "text-emerald-400" : "")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{mode.label}</span>
+                    {transportMode === mode.id && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-scan-slow opacity-30" />
+                    )}
+                  </button>
+                ))}
               </div>
 
               <div className="flex items-center gap-3">
