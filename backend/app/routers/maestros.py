@@ -8,6 +8,7 @@ import re
 
 from app.database import get_db
 from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer
+from app.models.embarque import ControlEmbarque, clean_container_code
 from app.utils.logging import logger
 from app.services.ocr import ocr_service
 from pydantic import BaseModel
@@ -45,6 +46,17 @@ class ChoferResponse(ChoferCreate):
     class Config:
         from_attributes = True
 
+class EmbarqueCreate(BaseModel):
+    booking: str
+    dam: str
+    contenedor: str
+
+class EmbarqueResponse(EmbarqueCreate):
+    id: int
+    
+    class Config:
+        from_attributes = True
+
 router = APIRouter(
     prefix="/api/v1/maestros",
     tags=["Maestros"]
@@ -63,6 +75,9 @@ async def bulk_upload_transportistas(
     """
     Carga masiva de transportistas y vehículos desde el Excel 'ASIGNACION DE UNIDADES'.
     Mapeo:
+    - Columna B (Indice 1): Booking
+    - Columna C (Indice 2): DAM (Única)
+    - Columna D (Indice 3): Contenedor
     - Columna E (Indice 4): Empresa de Transporte
     - Columna F (Indice 5): RUC
     - Columna G (Indice 6): Licencia
@@ -88,6 +103,11 @@ async def bulk_upload_transportistas(
                 licencia_raw = str(row[6]).strip() if pd.notna(row[6]) else None
                 conductor_raw = str(row[7]).strip() if pd.notna(row[7]) else None
                 placas_raw = str(row[8]).strip() if pd.notna(row[8]) else ""
+                
+                # Datos de Embarque
+                booking_raw = str(row[1]).strip() if pd.notna(row[1]) else None
+                dam_raw = str(row[2]).strip() if pd.notna(row[2]) else None
+                contenedor_raw = str(row[3]).strip() if pd.notna(row[3]) else None
 
                 # Saltar filas vacías o la fila de cabeceras
                 if not ruc or ruc == "nan" or ruc.upper() == "RUC":
@@ -153,7 +173,24 @@ async def bulk_upload_transportistas(
                             chofer.apellido_paterno = ape_pat.upper()
                             chofer.apellido_materno = ape_mat.upper()
 
-                # 3. Procesar Placas (Tracto/Carreta)
+                # 3. Registrar/Actualizar Control de Embarque
+                if dam_raw and dam_raw.lower() != "nan":
+                    # DAM es única, buscamos si ya existe
+                    embarque = db.query(ControlEmbarque).filter(ControlEmbarque.dam == dam_raw).first()
+                    
+                    if not embarque:
+                        new_emb = ControlEmbarque(
+                            booking=booking_raw or "SIN BOOKING",
+                            dam=dam_raw,
+                            contenedor=contenedor_raw or "SIN CONTENEDOR"
+                        )
+                        db.add(new_emb)
+                    else:
+                        # Actualizar datos si la DAM ya existe
+                        if booking_raw: embarque.booking = booking_raw
+                        if contenedor_raw: embarque.contenedor = clean_container_code(contenedor_raw)
+
+                # 4. Procesar Placas (Tracto/Carreta)
                 # Formato esperado: PLACA1/PLACA2 o solo PLACA1
                 partes = placas_raw.split('/')
                 placa_t = clean_plate(partes[0]) if len(partes) > 0 else ""
@@ -325,3 +362,76 @@ async def ocr_licencia(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error en OCR Licencia: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+@router.post("/ocr/embarque")
+async def ocr_embarque(file: UploadFile = File(...)):
+    """
+    Scanner de Control de Embarque:
+    Busca patrones de DAM (18-20 chars) y Contenedor ISO (4 letras + 7 números).
+    """
+    try:
+        contents = await file.read()
+        is_pdf = file.filename.lower().endswith('.pdf')
+        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
+        
+        # Lógica selectiva para DAM
+        # Ejemplo: 127-2026-10-015810 (Pattern SUNAT)
+        dam_pattern = r'\d{3}-\d{4}-\d{2}-\d{6}'
+        dam_match = re.search(dam_pattern, raw_text)
+        
+        # Lógica selectiva para Contenedor (MSCU1234567)
+        container_pattern = r'[A-Z]{4}\d{7}'
+        container_match = re.search(container_pattern, raw_text.replace(" ", ""))
+        
+        return {
+            "status": "success",
+            "data": {
+                "dam": dam_match.group(0) if dam_match else None,
+                "contenedor": container_match.group(0) if container_match else None
+            },
+            "raw_text": raw_text
+        }
+    except Exception as e:
+        logger.error(f"Error en OCR Embarque: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/embarques", response_model=List[EmbarqueResponse])
+def list_embarques(db: Session = Depends(get_db)):
+    return db.query(ControlEmbarque).order_by(ControlEmbarque.fecha_creacion.desc()).all()
+
+@router.post("/embarques", response_model=EmbarqueResponse)
+def create_embarque(data: EmbarqueCreate, db: Session = Depends(get_db)):
+    # Validar DAM único
+    existing = db.query(ControlEmbarque).filter(ControlEmbarque.dam == data.dam).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"La DAM {data.dam} ya está registrada")
+    
+    new_e = ControlEmbarque(**data.model_dump())
+    db.add(new_e)
+    db.commit()
+    db.refresh(new_e)
+    return new_e
+
+@router.put("/embarques/{id}", response_model=EmbarqueResponse)
+def update_embarque(id: int, data: EmbarqueCreate, db: Session = Depends(get_db)):
+    e = db.query(ControlEmbarque).filter(ControlEmbarque.id == id).first()
+    if not e:
+        raise HTTPException(status_code=404, detail="Embarque no encontrado")
+    
+    # Aplicar limpieza al contenedor explícitamente si se actualiza
+    v_data = data.model_dump()
+    v_data['contenedor'] = clean_container_code(v_data['contenedor'])
+    
+    for key, value in v_data.items():
+        setattr(e, key, value)
+    
+    db.commit()
+    return e
+
+@router.delete("/embarques/{id}")
+def delete_embarque(id: int, db: Session = Depends(get_db)):
+    e = db.query(ControlEmbarque).filter(ControlEmbarque.id == id).first()
+    if not e:
+        raise HTTPException(status_code=404, detail="Embarque no encontrado")
+    
+    db.delete(e)
+    db.commit()
+    return {"status": "success"}

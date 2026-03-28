@@ -52,6 +52,7 @@ export function AppSidebar() {
       label: "Datos Maestros",
       items: [
         { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
+        { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams" },
         { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
         { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos" },
         { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes" },

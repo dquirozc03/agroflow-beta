@@ -14,6 +14,7 @@ try:
     from app.models.pedido import PedidoComercial
     from app.models.posicionamiento import Posicionamiento
     from app.models.auditoria import RegistroEvento
+    from app.models.embarque import ControlEmbarque
     print("📦 Modelos cargados correctamente.")
 except ImportError as e:
     print(f"⚠️ Error al cargar modelos: {e}")
