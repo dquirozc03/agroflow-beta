@@ -28,6 +28,10 @@ import {
   SheetTitle,
   SheetDescription
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { 
@@ -76,6 +80,7 @@ export default function BandejaLogiCapture() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReg, setSelectedReg] = useState<any>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, label: string, key: string) => {
@@ -97,6 +102,8 @@ export default function BandejaLogiCapture() {
            if (!res.ok) throw new Error();
            await fetchRegistros();
            setIsPanelOpen(false);
+           setIsSuccessOpen(true); // Abrir modal premium
+           setTimeout(() => setIsSuccessOpen(false), 2500); // Auto-cierre elegante
         }),
       {
         loading: 'Actualizando Estatus en el Oráculo...',
@@ -518,6 +525,37 @@ export default function BandejaLogiCapture() {
            )}
         </SheetContent>
       </Sheet>
+
+      {/* Modal de Éxito Premium - ELIMINACIÓN DE TOAST FEO */}
+      <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
+         <DialogContent className="sm:max-w-md bg-emerald-950 border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl shadow-emerald-500/20 pointer-events-auto">
+            <div className="relative p-12 flex flex-col items-center text-center gap-6">
+               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-950 opacity-50 pointer-events-none" />
+               
+               <div className="h-24 w-24 bg-emerald-500/20 rounded-full flex items-center justify-center animate-in zoom-in spin-in duration-700">
+                  <div className="h-16 w-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                     <CheckCircle2 className="h-8 w-8 text-white font-black" />
+                  </div>
+               </div>
+
+               <div className="space-y-2 relative z-10">
+                  <h2 className="text-4xl font-black tracking-tighter text-white font-['Outfit'] animate-in slide-in-from-bottom-4 duration-500">
+                     PROCESADO
+                  </h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
+                     Operación cerrada con éxito en el oráculo
+                  </p>
+               </div>
+
+               <Button 
+                  onClick={() => setIsSuccessOpen(false)}
+                  className="mt-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest text-[10px] h-10 px-8 border border-white/10 transition-all z-10"
+               >
+                  Entendido
+               </Button>
+            </div>
+         </DialogContent>
+      </Dialog>
     </div>
   );
 }
