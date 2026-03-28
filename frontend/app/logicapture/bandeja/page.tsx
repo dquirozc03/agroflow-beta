@@ -14,7 +14,6 @@ import {
   ArrowUpDown,
   Calendar,
   Truck,
-  ShieldCheck,
   RefreshCw,
   Edit3,
   Trash2,
