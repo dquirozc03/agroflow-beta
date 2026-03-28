@@ -700,7 +700,7 @@ export default function LogiCaptureV2Page() {
                                  "w-2 h-2 rounded-full",
                                  formData.tratamientoBuque ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                               )} />
-                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Buque</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Tratamiento en Buque</span>
                            </button>
                          )}
                       </div>
