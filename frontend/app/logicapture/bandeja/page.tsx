@@ -45,6 +45,15 @@ import {
 } from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { Calendar as UICalendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Clock } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -1073,20 +1082,76 @@ export default function BandejaLogiCapture() {
                          )}
 
                          {editSector === 'fecha' && (
-                            <div className="flex flex-col items-center gap-6 p-10 bg-emerald-50/20 rounded-[2.5rem] border border-emerald-100/50">
-                               <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shadow-inner">
-                                  <Calendar className="h-10 w-10" />
+                            <div className="flex flex-col items-center gap-10 p-12 bg-emerald-50/10 rounded-[3rem] border border-emerald-100/50 shadow-inner max-w-2xl mx-auto">
+                               <div className="flex gap-8 w-full">
+                                  {/* Selector de Fecha Carlos Style 💎 */}
+                                  <div className="flex-1 space-y-4">
+                                     <div className="flex items-center gap-2 ml-2">
+                                        <Calendar className="h-3 w-3 text-emerald-500" />
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Oficial</span>
+                                     </div>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                           <button className="w-full h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex flex-col items-center justify-center gap-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group outline-none">
+                                              <span className="text-3xl font-black text-emerald-950 font-['Outfit'] group-hover:scale-110 transition-transform">
+                                                 {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "dd") : "--"}
+                                              </span>
+                                              <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
+                                                 {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "MMMM", { locale: es }) : "Seleccionar"}
+                                              </span>
+                                           </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-2xl" align="center">
+                                           <UICalendar
+                                              mode="single"
+                                              selected={editData.fecha_embarque ? new Date(editData.fecha_embarque) : undefined}
+                                              onSelect={(date) => {
+                                                 if (date) {
+                                                    const current = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                    date.setHours(current.getHours());
+                                                    date.setMinutes(current.getMinutes());
+                                                    setEditData({...editData, fecha_embarque: date.toISOString()});
+                                                 }
+                                              }}
+                                              className="bg-white"
+                                           />
+                                        </PopoverContent>
+                                     </Popover>
+                                  </div>
+
+                                  {/* Selector de Hora Carlos Style 💎 */}
+                                  <div className="flex-1 space-y-4">
+                                     <div className="flex items-center gap-2 ml-2">
+                                        <Clock className="h-3 w-3 text-amber-500" />
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora de Salida</span>
+                                     </div>
+                                     <div className="relative group">
+                                        <input 
+                                          type="time" 
+                                          value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "HH:mm") : ""}
+                                          onChange={(e) => {
+                                             const val = e.target.value;
+                                             if (!val) return;
+                                             const [h, m] = val.split(":");
+                                             const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                             date.setHours(parseInt(h));
+                                             date.setMinutes(parseInt(m));
+                                             setEditData({...editData, fecha_embarque: date.toISOString()});
+                                          }}
+                                          className="w-full h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex items-center justify-center text-3xl font-black text-emerald-950 font-['Outfit'] text-center outline-none focus:border-amber-500 focus:shadow-xl focus:shadow-amber-500/10 transition-all cursor-pointer"
+                                        />
+                                        <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+                                           <span className="text-[10px] font-black text-amber-600/60 uppercase tracking-[0.2em]">Formato 24H</span>
+                                        </div>
+                                     </div>
+                                  </div>
                                </div>
-                               <div className="text-center space-y-2">
-                                  <h4 className="text-xl font-black text-emerald-950 uppercase tracking-tighter">Ajuste de Fecha de Embarque</h4>
-                                  <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest">Establezca la fecha oficial de salida para este registro</p>
+
+                               <div className="bg-emerald-950/5 p-6 rounded-[2rem] border border-emerald-100/30 w-full text-center">
+                                  <p className="text-[11px] font-bold text-emerald-800/80">
+                                     Embarque programado para el <span className="font-black text-emerald-950">{editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "PPPP", { locale: es }) : "---"}</span>
+                                  </p>
                                </div>
-                               <Input 
-                                 type="datetime-local" 
-                                 value={editData.fecha_embarque ? new Date(editData.fecha_embarque).toISOString().slice(0, 16) : ""}
-                                 onChange={(e) => setEditData({...editData, fecha_embarque: e.target.value})}
-                                 className="max-w-md h-16 rounded-3xl border-emerald-200 bg-white shadow-2xl shadow-emerald-950/5 text-lg font-black text-emerald-950 px-8 text-center"
-                               />
                             </div>
                          )}
                       </div>
