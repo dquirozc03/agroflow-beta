@@ -145,7 +145,7 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicat
   );
 }
 
-function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSelect, searchUrl, readOnly, loading }: any) {
+function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSelect, searchUrl, readOnly, loading, hideResults }: any) {
   const [results, setResults] = useState<any[]>([]);
   const [isSearchingLocal, setIsSearchingLocal] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -187,7 +187,7 @@ function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSe
         />
         {(loading || isSearchingLocal) && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 absolute right-4" />}
       </div>
-      {showResults && !readOnly && (
+      {showResults && !readOnly && !hideResults && (
         <div className="absolute top-[110%] left-0 right-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[200] overflow-hidden animate-in fade-in slide-in-from-top-2">
            <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados de Búsqueda</span>
@@ -201,7 +201,12 @@ function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSe
                        <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 uppercase">
                           {res.nombre || res.placa}
                        </span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni || res.marca || res.transportista}</span>
+                       <div className="flex flex-wrap gap-1 items-center">
+                          {res.dni && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni}</span>}
+                          {res.marca && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.marca}</span>}
+                          {res.marca && res.transportista && <span className="text-[10px] font-bold text-slate-400 opacity-30">•</span>}
+                          {res.transportista && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{res.transportista}</span>}
+                       </div>
                     </div>
                  </div>
               ))}
@@ -1066,6 +1071,7 @@ export default function BandejaLogiCapture() {
                                   searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/carreta/search`}
                                   onSelect={(res: any) => setEditData({...editData, placa_carreta: res.placa})}
                                   placeholder="XYZ-456"
+                                  hideResults={true}
                                />
                             </div>
                          )}
