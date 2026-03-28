@@ -283,6 +283,14 @@ export default function LogiCaptureV2Page() {
 
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
+    // Limpiar error específico al editar
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const newState = { ...prev };
+        delete newState[field];
+        return newState;
+      });
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -298,7 +306,7 @@ export default function LogiCaptureV2Page() {
       updateField("empresa", data.transportista.nombre_transportista);
       toast.success("Transportista identificado: " + data.transportista.nombre_transportista);
     } catch (error: any) {
-      toast.error(error.message);
+      setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
       updateField("empresa", "");
     } finally {
       setIsLoadingVehiculo(false);
@@ -316,7 +324,7 @@ export default function LogiCaptureV2Page() {
       const data = await response.json();
       toast.success("Chofer validado: " + data.nombre_operativo);
     } catch (error: any) {
-      toast.error(error.message);
+      setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
     } finally {
       setIsLoadingChofer(false);
     }
@@ -509,6 +517,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("dni", v)} 
                         onBlur={handleChoferBlur}
                         loading={isLoadingChofer}
+                        error={!!fieldErrors.dni}
+                        errorMsg={fieldErrors.dni}
                      />
                      <FormField 
                         label="Placa Tracto" 
@@ -518,6 +528,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("placaTracto", v)} 
                         onBlur={handleVehiculoBlur}
                         loading={isLoadingVehiculo}
+                        error={!!fieldErrors.placaTracto}
+                        errorMsg={fieldErrors.placaTracto}
                      />
                      <FormField 
                         label="Placa Carreta" 
