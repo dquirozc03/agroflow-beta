@@ -423,14 +423,21 @@ export default function BandejaLogiCapture() {
                        {[
                          { label: "ID REGISTRO", value: selectedReg.id, key: "id" },
                          { label: "FECHA EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
-                         { label: "ORDEN BETA / SAP", value: selectedReg.orden_beta, key: "orden" },
+                         { label: "PLANTA LLENADO", value: selectedReg.planta, key: "planta" },
+                         { label: "CULTIVO", value: selectedReg.cultivo, key: "cultivo" },
+                         { label: "ORDEN BETA", value: selectedReg.orden_beta, key: "orden" },
                          { label: "BOOKING", value: selectedReg.booking, key: "booking" },
                          { label: "CONTENEDOR", value: selectedReg.contenedor, key: "cnt" },
                          { label: "DAM / DUA", value: selectedReg.dam, key: "dam" },
-                         { label: "PLACA TRACTO", value: selectedReg.placa_tracto, key: "tracto" },
-                         { label: "PLACA CARRETA", value: selectedReg.placa_carreta, key: "carreta" },
-                         { label: "CHOFER (DNI)", value: selectedReg.dni_chofer, key: "chofer" },
+                         { label: "CODIGO SAP TRANSP.", value: selectedReg.codigo_sap, key: "sap_t" },
+                         { label: "RUC TRANSPORTISTA", value: selectedReg.ruc_transportista, key: "ruc_t" },
                          { label: "TRANSPORTISTA", value: selectedReg.empresa_transporte, key: "trans" },
+                         { label: "PLACA TRACTO", value: selectedReg.placa_tracto, key: "tracto" },
+                         { label: "MARCA TRACTO", value: selectedReg.marca_tracto, key: "marca" },
+                         { label: "CERT. TRACTO", value: selectedReg.cert_tracto, key: "cert_t" },
+                         { label: "PLACA CARRETA", value: selectedReg.placa_carreta, key: "carreta" },
+                         { label: "CERT. CARRETA", value: selectedReg.cert_carreta, key: "cert_c" },
+                         { label: "CHOFER (DNI)", value: selectedReg.dni_chofer, key: "chofer" },
                        ].map((item) => (
                           <div key={item.key} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
                              <div className="flex items-center justify-between">
