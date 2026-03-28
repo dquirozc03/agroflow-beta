@@ -148,8 +148,8 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           </div>
         )}
 
-        {/* Tooltip Premium para Datos (Solo si no hay error y hay valor) */}
-        {value && !error && !loading && (
+        {/* Tooltip Premium para Datos (Solo si el dato es largo y no hay error) */}
+        {value && value.length > 14 && !error && !loading && (
           <div className="absolute top-[110%] left-1/2 -translate-x-1/2 px-5 py-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/20 text-emerald-400 text-xs font-black tracking-widest uppercase rounded-2xl shadow-2xl opacity-0 scale-90 translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap origin-top overflow-hidden">
              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-20" />
              <span className="relative z-10">{value}</span>
@@ -439,8 +439,8 @@ export default function LogiCaptureV2Page() {
             <div className="grid grid-cols-12 gap-8">
                
                {/* BLOQUE 1: DATOS DE EMBARQUE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500" />
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[2.5rem]" />
                   <div className="flex items-center gap-3 mb-10">
                      <BadgeCheck className="h-5 w-5 text-emerald-600" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
@@ -493,8 +493,8 @@ export default function LogiCaptureV2Page() {
                </div>
 
                {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900" />
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2.5rem]" />
                   <div className="flex items-center gap-3 mb-10">
                      <Truck className="h-5 w-5 text-slate-900" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Información del Transporte</h3>
