@@ -123,6 +123,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          title={value}
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
@@ -213,11 +214,20 @@ export default function LogiCaptureV2Page() {
       
       const result = await response.json();
       
+      // Sanitización de DAM Carlos Style (quitar ceros a la izquierda del último segmento)
+      let cleanDam = result.dam;
+      if (cleanDam && cleanDam.includes("-")) {
+        const parts = cleanDam.split("-");
+        const suffix = parts[parts.length - 1];
+        parts[parts.length - 1] = suffix.replace(/^0+(?!$)/, "");
+        cleanDam = parts.join("-");
+      }
+      
       setFormData(prev => ({
         ...prev,
         booking: cleanBooking,
         ordenBeta: result.orden_beta,
-        dam: result.dam,
+        dam: cleanDam,
         contenedor: result.contenedor
       }));
       
