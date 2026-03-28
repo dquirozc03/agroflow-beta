@@ -169,10 +169,52 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     if not trailer:
         raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
         
-    return {
-        "placa": trailer.placa_carreta,
-        "status": "success"
-    }
+@router.get("/drivers/search")
+def search_drivers(q: str, db: Session = Depends(get_db)):
+    """Busca choferes por coincidencia de nombre o DNI."""
+    results = db.query(Chofer).filter(
+        (Chofer.nombres.ilike(f"%{q}%")) | 
+        (Chofer.dni.ilike(f"%{q}%")) |
+        (Chofer.apellido_paterno.ilike(f"%{q}%"))
+    ).limit(10).all()
+    
+    return [
+        {
+            "dni": d.dni,
+            "nombre": f"{d.nombres} {d.apellido_paterno} {d.apellido_materno or ''}".strip(),
+            "nombre_operativo": d.nombre_operativo,
+            "licencia": d.licencia
+        } for d in results
+    ]
+
+@router.get("/vehicles/tracto/search")
+def search_tractos(q: str, db: Session = Depends(get_db)):
+    """Busca tractos por placa."""
+    results = db.query(VehiculoTracto).filter(
+        VehiculoTracto.placa_tracto.ilike(f"%{q}%")
+    ).limit(10).all()
+    
+    return [
+        {
+            "placa": v.placa_tracto,
+            "marca": v.marca,
+            "transportista": v.transportista.nombre_transportista if v.transportista else "S/N"
+        } for v in results
+    ]
+
+@router.get("/vehicles/carreta/search")
+def search_carretas(q: str, db: Session = Depends(get_db)):
+    """Busca carretas por placa."""
+    results = db.query(VehiculoCarreta).filter(
+        VehiculoCarreta.placa_carreta.ilike(f"%{q}%")
+    ).limit(10).all()
+    
+    return [
+        {
+            "placa": v.placa_carreta,
+            "transportista": v.transportista.nombre_transportista if v.transportista else "S/N"
+        } for v in results
+    ]
 
 @router.post("/register")
 def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
@@ -288,6 +330,14 @@ def list_registros(
         "items": registros
     }
 
+@router.get("/registros/{id}")
+def get_registro(id: int, db: Session = Depends(get_db)):
+    """Obtención de un registro específico para auditoría/edición."""
+    reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    return reg
+
 @router.put("/registros/{id}")
 def update_registro(id: int, req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
     """Edición de registros (Principalmente para corregir precintos y transporte)."""
@@ -310,8 +360,8 @@ def update_registro(id: int, req: LogiCaptureSaveRequest, db: Session = Depends(
     return {"status": "success", "message": "Registro actualizado correctamente"}
 
 @router.patch("/registros/{id}/status")
-def change_registro_status(id: int, status: str, db: Session = Depends(get_db)):
-    """Cambio de estado administrativo (Cerrar/Anular)."""
+def change_registro_status(id: int, status: str, motivo: Optional[str] = None, db: Session = Depends(get_db)):
+    """Cambio de estado administrativo (Cerrar/Anular) con trazabilidad de motivo."""
     reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
     if not reg:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
@@ -321,46 +371,75 @@ def change_registro_status(id: int, status: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Estatus no válido")
         
     reg.status = clean_status
+    if clean_status == "ANULADO":
+        reg.motivo_anulacion = motivo or "N/A"
+        
     db.commit()
     return {"status": "success", "message": f"Registro marcado como {clean_status}"}
 
 @router.get("/export/excel")
 def export_to_excel(db: Session = Depends(get_db)):
-    """Generación de reporte Excel Premium con formateo de tabla."""
+    """Generación de reporte Excel Premium con formateo de tabla y auto-ajuste."""
     regs = db.query(LogiCaptureRegistro).all()
     
     data = []
     for r in regs:
-        # Aplanar precintos para el excel
-        precintos_aduana = ", ".join(r.precinto_aduana) if r.precinto_aduana else "-"
-        # ... simplified for briefness in dev note, full mapping below
+        # Formateo de nombres y placas estilo Carlos
+        placas = f"{r.placa_tracto} / {r.placa_carreta}" if r.placa_tracto else "-"
+        tuc_t = r.cert_tracto if r.cert_tracto else "**"
+        tuc_c = r.cert_carreta if r.cert_carreta else "**"
+        tuc = f"{tuc_t} / {tuc_c}"
+        
+        senasa_codes = ", ".join(r.precinto_senasa) if r.precinto_senasa else "**"
+        linea_codes = ", ".join(r.precinto_linea) if r.precinto_linea else "**"
+        senasa_linea = f"SENASA: {senasa_codes} / PS.LIN: {linea_codes}"
+        
         data.append({
-            "FECHA REGISTRO": r.fecha_registro.strftime("%Y-%m-%d %H:%M") if r.fecha_registro else "-",
-            "PLANTA": r.planta or "-",
-            "CULTIVO": r.cultivo or "-",
-            "BOOKING": r.booking,
+            "FECHA EMBARQUE": r.fecha_registro.strftime("%Y-%m-%d") if r.fecha_registro else "-",
             "ORDEN BETA": r.orden_beta,
+            "BOOKING": r.booking,
             "CONTENEDOR": r.contenedor,
-            "DAM": r.dam,
-            "TRACTO": r.placa_tracto,
-            "CARRETA": r.placa_carreta,
-            "CHOFER": r.dni_chofer,
+            "MARCA": r.marca_tracto,
+            "PLACAS": placas,
+            "CHOFER": r.nombre_chofer,
+            "DNI": r.dni_chofer,
+            "LICENCIA": r.licencia_chofer,
+            "TERMOGRAFOS": " / ".join(r.termografos) if r.termografos else "-",
+            "CODIGO SAP": r.codigo_sap,
             "TRANSPORTISTA": r.empresa_transporte,
-            "P. ADUANA": precintos_aduana,
-            "STATUS": r.status
+            "NUMERO DE DAM": r.dam,
+            "PRECINTOS BETA": " / ".join(r.precintos_beta) if r.precintos_beta else "-",
+            "PRECINTO ADUANA": " / ".join(r.precinto_aduana) if r.precinto_aduana else "-",
+            "PRECINTO OPERADOR": " / ".join(r.precinto_operador) if r.precinto_operador else "-",
+            "SENASA/PS LÍNEA": senasa_linea,
+            "PARTIDA REGISTRAL": r.partida_registral,
+            "TUC (CERTIFICADOS)": tuc,
+            "ESTATUS": r.status
         })
     
     df = pd.DataFrame(data)
-    
-    # Crear Excel en memoria
     output = io.BytesIO()
+    
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='LogiCapture_Auditoria')
+        worksheet = writer.sheets['LogiCapture_Auditoria']
         
+        # Auto-ajuste de columnas Carlos Style 💎
+        for col in worksheet.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 4)
+            worksheet.column_dimensions[column].width = adjusted_width
+
     output.seek(0)
-    
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=LogiCapture_Auditoria.xlsx"}
+        headers={"Content-Disposition": f"attachment; filename=LogiCapture_Auditoria_{datetime.now().strftime('%Y%m%d')}.xlsx"}
     )

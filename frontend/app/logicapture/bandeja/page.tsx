@@ -19,6 +19,7 @@ import {
   Trash2,
   Eye,
   Copy,
+  AlertTriangle,
   X
 } from "lucide-react";
 import { 
@@ -81,6 +82,10 @@ export default function BandejaLogiCapture() {
   const [selectedReg, setSelectedReg] = useState<any>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isAnularOpen, setIsAnularOpen] = useState(false);
+  const [anularReason, setAnularReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, label: string, key: string) => {
@@ -96,21 +101,61 @@ export default function BandejaLogiCapture() {
   };
 
   const handleStatusChange = async (id: number, newStatus: string) => {
-    toast.promise(
-      fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}/status?status=${newStatus}`, { method: 'PATCH' })
-        .then(async res => {
-           if (!res.ok) throw new Error();
-           await fetchRegistros();
-           setIsPanelOpen(false);
-           setIsSuccessOpen(true); // Abrir modal premium
-           setTimeout(() => setIsSuccessOpen(false), 2500); // Auto-cierre elegante
-        }),
-      {
-        loading: 'Actualizando Estatus en el Sistema...',
-        success: `Registro marcado como ${newStatus} con éxito 💎`,
-        error: 'No se pudo cambiar el estatus del registro'
+    if (newStatus === "ANULADO") {
+       setIsAnularOpen(true);
+       return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}/status?status=${newStatus}`, {
+        method: 'PATCH'
+      });
+      if (!response.ok) throw new Error();
+      
+      if (newStatus === "PROCESADO") {
+        setIsSuccessOpen(true);
+        setTimeout(() => setIsSuccessOpen(false), 2500);
       }
-    );
+      
+      toast.success(`Registro marcado como ${newStatus} correctamente 💎`);
+      fetchRegistros();
+      setIsPanelOpen(false);
+    } catch (error) {
+      toast.error("Error al actualizar el sistema");
+    }
+  };
+
+  const handleAnularConfirm = async () => {
+    if (!anularReason) {
+      toast.error("Seleccione un motivo de anulación");
+      return;
+    }
+    
+    const finalReason = anularReason === "Otros" ? otherReason : anularReason;
+    if (anularReason === "Otros" && !otherReason) {
+      toast.error("Especifique el motivo 'Otros'");
+      return;
+    }
+
+    try {
+       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}/status?status=ANULADO&motivo=${encodeURIComponent(finalReason)}`, {
+         method: 'PATCH'
+       });
+       if (!response.ok) throw new Error();
+       
+       toast.warning("Registro Anulado Correctamente");
+       setIsAnularOpen(false);
+       setAnularReason("");
+       setOtherReason("");
+       fetchRegistros();
+       setIsPanelOpen(false);
+    } catch (error) {
+       toast.error("Error al anular el registro");
+    }
+  };
+
+  const handleAuditar = (id: number) => {
+    window.location.href = `/logicapture?edit=${id}`;
   };
 
   const fetchRegistros = async () => {
@@ -142,25 +187,26 @@ export default function BandejaLogiCapture() {
   const cultivosUnicos = Array.from(new Set(registros.map(r => r.cultivo).filter(Boolean)));
 
   const handleExportExcel = async () => {
-    toast.promise(
-      fetch(`${API_BASE_URL}/api/v1/logicapture/export/excel`)
-        .then(async res => {
-          if (!res.ok) throw new Error();
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `LogiCapture_Reporte_${new Date().toISOString().split('T')[0]}.xlsx`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }),
-      {
-        loading: 'Generando Reporte Premium...',
-        success: 'Reporte Excel generado correctamente 💎',
-        error: 'Error al generar reporte'
-      }
-    );
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/export/excel`);
+      if (!response.ok) throw new Error();
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `LogiCapture_Auditoria_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      toast.success('Reporte Excel generado correctamente 💎');
+    } catch (error) {
+      toast.error('No se pudo generar el reporte premium');
+    } finally {
+      setTimeout(() => setIsExporting(false), 2500);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -206,7 +252,7 @@ export default function BandejaLogiCapture() {
                   <Button 
                     onClick={handleExportExcel}
                     variant="outline" 
-                    className="rounded-2xl border-slate-200 font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all gap-2"
+                    className="rounded-2xl bg-white border-slate-200 font-bold text-emerald-800 hover:bg-emerald-50 hover:border-emerald-300 transition-all gap-2 shadow-sm"
                   >
                      <FileDown className="h-4 w-4" />
                      Exportar Excel
@@ -302,7 +348,7 @@ export default function BandejaLogiCapture() {
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                   <Table>
                     <TableHeader className="bg-slate-50/50">
-                      <TableRow className="hover:bg-transparent border-slate-100 px-6">
+                      <TableRow className="hover:bg-transparent border-none px-6">
                         <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest p-6">Fecha/Hora</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest">Embarque (B / D / C)</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest">Planta / Cultivo</TableHead>
@@ -333,7 +379,7 @@ export default function BandejaLogiCapture() {
                       ).map((reg) => (
                         <TableRow 
                           key={reg.id} 
-                          className="group hover:bg-emerald-50/30 transition-colors border-slate-100 border-b last:border-0 px-6 cursor-pointer"
+                          className="group hover:bg-emerald-50/10 transition-colors border-none px-6 cursor-pointer"
                           onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
                         >
                           <TableCell className="p-6 font-medium text-slate-600">
@@ -395,11 +441,11 @@ export default function BandejaLogiCapture() {
 
                                 {activeTab === "PROCESADO" && (
                                    <>
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer">
-                                        <Edit3 className="h-4 w-4" /> Editar Auditoría
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleAuditar(reg.id)}>
+                                        <Edit3 className="h-4 w-4" /> Auditar
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer">
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg.id, 'ANULADO')}>
                                         <Trash2 className="h-4 w-4" /> Anular Registro
                                       </DropdownMenuItem>
                                    </>
@@ -516,8 +562,12 @@ export default function BandejaLogiCapture() {
                           Cerrar Operación (Enviar a Procesados)
                        </Button>
                     ) : (
-                       <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12">
-                          Descargar PDF
+                       <Button 
+                         variant="outline" 
+                         className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                         onClick={() => handleAuditar(selectedReg.id)}
+                       >
+                          <Edit3 className="h-4 w-4 mr-2" /> Auditar Registro
                        </Button>
                     )}
                  </div>
@@ -553,6 +603,97 @@ export default function BandejaLogiCapture() {
                >
                   Entendido
                </Button>
+            </div>
+         </DialogContent>
+      </Dialog>
+
+      {/* Modal de Generación Excel Premium */}
+      <Dialog open={isExporting} onOpenChange={setIsExporting}>
+         <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
+            <div className="relative p-12 flex flex-col items-center text-center gap-6">
+               <div className="h-24 w-24 bg-emerald-50 rounded-full flex items-center justify-center">
+                  <FileDown className="h-10 w-10 text-emerald-600 animate-bounce" />
+               </div>
+
+               <div className="space-y-2">
+                  <h2 className="text-3xl font-black tracking-tighter text-emerald-950 font-['Outfit'] animate-pulse">
+                     GENERANDO EXCEL
+                  </h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                     Procesando datos maestros y auditoría
+                  </p>
+               </div>
+
+               <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden relative">
+                  <div className="absolute inset-x-0 h-full bg-emerald-500 animate-pulse bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500" />
+               </div>
+               
+               <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest">
+                  Sincronizando con el Sistema de Datos
+               </p>
+            </div>
+         </DialogContent>
+      </Dialog>
+
+      {/* Modal de Anulación Premium */}
+      <Dialog open={isAnularOpen} onOpenChange={setIsAnularOpen}>
+         <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
+            <div className="relative p-10 flex flex-col gap-6">
+               <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                     <AlertTriangle className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-1">
+                     <h2 className="text-2xl font-black text-slate-950 tracking-tight uppercase">Anular Operación</h2>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Se marcará como error administrativo</p>
+                  </div>
+               </div>
+
+               <div className="space-y-4">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Motivo de Anulación</label>
+                     <Select value={anularReason} onValueChange={setAnularReason}>
+                        <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold text-slate-700">
+                           <SelectValue placeholder="Seleccione un motivo..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+                           <SelectItem value="Error de precinto" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precinto</SelectItem>
+                           <SelectItem value="Error de precintado" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precintado</SelectItem>
+                           <SelectItem value="Error de guia" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de guía</SelectItem>
+                           <SelectItem value="Error de booking" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de booking</SelectItem>
+                           <SelectItem value="Otros" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700 text-rose-600">Otros (Especificar)</SelectItem>
+                        </SelectContent>
+                     </Select>
+                  </div>
+
+                  {anularReason === "Otros" && (
+                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Detalle del Motivo</label>
+                        <Input 
+                           value={otherReason}
+                           onChange={(e) => setOtherReason(e.target.value)}
+                           placeholder="Escriba el motivo aquí..."
+                           className="rounded-2xl border-slate-100 bg-white h-14 font-bold text-slate-700"
+                        />
+                     </div>
+                  )}
+               </div>
+
+               <div className="flex gap-4 mt-4">
+                  <Button 
+                    variant="ghost" 
+                    className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] text-slate-400"
+                    onClick={() => setIsAnularOpen(false)}
+                  >
+                     Cancelar
+                  </Button>
+                  <Button 
+                    className="flex-1 rounded-2xl h-14 bg-rose-600 hover:bg-rose-700 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-rose-600/20"
+                    onClick={handleAnularConfirm}
+                  >
+                     Confirmar Anulación
+                  </Button>
+               </div>
             </div>
          </DialogContent>
       </Dialog>

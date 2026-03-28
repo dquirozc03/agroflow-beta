@@ -30,13 +30,23 @@ import {
   AlertCircle,
   Info,
   Ship,
-  Plane
+  Plane,
+  ShieldAlert,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { Input } from "@/components/ui/input";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 // --- Componentes UX Premium Carlos Style ---
 
@@ -48,13 +58,15 @@ interface MultiInputProps {
   icon: any;
   autoFocus?: boolean;
   duplicatedValues?: string[];
+  readOnly?: boolean;
 }
 
-function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus, duplicatedValues = [] }: MultiInputProps) {
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus, duplicatedValues = [], readOnly }: MultiInputProps) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (readOnly) return;
     if (e.key === "Enter") {
       const cleanValue = inputValue.trim().toUpperCase();
       if (!cleanValue) return;
@@ -198,6 +210,102 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
     </div>
   );
 }
+function SearchableField({ 
+  label, 
+  placeholder, 
+  icon: Icon, 
+  value, 
+  onChange, 
+  onSelect,
+  searchUrl,
+  readOnly,
+  loading,
+  error,
+  errorMsg,
+  helperText
+}: any) {
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearchingLocal, setIsSearchingLocal] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!value || value.length < 2 || readOnly) {
+        setResults([]);
+        return;
+      }
+      
+      setIsSearchingLocal(true);
+      try {
+        const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(value)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          setResults(data);
+          setShowResults(data.length > 0);
+        }
+      } catch (e) {
+        console.error("Search error", e);
+      } finally {
+        setIsSearchingLocal(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [value, searchUrl, readOnly]);
+
+  return (
+    <div className="space-y-3 relative group/field">
+      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{label}</label>
+      <div className="relative group/input">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 z-10">
+          {(loading || isSearchingLocal) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+        </div>
+        <input
+          value={value}
+          readOnly={readOnly}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          onBlur={() => setTimeout(() => setShowResults(false), 200)}
+          onFocus={() => results.length > 0 && setShowResults(true)}
+          className={cn(
+            "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
+            readOnly ? "bg-slate-50/50 text-slate-400 border-slate-100" : "bg-white border-slate-100 text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          )}
+        />
+        
+        {showResults && !readOnly && (
+          <div className="absolute top-[110%] left-0 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[50] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+             <div className="max-h-60 overflow-y-auto p-3 space-y-2">
+                {results.map((res: any, idx: number) => (
+                   <button
+                      key={idx}
+                      onMouseDown={() => {
+                         onSelect(res);
+                         setShowResults(false);
+                      }}
+                      className="w-full text-left p-4 hover:bg-emerald-50 rounded-2xl transition-all group/item border border-transparent hover:border-emerald-100 flex items-center justify-between"
+                   >
+                      <div className="space-y-1">
+                         <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{res.nombre || res.placa}</p>
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{res.dni || res.transportista || res.marca}</p>
+                      </div>
+                      <Plus className="h-4 w-4 text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                   </button>
+                ))}
+             </div>
+          </div>
+        )}
+
+        {helperText && (
+          <div className="absolute top-[110%] left-0 z-40 bg-emerald-950 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-xl">
+             {helperText}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
   if (!isOpen) return null;
   return (
@@ -288,6 +396,70 @@ export default function LogiCaptureV2Page() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successTitle, setSuccessTitle] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editField, setEditField] = useState<string>("none");
+
+  const AUDIT_OPTIONS = [
+    { id: "none", label: "Solo Lectura" },
+    { id: "precintos", label: "Corregir Precintos" },
+    { id: "transporte", label: "Corregir Transporte (Placas/Chofer)" },
+    { id: "fecha", label: "Corregir Fecha de Embarque" },
+    { id: "termografos", label: "Corregir Termógrafos" }
+  ];
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("edit");
+    if (id) {
+      setEditId(id);
+      loadRegistroForEdit(id);
+    }
+  }, []);
+
+  const loadRegistroForEdit = async (id: string) => {
+    setIsSearching(true);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}`);
+      if (!resp.ok) throw new Error();
+      const data = await resp.json();
+      
+      setFormData({
+        booking: data.booking,
+        ordenBeta: data.orden_beta,
+        contenedor: data.contenedor,
+        dam: data.dam,
+        dni: data.dni_chofer,
+        placaTracto: data.placa_tracto,
+        placaCarreta: data.placa_carreta,
+        empresa: data.empresa_transporte,
+        precintoAduana: data.precinto_aduana || [],
+        precintoOperador: data.precinto_operador || [],
+        precintoSenasa: data.precinto_senasa || [],
+        precintoLinea: data.precinto_linea || [],
+        precintosBeta: data.precintos_beta || [],
+        termografos: data.termografos || [],
+        tratamientoBuque: data.is_maritimo || false,
+        planta: data.planta || "",
+        cultivo: data.cultivo || "",
+        codigo_sap: data.codigo_sap || "",
+        ruc_transportista: data.ruc_transportista || "",
+        marca_tracto: data.marca_tracto || "",
+        cert_tracto: data.cert_tracto || "",
+        cert_carreta: data.cert_carreta || "",
+        fecha_embarque: data.fecha_registro,
+        nombreChofer: data.nombre_chofer || "",
+        licenciaChofer: data.licencia_chofer || "",
+        partidaRegistral: data.partida_registral || ""
+      });
+      
+      setValidatedFields(["booking", "ordenBeta", "contenedor", "dam", "dni", "placaTracto", "placaCarreta"]);
+      toast.success("Información cargada para Auditoría");
+    } catch (e) {
+      toast.error("No se pudo cargar el registro para edición");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -400,8 +572,8 @@ export default function LogiCaptureV2Page() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleVehiculoBlur = async () => {
-    const placa = (formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
+  const handleVehiculoBlurWithVal = async (val?: string) => {
+    const placa = (val || formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
     if (!placa) return;
 
     setIsLoadingVehiculo(true);
@@ -426,8 +598,10 @@ export default function LogiCaptureV2Page() {
     }
   };
 
-  const handleChoferBlur = async () => {
-    const dni = (formData.dni || "").trim();
+  const handleVehiculoBlur = () => handleVehiculoBlurWithVal();
+
+  const handleChoferBlurWithVal = async (val?: string) => {
+    const dni = (val || formData.dni || "").trim();
     if (!dni) return;
 
     setIsLoadingChofer(true);
@@ -444,6 +618,8 @@ export default function LogiCaptureV2Page() {
       setIsLoadingChofer(false);
     }
   };
+
+  const handleChoferBlur = () => handleChoferBlurWithVal();
 
   const handleFieldBlur = async (field: string, value: string) => {
     const cleanVal = (value || "").trim().toUpperCase();
@@ -504,8 +680,8 @@ export default function LogiCaptureV2Page() {
     }
   };
 
-  const handleCarretaBlur = async () => {
-    const placa = (formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
+  const handleCarretaBlurWithVal = async (val?: string) => {
+    const placa = (val || formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
     if (!placa) return;
 
     setIsLoadingCarreta(true);
@@ -513,13 +689,15 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
       if (!response.ok) throw new Error("Carreta no registrada en maestros");
       const data = await response.json();
-      updateField("cert_carreta", data.status === "success" ? "" : ""); // El backend actual de trailer no devuelve config aún, pero dejamos el slot
+      updateField("cert_carreta", data.status === "success" ? "" : ""); 
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
     } finally {
       setIsLoadingCarreta(false);
     }
   };
+
+  const handleCarretaBlur = () => handleCarretaBlurWithVal();
 
   const handleSaveDraft = () => {
     localStorage.setItem("logicapture_draft", JSON.stringify({
@@ -555,8 +733,12 @@ export default function LogiCaptureV2Page() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
-        method: "POST",
+      const url = editId 
+        ? `${API_BASE_URL}/api/v1/logicapture/registros/${editId}` 
+        : `${API_BASE_URL}/api/v1/logicapture/register`;
+      
+      const response = await fetch(url, {
+        method: editId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
@@ -570,7 +752,10 @@ export default function LogiCaptureV2Page() {
       const resData = await response.json();
       setSuccessTitle(formData.ordenBeta || formData.contenedor);
       setShowSuccess(true);
-      // Mantenemos la data visible por petición del usuario
+      if (editId) {
+        toast.success("Auditoría Finalizada con Éxito");
+        setTimeout(() => window.location.href = "/logicapture/bandeja", 2000);
+      }
     } catch (error: any) {
       setServerError("Error de conexión con el servidor. Intente nuevamente en unos momentos.");
     } finally {
@@ -634,10 +819,11 @@ export default function LogiCaptureV2Page() {
                    </div>
                    <h1 className="text-4xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit'] group-hover:tracking-tight transition-all duration-500">
                       Logi<span className="text-emerald-500 drop-shadow-sm">Capture</span>
+                      {editId && <span className="ml-4 text-xs bg-amber-500 text-white px-3 py-1 rounded-full animate-pulse">MODO AUDITORÍA</span>}
                    </h1>
                 </div>
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] ml-13">
-                  Registro Operativo de Salida - Fase 3
+                  {editId ? `Editando Auditoría de Registro #${editId}` : "Registro Operativo de Salida - Fase 3"}
                 </p>
               </div>
 
@@ -685,6 +871,39 @@ export default function LogiCaptureV2Page() {
                   </button>
               </div>
             </div>
+
+            {/* Panel de Auditoría Inteligente Carlos Style */}
+            {editId && (
+              <div className="bg-amber-50/50 backdrop-blur-md border border-amber-100 p-8 rounded-[3rem] shadow-sm animate-in slide-in-from-top-4 duration-500 overflow-hidden relative">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+                    <div className="space-y-2">
+                       <div className="flex items-center gap-3">
+                          <ShieldAlert className="h-6 w-6 text-amber-600 animate-pulse" />
+                          <h3 className="text-xl font-black text-amber-950 tracking-tight uppercase">Panel de Corrección Dirigida</h3>
+                       </div>
+                       <p className="text-xs font-bold text-amber-700/70 max-w-lg leading-relaxed uppercase tracking-widest"> 
+                          La edición de datos maestros está restringida. Seleccione un campo para desbloquear su corrección mediante el sistema de búsqueda.
+                       </p>
+                    </div>
+                    
+                    <div className="min-w-[300px] space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Campo a Corregir</label>
+                       <Select value={editField} onValueChange={setEditField}>
+                          <SelectTrigger className="rounded-2xl border-amber-200 bg-white h-14 font-black text-amber-950 uppercase tracking-widest text-[11px] shadow-sm">
+                             <SelectValue placeholder="Seleccione campo..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-amber-100 shadow-2xl">
+                             {AUDIT_OPTIONS.map(opt => (
+                                <SelectItem key={opt.id} value={opt.id} className="font-bold text-slate-600 focus:bg-amber-50 focus:text-amber-800 uppercase tracking-widest text-[10px]">{opt.label}</SelectItem>
+                             ))}
+                          </SelectContent>
+                       </Select>
+                    </div>
+                 </div>
+                 {/* Aura Amber */}
+                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-400 opacity-5 blur-[100px] rounded-full" />
+              </div>
+            )}
 
             {/* Fila 0: Inteligencia Operativa (OCR Hub Unificado) Carlos Edition */}
             <div className="bg-gradient-to-br from-[#022c22] to-slate-900 rounded-[2.5rem] p-1 shadow-2xl shadow-emerald-900/20 group overflow-hidden relative">
@@ -858,39 +1077,55 @@ export default function LogiCaptureV2Page() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField 
-                        label="DNI del Chofer" 
-                        placeholder="XXXXXXXX" 
+                     <SearchableField 
+                        label="DNI o Nombre del Chofer" 
+                        placeholder="Buscar por DNI o Nombre..." 
                         icon={User} 
                         value={formData.dni} 
-                        onChange={(v) => updateField("dni", v)} 
-                        onBlur={handleChoferBlur}
+                        onChange={(v: string) => updateField("dni", v)}
+                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
+                        onSelect={(res: any) => {
+                           updateField("dni", res.dni);
+                           // Ejecutamos manualmente el blur/lookup
+                           handleChoferBlurWithVal(res.dni);
+                        }}
                         loading={isLoadingChofer}
                         error={!!fieldErrors.dni}
                         errorMsg={fieldErrors.dni}
                         helperText={fieldErrors.dni_info}
+                        readOnly={editId ? editField !== 'transporte' : false}
                      />
-                     <FormField 
+                     <SearchableField 
                         label="Placa Tracto" 
                         placeholder="ABC-123" 
                         icon={Maximize2} 
                         value={formData.placaTracto} 
-                        onChange={(v) => updateField("placaTracto", v)} 
-                        onBlur={handleVehiculoBlur}
+                        onChange={(v: string) => updateField("placaTracto", v)} 
+                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/tracto/search`}
+                        onSelect={(res: any) => {
+                           updateField("placaTracto", res.placa);
+                           handleVehiculoBlurWithVal(res.placa);
+                        }}
                         loading={isLoadingVehiculo}
                         error={!!fieldErrors.placaTracto}
                         errorMsg={fieldErrors.placaTracto}
+                        readOnly={editId ? editField !== 'transporte' : false}
                      />
-                     <FormField 
+                     <SearchableField 
                         label="Placa Carreta" 
                         placeholder="XYZ-987" 
                         icon={Maximize2} 
                         value={formData.placaCarreta} 
-                        onChange={(v) => updateField("placaCarreta", v)} 
-                        onBlur={handleCarretaBlur}
+                        onChange={(v: string) => updateField("placaCarreta", v)} 
+                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/carreta/search`}
+                        onSelect={(res: any) => {
+                           updateField("placaCarreta", res.placa);
+                           handleCarretaBlurWithVal(res.placa);
+                        }}
                         loading={isLoadingCarreta}
                         error={!!fieldErrors.placaCarreta}
                         errorMsg={fieldErrors.placaCarreta}
+                        readOnly={editId ? editField !== 'transporte' : false}
                      />
                      <FormField 
                         label="Empresa Transportes" 
@@ -928,6 +1163,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintoAduana", v)}
                         icon={ShieldCheck}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'precintos' : false}
                         autoFocus
                      />
                      <MultiInput 
@@ -937,6 +1173,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintoOperador", v)}
                         icon={ShieldCheck}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'precintos' : false}
                      />
                      <MultiInput 
                         label="Precinto SENASA" 
@@ -945,6 +1182,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintoSenasa", v)}
                         icon={BadgeCheck}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'precintos' : false}
                      />
                      <MultiInput 
                         label="Precinto Línea" 
@@ -953,6 +1191,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintoLinea", v)}
                         icon={Layers}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'precintos' : false}
                      />
                      <MultiInput 
                         label="Precintos BETA" 
@@ -961,6 +1200,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintosBeta", v)}
                         icon={Zap}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'precintos' : false}
                      />
                      <MultiInput 
                         label="Termógrafos / Key" 
@@ -969,7 +1209,25 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("termografos", v)}
                         icon={Thermometer}
                         duplicatedValues={duplicatedCodes}
+                        readOnly={editId ? editField !== 'termografos' : false}
                      />
+                     {editField === 'fecha' && (
+                        <div className="col-span-full bg-amber-50/30 p-6 rounded-3xl border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-left-4">
+                           <div className="flex items-center gap-4">
+                              <CalendarIcon className="h-8 w-8 text-amber-600" />
+                              <div>
+                                 <h4 className="text-xs font-black text-amber-950 uppercase tracking-widest">Fecha de Embarque Operativa</h4>
+                                 <p className="text-[10px] font-bold text-amber-700/60 uppercase">Especifique la fecha oficial del despacho</p>
+                              </div>
+                           </div>
+                           <Input 
+                              type="datetime-local"
+                              value={formData.fecha_embarque ? new Date(formData.fecha_embarque).toISOString().slice(0, 16) : ""}
+                              onChange={(e) => updateField("fecha_embarque", e.target.value)}
+                              className="max-w-[250px] rounded-2xl border-amber-200 bg-white h-14 font-black text-amber-950 focus:ring-amber-500"
+                           />
+                        </div>
+                     )}
                   </div>
 
                   {/* PANEL DE ESTATUS AMIGABLE 'CARLOS STYLE' */}
