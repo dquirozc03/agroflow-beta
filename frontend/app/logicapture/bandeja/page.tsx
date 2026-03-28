@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -137,7 +137,7 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicat
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={addValue}
-          placeholder={values.length === 0 ? placeholder : "Añadir..."}
+          placeholder={values.length === 0 ? placeholder : "AÃ±adir..."}
           className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 min-w-[80px] px-2"
         />
       </div>
@@ -190,7 +190,7 @@ function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSe
       {showResults && !readOnly && !hideResults && (
         <div className="absolute top-[110%] left-0 right-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[200] overflow-hidden animate-in fade-in slide-in-from-top-2">
            <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados de Búsqueda</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados de BÃºsqueda</span>
               <button onClick={() => setShowResults(false)} className="text-slate-400 hover:text-rose-500"><X className="h-3 w-3" /></button>
            </div>
            <div className="lc-scroll max-h-[200px] overflow-y-auto">
@@ -204,7 +204,7 @@ function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSe
                        <div className="flex flex-wrap gap-1 items-center">
                           {res.dni && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni}</span>}
                           {res.marca && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.marca}</span>}
-                          {res.marca && res.transportista && <span className="text-[10px] font-bold text-slate-400 opacity-30">•</span>}
+                          {res.marca && res.transportista && <span className="text-[10px] font-bold text-slate-400 opacity-30">â€¢</span>}
                           {res.transportista && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{res.transportista}</span>}
                        </div>
                     </div>
@@ -282,18 +282,18 @@ export default function BandejaLogiCapture() {
         setTimeout(() => setIsSuccessOpen(false), 2500);
       }
       
-      toast.success(`Registro marcado como ${newStatus} correctamente 💎`);
+      toast.success(`Registro marcado como ${newStatus} correctamente ðŸ’Ž`);
       fetchRegistros();
       setIsPanelOpen(false);
     } catch (error) {
-      setErrorMessage("No se pudo actualizar el estado del registro. Verifique su conexión.");
+      setErrorMessage("No se pudo actualizar el estado del registro. Verifique su conexiÃ³n.");
       setIsErrorOpen(true);
     }
   };
 
   const handleAnularConfirm = async () => {
     if (!anularReason) {
-      toast.error("Seleccione un motivo de anulación");
+      toast.error("Seleccione un motivo de anulaciÃ³n");
       return;
     }
     
@@ -326,7 +326,7 @@ export default function BandejaLogiCapture() {
        ...reg,
        fecha_embarque: reg.fecha_embarque || reg.fecha_registro
     });
-    setEditSector(""); // Reiniciar selección
+    setEditSector(""); // Reiniciar selecciÃ³n
     setIsEditOpen(true);
   };
 
@@ -356,11 +356,11 @@ export default function BandejaLogiCapture() {
 
        if (!response.ok) throw new Error();
        
-       toast.success("Cambios aplicados correctamente 💎");
+       toast.success("Cambios aplicados correctamente ðŸ’Ž");
        setIsEditOpen(false);
        fetchRegistros();
     } catch (error) {
-       setErrorMessage("No se pudieron guardar los cambios de auditoría.");
+       setErrorMessage("No se pudieron guardar los cambios de auditorÃ­a.");
        setIsErrorOpen(true);
     }
   };
@@ -390,7 +390,7 @@ export default function BandejaLogiCapture() {
     fetchRegistros();
   }, [activeTab, filterPlanta, filterCultivo]);
 
-  // Filtros dinámicos basados en la data real
+  // Filtros dinÃ¡micos basados en la data real
   const plantasUnicas = Array.from(new Set(registros.map(r => r.planta).filter(Boolean)));
   const cultivosUnicos = Array.from(new Set(registros.map(r => r.cultivo).filter(Boolean)));
 
@@ -409,9 +409,9 @@ export default function BandejaLogiCapture() {
       a.click();
       a.remove();
       
-      toast.success('Reporte Excel generado correctamente 💎');
+      toast.success('Reporte Excel generado correctamente ðŸ’Ž');
     } catch (error) {
-      setErrorTitle("ERROR DE EXPORTACIÓN");
+      setErrorTitle("ERROR DE EXPORTACIÃ“N");
       setErrorMessage("No se pudo generar el reporte premium. Verifique que existan datos en el periodo seleccionado o contacte a soporte TI.");
       setIsErrorOpen(true);
     } finally {
@@ -454,7 +454,7 @@ export default function BandejaLogiCapture() {
                     </h1>
                  </div>
                  <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-13">
-                   Auditoría y Gestión Operativa LogiCapture
+                   AuditorÃ­a y GestiÃ³n Operativa LogiCapture
                  </p>
                </div>
 
@@ -479,7 +479,7 @@ export default function BandejaLogiCapture() {
             {/* Filtros Inteligentes */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Búsqueda Rápida</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">BÃºsqueda RÃ¡pida</label>
                   <div className="relative group">
                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                      <Input 
@@ -595,10 +595,10 @@ export default function BandejaLogiCapture() {
                           <TableCell className="p-6 font-medium text-slate-600">
                              <div className="flex flex-col">
                                 <span className="text-sm font-bold text-slate-900 leading-none mb-1">
-                                   {new Date(reg.fecha_registro).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                   {(reg.fecha_embarque ? new Date(reg.fecha_embarque) : new Date(reg.fecha_registro)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400">
-                                   {new Date(reg.fecha_registro).toLocaleDateString()}
+                                   {(reg.fecha_embarque ? new Date(reg.fecha_embarque) : new Date(reg.fecha_registro)).toLocaleDateString()}
                                 </span>
                              </div>
                           </TableCell>
@@ -608,7 +608,7 @@ export default function BandejaLogiCapture() {
                           className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
 
                                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
-                                   {reg.dam} • {reg.contenedor}
+                                   {reg.dam} â€¢ {reg.contenedor}
                                 </div>
                              </div>
                           </TableCell>
@@ -640,7 +640,7 @@ export default function BandejaLogiCapture() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
-                                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
+                                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">GestiÃ³n</DropdownMenuLabel>
                                 
                                 <DropdownMenuItem 
                                   className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
@@ -666,7 +666,7 @@ export default function BandejaLogiCapture() {
                                      className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
                                      onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
                                    >
-                                      <CheckCircle2 className="h-4 w-4" /> Cerrar Operación
+                                      <CheckCircle2 className="h-4 w-4" /> Cerrar OperaciÃ³n
                                    </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -693,7 +693,7 @@ export default function BandejaLogiCapture() {
                     <div className="flex items-center justify-between mb-2">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2">
                           <CircleDot className="h-3 w-3 animate-pulse" />
-                          PANEL SAP • {selectedReg.status}
+                          PANEL SAP â€¢ {selectedReg.status}
                        </span>
                        <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(false)} className="rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all">
                           <X className="h-5 w-5" />
@@ -728,7 +728,7 @@ export default function BandejaLogiCapture() {
                          { label: "PRECINTO ADUANA", value: selectedReg.precinto_aduana?.join(" / "), key: "aduana" },
                          { label: "PRECINTO OPERADOR", value: selectedReg.precinto_operador?.join(" / "), key: "ope" },
                          { 
-                            label: "SENASA/PS LÍNEA", 
+                            label: "SENASA/PS LÃNEA", 
                             value: `${selectedReg.precinto_senasa?.join(" / ") || "**"} / PS.LIN: ${selectedReg.precinto_linea?.join(" / ") || "**"}`, 
                             key: "senasa_linea" 
                          },
@@ -769,7 +769,7 @@ export default function BandejaLogiCapture() {
                          className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20"
                          onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
                        >
-                          Cerrar Operación (Enviar a Procesados)
+                          Cerrar OperaciÃ³n (Enviar a Procesados)
                        </Button>
                     ) : (
                        <Button 
@@ -777,7 +777,7 @@ export default function BandejaLogiCapture() {
 
                          onClick={() => handleEditOpen(selectedReg)}
                        >
-                          <Edit3 className="h-4 w-4 mr-2" /> Editar Auditor�a
+                          <Edit3 className="h-4 w-4 mr-2" /> Editar Auditoría
                        </Button>
                     )}
                  </div>
@@ -786,7 +786,7 @@ export default function BandejaLogiCapture() {
         </SheetContent>
       </Sheet>
 
-      {/* Modal de Éxito Premium - ELIMINACIÓN DE TOAST FEO */}
+      {/* Modal de Ã‰xito Premium - ELIMINACIÃ“N DE TOAST FEO */}
       <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
          <DialogContent className="sm:max-w-md bg-emerald-950 border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl shadow-emerald-500/20 pointer-events-auto">
             <div className="relative p-12 flex flex-col items-center text-center gap-6">
@@ -803,7 +803,7 @@ export default function BandejaLogiCapture() {
                      PROCESADO
                   </h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
-                     Operación cerrada con éxito en el sistema
+                     OperaciÃ³n cerrada con Ã©xito en el sistema
                   </p>
                </div>
 
@@ -817,7 +817,7 @@ export default function BandejaLogiCapture() {
          </DialogContent>
       </Dialog>
 
-      {/* Modal de Generación Excel Premium */}
+      {/* Modal de GeneraciÃ³n Excel Premium */}
       <Dialog open={isExporting} onOpenChange={setIsExporting}>
          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
             <div className="relative p-12 flex flex-col items-center text-center gap-6">
@@ -830,7 +830,7 @@ export default function BandejaLogiCapture() {
                      GENERANDO EXCEL
                   </h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                     Procesando datos maestros y auditoría
+                     Procesando datos maestros y auditorÃ­a
                   </p>
                </div>
 
@@ -845,7 +845,7 @@ export default function BandejaLogiCapture() {
          </DialogContent>
       </Dialog>
 
-      {/* Modal de Anulación Premium */}
+      {/* Modal de AnulaciÃ³n Premium */}
       <Dialog open={isAnularOpen} onOpenChange={setIsAnularOpen}>
          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
             <div className="relative p-10 flex flex-col gap-6">
@@ -854,14 +854,14 @@ export default function BandejaLogiCapture() {
                      <AlertTriangle className="h-8 w-8" />
                   </div>
                   <div className="space-y-1">
-                     <h2 className="text-2xl font-black text-slate-950 tracking-tight uppercase">Anular Operación</h2>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Se marcará como error administrativo</p>
+                     <h2 className="text-2xl font-black text-slate-950 tracking-tight uppercase">Anular OperaciÃ³n</h2>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Se marcarÃ¡ como error administrativo</p>
                   </div>
                </div>
 
                <div className="space-y-4">
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Motivo de Anulación</label>
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Motivo de AnulaciÃ³n</label>
                      <Select value={anularReason} onValueChange={setAnularReason}>
                         <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold text-slate-700">
                            <SelectValue placeholder="Seleccione un motivo..." />
@@ -869,7 +869,7 @@ export default function BandejaLogiCapture() {
                         <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
                            <SelectItem value="Error de precinto" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precinto</SelectItem>
                            <SelectItem value="Error de precintado" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precintado</SelectItem>
-                           <SelectItem value="Error de guia" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de guía</SelectItem>
+                           <SelectItem value="Error de guia" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de guÃ­a</SelectItem>
                            <SelectItem value="Error de booking" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de booking</SelectItem>
                            <SelectItem value="Otros" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700 text-rose-600">Otros (Especificar)</SelectItem>
                         </SelectContent>
@@ -882,7 +882,7 @@ export default function BandejaLogiCapture() {
                         <Input 
                            value={otherReason}
                            onChange={(e) => setOtherReason(e.target.value)}
-                           placeholder="Escriba el motivo aquí..."
+                           placeholder="Escriba el motivo aquÃ­..."
                            className="rounded-2xl border-slate-100 bg-white h-14 font-bold text-slate-700"
                         />
                      </div>
@@ -901,13 +901,13 @@ export default function BandejaLogiCapture() {
                     className="flex-1 rounded-2xl h-14 bg-rose-600 hover:bg-rose-700 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-rose-600/20"
                     onClick={handleAnularConfirm}
                   >
-                     Confirmar Anulación
+                     Confirmar AnulaciÃ³n
                   </Button>
                </div>
             </div>
          </DialogContent>
       </Dialog>
-       {/* Modal de Error Premium Carlos Style 💎 */}
+       {/* Modal de Error Premium Carlos Style ðŸ’Ž */}
        <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
           <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-300">
              <DialogHeader className="sr-only">
@@ -939,12 +939,12 @@ export default function BandejaLogiCapture() {
              </div>
           </DialogContent>
        </Dialog>
-       {/* Modal de Edición Directa Carlos Style 💎 */}
+       {/* Modal de EdiciÃ³n Directa Carlos Style ðŸ’Ž */}
        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent className="sm:max-w-4xl bg-white border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl h-[90vh] flex flex-col">
              <DialogHeader className="sr-only">
-                <DialogTitle>Editar Auditoría</DialogTitle>
-                <DialogDescription>Corrección de datos operativos LogiCapture</DialogDescription>
+                <DialogTitle>Editar AuditorÃ­a</DialogTitle>
+                <DialogDescription>CorrecciÃ³n de datos operativos LogiCapture</DialogDescription>
              </DialogHeader>
 
              <div className="p-10 bg-emerald-950 flex items-center justify-between shrink-0">
@@ -953,8 +953,8 @@ export default function BandejaLogiCapture() {
                       <Edit3 className="h-8 w-8" />
                    </div>
                    <div className="space-y-1">
-                      <h2 className="text-3xl font-black text-white tracking-tighter uppercase font-['Outfit']">Auditoría <span className="text-emerald-400">Dirigida</span></h2>
-                      <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">Corrección Selectiva de Registro #{selectedReg?.id}</p>
+                      <h2 className="text-3xl font-black text-white tracking-tighter uppercase font-['Outfit']">AuditorÃ­a <span className="text-emerald-400">Dirigida</span></h2>
+                      <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">CorrecciÃ³n Selectiva de Registro #{selectedReg?.id}</p>
                    </div>
                 </div>
                 <button onClick={() => setIsEditOpen(false)} className="h-12 w-12 bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all flex items-center justify-center group">
@@ -963,17 +963,17 @@ export default function BandejaLogiCapture() {
              </div>
 
              <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-slate-50/30 pb-24">
-                {/* Paso 1: Selección de Sector */}
+                {/* Paso 1: SelecciÃ³n de Sector */}
                 <div className="space-y-6">
                    <div className="flex items-center gap-3 ml-2">
                       <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                      <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Paso 1: ¿Qué campo desea corregir?</h3>
+                      <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Paso 1: Â¿QuÃ© campo desea corregir?</h3>
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
                         { id: 'maestros', label: 'Datos Maestros', desc: 'Chofer, Placas, Transportista', icon: Truck },
                         { id: 'precintos', label: 'Precintos y Sellos', desc: 'Aduana, Beta, Senasa, etc.', icon: ShieldCheck },
-                        { id: 'fecha', label: 'Fecha de Embarque', desc: 'Ajuste de día y hora operativa', icon: Calendar }
+                        { id: 'fecha', label: 'Fecha de Embarque', desc: 'Ajuste de dÃ­a y hora operativa', icon: Calendar }
                       ].map((item) => (
                          <button 
                            key={item.id}
@@ -1003,12 +1003,12 @@ export default function BandejaLogiCapture() {
                    </div>
                 </div>
 
-                {/* Paso 2: Edición Dinámica */}
+                {/* Paso 2: EdiciÃ³n DinÃ¡mica */}
                 {editSector && (
                    <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-700">
                       <div className="flex items-center gap-3 ml-2 border-t border-slate-100 pt-10">
                          <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse" />
-                         <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest uppercase">Paso 2: Formulario de Corrección</h3>
+                         <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest uppercase">Paso 2: Formulario de CorrecciÃ³n</h3>
                       </div>
 
                       <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl space-y-8 relative">
@@ -1081,16 +1081,16 @@ export default function BandejaLogiCapture() {
                                <MultiInput label="Aduana" icon={ShieldCheck} values={editData.precinto_aduana} onChange={(v:any)=>setEditData({...editData, precinto_aduana: v})} placeholder="Ej: AD123" />
                                <MultiInput label="Operador" icon={ShieldCheck} values={editData.precinto_operador} onChange={(v:any)=>setEditData({...editData, precinto_operador: v})} placeholder="Ej: OP123" />
                                <MultiInput label="Senasa" icon={ShieldCheck} values={editData.precinto_senasa} onChange={(v:any)=>setEditData({...editData, precinto_senasa: v})} placeholder="Ej: SE123" />
-                               <MultiInput label="Línea" icon={Layers} values={editData.precinto_linea} onChange={(v:any)=>setEditData({...editData, precinto_linea: v})} placeholder="Ej: LN123" />
+                               <MultiInput label="LÃ­nea" icon={Layers} values={editData.precinto_linea} onChange={(v:any)=>setEditData({...editData, precinto_linea: v})} placeholder="Ej: LN123" />
                                <MultiInput label="BETA" icon={Zap} values={editData.precintos_beta} onChange={(v:any)=>setEditData({...editData, precintos_beta: v})} placeholder="Ej: BT123" />
-                               <MultiInput label="Termógrafos" icon={Thermometer} values={editData.termografos} onChange={(v:any)=>setEditData({...editData, termografos: v})} placeholder="Ej: T-999" />
+                               <MultiInput label="TermÃ³grafos" icon={Thermometer} values={editData.termografos} onChange={(v:any)=>setEditData({...editData, termografos: v})} placeholder="Ej: T-999" />
                             </div>
                          )}
 
                          {editSector === 'fecha' && (
                             <div className="flex flex-col items-center gap-10 p-12 bg-emerald-50/10 rounded-[3rem] border border-emerald-100/50 shadow-inner max-w-2xl mx-auto">
                                <div className="flex gap-8 w-full">
-                                  {/* Selector de Fecha Carlos Style 💎 */}
+                                  {/* Selector de Fecha Carlos Style ðŸ’Ž */}
                                   <div className="flex-1 space-y-4">
                                      <div className="flex items-center gap-2 ml-2">
                                         <Calendar className="h-3 w-3 text-emerald-500" />
@@ -1119,13 +1119,13 @@ export default function BandejaLogiCapture() {
                                                     setEditData({...editData, fecha_embarque: date.toISOString()});
                                                  }
                                               }}
-                                              className="bg-white"
+                                              className="bg-white" classNames={{ day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-bold aria-selected:opacity-100 text-slate-900 hover:bg-emerald-100 hover:text-emerald-950"), day_today: "bg-slate-100 text-slate-900", day_selected: "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white", caption_label: "text-sm font-black text-slate-900 uppercase tracking-widest", head_cell: "text-slate-400 rounded-md w-9 font-black text-[10px] uppercase", nav_button: "text-slate-900 hover:text-emerald-600" }}
                                            />
                                         </PopoverContent>
                                      </Popover>
                                   </div>
 
-                                  {/* Selector de Hora Carlos Style 💎 */}
+                                  {/* Selector de Hora Carlos Style ðŸ’Ž */}
                                   <div className="flex-1 space-y-4">
                                      <div className="flex items-center gap-2 ml-2">
                                         <Clock className="h-3 w-3 text-amber-500" />
@@ -1168,7 +1168,7 @@ export default function BandejaLogiCapture() {
              <div className="p-10 bg-white border-t border-slate-100 shrink-0 flex items-center justify-between gap-8 z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.02)]">
                 <div className="flex items-center gap-4 text-slate-400">
                    <Info className="h-5 w-5" />
-                   <p className="text-[10px] font-black uppercase tracking-widest leading-none">Los cambios serán auditados y registrados bajo su usuario corporativo.</p>
+                   <p className="text-[10px] font-black uppercase tracking-widest leading-none">Los cambios serÃ¡n auditados y registrados bajo su usuario corporativo.</p>
                 </div>
                 <div className="flex gap-4">
                    <button onClick={() => setIsEditOpen(false)} className="px-10 py-5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-all">Cancelar</button>
@@ -1176,7 +1176,7 @@ export default function BandejaLogiCapture() {
                      onClick={handleEditSave}
                      className="px-12 py-7 bg-emerald-950 hover:bg-emerald-900 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-emerald-950/20 active:scale-95 transition-all"
                    >
-                      Aplicar Corrección
+                      Aplicar CorrecciÃ³n
                    </Button>
                 </div>
              </div>
