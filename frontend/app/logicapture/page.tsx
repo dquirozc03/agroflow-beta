@@ -432,12 +432,36 @@ export default function LogiCaptureV2Page() {
       if (!response.ok) throw new Error("Error al persistir registro");
       
       toast.success("Operación guardada y confirmada con éxito");
-      // Opcional: Limpiar pantalla o redirigir
+      // Mantenemos la data visible por petición del usuario
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      booking: "",
+      ordenBeta: "",
+      contenedor: "",
+      dam: "",
+      dni: "",
+      placaTracto: "",
+      placaCarreta: "",
+      empresa: "",
+      precintoAduana: [],
+      precintoOperador: [],
+      precintoSenasa: [],
+      precintoLinea: [],
+      precintosBeta: [],
+      termografos: [],
+    });
+    setValidatedFields([]);
+    setFieldErrors({});
+    setBookingError(false);
+    localStorage.removeItem("logicapture_draft");
+    toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
   };
 
   return (
@@ -493,7 +517,10 @@ export default function LogiCaptureV2Page() {
               </div>
 
               <div className="flex items-center gap-3">
-                 <button className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm text-[11px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-700 transition-all duration-300 hover:scale-[1.02] active:scale-95 group">
+                 <button 
+                    onClick={handleReset}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm text-[11px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-700 transition-all duration-300 hover:scale-[1.02] active:scale-95 group"
+                 >
                     <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-500" />
                     Limpiar Pantalla
                  </button>
