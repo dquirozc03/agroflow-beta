@@ -138,10 +138,10 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
         {error && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
              <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
-             {/* Tooltip Carlos Style */}
-             <div className="absolute bottom-full right-0 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-50 origin-bottom-right">
+             {/* Tooltip Carlos Style - Centrado y Preventivo */}
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-50 origin-bottom">
                 {errorMsg}
-                <div className="absolute top-full right-4 border-8 border-transparent border-t-rose-950" />
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
              </div>
           </div>
         )}
@@ -206,8 +206,9 @@ export default function LogiCaptureV2Page() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || "Booking no encontrado");
+        setBookingError(true);
+        setIsSearching(false);
+        return;
       }
       
       const result = await response.json();
