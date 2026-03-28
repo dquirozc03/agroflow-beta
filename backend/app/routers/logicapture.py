@@ -386,6 +386,51 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
     if req.empresa: reg.empresa_transporte = req.empresa
     if req.partidaRegistral: reg.partida_registral = req.partidaRegistral
         
+    # 4. Sincronización con LogiCaptureDetalle (Blindaje de Unicidad) 💎
+    # Si hubo cambios en precintos o termógrafos, refrescamos la tabla de detalles
+    if any([
+        req.precintoAduana is not None, req.precintoOperador is not None,
+        req.precintoSenasa is not None, req.precintoLinea is not None,
+        req.precintosBeta is not None, req.termografos is not None
+    ]):
+        # a. Limpiar detalles previos asociados a esta salida
+        db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.registro_id == id).delete()
+        
+        # b. Re-mapear y re-validar códigos actuales (post-edición)
+        mapeo_detalles = [
+            ("ADUANA", reg.precinto_aduana or []),
+            ("OPERADOR", reg.precinto_operador or []),
+            ("SENASA", reg.precinto_senasa or []),
+            ("LINEA", reg.precinto_linea or []),
+            ("BETA", reg.precintos_beta or []),
+            ("TERMOGRAFO", reg.termografos or [])
+        ]
+        
+        nuevos_detalles = []
+        for tipo, codigos in mapeo_detalles:
+            cat = "TERMOGRAFO" if tipo == "TERMOGRAFO" else "PRECINTO"
+            for code in codigos:
+                if not code or code == "**": continue
+                
+                # c. Blindaje contra duplicados sistémicos
+                duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code).first()
+                if duplicado:
+                    db.rollback()
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Error: El código '{code}' ya está siendo usado en otro registro activo."
+                    )
+                
+                nuevos_detalles.append(LogiCaptureDetalle(
+                    registro_id=id,
+                    categoria=cat,
+                    tipo=tipo,
+                    codigo=code
+                ))
+        
+        if nuevos_detalles:
+            db.add_all(nuevos_detalles)
+
     db.commit()
     return {"status": "success", "message": "Datos de auditoría actualizados correctamente 💎"}
 
