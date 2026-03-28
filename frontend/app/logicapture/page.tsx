@@ -24,9 +24,12 @@ import {
   Maximize2,
   Sparkles,
   RefreshCw,
-  Camera
+  Camera,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/constants";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 
@@ -94,24 +97,40 @@ interface FormFieldProps {
   icon: any;
   value: string;
   onChange: (v: string) => void;
+  readOnly?: boolean;
+  success?: boolean;
+  loading?: boolean;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading }: FormFieldProps) {
   return (
     <div className="space-y-3 group">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-emerald-500 transition-colors">
         {label}
       </label>
       <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors">
-          <Icon className="h-4 w-4" />
+        <div className={cn(
+          "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
+          success ? "text-emerald-500" : "text-slate-300 group-focus-within:text-emerald-500"
+        )}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
         </div>
         <input
           value={value}
+          readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-white border border-slate-100 rounded-2xl py-4 pl-11 pr-4 text-base font-medium text-slate-900 placeholder:text-slate-300 outline-none transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]"
+          className={cn(
+            "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
+            readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
+            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold"
+          )}
         />
+        {success && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in-50">
+             <CheckCircle2 className="h-5 w-5" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -155,6 +174,45 @@ export default function LogiCaptureV2Page() {
     termografos: [] as string[],
   });
 
+  const [isSearching, setIsSearching] = useState(false);
+  const [validatedFields, setValidatedFields] = useState<string[]>([]);
+
+  const handleLookup = async () => {
+    const cleanBooking = formData.booking.trim().toUpperCase();
+    if (!cleanBooking) {
+      toast.error("Ingrese un Booking para comenzar");
+      return;
+    }
+
+    setIsSearching(true);
+    setValidatedFields([]);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Booking no encontrado");
+      }
+      
+      const result = await response.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        booking: cleanBooking,
+        ordenBeta: result.orden_beta,
+        dam: result.dam,
+        contenedor: result.contenedor
+      }));
+      
+      setValidatedFields(["ordenBeta", "dam", "contenedor"]);
+      toast.success("Resolución de datos exitosa");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -190,10 +248,14 @@ export default function LogiCaptureV2Page() {
                     <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-500" />
                     Limpiar Pantalla
                  </button>
-                 <button className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl shadow-lg text-[11px] font-black uppercase tracking-widest hover:from-emerald-700 hover:to-emerald-600 transition-all duration-300 active:scale-95 animate-venom">
-                    <Sparkles className="h-4 w-4 animate-pulse" />
+                 <button 
+                    onClick={handleLookup}
+                    disabled={isSearching}
+                    className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl shadow-lg text-[11px] font-black uppercase tracking-widest hover:from-emerald-700 hover:to-emerald-600 transition-all duration-300 active:scale-95 animate-venom disabled:opacity-50"
+                  >
+                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Sparkles className="h-4 w-4 animate-pulse" />}
                     Autocompletar Inteligente
-                 </button>
+                  </button>
               </div>
             </div>
 
@@ -293,6 +355,8 @@ export default function LogiCaptureV2Page() {
                         icon={Target} 
                         value={formData.ordenBeta} 
                         onChange={(v) => updateField("ordenBeta", v)} 
+                        readOnly
+                        success={validatedFields.includes("ordenBeta")}
                      />
                      <FormField 
                         label="Número Contenedor" 
@@ -300,6 +364,8 @@ export default function LogiCaptureV2Page() {
                         icon={Container} 
                         value={formData.contenedor} 
                         onChange={(v) => updateField("contenedor", v)} 
+                        readOnly
+                        success={validatedFields.includes("contenedor")}
                      />
                      <FormField 
                         label="Número DAM" 
@@ -307,6 +373,8 @@ export default function LogiCaptureV2Page() {
                         icon={Hash} 
                         value={formData.dam} 
                         onChange={(v) => updateField("dam", v)} 
+                        readOnly
+                        success={validatedFields.includes("dam")}
                      />
                   </div>
                </div>
@@ -429,20 +497,24 @@ export default function LogiCaptureV2Page() {
           showFloatingButton ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-64"
         )}
       >
-         <button className="group relative flex flex-col items-center gap-3">
-             {/* Tooltip Venom */}
-             <div className="absolute right-full mr-10 py-2.5 px-6 bg-[#022c22] text-emerald-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl border border-emerald-500/20 opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0 whitespace-nowrap">
-                IA Autocomplete
-             </div>
-             
-             {/* El Botón Orgánico "Venom" */}
-             <div className="h-24 w-24 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-3xl shadow-2xl shadow-emerald-500/50 flex items-center justify-center text-white animate-venom cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500">
-                <Sparkles className="h-12 w-12 animate-pulse" />
-             </div>
-             
-             {/* Aura Venom */}
-             <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full animate-pulse z-[-1]" />
-         </button>
+          <button 
+            onClick={handleLookup}
+            disabled={isSearching}
+            className="group relative flex flex-col items-center gap-3 outline-none pointer-events-auto"
+          >
+              {/* Tooltip Venom */}
+              <div className="absolute right-full mr-10 py-2.5 px-6 bg-[#022c22] text-emerald-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl border border-emerald-500/20 opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0 whitespace-nowrap">
+                 IA Autocomplete
+              </div>
+              
+              {/* El Botón Orgánico "Venom" */}
+              <div className="h-24 w-24 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-3xl shadow-2xl shadow-emerald-500/50 flex items-center justify-center text-white animate-venom cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 disabled:opacity-50">
+                 {isSearching ? <Loader2 className="h-10 w-10 animate-spin text-white" /> : <Sparkles className="h-12 w-12 animate-pulse" />}
+              </div>
+              
+              {/* Aura Venom */}
+              <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full animate-pulse z-[-1]" />
+          </button>
       </div>
     </div>
   );
