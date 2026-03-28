@@ -106,6 +106,8 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
     """Verifica si un dato ya existe en la tabla de registros operativos."""
     clean_val = value.strip().upper()
     
+    if clean_val == "**":
+        return {"field": field, "exists": False, "id": None}
     if field == "booking" and not treatment_buque:
         exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val).first()
     elif field == "dam":

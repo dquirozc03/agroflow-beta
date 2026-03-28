@@ -520,12 +520,20 @@ export default function LogiCaptureV2Page() {
 
   const handleSave = async () => {
     setServerError(null);
+
+    // Sanitización de campos opcionales por defecto (**)
+    const payload = {
+       ...formData,
+       precintoOperador: formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
+       precintoSenasa: formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
+    };
+
     setIsSearching(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
