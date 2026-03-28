@@ -209,6 +209,13 @@ export default function LogiCaptureV2Page() {
       if (!response.ok) {
         setBookingError(true);
         setIsSearching(false);
+        // Limpiar campos para evitar confusión con el booking anterior
+        setFormData(prev => ({
+          ...prev,
+          ordenBeta: "",
+          dam: "",
+          contenedor: ""
+        }));
         return;
       }
       
