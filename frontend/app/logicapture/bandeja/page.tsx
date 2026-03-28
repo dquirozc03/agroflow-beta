@@ -20,7 +20,14 @@ import {
   Eye,
   Copy,
   AlertTriangle,
-  X
+  X,
+  Loader2,
+  ShieldCheck,
+  User,
+  Layers,
+  Zap,
+  Thermometer,
+  Info
 } from "lucide-react";
 import { 
   Sheet, 
@@ -75,6 +82,127 @@ import { cn } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com";
 
+// --- Componentes UX Premium Carlos Style (Duplicados para Bandeja) ---
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicatedValues = [] }: any) {
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const addValue = () => {
+    const val = inputValue.trim().toUpperCase();
+    if (val && !values.includes(val)) {
+      onChange([...values, val]);
+      setInputValue("");
+    }
+  };
+
+  const removeValue = (index: number) => {
+    onChange(values.filter((_: any, i: number) => i !== index));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addValue();
+    }
+  };
+
+  return (
+    <div className="space-y-3 group/field">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-100 rounded-2xl min-h-[56px] focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all cursor-text group-hover/field:border-emerald-100" onClick={() => inputRef.current?.focus()}>
+        <div className="h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 mt-1 ml-1">
+          <Icon className="h-4 w-4" />
+        </div>
+        {values.map((v: string, i: number) => (
+          <div key={i} className={cn(
+             "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black animate-in zoom-in-95 duration-200 border",
+             duplicatedValues.includes(v) ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-emerald-50 border-emerald-100 text-emerald-700"
+          )}>
+             {v}
+             <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors"><X className="h-3 w-3" /></button>
+          </div>
+        ))}
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={addValue}
+          placeholder={values.length === 0 ? placeholder : "Añadir..."}
+          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 min-w-[80px] px-2"
+        />
+      </div>
+    </div>
+  );
+}
+
+function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSelect, searchUrl, readOnly, loading }: any) {
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearchingLocal, setIsSearchingLocal] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!value || value.length < 2 || readOnly) {
+        setResults([]);
+        return;
+      }
+      setIsSearchingLocal(true);
+      try {
+        const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(value)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          setResults(data);
+          setShowResults(data.length > 0);
+        }
+      } catch (e) {} finally { setIsSearchingLocal(false); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [value, searchUrl, readOnly]);
+
+  return (
+    <div className="space-y-3 group/field relative">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <div className={cn(
+        "relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl h-14 group-hover/field:border-emerald-100 transition-all px-4",
+        readOnly && "opacity-60 cursor-not-allowed"
+      )}>
+        <Icon className={cn("h-4 w-4 mr-3", readOnly ? "text-slate-300" : "text-slate-300 group-focus-within/field:text-emerald-500")} />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          placeholder={placeholder}
+          onFocus={() => results.length > 0 && setShowResults(true)}
+          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 h-full"
+        />
+        {(loading || isSearchingLocal) && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 absolute right-4" />}
+      </div>
+      {showResults && !readOnly && (
+        <div className="absolute top-[110%] left-0 right-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[200] overflow-hidden animate-in fade-in slide-in-from-top-2">
+           <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados de Búsqueda</span>
+              <button onClick={() => setShowResults(false)} className="text-slate-400 hover:text-rose-500"><X className="h-3 w-3" /></button>
+           </div>
+           <div className="lc-scroll max-h-[200px] overflow-y-auto">
+              {results.map((res, i) => (
+                 <div key={i} onClick={() => { onSelect(res); setShowResults(false); }} className="p-4 hover:bg-emerald-50 cursor-pointer flex items-center gap-4 group transition-colors border-b border-slate-50 last:border-none">
+                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-slate-50 group-hover:bg-emerald-600 group-hover:text-white transition-all"><Icon className="h-4 w-4" /></div>
+                    <div className="flex flex-col">
+                       <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 uppercase">
+                          {res.nombre || res.placa}
+                       </span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni || res.marca || res.transportista}</span>
+                    </div>
+                 </div>
+              ))}
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BandejaLogiCapture() {
   const [registros, setRegistros] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,6 +221,23 @@ export default function BandejaLogiCapture() {
   const [anularReason, setAnularReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editSector, setEditSector] = useState<string>(""); // 'maestros' | 'precintos' | 'fecha'
+  const [editData, setEditData] = useState<any>({
+     nombre_chofer: "",
+     dni_chofer: "",
+     licencia_chofer: "",
+     placa_tracto: "",
+     placa_carreta: "",
+     empresa_transporte: "",
+     precinto_aduana: [],
+     precinto_operador: [],
+     precinto_senasa: [],
+     precinto_linea: [],
+     precintos_beta: [],
+     termografos: [],
+     fecha_embarque: ""
+  });
 
   const copyToClipboard = (text: string, label: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -161,8 +306,49 @@ export default function BandejaLogiCapture() {
     }
   };
 
-  const handleAuditar = (id: number) => {
-    window.location.href = `/logicapture?edit=${id}`;
+  const handleEditOpen = (reg: any) => {
+    setSelectedReg(reg);
+    setEditData({
+       ...reg,
+       fecha_embarque: reg.fecha_embarque || reg.fecha_registro
+    });
+    setEditSector(""); // Reiniciar selección
+    setIsEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    try {
+       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+             precintoAduana: editData.precinto_aduana,
+             precintoOperador: editData.precinto_operador,
+             precintoSenasa: editData.precinto_senasa,
+             precintoLinea: editData.precinto_linea,
+             precintosBeta: editData.precintos_beta,
+             termografos: editData.termografos,
+             fecha_embarque: editData.fecha_embarque,
+             // Campos maestros si se editaron
+             nombreChofer: editData.nombre_chofer,
+             dni: editData.dni_chofer,
+             licenciaChofer: editData.licencia_chofer,
+             placaTracto: editData.placa_tracto,
+             placaCarreta: editData.placa_carreta,
+             empresa: editData.empresa_transporte,
+             isAudit: true
+          })
+       });
+
+       if (!response.ok) throw new Error();
+       
+       toast.success("Cambios aplicados correctamente 💎");
+       setIsEditOpen(false);
+       fetchRegistros();
+    } catch (error) {
+       setErrorMessage("No se pudieron guardar los cambios de auditoría.");
+       setIsErrorOpen(true);
+    }
   };
 
   const fetchRegistros = async () => {
@@ -358,13 +544,13 @@ export default function BandejaLogiCapture() {
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                   <Table>
                     <TableHeader className="bg-slate-50/50">
-                      <TableRow className="hover:bg-transparent border-none px-6">
-                        <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest p-6">Fecha/Hora</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest">Embarque (B / D / C)</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest">Planta / Cultivo</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest">Transporte (T / C)</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest w-[140px]">Estatus</TableHead>
-                        <TableHead className="text-right p-6 font-black text-[10px] uppercase tracking-widest w-[100px]">Acciones</TableHead>
+                      <TableRow className="hover:bg-transparent border-none px-6 [&_th]:border-none">
+                        <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest p-6 border-none">Fecha/Hora</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Embarque (B / D / C)</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Planta / Cultivo</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Transporte (T / C)</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest w-[140px] border-none">Estatus</TableHead>
+                        <TableHead className="text-right p-6 font-black text-[10px] uppercase tracking-widest w-[100px] border-none">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -389,7 +575,7 @@ export default function BandejaLogiCapture() {
                       ).map((reg) => (
                         <TableRow 
                           key={reg.id} 
-                          className="group hover:bg-emerald-50/10 transition-colors border-none px-6 cursor-pointer"
+                          className="group hover:bg-emerald-50/10 transition-colors border-none px-6 cursor-pointer [&_td]:border-none"
                           onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
                         >
                           <TableCell className="p-6 font-medium text-slate-600">
@@ -451,8 +637,8 @@ export default function BandejaLogiCapture() {
 
                                 {activeTab === "PROCESADO" && (
                                    <>
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleAuditar(reg.id)}>
-                                        <Edit3 className="h-4 w-4" /> Auditar
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
+                                        <Edit3 className="h-4 w-4" /> Editar
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
                                       <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg.id, 'ANULADO')}>
@@ -575,9 +761,9 @@ export default function BandejaLogiCapture() {
                        <Button 
                          variant="outline" 
                          className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                         onClick={() => handleAuditar(selectedReg.id)}
+                         onClick={() => handleEditOpen(selectedReg)}
                        >
-                          <Edit3 className="h-4 w-4 mr-2" /> Auditar Registro
+                          <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
                        </Button>
                     )}
                  </div>
@@ -736,6 +922,184 @@ export default function BandejaLogiCapture() {
                 >
                    Entendido
                 </Button>
+             </div>
+          </DialogContent>
+       </Dialog>
+       {/* Modal de Edición Directa Carlos Style 💎 */}
+       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-4xl bg-white border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl h-[90vh] flex flex-col">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Editar Auditoría</DialogTitle>
+                <DialogDescription>Corrección de datos operativos LogiCapture</DialogDescription>
+             </DialogHeader>
+
+             <div className="p-10 bg-emerald-950 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-6">
+                   <div className="h-16 w-16 bg-emerald-500 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-emerald-500/50">
+                      <Edit3 className="h-8 w-8" />
+                   </div>
+                   <div className="space-y-1">
+                      <h2 className="text-3xl font-black text-white tracking-tighter uppercase font-['Outfit']">Auditoría <span className="text-emerald-400">Dirigida</span></h2>
+                      <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">Corrección Selectiva de Registro #{selectedReg?.id}</p>
+                   </div>
+                </div>
+                <button onClick={() => setIsEditOpen(false)} className="h-12 w-12 bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all flex items-center justify-center group">
+                   <X className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                </button>
+             </div>
+
+             <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-slate-50/30 pb-24">
+                {/* Paso 1: Selección de Sector */}
+                <div className="space-y-6">
+                   <div className="flex items-center gap-3 ml-2">
+                      <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                      <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Paso 1: ¿Qué campo desea corregir?</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        { id: 'maestros', label: 'Datos Maestros', desc: 'Chofer, Placas, Transportista', icon: Truck },
+                        { id: 'precintos', label: 'Precintos y Sellos', desc: 'Aduana, Beta, Senasa, etc.', icon: ShieldCheck },
+                        { id: 'fecha', label: 'Fecha de Embarque', desc: 'Ajuste de día y hora operativa', icon: Calendar }
+                      ].map((item) => (
+                         <button 
+                           key={item.id}
+                           onClick={() => setEditSector(item.id)}
+                           className={cn(
+                              "relative overflow-hidden p-6 rounded-[2.5rem] border-2 text-left transition-all duration-500 group",
+                              editSector === item.id 
+                                ? "border-emerald-500 bg-white shadow-xl shadow-emerald-500/10 scale-[1.02]" 
+                                : "border-slate-100 bg-white hover:border-emerald-200"
+                           )}
+                         >
+                            <div className={cn(
+                               "h-12 w-12 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500",
+                               editSector === item.id ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600"
+                            )}>
+                               <item.icon className="h-6 w-6" />
+                            </div>
+                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide mb-1">{item.label}</h4>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-tight">{item.desc}</p>
+                            {editSector === item.id && (
+                               <div className="absolute top-6 right-6 h-6 w-6 bg-emerald-500 rounded-full flex items-center justify-center animate-in zoom-in">
+                                  <CheckCircle2 className="h-3 w-3 text-white" />
+                               </div>
+                            )}
+                         </button>
+                      ))}
+                   </div>
+                </div>
+
+                {/* Paso 2: Edición Dinámica */}
+                {editSector && (
+                   <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-700">
+                      <div className="flex items-center gap-3 ml-2 border-t border-slate-100 pt-10">
+                         <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse" />
+                         <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest uppercase">Paso 2: Formulario de Corrección</h3>
+                      </div>
+
+                      <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl space-y-8 relative overflow-hidden">
+                         <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none text-emerald-950">
+                            <Edit3 className="h-32 w-32 rotate-12" />
+                         </div>
+
+                         {editSector === 'maestros' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               <SearchableField 
+                                  label="Chofer (Nombre o DNI)"
+                                  icon={User}
+                                  value={editData.nombre_chofer}
+                                  onChange={(v: string) => setEditData({...editData, nombre_chofer: v})}
+                                  searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
+                                  onSelect={(res: any) => setEditData({
+                                     ...editData, 
+                                     nombre_chofer: res.nombre,
+                                     dni_chofer: res.dni,
+                                     licencia_chofer: res.licencia
+                                  })}
+                                  placeholder="Buscar chofer..."
+                               />
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                     <label className="text-[10px] font-black text-slate-400 uppercase ml-1">DNI</label>
+                                     <Input value={editData.dni_chofer} readOnly className="rounded-2xl bg-slate-50 border-none font-bold h-14" />
+                                  </div>
+                                  <div className="space-y-2">
+                                     <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Licencia</label>
+                                     <Input value={editData.licencia_chofer} readOnly className="rounded-2xl bg-slate-50 border-none font-bold h-14" />
+                                  </div>
+                               </div>
+                               <SearchableField 
+                                  label="Placa Tracto"
+                                  icon={Truck}
+                                  value={editData.placa_tracto}
+                                  onChange={(v: string) => setEditData({...editData, placa_tracto: v})}
+                                  searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/tracto/search`}
+                                  onSelect={(res: any) => setEditData({
+                                     ...editData, 
+                                     placa_tracto: res.placa,
+                                     empresa_transporte: res.transportista
+                                  })}
+                                  placeholder="ABC-123"
+                               />
+                               <SearchableField 
+                                  label="Placa Carreta"
+                                  icon={Truck}
+                                  value={editData.placa_carreta}
+                                  onChange={(v: string) => setEditData({...editData, placa_carreta: v})}
+                                  searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/carreta/search`}
+                                  onSelect={(res: any) => setEditData({...editData, placa_carreta: res.placa})}
+                                  placeholder="XYZ-456"
+                               />
+                            </div>
+                         )}
+
+                         {editSector === 'precintos' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                               <MultiInput label="Aduana" icon={ShieldCheck} values={editData.precinto_aduana} onChange={(v:any)=>setEditData({...editData, precinto_aduana: v})} placeholder="Ej: AD123" />
+                               <MultiInput label="Operador" icon={ShieldCheck} values={editData.precinto_operador} onChange={(v:any)=>setEditData({...editData, precinto_operador: v})} placeholder="Ej: OP123" />
+                               <MultiInput label="Senasa" icon={ShieldCheck} values={editData.precinto_senasa} onChange={(v:any)=>setEditData({...editData, precinto_senasa: v})} placeholder="Ej: SE123" />
+                               <MultiInput label="Línea" icon={Layers} values={editData.precinto_linea} onChange={(v:any)=>setEditData({...editData, precinto_linea: v})} placeholder="Ej: LN123" />
+                               <MultiInput label="BETA" icon={Zap} values={editData.precintos_beta} onChange={(v:any)=>setEditData({...editData, precintos_beta: v})} placeholder="Ej: BT123" />
+                               <MultiInput label="Termógrafos" icon={Thermometer} values={editData.termografos} onChange={(v:any)=>setEditData({...editData, termografos: v})} placeholder="Ej: T-999" />
+                            </div>
+                         )}
+
+                         {editSector === 'fecha' && (
+                            <div className="flex flex-col items-center gap-6 p-10 bg-emerald-50/20 rounded-[2.5rem] border border-emerald-100/50">
+                               <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shadow-inner">
+                                  <Calendar className="h-10 w-10" />
+                               </div>
+                               <div className="text-center space-y-2">
+                                  <h4 className="text-xl font-black text-emerald-950 uppercase tracking-tighter">Ajuste de Fecha de Embarque</h4>
+                                  <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest">Establezca la fecha oficial de salida para este registro</p>
+                               </div>
+                               <Input 
+                                 type="datetime-local" 
+                                 value={editData.fecha_embarque ? new Date(editData.fecha_embarque).toISOString().slice(0, 16) : ""}
+                                 onChange={(e) => setEditData({...editData, fecha_embarque: e.target.value})}
+                                 className="max-w-md h-16 rounded-3xl border-emerald-200 bg-white shadow-2xl shadow-emerald-950/5 text-lg font-black text-emerald-950 px-8 text-center"
+                               />
+                            </div>
+                         )}
+                      </div>
+                   </div>
+                )}
+             </div>
+
+             <div className="p-10 bg-white border-t border-slate-100 shrink-0 flex items-center justify-between gap-8 z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center gap-4 text-slate-400">
+                   <Info className="h-5 w-5" />
+                   <p className="text-[10px] font-black uppercase tracking-widest leading-none">Los cambios serán auditados y registrados bajo su usuario corporativo.</p>
+                </div>
+                <div className="flex gap-4">
+                   <button onClick={() => setIsEditOpen(false)} className="px-10 py-5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-all">Cancelar</button>
+                   <Button 
+                     onClick={handleEditSave}
+                     className="px-12 py-7 bg-emerald-950 hover:bg-emerald-900 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-emerald-950/20 active:scale-95 transition-all"
+                   >
+                      Aplicar Corrección Auditoría
+                   </Button>
+                </div>
              </div>
           </DialogContent>
        </Dialog>
