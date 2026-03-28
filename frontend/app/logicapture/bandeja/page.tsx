@@ -461,8 +461,8 @@ export default function BandejaLogiCapture() {
                <div className="flex items-center gap-4">
                   <Button 
                     onClick={handleExportExcel}
-                    variant="outline" 
-                    className="rounded-2xl bg-white border-emerald-100 font-black text-emerald-600 hover:bg-emerald-950 hover:text-white hover:border-emerald-950 transition-all gap-2 shadow-sm px-6 h-10 uppercase tracking-widest text-[10px]"
+                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
+
                   >
                      <FileDown className="h-4 w-4" />
                      {isExporting ? "Generando..." : "Exportar Excel"}
@@ -605,8 +605,8 @@ export default function BandejaLogiCapture() {
                           <TableCell>
                              <div className="flex flex-col gap-1.5 py-4">
                                 <div className="flex items-center gap-3">
-                                   <Badge variant="outline" className="rounded-lg bg-emerald-50 text-emerald-800 border-emerald-100 font-black text-[10px]">{reg.booking}</Badge>
-                                </div>
+                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
+
                                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
                                    {reg.dam} â€¢ {reg.contenedor}
                                 </div>
@@ -773,11 +773,11 @@ export default function BandejaLogiCapture() {
                        </Button>
                     ) : (
                        <Button 
-                         variant="outline" 
-                         className="flex-1 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-xs h-12 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
+                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
+
                          onClick={() => handleEditOpen(selectedReg)}
                        >
-                          <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
+                          <Edit3 className="h-4 w-4 mr-2" /> Editar Auditoría
                        </Button>
                     )}
                  </div>
@@ -1185,3 +1185,4 @@ export default function BandejaLogiCapture() {
     </div>
   );
 }
+
