@@ -112,6 +112,14 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
         exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val).first()
     elif field == "contenedor":
         exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val).first()
+    elif field in ["precinto", "termografo"]:
+        # Buscar en la tabla de blindaje detallado
+        det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val).first()
+        if det:
+            # Si existe en detalles, devolvemos el registro padre
+            exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == det.registro_id).first()
+        else:
+            exists = None
     else:
         exists = None
 
