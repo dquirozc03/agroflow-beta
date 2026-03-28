@@ -4,6 +4,7 @@ from typing import Optional
 from app.database import get_db
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
+from app.models.maestros import Chofer, VehiculoTracto, Transportista
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -45,4 +46,40 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         "dam": emb.dam if emb else "PENDIENTE",
         "contenedor": emb.contenedor if emb else "PENDIENTE",
         "status": "success"
+    }
+
+@router.get("/driver/{dni}")
+def get_driver_data(dni: str, db: Session = Depends(get_db)):
+    """Busca chofer en maestros por DNI."""
+    clean_dni = dni.strip().upper()
+    driver = db.query(Chofer).filter(Chofer.dni == clean_dni).first()
+    
+    if not driver:
+        raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni} no registrado")
+        
+    return {
+        "dni": driver.dni,
+        "nombres": driver.nombres,
+        "apellido_paterno": driver.apellido_paterno,
+        "apellido_materno": driver.apellido_materno,
+        "licencia": driver.licencia,
+        "nombre_operativo": driver.nombre_operativo
+    }
+
+@router.get("/vehicle/{placa}")
+def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
+    """Busca vehículo y su transportista por placa."""
+    clean_placa = placa.strip().upper().replace("-", "")
+    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa).first()
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa} no registrado")
+        
+    return {
+        "placa": vehicle.placa_tracto,
+        "marca": vehicle.marca,
+        "transportista": {
+            "nombre_transportista": vehicle.transportista.nombre_transportista,
+            "ruc": vehicle.transportista.ruc
+        }
     }

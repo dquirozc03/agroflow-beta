@@ -103,9 +103,10 @@ interface FormFieldProps {
   loading?: boolean;
   error?: boolean;
   errorMsg?: string;
+  onBlur?: () => void;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur }: FormFieldProps) {
   return (
     <div className="space-y-3 group/field">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
@@ -122,6 +123,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           value={value}
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
           placeholder={placeholder}
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
@@ -202,6 +204,9 @@ export default function LogiCaptureV2Page() {
   const [bookingError, setBookingError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
+  const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
+  const [isLoadingChofer, setIsLoadingChofer] = useState(false);
+
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
     if (!cleanBooking) {
@@ -279,6 +284,42 @@ export default function LogiCaptureV2Page() {
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleVehiculoBlur = async () => {
+    const placa = (formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
+    if (!placa) return;
+
+    setIsLoadingVehiculo(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
+      if (!response.ok) throw new Error("Placa no registrada en maestros");
+      const data = await response.json();
+      updateField("empresa", data.transportista.nombre_transportista);
+      toast.success("Transportista identificado: " + data.transportista.nombre_transportista);
+    } catch (error: any) {
+      toast.error(error.message);
+      updateField("empresa", "");
+    } finally {
+      setIsLoadingVehiculo(false);
+    }
+  };
+
+  const handleChoferBlur = async () => {
+    const dni = (formData.dni || "").trim();
+    if (!dni) return;
+
+    setIsLoadingChofer(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
+      if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
+      const data = await response.json();
+      toast.success("Chofer validado: " + data.nombre_operativo);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoadingChofer(false);
+    }
   };
 
   return (
@@ -466,6 +507,8 @@ export default function LogiCaptureV2Page() {
                         icon={User} 
                         value={formData.dni} 
                         onChange={(v) => updateField("dni", v)} 
+                        onBlur={handleChoferBlur}
+                        loading={isLoadingChofer}
                      />
                      <FormField 
                         label="Placa Tracto" 
@@ -473,6 +516,8 @@ export default function LogiCaptureV2Page() {
                         icon={Maximize2} 
                         value={formData.placaTracto} 
                         onChange={(v) => updateField("placaTracto", v)} 
+                        onBlur={handleVehiculoBlur}
+                        loading={isLoadingVehiculo}
                      />
                      <FormField 
                         label="Placa Carreta" 
@@ -483,10 +528,11 @@ export default function LogiCaptureV2Page() {
                      />
                      <FormField 
                         label="Empresa Transportes" 
-                        placeholder="BUSCAR EMPRESA..." 
+                        placeholder="AUTOMÁTICO..." 
                         icon={Layers} 
                         value={formData.empresa} 
                         onChange={(v) => updateField("empresa", v)} 
+                        readOnly
                      />
                   </div>
                </div>
