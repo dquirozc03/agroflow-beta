@@ -107,11 +107,11 @@ interface FormFieldProps {
 
 function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg }: FormFieldProps) {
   return (
-    <div className="space-y-3 group">
-      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-emerald-500 transition-colors">
+    <div className="space-y-3 group/field">
+      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
         {label}
       </label>
-      <div className={cn("relative", error && "z-20 hover:z-30")}>
+      <div className={cn("relative group/input", error && "z-20 hover:z-30")}>
         <div className={cn(
           "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
           success ? "text-emerald-500" : "text-slate-300 group-focus-within:text-emerald-500"
@@ -123,7 +123,6 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          title={value}
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
@@ -139,11 +138,20 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
         {error && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
              <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
-             {/* Tooltip Carlos Style - Centrado y Preventivo */}
+             {/* Tooltip Alert Style */}
              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[100] origin-bottom">
                 {errorMsg}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
              </div>
+          </div>
+        )}
+
+        {/* Tooltip Premium para Datos (Solo si no hay error y hay valor) */}
+        {value && !error && !loading && (
+          <div className="absolute top-[110%] left-1/2 -translate-x-1/2 px-5 py-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/20 text-emerald-400 text-xs font-black tracking-widest uppercase rounded-2xl shadow-2xl opacity-0 scale-90 translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap origin-top overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-20" />
+             <span className="relative z-10">{value}</span>
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-emerald-950/90" />
           </div>
         )}
       </div>
