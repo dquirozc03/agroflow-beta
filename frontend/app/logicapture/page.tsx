@@ -268,7 +268,11 @@ export default function LogiCaptureV2Page() {
     marca_tracto: "",
     cert_tracto: "",
     cert_carreta: "",
-    fecha_embarque: new Date().toISOString()
+    fecha_embarque: new Date().toISOString(),
+    // Campos v2
+    nombreChofer: "",
+    licenciaChofer: "",
+    partidaRegistral: ""
   });
 
   const [isSearching, setIsSearching] = useState(false);
@@ -411,6 +415,7 @@ export default function LogiCaptureV2Page() {
       updateField("marca_tracto", data.marca);
       updateField("cert_tracto", data.configuracion_vehicular);
       updateField("codigo_sap", data.transportista.codigo_sap);
+      updateField("partidaRegistral", data.transportista.partida_registral);
       
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {
@@ -430,6 +435,8 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
       const data = await response.json();
+      updateField("nombreChofer", data.nombre_operativo);
+      updateField("licenciaChofer", data.licencia);
       setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
@@ -595,7 +602,10 @@ export default function LogiCaptureV2Page() {
       marca_tracto: "",
       cert_tracto: "",
       cert_carreta: "",
-      fecha_embarque: new Date().toISOString()
+      fecha_embarque: new Date().toISOString(),
+      nombreChofer: "",
+      licenciaChofer: "",
+      partidaRegistral: ""
     });
     setValidatedFields([]);
     setFieldErrors({});

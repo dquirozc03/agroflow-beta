@@ -421,21 +421,33 @@ export default function BandejaLogiCapture() {
                        </p>
                        
                        {[
-                         { label: "ID REGISTRO", value: selectedReg.id, key: "id" },
-                         { label: "FECHA EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
+                         { label: "FECHA DE EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
                          { label: "ORDEN BETA", value: selectedReg.orden_beta, key: "orden" },
                          { label: "BOOKING", value: selectedReg.booking, key: "booking" },
                          { label: "CONTENEDOR", value: selectedReg.contenedor, key: "cnt" },
-                         { label: "DAM / DUA", value: selectedReg.dam, key: "dam" },
-                         { label: "CODIGO SAP TRANSP.", value: selectedReg.codigo_sap, key: "sap_t" },
-                         { label: "RUC TRANSPORTISTA", value: selectedReg.ruc_transportista, key: "ruc_t" },
+                         { label: "MARCA", value: selectedReg.marca_tracto, key: "marca" },
+                         { label: "PLACAS", value: `${selectedReg.placa_tracto} / ${selectedReg.placa_carreta}`, key: "placas" },
+                         { label: "CHOFER", value: selectedReg.nombre_chofer, key: "chofer_n" },
+                         { label: "DNI", value: selectedReg.dni_chofer, key: "dni" },
+                         { label: "LICENCIA", value: selectedReg.licencia_chofer, key: "lic" },
+                         { label: "TERMOGRAFOS", value: selectedReg.termografos?.join(" / "), key: "term" },
+                         { label: "CODIGO SAP", value: selectedReg.codigo_sap, key: "sap" },
                          { label: "TRANSPORTISTA", value: selectedReg.empresa_transporte, key: "trans" },
-                         { label: "PLACA TRACTO", value: selectedReg.placa_tracto, key: "tracto" },
-                         { label: "MARCA TRACTO", value: selectedReg.marca_tracto, key: "marca" },
-                         { label: "CERT. TRACTO", value: selectedReg.cert_tracto, key: "cert_t" },
-                         { label: "PLACA CARRETA", value: selectedReg.placa_carreta, key: "carreta" },
-                         { label: "CERT. CARRETA", value: selectedReg.cert_carreta, key: "cert_c" },
-                         { label: "CHOFER (DNI)", value: selectedReg.dni_chofer, key: "chofer" },
+                         { label: "NUMERO DE DAM", value: selectedReg.dam, key: "dam" },
+                         { label: "PRECINTOS BETA", value: selectedReg.precintos_beta?.join(" / "), key: "beta" },
+                         { label: "PRECINTO ADUANA", value: selectedReg.precinto_aduana?.join(" / "), key: "aduana" },
+                         { label: "PRECINTO OPERADOR", value: selectedReg.precinto_operador?.join(" / "), key: "ope" },
+                         { 
+                            label: "SENASA/PS LÍNEA", 
+                            value: `SENASA: ${selectedReg.precinto_senasa?.join(" / ") || "**"} / PS.LIN: ${selectedReg.precinto_linea?.join(" / ") || "**"}`, 
+                            key: "senasa_linea" 
+                         },
+                         { label: "PARTIDA REGISTRAL", value: selectedReg.partida_registral, key: "partida" },
+                         { 
+                            label: "TARJETA UNICA DE CIRCULACION", 
+                            value: `${selectedReg.cert_tracto || "**"} / ${selectedReg.cert_carreta || "**"}`, 
+                            key: "tuc" 
+                         },
                        ].map((item) => (
                           <div key={item.key} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
                              <div className="flex items-center justify-between">

@@ -43,6 +43,11 @@ class LogiCaptureSaveRequest(BaseModel):
     cert_tracto: Optional[str] = None
     cert_carreta: Optional[str] = None
     fecha_embarque: Optional[str] = None # ISO Format
+    
+    # Nuevos campos v2
+    nombreChofer: Optional[str] = None
+    licenciaChofer: Optional[str] = None
+    partidaRegistral: Optional[str] = None
 
 class LookupResponse(BaseModel):
     booking: str
@@ -120,7 +125,8 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
         "transportista": {
             "nombre_transportista": vehicle.transportista.nombre_transportista,
             "ruc_transportista": vehicle.transportista.ruc,
-            "codigo_sap": vehicle.transportista.codigo_sap
+            "codigo_sap": vehicle.transportista.codigo_sap,
+            "partida_registral": vehicle.transportista.partida_registral
         },
         "configuracion_vehicular": vehicle.certificado_vehicular_tracto
     }
@@ -222,7 +228,10 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         cert_tracto=req.cert_tracto,
         cert_carreta=req.cert_carreta,
         fecha_embarque=datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00')) if req.fecha_embarque else None,
-        status="PENDIENTE"
+        status="PENDIENTE",
+        nombre_chofer=req.nombreChofer,
+        licencia_chofer=req.licenciaChofer,
+        partida_registral=req.partidaRegistral
     )
     db.add(new_reg)
     db.commit() # Commit inicial para obtener id

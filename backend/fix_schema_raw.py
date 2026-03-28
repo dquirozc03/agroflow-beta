@@ -13,18 +13,11 @@ def fix_schema():
     print(f"🕵️‍♂️ Iniciando auditoría de esquema ampliado en Supabase...")
     
     with engine.connect() as conn:
-        # Lista de nuevas columnas para el Ticket de Bandeja Premium
+        # Colunas extra para Reporte Auditoría Carlos Style
         new_cols = [
-            ("status", "VARCHAR(50) DEFAULT 'PENDIENTE'"),
-            ("motivo_anulacion", "VARCHAR(200)"),
-            ("fecha_embarque", "TIMESTAMP WITH TIME ZONE"),
-            ("planta", "VARCHAR(100)"),
-            ("cultivo", "VARCHAR(100)"),
-            ("codigo_sap", "VARCHAR(50)"),
-            ("ruc_transportista", "VARCHAR(20)"),
-            ("marca_tracto", "VARCHAR(50)"),
-            ("cert_tracto", "VARCHAR(50)"),
-            ("cert_carreta", "VARCHAR(50)")
+            ("nombre_chofer", "VARCHAR(255)"),
+            ("licencia_chofer", "VARCHAR(50)"),
+            ("partida_registral", "VARCHAR(100)")
         ]
 
         for col_name, col_type in new_cols:
@@ -36,7 +29,7 @@ def fix_schema():
 
         conn.commit()
     
-    print("🚀 Cirugía de esquema Premium completada.")
+    print("🚀 Cirugía de esquema Auditoría v2 completada.")
 
 if __name__ == "__main__":
     fix_schema()
