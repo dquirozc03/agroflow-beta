@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
 from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
-from app.models.logicapture import LogiCaptureRegistro
+from app.models.logicapture import LogiCaptureRegistro, LogiCaptureDetalle
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -116,7 +116,27 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
 
 @router.post("/register")
 def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
-    """Guarda registro final de LogiCapture."""
+    """Guarda registro final de LogiCapture con validaciones de unicidad."""
+    
+    # 1. Validar Unicidad de Cabecera (DAM / Contenedor)
+    existing_dam = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == req.dam).first()
+    if existing_dam:
+        raise HTTPException(status_code=400, detail=f"La DAM {req.dam} ya cuenta con un registro de salida.")
+        
+    existing_cnt = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == req.contenedor).first()
+    if existing_cnt:
+        raise HTTPException(status_code=400, detail=f"El contenedor {req.contenedor} ya cuenta con un registro de salida activo.")
+
+    # 2. Validar Unicidad de Precintos/Termógrafos
+    codes_to_check = (req.precintoAduana + req.precintoOperador + req.precintoSenasa + 
+                      req.precintoLinea + req.precintosBeta + req.termografos)
+    
+    if codes_to_check:
+        dup = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo.in_(codes_to_check)).first()
+        if dup:
+            raise HTTPException(status_code=400, detail=f"El código de precinto/termógrafo '{dup.codigo}' ya fue utilizado en otra operación.")
+
+    # 3. Guardar Cabecera
     new_reg = LogiCaptureRegistro(
         booking=req.booking,
         orden_beta=req.ordenBeta,
@@ -134,6 +154,32 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         termografos=req.termografos
     )
     db.add(new_reg)
-    db.commit()
+    db.commit() # Commit inicial para obtener id
     db.refresh(new_reg)
+
+    # 4. Guardar Detalles de Unicidad
+    # Por cada categoría guardamos en la tabla de blindaje
+    details = []
+    category_map = {
+        "ADUANA": req.precintoAduana,
+        "OPERADOR": req.precintoOperador,
+        "SENASA": req.precintoSenasa,
+        "LINEA": req.precintoLinea,
+        "BETA": req.precintosBeta,
+        "TERMOGRAFO": req.termografos
+    }
+
+    for tipo, codes in category_map.items():
+        for code in codes:
+            details.append(LogiCaptureDetalle(
+                registro_id=new_reg.id,
+                categoria="PRECINTO" if tipo != "TERMOGRAFO" else "TERMOGRAFO",
+                tipo=tipo,
+                codigo=code
+            ))
+    
+    if details:
+        db.add_all(details)
+        db.commit()
+
     return {"status": "success", "id": new_reg.id}
