@@ -244,13 +244,13 @@ export default function LogiCaptureV2Page() {
       const errors: { [key: string]: string } = {};
 
       if (result.orden_beta) found.push("ordenBeta");
-      else errors.ordenBeta = "No se encontró Orden Beta en Plan Maestro";
+      else errors.ordenBeta = "No se encontró Orden Beta en el Posicionamiento";
 
       if (result.contenedor) found.push("contenedor");
-      else errors.contenedor = "No se encontró Contenedor en Plan Maestro";
+      else errors.contenedor = "No se encontró Contenedor en Datos Maestros";
 
       if (result.dam) found.push("dam");
-      else errors.dam = "No se encontró DAM en Control de Embarque";
+      else errors.dam = "No se encontró DAM en el Control de Embarque";
 
       setValidatedFields(found);
       setFieldErrors(errors);
