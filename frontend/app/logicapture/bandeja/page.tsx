@@ -541,7 +541,7 @@ export default function BandejaLogiCapture() {
               </div>
 
               <TabsContent value={activeTab} className="p-0 border-none outline-none">
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden lc-table-clean">
                   <Table>
                     <TableHeader className="bg-slate-50/50">
                       <TableRow className="hover:bg-transparent border-none px-6 [&_th]:border-none">

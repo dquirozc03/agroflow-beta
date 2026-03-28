@@ -266,3 +266,5 @@
   animation-duration: 1.5s;
   filter: brightness(1.2);
 }
+/* Limpieza de Tablas LogiCapture Carlos Style ?? */
+.lc-table-clean table, .lc-table-clean thead, .lc-table-clean tbody, .lc-table-clean tr, .lc-table-clean th, .lc-table-clean td { border: none !important; border-bottom: none !important; border-top: none !important; box-shadow: none !important; }
