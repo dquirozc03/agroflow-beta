@@ -10,38 +10,33 @@ sys.path.append(os.getcwd())
 from app.database import engine
 
 def fix_schema():
-    print(f"🕵️‍♂️ Iniciando auditoría de esquema en Supabase...")
+    print(f"🕵️‍♂️ Iniciando auditoría de esquema ampliado en Supabase...")
     
     with engine.connect() as conn:
-        # 1. Asegurar tratamiento_buque en logicapture_registros
-        try:
-            conn.execute(text("ALTER TABLE logicapture_registros ADD COLUMN IF NOT EXISTS tratamiento_buque BOOLEAN DEFAULT FALSE;"))
-            print("✅ Columna 'tratamiento_buque' verificada/creada.")
-        except Exception as e:
-            print(f"⚠️ Error al verificar 'tratamiento_buque': {e}")
-
-        # 2. Asegurar todos los campos de JSON (por si alguno falta)
-        cols_json = [
-            "precinto_aduana", "precinto_operador", "precinto_senasa", 
-            "precinto_linea", "precintos_beta", "termografos"
+        # Lista de nuevas columnas para el Ticket de Bandeja Premium
+        new_cols = [
+            ("status", "VARCHAR(50) DEFAULT 'PENDIENTE'"),
+            ("motivo_anulacion", "VARCHAR(200)"),
+            ("fecha_embarque", "TIMESTAMP WITH TIME ZONE"),
+            ("planta", "VARCHAR(100)"),
+            ("cultivo", "VARCHAR(100)"),
+            ("codigo_sap", "VARCHAR(50)"),
+            ("ruc_transportista", "VARCHAR(20)"),
+            ("marca_tracto", "VARCHAR(50)"),
+            ("cert_tracto", "VARCHAR(50)"),
+            ("cert_carreta", "VARCHAR(50)")
         ]
-        for col in cols_json:
-            try:
-                conn.execute(text(f"ALTER TABLE logicapture_registros ADD COLUMN IF NOT EXISTS {col} JSON;"))
-                print(f"✅ Columna JSON '{col}' verificada.")
-            except Exception as e:
-                print(f"⚠️ Error al verificar {col}: {e}")
 
-        # 3. Asegurar usuario_registro
-        try:
-            conn.execute(text("ALTER TABLE logicapture_registros ADD COLUMN IF NOT EXISTS usuario_registro VARCHAR(100);"))
-            print("✅ Columna 'usuario_registro' verificada.")
-        except Exception as e:
-            print(f"⚠️ Error al verificar 'usuario_registro': {e}")
+        for col_name, col_type in new_cols:
+            try:
+                conn.execute(text(f"ALTER TABLE logicapture_registros ADD COLUMN IF NOT EXISTS {col_name} {col_type};"))
+                print(f"✅ Columna '{col_name}' verificada/creada.")
+            except Exception as e:
+                print(f"⚠️ Error al verificar '{col_name}': {e}")
 
         conn.commit()
     
-    print("🚀 Cirugía de esquema completada. La base de datos está ahora alineada al 100% con el modelo.")
+    print("🚀 Cirugía de esquema Premium completada.")
 
 if __name__ == "__main__":
     fix_schema()

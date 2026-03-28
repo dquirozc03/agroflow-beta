@@ -32,7 +32,23 @@ class LogiCaptureRegistro(Base):
     precintos_beta = Column(JSON)
     termografos = Column(JSON)
     
-    # Metadatos
+    # Metadatos del Negocio (Auditoría y Gestión)
+    status = Column(String(50), default="PENDIENTE") # PENDIENTE, PROCESADO, ANULADO
+    motivo_anulacion = Column(String(200), nullable=True)
+    fecha_embarque = Column(DateTime(timezone=True), nullable=True)
+    
+    # Datos del Maestro de Posicionamiento (Captura reactiva)
+    planta = Column(String(100), nullable=True)
+    cultivo = Column(String(100), nullable=True)
+    codigo_sap = Column(String(50), nullable=True)
+    
+    # Datos Extendidos de Transporte (Trazabilidad)
+    ruc_transportista = Column(String(20), nullable=True)
+    marca_tracto = Column(String(50), nullable=True)
+    cert_tracto = Column(String(50), nullable=True)
+    cert_carreta = Column(String(50), nullable=True)
+
+    # Metadatos de Sistema
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
     usuario_registro = Column(String(100), nullable=True)
 

@@ -260,6 +260,15 @@ export default function LogiCaptureV2Page() {
     precintosBeta: [] as string[],
     termografos: [] as string[],
     tratamientoBuque: false,
+    // Nuevos campos de gestión premium
+    planta: "",
+    cultivo: "",
+    codigo_sap: "",
+    ruc_transportista: "",
+    marca_tracto: "",
+    cert_tracto: "",
+    cert_carreta: "",
+    fecha_embarque: new Date().toISOString()
   });
 
   const [isSearching, setIsSearching] = useState(false);
@@ -394,7 +403,12 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
       if (!response.ok) throw new Error("Placa no registrada en maestros");
       const data = await response.json();
+      
       updateField("empresa", data.transportista.nombre_transportista);
+      updateField("ruc_transportista", data.transportista.ruc_transportista);
+      updateField("marca_tracto", data.marca);
+      updateField("cert_tracto", data.configuracion_vehicular);
+      
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
@@ -488,7 +502,8 @@ export default function LogiCaptureV2Page() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
       if (!response.ok) throw new Error("Carreta no registrada en maestros");
-      // No necesitamos info extra por ahora, solo validar existencia
+      const data = await response.json();
+      updateField("cert_carreta", data.status === "success" ? "" : ""); // El backend actual de trailer no devuelve config aún, pero dejamos el slot
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
     } finally {
@@ -570,6 +585,14 @@ export default function LogiCaptureV2Page() {
       precintosBeta: [],
       termografos: [],
       tratamientoBuque: false,
+      planta: "",
+      cultivo: "",
+      codigo_sap: "",
+      ruc_transportista: "",
+      marca_tracto: "",
+      cert_tracto: "",
+      cert_carreta: "",
+      fecha_embarque: new Date().toISOString()
     });
     setValidatedFields([]);
     setFieldErrors({});

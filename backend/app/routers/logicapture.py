@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
+from datetime import datetime
+import pandas as pd
+import io
+from fastapi.responses import StreamingResponse
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque
 from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
@@ -29,6 +33,16 @@ class LogiCaptureSaveRequest(BaseModel):
     precintosBeta: list[str]
     termografos: list[str]
     tratamientoBuque: bool = False
+    
+    # Nuevos campos del ticket premium
+    planta: Optional[str] = None
+    cultivo: Optional[str] = None
+    codigo_sap: Optional[str] = None
+    ruc_transportista: Optional[str] = None
+    marca_tracto: Optional[str] = None
+    cert_tracto: Optional[str] = None
+    cert_carreta: Optional[str] = None
+    fecha_embarque: Optional[str] = None # ISO Format
 
 class LookupResponse(BaseModel):
     booking: str
@@ -36,6 +50,9 @@ class LookupResponse(BaseModel):
     dam: Optional[str] = None
     contenedor: Optional[str] = None
     status: str
+    planta: Optional[str] = None
+    cultivo: Optional[str] = None
+    codigo_sap: Optional[str] = None
 
 @router.get("/lookup/{booking}", response_model=LookupResponse)
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
@@ -189,7 +206,17 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         precinto_linea=req.precintoLinea,
         precintos_beta=req.precintosBeta,
         termografos=req.termografos,
-        tratamiento_buque=req.tratamientoBuque
+        tratamiento_buque=req.tratamientoBuque,
+        # Nuevos campos del ticket premium
+        planta=req.planta,
+        cultivo=req.cultivo,
+        codigo_sap=req.codigo_sap,
+        ruc_transportista=req.ruc_transportista,
+        marca_tracto=req.marca_tracto,
+        cert_tracto=req.cert_tracto,
+        cert_carreta=req.cert_carreta,
+        fecha_embarque=datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00')) if req.fecha_embarque else None,
+        status="PENDIENTE"
     )
     db.add(new_reg)
     db.commit() # Commit inicial para obtener id
@@ -221,3 +248,89 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         db.commit()
 
     return {"status": "success", "id": new_reg.id}
+
+@router.get("/registros")
+def list_registros(
+    page: int = 1, 
+    planta: Optional[str] = None, 
+    cultivo: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Listado paginado de registros con filtros operativos."""
+    query = db.query(LogiCaptureRegistro)
+    
+    if planta: query = query.filter(LogiCaptureRegistro.planta == planta)
+    if cultivo: query = query.filter(LogiCaptureRegistro.cultivo == cultivo)
+    if status: query = query.filter(LogiCaptureRegistro.status == status)
+    
+    total = query.count()
+    registros = query.order_by(LogiCaptureRegistro.fecha_registro.desc()).offset((page - 1) * 10).limit(10).all()
+    
+    return {
+        "total": total,
+        "page": page,
+        "items": registros
+    }
+
+@router.put("/registros/{id}")
+def update_registro(id: int, req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
+    """Edición de registros (Principalmente para corregir precintos y transporte)."""
+    reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    # Actualizar campos permitidos
+    reg.precinto_aduana = req.precintoAduana
+    reg.precinto_operador = req.precintoOperador
+    reg.precinto_senasa = req.precintoSenasa
+    reg.precinto_linea = req.precintoLinea
+    reg.precintos_beta = req.precintosBeta
+    reg.termografos = req.termografos
+    
+    if req.fecha_embarque:
+        reg.fecha_embarque = datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00'))
+        
+    db.commit()
+    return {"status": "success", "message": "Registro actualizado correctamente"}
+
+@router.get("/export/excel")
+def export_to_excel(db: Session = Depends(get_db)):
+    """Generación de reporte Excel Premium con formateo de tabla."""
+    regs = db.query(LogiCaptureRegistro).all()
+    
+    data = []
+    for r in regs:
+        # Aplanar precintos para el excel
+        precintos_aduana = ", ".join(r.precinto_aduana) if r.precinto_aduana else "-"
+        # ... simplified for briefness in dev note, full mapping below
+        data.append({
+            "FECHA REGISTRO": r.fecha_registro.strftime("%Y-%m-%d %H:%M") if r.fecha_registro else "-",
+            "PLANTA": r.planta or "-",
+            "CULTIVO": r.cultivo or "-",
+            "BOOKING": r.booking,
+            "ORDEN BETA": r.orden_beta,
+            "CONTENEDOR": r.contenedor,
+            "DAM": r.dam,
+            "TRACTO": r.placa_tracto,
+            "CARRETA": r.placa_carreta,
+            "CHOFER": r.dni_chofer,
+            "TRANSPORTISTA": r.empresa_transporte,
+            "P. ADUANA": precintos_aduana,
+            "STATUS": r.status
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Crear Excel en memoria
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='LogiCapture_Auditoria')
+        
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=LogiCapture_Auditoria.xlsx"}
+    )
