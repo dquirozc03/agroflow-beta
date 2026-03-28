@@ -27,7 +27,8 @@ import {
   Layers,
   Zap,
   Thermometer,
-  Info
+  Info,
+  Inbox
 } from "lucide-react";
 import { 
   Sheet, 
@@ -324,9 +325,13 @@ export default function BandejaLogiCapture() {
     setSelectedReg(reg);
     setEditData({
        ...reg,
-       fecha_embarque: reg.fecha_embarque || reg.fecha_registro
+       fecha_embarque: reg.fecha_embarque || reg.fecha_registro,
+       booking: reg.booking,
+       orden_beta: reg.orden_beta,
+       dam: reg.dam,
+       contenedor: reg.contenedor
     });
-    setEditSector(""); // Reiniciar selecciÃ³n
+    setEditSector(""); // Reiniciar selección
     setIsEditOpen(true);
   };
 
@@ -459,11 +464,7 @@ export default function BandejaLogiCapture() {
                </div>
 
                <div className="flex items-center gap-4">
-                  <Button 
-                    onClick={handleExportExcel}
-                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
-
-                  >
+                  <Button onClick={handleExportExcel} className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none">
                      <FileDown className="h-4 w-4" />
                      {isExporting ? "Generando..." : "Exportar Excel"}
                   </Button>
@@ -604,10 +605,7 @@ export default function BandejaLogiCapture() {
                           </TableCell>
                           <TableCell>
                              <div className="flex flex-col gap-1.5 py-4">
-                                <div className="flex items-center gap-3">
-                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
-
-                                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
+                                <div className="flex items-center gap-3"><span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border border-emerald-100/50 shadow-sm">{reg.booking}</span></div><div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
                                    {reg.dam} â€¢ {reg.contenedor}
                                 </div>
                              </div>
@@ -772,10 +770,7 @@ export default function BandejaLogiCapture() {
                           Cerrar OperaciÃ³n (Enviar a Procesados)
                        </Button>
                     ) : (
-                       <Button 
-                          className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none"
-
-                         onClick={() => handleEditOpen(selectedReg)}
+                       <Button className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none" onClick={() => handleEditOpen(selectedReg)}
                        >
                           <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
                        </Button>
@@ -971,9 +966,9 @@ export default function BandejaLogiCapture() {
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
-                        { id: 'maestros', label: 'Datos Maestros', desc: 'Chofer, Placas, Transportista', icon: Truck },
-                        { id: 'precintos', label: 'Precintos y Sellos', desc: 'Aduana, Beta, Senasa, etc.', icon: ShieldCheck },
-                        { id: 'fecha', label: 'Fecha de Embarque', desc: 'Ajuste de dÃ­a y hora operativa', icon: Calendar }
+                        { id: 'maestros', label: 'Entidades', desc: 'Chofer, Transportista, Unidades', icon: Truck },
+                        { id: 'precintos', label: 'Seguridad', desc: 'Aduana, Beta, Sellos, Termos', icon: ShieldCheck },
+                        { id: 'embarque', label: 'Carga y Tiempo', desc: 'Booking, Contenedor, Orden, Cronos', icon: Inbox }
                       ].map((item) => (
                          <button 
                            key={item.id}
@@ -1087,98 +1082,154 @@ export default function BandejaLogiCapture() {
                             </div>
                          )}
 
-                         {editSector === 'fecha' && (
-                            <div className="flex flex-col items-center gap-10 p-12 bg-emerald-50/10 rounded-[3rem] border border-emerald-100/50 shadow-inner max-w-2xl mx-auto">
-                               <div className="flex gap-8 w-full">
-                                  {/* Selector de Fecha Carlos Style ðŸ’Ž */}
-                                  <div className="flex-1 space-y-4">
-                                     <div className="flex items-center gap-2 ml-2">
-                                        <Calendar className="h-3 w-3 text-emerald-500" />
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Oficial</span>
+                         {editSector === 'embarque' && (
+                            <div className="space-y-10">
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-10 bg-emerald-50/10 rounded-[3rem] border border-emerald-100/50 shadow-inner">
+                                  {/* Buscador de Booking Carlos Style 💎 */}
+                                  <div className="space-y-6">
+                                     <div className="flex items-center gap-3 ml-2">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buscador de Despacho Master</span>
                                      </div>
-                                     <Popover>
-                                        <PopoverTrigger asChild>
-                                           <button className="w-full h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex flex-col items-center justify-center gap-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group outline-none">
-                                              <span className="text-3xl font-black text-emerald-950 font-['Outfit'] group-hover:scale-110 transition-transform">
-                                                 {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "dd") : "--"}
-                                              </span>
-                                              <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
-                                                 {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "MMMM", { locale: es }) : "Seleccionar"}
-                                              </span>
-                                           </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-2xl" align="center">
-                                           <UICalendar
-                                              mode="single"
-                                              selected={editData.fecha_embarque ? new Date(editData.fecha_embarque) : undefined}
-                                              onSelect={(date) => {
-                                                 if (date) {
-                                                    const current = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
-                                                    date.setHours(current.getHours());
-                                                    date.setMinutes(current.getMinutes());
-                                                    setEditData({...editData, fecha_embarque: date.toISOString()});
-                                                 }
-                                              }}
-                                              className="bg-white" classNames={{ day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-bold aria-selected:opacity-100 text-slate-900 hover:bg-emerald-100 hover:text-emerald-950"), day_today: "bg-slate-100 text-slate-900", day_selected: "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white", caption_label: "text-sm font-black text-slate-900 uppercase tracking-widest", head_cell: "text-slate-400 rounded-md w-9 font-black text-[10px] uppercase", nav_button: "text-slate-900 hover:text-emerald-600" }}
-                                           />
-                                        </PopoverContent>
-                                     </Popover>
+                                     <SearchableField 
+                                        label="Nro de Booking"
+                                        icon={Inbox}
+                                        value={editData.booking}
+                                        onChange={(v: string) => setEditData({...editData, booking: v})}
+                                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/bookings/search`}
+                                        onSelect={(res: any) => setEditData({
+                                           ...editData, 
+                                           booking: res.booking,
+                                           dam: res.dam,
+                                           contenedor: res.contenedor,
+                                           orden_beta: res.orden_beta,
+                                           planta: res.planta || editData.planta,
+                                           cultivo: res.cultivo || editData.cultivo
+                                        })}
+                                        placeholder="Ej: EBKG123456"
+                                     />
                                   </div>
 
-                                  {/* Selector de Hora Carlos Style ðŸ’Ž */}
-                                  <div className="flex-1 space-y-4">
-                                     <div className="flex items-center gap-2 ml-2">
-                                        <Clock className="h-3 w-3 text-amber-500" />
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora de Salida</span>
+                                  {/* Resumen de Trazabilidad Cruzada 💎 */}
+                                  <div className="grid grid-cols-1 gap-4">
+                                     <div className="flex flex-col gap-1 px-6 py-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Orden Beta</span>
+                                        <span className="text-sm font-black text-emerald-950 uppercase">{editData.orden_beta || "PENDIENTE"}</span>
                                      </div>
-                                     <div className="flex gap-4 h-24 bg-white border-2 border-slate-100 rounded-[2rem] p-6 items-center justify-center hover:border-amber-500 transition-all shadow-inner">
-                                        {/* Horas */}
-                                        <div className="flex-1 flex flex-col items-center">
-                                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">HORA</span>
-                                           <select 
-                                              value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "HH") : "00"}
-                                              onChange={(e) => {
-                                                 const h = e.target.value;
-                                                 const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
-                                                 date.setHours(parseInt(h));
-                                                 setEditData({...editData, fecha_embarque: date.toISOString()});
-                                              }}
-                                              className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
-                                           >
-                                              {Array.from({length: 24}).map((_, i) => (
-                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
-                                              ))}
-                                           </select>
+                                     <div className="flex gap-4">
+                                        <div className="flex-1 flex flex-col gap-1 px-6 py-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                                           <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">DAM</span>
+                                           <span className="text-sm font-black text-emerald-950 uppercase">{editData.dam || "PENDIENTE"}</span>
                                         </div>
-                                        
-                                        <span className="text-3xl font-black text-slate-200 self-center mt-4">:</span>
-
-                                        {/* Minutos */}
-                                        <div className="flex-1 flex flex-col items-center">
-                                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">MIN</span>
-                                           <select 
-                                              value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "mm") : "00"}
-                                              onChange={(e) => {
-                                                 const m = e.target.value;
-                                                 const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
-                                                 date.setMinutes(parseInt(m));
-                                                 setEditData({...editData, fecha_embarque: date.toISOString()});
-                                              }}
-                                              className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
-                                           >
-                                              {Array.from({length: 60}).map((_, i) => (
-                                                 <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
-                                              ))}
-                                           </select>
+                                        <div className="flex-1 flex flex-col gap-1 px-6 py-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                                           <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Contenedor</span>
+                                           <span className="text-sm font-black text-emerald-950 uppercase">{editData.contenedor || "PENDIENTE"}</span>
                                         </div>
                                      </div>
                                   </div>
                                </div>
 
-                               <div className="bg-emerald-950/5 p-6 rounded-[2rem] border border-emerald-100/30 w-full text-center">
-                                  <p className="text-[11px] font-bold text-emerald-800/80">
-                                     Embarque programado para el <span className="font-black text-emerald-950">{editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "PPPP", { locale: es }) : "---"}</span>
-                                  </p>
+                               <div className="flex flex-col items-center gap-10 p-12 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 max-w-2xl mx-auto">
+                                  <div className="flex gap-8 w-full">
+                                     {/* Selector de Fecha Carlos Style 💎 */}
+                                     <div className="flex-1 space-y-4">
+                                        <div className="flex items-center gap-2 ml-2">
+                                           <Calendar className="h-3 w-3 text-emerald-500" />
+                                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Oficial</span>
+                                        </div>
+                                        <Popover>
+                                           <PopoverTrigger asChild>
+                                              <button className="w-full h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex flex-col items-center justify-center gap-1 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group outline-none">
+                                                 <span className="text-3xl font-black text-emerald-950 font-['Outfit'] group-hover:scale-110 transition-transform">
+                                                    {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "dd") : "--"}
+                                                 </span>
+                                                 <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
+                                                    {editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "MMMM", { locale: es }) : "Seleccionar"}
+                                                 </span>
+                                              </button>
+                                           </PopoverTrigger>
+                                           <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-2xl" align="center">
+                                              <UICalendar
+                                                 mode="single"
+                                                 selected={editData.fecha_embarque ? new Date(editData.fecha_embarque) : undefined}
+                                                 onSelect={(date) => {
+                                                    if (date) {
+                                                       const current = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                       date.setHours(current.getHours());
+                                                       date.setMinutes(current.getMinutes());
+                                                       setEditData({...editData, fecha_embarque: date.toISOString()});
+                                                    }
+                                                 }}
+                                                 className="bg-white"
+                                                 classNames={{
+                                                    day: cn(
+                                                      buttonVariants({ variant: "ghost" }),
+                                                      "h-9 w-9 p-0 font-bold aria-selected:opacity-100 text-slate-900 hover:bg-emerald-100 hover:text-emerald-950"
+                                                    ),
+                                                    day_today: "bg-slate-100 text-slate-900",
+                                                    day_selected: "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white",
+                                                    caption_label: "text-sm font-black text-slate-900 uppercase tracking-widest",
+                                                    head_cell: "text-slate-400 rounded-md w-9 font-black text-[10px] uppercase",
+                                                    nav_button: "text-slate-900 hover:text-emerald-600",
+                                                 }}
+                                              />
+                                           </PopoverContent>
+                                        </Popover>
+                                     </div>
+
+                                     {/* Selector de Hora Carlos Style 💎 */}
+                                     <div className="flex-1 space-y-4">
+                                        <div className="flex items-center gap-2 ml-2">
+                                           <Clock className="h-3 w-3 text-amber-500" />
+                                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora de Salida</span>
+                                        </div>
+                                        <div className="flex gap-4 h-24 bg-white border-2 border-slate-100 rounded-[2rem] p-6 items-center justify-center hover:border-amber-500 transition-all shadow-inner">
+                                           {/* Horas */}
+                                           <div className="flex-1 flex flex-col items-center">
+                                              <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">HORA</span>
+                                              <select 
+                                                 value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "HH") : "00"}
+                                                 onChange={(e) => {
+                                                    const h = e.target.value;
+                                                    const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                    date.setHours(parseInt(h));
+                                                    setEditData({...editData, fecha_embarque: date.toISOString()});
+                                                 }}
+                                                 className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
+                                              >
+                                                 {Array.from({length: 24}).map((_, i) => (
+                                                    <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                                 ))}
+                                              </select>
+                                           </div>
+                                           <span className="text-3xl font-black text-slate-200 self-center mt-4">:</span>
+                                           {/* Minutos */}
+                                           <div className="flex-1 flex flex-col items-center">
+                                              <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter mb-1 select-none">MIN</span>
+                                              <select 
+                                                 value={editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "mm") : "00"}
+                                                 onChange={(e) => {
+                                                    const m = e.target.value;
+                                                    const date = editData.fecha_embarque ? new Date(editData.fecha_embarque) : new Date();
+                                                    date.setMinutes(parseInt(m));
+                                                    setEditData({...editData, fecha_embarque: date.toISOString()});
+                                                 }}
+                                                 className="bg-transparent text-3xl font-black text-emerald-950 appearance-none outline-none cursor-pointer hover:text-emerald-600 transition-colors w-full text-center font-['Outfit']"
+                                              >
+                                                 {Array.from({length: 60}).map((_, i) => (
+                                                    <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                                 ))}
+                                              </select>
+                                           </div>
+                                        </div>
+                                     </div>
+                                  </div>
+
+                                  <div className="bg-emerald-950 p-6 rounded-[2rem] border border-emerald-900 w-full text-center shadow-2xl shadow-emerald-950/20">
+                                     <p className="text-[11px] font-bold text-emerald-500/80">
+                                        Embarque programado para el <span className="font-black text-white">{editData.fecha_embarque ? format(new Date(editData.fecha_embarque), "PPPP", { locale: es }) : "---"}</span>
+                                     </p>
+                                  </div>
                                </div>
                             </div>
                          )}

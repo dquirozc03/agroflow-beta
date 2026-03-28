@@ -65,6 +65,11 @@ class LogiCaptureUpdateRequest(BaseModel):
     placaCarreta: Optional[str] = None
     empresa: Optional[str] = None
     partidaRegistral: Optional[str] = None
+    # Auditoría de Despacho
+    booking: Optional[str] = None
+    ordenBeta: Optional[str] = None
+    dam: Optional[str] = None
+    contenedor: Optional[str] = None
 
 class LookupResponse(BaseModel):
     booking: str
@@ -233,22 +238,56 @@ def search_carretas(q: str, db: Session = Depends(get_db)):
         } for v in results
     ]
 
+@router.get("/bookings/search")
+def search_bookings(q: str, db: Session = Depends(get_db)):
+    """Busca bookings en maestros y cruza con posicionamiento."""
+    clean_q = q.strip().upper()
+    results = db.query(ControlEmbarque).filter(
+        ControlEmbarque.booking.ilike(f"%{clean_q}%")
+    ).limit(10).all()
+    
+    output = []
+    for b in results:
+        # Intentar jalar Orden Beta desde Posicionamiento
+        pos = db.query(Posicionamiento).filter(
+            Posicionamiento.BOOKING_REAL == b.booking
+        ).first()
+        
+        output.append({
+            "booking": b.booking,
+            "dam": b.dam,
+            "contenedor": b.contenedor,
+            "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
+            "planta": pos.PLANTA_LLENADO if pos else None,
+            "cultivo": pos.CULTIVO if pos else None
+        })
+    return output
+
 @router.post("/register")
 def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends(get_db)):
     """Guarda registro final de LogiCapture con validaciones de unicidad."""
     
-    # 1. Validar Unicidad de Cabecera (DAM / Contenedor)
-    existing_dam = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == req.dam).first()
+    # 1. Validar Unicidad de Cabecera (DAM / Contenedor) - Solo registros activos
+    existing_dam = db.query(LogiCaptureRegistro).filter(
+        LogiCaptureRegistro.dam == req.dam,
+        LogiCaptureRegistro.status != "ANULADO"
+    ).first()
     if existing_dam:
         raise HTTPException(status_code=400, detail=f"La DAM {req.dam} ya cuenta con un registro de salida.")
         
-    existing_cnt = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == req.contenedor).first()
+    existing_cnt = db.query(LogiCaptureRegistro).filter(
+        LogiCaptureRegistro.contenedor == req.contenedor,
+        LogiCaptureRegistro.status != "ANULADO"
+    ).first()
     if existing_cnt:
         raise HTTPException(status_code=400, detail=f"El contenedor {req.contenedor} ya cuenta con un registro de salida activo.")
 
     # 1.5 Validar Unicidad de Booking (Solo si NO es Tratamiento en Buque)
     if not req.tratamientoBuque:
-        existing_bk = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == req.booking).first()
+        existing_bk = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.booking == req.booking,
+            LogiCaptureRegistro.status != "ANULADO"
+        ).first()
         if existing_bk:
             raise HTTPException(status_code=400, detail=f"El Booking {req.booking} ya fue registrado anteriormente. Si es una carga compartida, active 'Tratamiento en Buque'.")
 
@@ -385,6 +424,12 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
     if req.placaCarreta: reg.placa_carreta = req.placaCarreta
     if req.empresa: reg.empresa_transporte = req.empresa
     if req.partidaRegistral: reg.partida_registral = req.partidaRegistral
+
+    # 3.5 Datos de Despacho (Auditoría de Carga)
+    if req.booking: reg.booking = req.booking
+    if req.ordenBeta: reg.orden_beta = req.ordenBeta
+    if req.dam: reg.dam = req.dam
+    if req.contenedor: reg.contenedor = req.contenedor
         
     # 4. Sincronización con LogiCaptureDetalle (Blindaje de Unicidad) 💎
     # Si hubo cambios en precintos o termógrafos, refrescamos la tabla de detalles
@@ -448,6 +493,9 @@ def change_registro_status(id: int, status: str, motivo: Optional[str] = None, d
     reg.status = clean_status
     if clean_status == "ANULADO":
         reg.motivo_anulacion = motivo or "N/A"
+        # Liberación de Precintos y Termógrafos 💎
+        # Al anular, permitimos que estos códigos vuelvan a ser usados en el formulario
+        db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.registro_id == id).delete()
         
     db.commit()
     return {"status": "success", "message": f"Registro marcado como {clean_status}"}
