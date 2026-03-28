@@ -106,7 +106,7 @@ export default function BandejaLogiCapture() {
            setTimeout(() => setIsSuccessOpen(false), 2500); // Auto-cierre elegante
         }),
       {
-        loading: 'Actualizando Estatus en el Oráculo...',
+        loading: 'Actualizando Estatus en el Sistema...',
         success: `Registro marcado como ${newStatus} con éxito 💎`,
         error: 'No se pudo cambiar el estatus del registro'
       }
@@ -127,7 +127,7 @@ export default function BandejaLogiCapture() {
       const data = await response.json();
       setRegistros(data.items || []);
     } catch (error) {
-      toast.error("Error al sincronizar con el Oráculo");
+      toast.error("Error al sincronizar con el Sistema");
     } finally {
       setIsLoading(false);
     }
@@ -315,7 +315,7 @@ export default function BandejaLogiCapture() {
                       {isLoading ? (
                          Array.from({length: 5}).map((_, i) => (
                            <TableRow key={i} className="animate-pulse">
-                              <TableCell colSpan={6} className="p-10 text-center text-slate-300">Cargando datos del oráculo...</TableCell>
+                              <TableCell colSpan={6} className="p-10 text-center text-slate-300">Cargando datos del sistema...</TableCell>
                            </TableRow>
                          ))
                       ) : registros.length === 0 ? (
@@ -543,7 +543,7 @@ export default function BandejaLogiCapture() {
                      PROCESADO
                   </h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
-                     Operación cerrada con éxito en el oráculo
+                     Operación cerrada con éxito en el sistema
                   </p>
                </div>
 
