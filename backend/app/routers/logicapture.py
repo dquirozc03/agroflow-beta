@@ -101,6 +101,26 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
             "ruc": vehicle.transportista.ruc
         }
     }
+@router.get("/check_unique")
+def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
+    """Verifica si un dato ya existe en la tabla de registros operativos."""
+    clean_val = value.strip().upper()
+    
+    if field == "booking" and not treatment_buque:
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val).first()
+    elif field == "dam":
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val).first()
+    elif field == "contenedor":
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val).first()
+    else:
+        exists = None
+
+    return {
+        "field": field,
+        "exists": exists is not None,
+        "id": exists.id if exists else None
+    }
+
 @router.get("/trailer/{placa}")
 def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     """Busca carreta en maestros por placa."""

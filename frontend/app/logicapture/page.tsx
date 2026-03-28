@@ -186,6 +186,30 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
     </div>
   );
 }
+function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+       <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-emerald-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
+          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto relative group">
+             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity" />
+             <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
+          </div>
+          <div className="space-y-3">
+             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">¡Operación Exitosa!</h2>
+             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Registro: {title}</p>
+          </div>
+          <button 
+             onClick={onClose}
+             className="w-full py-5 bg-emerald-950 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/20 active:scale-95"
+          >
+             Continuar Operación
+          </button>
+       </div>
+    </div>
+  );
+}
 
 export default function LogiCaptureV2Page() {
   const [showFloatingButton, setShowFloatingButton] = useState(false);
@@ -235,6 +259,8 @@ export default function LogiCaptureV2Page() {
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
   const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
   const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successTitle, setSuccessTitle] = useState("");
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -378,6 +404,36 @@ export default function LogiCaptureV2Page() {
     }
   };
 
+  const handleFieldBlur = async (field: string, value: string) => {
+    const cleanVal = (value || "").trim().toUpperCase();
+    if (!cleanVal) return;
+
+    // Solo validamos duplicados para campos clave de logicapture_registros
+    if (!["booking", "dam", "contenedor"].includes(field)) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=${field}&value=${cleanVal}&treatment_buque=${formData.tratamientoBuque}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      
+      if (data.exists) {
+         setFieldErrors(prev => ({ 
+            ...prev, 
+            [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
+         }));
+      } else {
+         // Si existía un error previo de duplicado para este campo, lo borramos
+         setFieldErrors(prev => {
+            const next = { ...prev };
+            if (next[field]?.includes("Duplicado")) delete next[field];
+            return next;
+         });
+      }
+    } catch (error) {
+       console.error("Error check unique", error);
+    }
+  };
+
   const handleCarretaBlur = async () => {
     const placa = (formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
     if (!placa) return;
@@ -430,12 +486,19 @@ export default function LogiCaptureV2Page() {
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error("Error al persistir registro");
+      if (!response.ok) {
+         const errData = await response.json();
+         throw new Error(errData.detail || "Error al persistir registro");
+      }
       
-      toast.success("Operación guardada y confirmada con éxito");
+      const resData = await response.json();
+      setSuccessTitle(formData.ordenBeta || formData.contenedor);
+      setShowSuccess(true);
       // Mantenemos la data visible por petición del usuario
     } catch (error: any) {
-      toast.error(error.message);
+      // Para errores, usamos toast pero solo si es un error real de sistema 
+      // (aunque el usuario pida quitarlos, un error crítico debe avisar)
+      toast.error(error.message, { position: "top-center" });
     } finally {
       setIsSearching(false);
     }
@@ -626,8 +689,9 @@ export default function LogiCaptureV2Page() {
                         icon={BookOpen} 
                         value={formData.booking} 
                         onChange={(v) => updateField("booking", v)} 
-                        error={bookingError}
-                        errorMsg="El booking no está registrado en posicionamiento"
+                        onBlur={() => handleFieldBlur("booking", formData.booking)}
+                        error={bookingError || !!fieldErrors.booking}
+                        errorMsg={bookingError ? "Booking no está registrado en posicionamiento" : fieldErrors.booking}
                      />
                      <FormField 
                         label="Orden Beta" 
@@ -635,6 +699,7 @@ export default function LogiCaptureV2Page() {
                         icon={Target} 
                         value={formData.ordenBeta} 
                         onChange={(v) => updateField("ordenBeta", v)} 
+                        onBlur={() => handleFieldBlur("ordenBeta", formData.ordenBeta)}
                         readOnly
                         success={validatedFields.includes("ordenBeta")}
                         error={!!fieldErrors.ordenBeta}
@@ -646,6 +711,7 @@ export default function LogiCaptureV2Page() {
                         icon={Container} 
                         value={formData.contenedor} 
                         onChange={(v) => updateField("contenedor", v)} 
+                        onBlur={() => handleFieldBlur("contenedor", formData.contenedor)}
                         readOnly
                         success={validatedFields.includes("contenedor")}
                         error={!!fieldErrors.contenedor}
@@ -657,6 +723,7 @@ export default function LogiCaptureV2Page() {
                         icon={Hash} 
                         value={formData.dam} 
                         onChange={(v) => updateField("dam", v)} 
+                        onBlur={() => handleFieldBlur("dam", formData.dam)}
                         readOnly
                         success={validatedFields.includes("dam")}
                         error={!!fieldErrors.dam}
@@ -849,6 +916,12 @@ export default function LogiCaptureV2Page() {
               <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full animate-pulse z-[-1]" />
           </button>
       </div>
+
+      <SuccessModal 
+         isOpen={showSuccess} 
+         onClose={() => setShowSuccess(false)} 
+         title={successTitle} 
+      />
     </div>
   );
 }
