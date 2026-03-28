@@ -104,9 +104,10 @@ interface FormFieldProps {
   error?: boolean;
   errorMsg?: string;
   onBlur?: () => void;
+  helperText?: string;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText }: FormFieldProps) {
   return (
     <div className="space-y-3 group/field">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
@@ -148,8 +149,20 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           </div>
         )}
 
+        {/* Tooltip de Información Adicional (Helper) */}
+        {helperText && !error && !loading && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-5 py-3 bg-[#022c22] backdrop-blur-md border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-[0.15em] uppercase rounded-2xl shadow-2xl opacity-0 scale-90 -translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[110] whitespace-nowrap origin-bottom">
+             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-10" />
+             <div className="flex items-center gap-2 relative z-10">
+                <CheckCircle2 className="h-3 w-3" />
+                <span>{helperText}</span>
+             </div>
+             <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#022c22]" />
+          </div>
+        )}
+
         {/* Tooltip Premium para Datos (Solo si el dato es largo y no hay error) */}
-        {value && value.length > 14 && !error && !loading && (
+        {value && value.length > 14 && !error && !loading && !helperText && (
           <div className="absolute top-[110%] left-1/2 -translate-x-1/2 px-5 py-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/20 text-emerald-400 text-xs font-black tracking-widest uppercase rounded-2xl shadow-2xl opacity-0 scale-90 translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap origin-top overflow-hidden">
              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-20" />
              <span className="relative z-10">{value}</span>
@@ -268,14 +281,13 @@ export default function LogiCaptureV2Page() {
       setValidatedFields(found);
       setFieldErrors(errors);
 
-      if (found.length === 3) {
-        toast.success("Resolución de datos completa");
-      } else if (found.length > 0) {
-        toast.warning("Resolución de datos incompleta");
+      setFieldErrors(errors);
+
+      if (found.length < 3) {
+        // En lugar de toast, los errores ya están en fieldErrors
       }
     } catch (error: any) {
       setBookingError(true);
-      toast.error(error.message);
     } finally {
       setIsSearching(false);
     }
@@ -304,7 +316,7 @@ export default function LogiCaptureV2Page() {
       if (!response.ok) throw new Error("Placa no registrada en maestros");
       const data = await response.json();
       updateField("empresa", data.transportista.nombre_transportista);
-      toast.success("Transportista identificado: " + data.transportista.nombre_transportista);
+      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
       updateField("empresa", "");
@@ -322,7 +334,7 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
       const data = await response.json();
-      toast.success("Chofer validado: " + data.nombre_operativo);
+      setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
     } finally {
@@ -519,6 +531,7 @@ export default function LogiCaptureV2Page() {
                         loading={isLoadingChofer}
                         error={!!fieldErrors.dni}
                         errorMsg={fieldErrors.dni}
+                        helperText={fieldErrors.dni_info}
                      />
                      <FormField 
                         label="Placa Tracto" 
@@ -545,6 +558,7 @@ export default function LogiCaptureV2Page() {
                         value={formData.empresa} 
                         onChange={(v) => updateField("empresa", v)} 
                         readOnly
+                        helperText={fieldErrors.empresa_info}
                      />
                   </div>
                </div>
