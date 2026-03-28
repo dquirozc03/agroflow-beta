@@ -673,29 +673,50 @@ export default function LogiCaptureV2Page() {
             </div>
 
             {/* CUERPO DEL FORMULARIO: Columnas de Datos */}
-            <div className="grid grid-cols-12 gap-8">
+            <div className="grid grid-cols-12 gap-6">
                
                 {/* BLOQUE 1: DATOS DE EMBARQUE */}
-                <div className="col-span-12 lg:col-span-6 bg-white rounded-[1.75rem] border border-slate-100 p-7 shadow-sm relative">
-                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[1.75rem]" />
-                   <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                         <BadgeCheck className="h-5 w-5 text-emerald-600" />
-                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
+                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-3xl" />
+                   <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-3">
+                            <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                            <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                         </div>
+                         
+                         {/* Toggle Tratamiento en Buque (Compacto en Cabecera) */}
+                         {transportMode === "maritimo" && (
+                           <button 
+                              onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                              className={cn(
+                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 border",
+                                 formData.tratamientoBuque 
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" 
+                                    : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200"
+                              )}
+                           >
+                              <div className={cn(
+                                 "w-2 h-2 rounded-full",
+                                 formData.tratamientoBuque ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                              )} />
+                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Buque</span>
+                           </button>
+                         )}
                       </div>
                       
-                      {/* Oráculo de Unicidad: Alerta Centralizada (Reference Drawing) */}
+                      {/* Oráculo de Unicidad: Alerta Centralizada */}
                       {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
-                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[200px]">
                            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
-                           <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">
+                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight truncate">
                               {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
                            </span>
                         </div>
                       )}
                    </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
                         label="Booking / Reserva" 
                         placeholder="BK-XXXXXXXX" 
@@ -741,41 +762,17 @@ export default function LogiCaptureV2Page() {
                         highlightError={!!fieldErrors.dam}
                      />
                   </div>
-
-                  {/* Toggle Tratamiento en Buque Carlos Style */}
-                  {transportMode === "maritimo" && (
-                    <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between bg-emerald-50/20 p-6 rounded-3xl border-dashed border-emerald-500/20">
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Tratamiento en Buque</p>
-                          <p className="text-[9px] text-emerald-600/70 font-bold">Activar solo para múltiples contenedores por booking</p>
-                       </div>
-                       <button 
-                          onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
-                          className={cn(
-                             "w-14 h-8 rounded-full transition-all duration-500 relative flex items-center px-1",
-                             formData.tratamientoBuque ? "bg-emerald-600 shadow-lg shadow-emerald-200" : "bg-slate-200"
-                          )}
-                       >
-                          <div className={cn(
-                             "h-6 w-6 bg-white rounded-full shadow-md transition-all duration-500 flex items-center justify-center",
-                             formData.tratamientoBuque ? "translate-x-6" : "translate-x-0"
-                          )}>
-                             {formData.tratamientoBuque && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
-                          </div>
-                       </button>
-                    </div>
-                  )}
                </div>
 
                {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm relative">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2rem]" />
-                  <div className="flex items-center gap-3 mb-6">
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-3xl" />
+                  <div className="flex items-center gap-3 mb-5">
                      <Truck className="h-5 w-5 text-slate-900" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Información del Transporte</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
                         label="DNI del Chofer" 
                         placeholder="XXXXXXXX" 
@@ -823,13 +820,13 @@ export default function LogiCaptureV2Page() {
                </div>
 
                {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
-                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-[2rem] border border-slate-100 p-7 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
-                  <div className="flex items-center gap-3 mb-6">
+                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-3xl border border-slate-100 p-6 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
+                  <div className="flex items-center gap-3 mb-5">
                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                      <MultiInput 
                         label="Precinto Aduana" 
                         placeholder="Ej: AD123" 
