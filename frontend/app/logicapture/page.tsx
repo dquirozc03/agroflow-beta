@@ -192,6 +192,7 @@ export default function LogiCaptureV2Page() {
   const [isSearching, setIsSearching] = useState(false);
   const [validatedFields, setValidatedFields] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -203,6 +204,7 @@ export default function LogiCaptureV2Page() {
     setIsSearching(true);
     setValidatedFields([]);
     setBookingError(false);
+    setFieldErrors({});
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
@@ -233,13 +235,31 @@ export default function LogiCaptureV2Page() {
       setFormData(prev => ({
         ...prev,
         booking: cleanBooking,
-        ordenBeta: result.orden_beta,
-        dam: cleanDam,
-        contenedor: result.contenedor
+        ordenBeta: result.orden_beta || "",
+        dam: cleanDam || "",
+        contenedor: result.contenedor || ""
       }));
       
-      setValidatedFields(["ordenBeta", "dam", "contenedor"]);
-      toast.success("Resolución de datos exitosa");
+      const found: string[] = [];
+      const errors: { [key: string]: string } = {};
+
+      if (result.orden_beta) found.push("ordenBeta");
+      else errors.ordenBeta = "No se encontró Orden Beta en Plan Maestro";
+
+      if (result.contenedor) found.push("contenedor");
+      else errors.contenedor = "No se encontró Contenedor en Plan Maestro";
+
+      if (result.dam) found.push("dam");
+      else errors.dam = "No se encontró DAM en Control de Embarque";
+
+      setValidatedFields(found);
+      setFieldErrors(errors);
+
+      if (found.length === 3) {
+        toast.success("Resolución de datos completa");
+      } else if (found.length > 0) {
+        toast.warning("Resolución de datos incompleta");
+      }
     } catch (error: any) {
       setBookingError(true);
       toast.error(error.message);
@@ -395,6 +415,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("ordenBeta", v)} 
                         readOnly
                         success={validatedFields.includes("ordenBeta")}
+                        error={!!fieldErrors.ordenBeta}
+                        errorMsg={fieldErrors.ordenBeta}
                      />
                      <FormField 
                         label="Número Contenedor" 
@@ -404,6 +426,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("contenedor", v)} 
                         readOnly
                         success={validatedFields.includes("contenedor")}
+                        error={!!fieldErrors.contenedor}
+                        errorMsg={fieldErrors.contenedor}
                      />
                      <FormField 
                         label="Número DAM" 
@@ -413,6 +437,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("dam", v)} 
                         readOnly
                         success={validatedFields.includes("dam")}
+                        error={!!fieldErrors.dam}
+                        errorMsg={fieldErrors.dam}
                      />
                   </div>
                </div>
