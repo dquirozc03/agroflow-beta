@@ -36,25 +36,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-// --- Mock Data ---
-const MOCK_BOOKINGS = [
-  { id: "BKG-2024-001", cliente: "CAMPOSOL S.A.", cultivo: "Palta Hass", status: "PENDIENTE" },
-  { id: "BKG-2024-002", cliente: "SOCIEDAD AGRICOLA DROKASA", cultivo: "Arándano", status: "PENDIENTE" },
-  { id: "BKG-2024-003", cliente: "AGROVISION PERU", cultivo: "Uva de Mesa", status: "PENDIENTE" },
-  { id: "BKG-2024-004", cliente: "COMPLEJO AGROINDUSTRIAL BETA", cultivo: "Espárrago", status: "PENDIENTE" },
-];
-
-const MOCK_HISTORY = [
-  { id: 101, fecha: "2024-03-24 10:30", booking: "BKG-2024-001", orden: "OB-993", cliente: "CAMPOSOL", cultivo: "Palta", status: "ACTIVO" },
-  { id: 102, fecha: "2024-03-24 09:15", booking: "BKG-2024-002", orden: "OB-991", cliente: "DROKASA", cultivo: "Arándano", status: "ACTIVO" },
-  { id: 103, fecha: "2024-03-23 16:40", booking: "BKG-2024-003", orden: "OB-987", cliente: "AGROVISION", cultivo: "Uva", status: "ANULADO" },
-];
+// --- Data Real Binding (Eliminado Mocks Carlos Style) ---
 
 export default function InstruccionesEmbarque() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [lookupData, setLookupData] = useState<any>(null);
   const [isLoadingLookup, setIsLoadingLookup] = useState(false);
+  const [bookingsReal, setBookingsReal] = useState<any[]>([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
+
+  // Carga inicial de bookings desde Posicionamiento
+  React.useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/logicapture/registros?status=PENDIENTE`);
+        if (resp.ok) {
+           const data = await resp.json();
+           setBookingsReal(data.items || []);
+        }
+      } catch (e) {
+        console.error("Error cargando bookings:", e);
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    };
+    loadBookings();
+  }, []);
 
   const handleBookingSelect = async (b: any) => {
     setSelectedBooking(b);
@@ -113,13 +121,24 @@ export default function InstruccionesEmbarque() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-4 lc-scroll">
-              {MOCK_BOOKINGS.map((b) => (
+              {isLoadingBookings ? (
+                 Array.from({length: 4}).map((_, i) => (
+                    <div key={i} className="h-32 w-full bg-slate-50 border border-slate-100 rounded-[2.5rem] animate-pulse" />
+                 ))
+              ) : bookingsReal.length === 0 ? (
+                 <div className="p-10 text-center space-y-4 opacity-30">
+                    <Inbox className="h-10 w-10 mx-auto" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">No hay bookings pendientes</p>
+                 </div>
+              ) : bookingsReal.filter(b => 
+                b.booking.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((b) => (
                 <button
                   key={b.id}
-                  onClick={() => handleBookingSelect(b)}
+                  onClick={() => handleBookingSelect({ id: b.booking, cliente: "CARGANDO...", cultivo: b.cultivo })}
                   className={cn(
                     "w-full p-6 rounded-[2.5rem] border-2 text-left transition-all duration-300 group relative overflow-hidden",
-                    selectedBooking?.id === b.id 
+                    selectedBooking?.id === b.booking 
                       ? "border-emerald-500 bg-emerald-50/10 shadow-xl shadow-emerald-500/5 scale-[1.02]" 
                       : "border-slate-50 bg-white hover:border-slate-200"
                   )}
@@ -129,18 +148,20 @@ export default function InstruccionesEmbarque() {
                       <div className="flex items-center gap-2">
                         <div className={cn(
                           "h-2 w-2 rounded-full",
-                          selectedBooking?.id === b.id ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                          selectedBooking?.id === b.booking ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                         )} />
-                        <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{b.id}</span>
+                        <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{b.booking}</span>
                       </div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase truncate max-w-[200px]">{b.cliente}</h4>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate max-w-[220px]">
+                         CONTENEDOR: {b.contenedor}
+                      </h4>
                       <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-tighter px-3 h-6 border-none">
                         {b.cultivo}
                       </Badge>
                     </div>
                     <ChevronRight className={cn(
                       "h-5 w-5 transition-transform duration-300",
-                      selectedBooking?.id === b.id ? "text-emerald-500 translate-x-1" : "text-slate-200"
+                      selectedBooking?.id === b.booking ? "text-emerald-500 translate-x-1" : "text-slate-200"
                     )} />
                   </div>
                 </button>
@@ -287,48 +308,14 @@ export default function InstruccionesEmbarque() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {MOCK_HISTORY.map((h) => (
-                      <TableRow key={h.id} className="group hover:bg-emerald-50/5 transition-colors border-none">
-                        <TableCell className="p-8">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-black text-slate-950 uppercase">{h.fecha.split(' ')[1]}</span>
-                            <span className="text-[10px] font-bold text-slate-400">{h.fecha.split(' ')[0]}</span>
+                    <TableRow>
+                       <TableCell colSpan={5} className="p-20 text-center">
+                          <div className="flex flex-col items-center gap-4 text-slate-300 opacity-20 capitalize">
+                             <FileText className="h-12 w-12" />
+                             <p className="font-black uppercase tracking-widest text-[10px]">Las emisiones reales aparecerán aquí cuando se guarden en el sistema.</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black text-emerald-950 uppercase">{h.booking}</span>
-                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{h.orden}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black text-slate-800 uppercase truncate max-w-[150px]">{h.cliente}</span>
-                            <Badge variant="outline" className="w-fit text-[9px] font-black uppercase h-5 px-3 border-emerald-100 text-emerald-600 bg-emerald-50/30">
-                              {h.cultivo}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={cn(
-                            "rounded-lg px-4 h-7 text-[9px] font-black uppercase tracking-widest",
-                            h.status === "ACTIVO" ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-rose-500 text-white shadow-lg shadow-rose-500/20"
-                          )}>
-                            {h.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right pr-12">
-                           <div className="flex items-center justify-end gap-2">
-                             <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-emerald-100 text-emerald-600">
-                               <Download className="h-4 w-4" />
-                             </Button>
-                             <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-rose-100 text-rose-500">
-                               <Ban className="h-4 w-4" />
-                             </Button>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                       </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
