@@ -112,7 +112,8 @@ function SearchableField({ value, onChange, onSelect, searchUrl, placeholder }: 
             f.consignatario_fito.toLowerCase().includes(value.toLowerCase())
           );
           setResults(filtered);
-          setShowResults(filtered.length > 0);
+          const isExactMatch = filtered.length === 1 && filtered[0].consignatario_fito.toLowerCase() === value.toLowerCase();
+          setShowResults(filtered.length > 0 && !isExactMatch);
         }
       } catch (e) {
         console.error(e);
@@ -142,7 +143,11 @@ function SearchableField({ value, onChange, onSelect, searchUrl, placeholder }: 
             {results.map((res, idx) => (
               <button
                 key={idx}
-                onMouseDown={() => onSelect(res)}
+                type="button"
+                onMouseDown={() => {
+                  onSelect(res);
+                  setShowResults(false);
+                }}
                 className="w-full text-left p-5 hover:bg-emerald-50 rounded-2xl transition-all group/item border border-transparent hover:border-emerald-100 flex items-center justify-between"
               >
                 <div className="space-y-1">

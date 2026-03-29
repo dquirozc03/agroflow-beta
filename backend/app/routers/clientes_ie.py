@@ -101,24 +101,41 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
     if not cliente:
         raise HTTPException(status_code=404, detail="Maestro no encontrado")
     
-    # Actualizar cabecera
-    for key, value in req.dict(exclude={'id', 'fitosanitario'}).items():
-        setattr(cliente, key, value.upper() if isinstance(value, str) else value)
-    
-    # Actualizar o Crear Fitosanitario
+    # Gestionar Fitosanitario primero
+    fito_id = req.fito_id
     if req.fitosanitario:
-        if cliente.fitosanitario:
-            cliente.fitosanitario.consignatario_fito = req.fitosanitario.consignatario_fito
-            cliente.fitosanitario.direccion_consignatario_fito = req.fitosanitario.direccion_consignatario_fito
+        existing_fito = db.query(MaestroFito).filter(
+            MaestroFito.consignatario_fito == req.fitosanitario.consignatario_fito.upper(),
+            MaestroFito.direccion_fito == req.fitosanitario.direccion_fito.upper()
+        ).first()
+        
+        if existing_fito:
+            fito_id = existing_fito.id
         else:
-            new_fito = ClienteIEFito(
-                cliente_ie_id=id,
-                consignatario_fito=req.fitosanitario.consignatario_fito,
-                direccion_consignatario_fito=req.fitosanitario.direccion_consignatario_fito
+            new_fito = MaestroFito(
+                consignatario_fito=req.fitosanitario.consignatario_fito.upper(),
+                direccion_fito=req.fitosanitario.direccion_fito.upper()
             )
             db.add(new_fito)
+            db.flush()
+            fito_id = new_fito.id
+    
+    # Actualizar campos
+    update_data = req.dict(exclude={'id', 'fitosanitario', 'fito_id'})
+    for key, value in update_data.items():
+        if value is not None and isinstance(value, str):
+            setattr(cliente, key, value.upper())
+        else:
+            setattr(cliente, key, value)
             
-    db.commit()
+    cliente.fito_id = fito_id
+    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Error: Esta combinación de Cliente/Ruta ya existe")
+
     return {"status": "success"}
 
 @router.patch("/{id}/toggle-status")
