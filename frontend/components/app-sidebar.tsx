@@ -31,7 +31,7 @@ import {
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
-export function AppSidebar() {
+export function AppSidebar({ className }: { className?: string }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -48,6 +48,7 @@ export function AppSidebar() {
       items: [
         { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
         { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja" },
+        { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/logicapture/instrucciones", active: pathname === "/logicapture/instrucciones" },
       ]
     },
     {
