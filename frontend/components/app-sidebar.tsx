@@ -64,6 +64,7 @@ export function AppSidebar({ className }: { className?: string }) {
         { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
         { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos" },
         { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes" },
+        { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie" },
       ]
     },
     {

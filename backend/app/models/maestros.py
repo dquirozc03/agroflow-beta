@@ -88,3 +88,40 @@ class Chofer(Base):
         ape_mat_inic = f"{self.apellido_materno[0].upper()}." if self.apellido_materno else ""
         
         return f"{primer_nombre} {ape_pat} {ape_mat_inic}".strip()
+
+class ClienteIE(Base):
+    __tablename__ = "clientes_ie"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre_legal = Column(String(255), nullable=False)
+    pais = Column(String(100), nullable=False)
+    destino = Column(String(100), nullable=False)
+    
+    # Datos BL
+    consignatario_bl = Column(String(500), nullable=True)
+    direccion_consignatario = Column(String(1000), nullable=True)
+    notify_bl = Column(String(500), nullable=True)
+    eori_consignatario = Column(String(100), nullable=True)
+    eori_notify = Column(String(100), nullable=True)
+    emision_bl = Column(String(100), nullable=True)
+    
+    estado = Column(String(20), default="ACTIVO")
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relación 1:1 con Fito
+    fitosanitario = relationship("ClienteIEFito", back_populates="cliente", uselist=False, cascade="all, delete-orphan")
+
+class ClienteIEFito(Base):
+    __tablename__ = "clientes_ie_fito"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cliente_ie_id = Column(Integer, ForeignKey("clientes_ie.id", ondelete="CASCADE"), unique=True)
+    
+    consignatario_fito = Column(String(500), nullable=True)
+    direccion_consignatario_fito = Column(String(1000), nullable=True)
+    
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relación inversa
+    cliente = relationship("ClienteIE", back_populates="fitosanitario")
