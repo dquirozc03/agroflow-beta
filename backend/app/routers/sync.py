@@ -363,3 +363,8 @@ async def sync_pedidos_raw(
         db.rollback()
         logger.error(f"Error en sincronización atómica: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Fallo en la sincronización: {str(e)}")
+
+@router.get("/posicionamiento/list")
+def list_posicionamiento(db: Session = Depends(get_db)):
+    """Retorna listado completo del Plan Maestro para el módulo de Instrucciones."""
+    return db.query(Posicionamiento).order_by(Posicionamiento.FECHA_CREACION.desc()).all()

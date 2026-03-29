@@ -48,17 +48,18 @@ export default function InstruccionesEmbarque() {
   const [bookingsReal, setBookingsReal] = useState<any[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
 
-  // Carga inicial de bookings desde Posicionamiento
+  // Carga inicial de bookings desde el Plan Maestro (Posicionamiento)
   React.useEffect(() => {
     const loadBookings = async () => {
       try {
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/logicapture/registros?status=PENDIENTE`);
+        // Consultamos directamente al Plan Maestro, no a los registros de LogiCapture
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/sync/posicionamiento/list`);
         if (resp.ok) {
-          const data = await resp.json();
-          setBookingsReal(data.items || []);
+           const data = await resp.json();
+           setBookingsReal(data || []);
         }
       } catch (e) {
-        console.error("Error cargando bookings:", e);
+        console.error("Error cargando Plan Maestro:", e);
       } finally {
         setIsLoadingBookings(false);
       }
@@ -169,11 +170,11 @@ export default function InstruccionesEmbarque() {
                         )} />
                         <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{b.booking}</span>
                       </div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate max-w-[220px]">
-                         CONTENEDOR: {b.contenedor || "S/N"}
+                      <h4 className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter truncate max-w-[220px]">
+                         NAVE: {b.NAVE || "POR DEFINIR"}
                       </h4>
                       <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-tighter px-3 h-6 border-none">
-                        {b.cultivo}
+                        {b.CULTIVO}
                       </Badge>
                     </div>
                     <ChevronRight className={cn(
