@@ -232,6 +232,7 @@ export default function BandejaLogiCapture() {
   const [errorMessage, setErrorMessage] = useState("");
   const [errorTitle, setErrorTitle] = useState("ERROR DE SISTEMA");
   const [isAnularOpen, setIsAnularOpen] = useState(false);
+  const [isAnularSuccessOpen, setIsAnularSuccessOpen] = useState(false);
   const [anularReason, setAnularReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -309,7 +310,9 @@ export default function BandejaLogiCapture() {
        });
        if (!response.ok) throw new Error();
        
-       toast.warning("Registro Anulado Correctamente");
+       setIsAnularSuccessOpen(true);
+       setTimeout(() => setIsAnularSuccessOpen(false), 2500);
+       
        setIsAnularOpen(false);
        setAnularReason("");
        setOtherReason("");
@@ -860,12 +863,12 @@ export default function BandejaLogiCapture() {
                         <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold text-slate-700">
                            <SelectValue placeholder="Seleccione un motivo..." />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                           <SelectItem value="Error de precinto" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precinto</SelectItem>
-                           <SelectItem value="Error de precintado" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de precintado</SelectItem>
-                           <SelectItem value="Error de guia" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de guía</SelectItem>
-                           <SelectItem value="Error de booking" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700">Error de booking</SelectItem>
-                           <SelectItem value="Otros" className="font-bold text-slate-600 focus:bg-emerald-50 focus:text-emerald-700 text-rose-600">Otros (Especificar)</SelectItem>
+                        <SelectContent className="rounded-[2rem] border-slate-200 shadow-2xl bg-white p-2">
+                           <SelectItem value="Error de precinto" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de precinto</SelectItem>
+                           <SelectItem value="Error de precintado" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de precintado</SelectItem>
+                           <SelectItem value="Error de guia" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de guía</SelectItem>
+                           <SelectItem value="Error de booking" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de booking</SelectItem>
+                           <SelectItem value="Otros" className="p-4 rounded-2xl font-bold text-rose-600 focus:bg-rose-600 focus:text-white cursor-pointer border-none mt-2">Otros (Especificar)</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -957,7 +960,21 @@ export default function BandejaLogiCapture() {
              </div>
 
              <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-slate-50/30 pb-24">
-                {/* Paso 1: Selección de Sector */}
+                {/* Modal Transitorio de Éxito Anulación */}
+      <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
+          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-rose-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-rose-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
+             <div className="h-24 w-24 bg-rose-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-rose-200 animate-bounce">
+                <XCircle className="h-12 w-12" />
+             </div>
+             <div className="space-y-2">
+                <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Registro <span className="text-rose-600">Anulado</span></h2>
+                <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Operación invalidada correctamente</p>
+             </div>
+             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
+                <div className="absolute inset-x-0 h-full bg-rose-500 animate-pulse" />
+             </div>
+          </DialogContent>
+      </Dialog>
                 <div className="space-y-6">
                    <div className="flex items-center gap-3 ml-2">
                       <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
