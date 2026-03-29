@@ -88,10 +88,10 @@ export default function ClientesIEPage() {
           title: nombre
         });
         
-        // Auto-cierre en 2 segundos
+        // Auto-cierre en 3 segundos
         setTimeout(() => {
           setStatusModal(prev => ({ ...prev, open: false }));
-        }, 2000);
+        }, 3000);
 
         fetchClientes();
       }
@@ -100,11 +100,14 @@ export default function ClientesIEPage() {
     }
   };
 
-  const filtered = clientes.filter(c => 
-    c.nombre_legal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.pais.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.destino.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = clientes.filter(c => {
+    const search = searchTerm.toLowerCase();
+    const nombre = (c.nombre_legal || "").toLowerCase();
+    const pais = (c.pais || "").toLowerCase();
+    const destino = (c.destino || "").toLowerCase();
+    
+    return nombre.includes(search) || pais.includes(search) || destino.includes(search);
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
