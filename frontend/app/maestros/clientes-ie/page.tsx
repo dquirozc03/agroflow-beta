@@ -11,7 +11,9 @@ import {
   Navigation,
   Copy,
   Edit2,
-  Trash2
+  Trash2,
+  Ban,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -65,6 +67,20 @@ export default function ClientesIEPage() {
       }
     } catch (error) {
       toast.error("Error al duplicar maestro");
+    }
+  };
+
+  const handleToggleStatus = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/clientes-ie/${id}/toggle-status`, {
+        method: 'PATCH'
+      });
+      if (response.ok) {
+        toast.success("Estado del maestro actualizado");
+        fetchClientes();
+      }
+    } catch (error) {
+      toast.error("Error al cambiar estado");
     }
   };
 
@@ -132,7 +148,7 @@ export default function ClientesIEPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Identificación de Ruta</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Identificación de Cliente</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Cultivo</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">País / Destino</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Estado</th>
@@ -156,9 +172,11 @@ export default function ClientesIEPage() {
                       </div>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
-                       <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-black uppercase tracking-widest px-3 h-6">
-                          {c.cultivo || "N/A"}
-                       </Badge>
+                       <div className="flex justify-center">
+                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-black uppercase tracking-widest px-3 h-6">
+                             {c.cultivo || "N/A"}
+                          </Badge>
+                       </div>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex flex-col gap-1.5">
@@ -174,7 +192,12 @@ export default function ClientesIEPage() {
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex justify-center">
-                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-black uppercase tracking-widest px-3 h-6">
+                          <Badge className={cn(
+                            "text-[9px] font-black uppercase tracking-widest px-3 h-6",
+                            c.estado === "ACTIVO" 
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                              : "bg-slate-100 text-slate-400 border-slate-200"
+                          )}>
                              {c.estado}
                           </Badge>
                        </div>
@@ -187,6 +210,18 @@ export default function ClientesIEPage() {
                           className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all duration-300 shadow-sm group active:scale-95"
                         >
                           <Copy className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        </button>
+                        <button 
+                          onClick={() => handleToggleStatus(c.id)}
+                          title={c.estado === "ACTIVO" ? "Inhabilitar" : "Habilitar"}
+                          className={cn(
+                            "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                            c.estado === "ACTIVO"
+                              ? "bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                              : "bg-emerald-100 text-emerald-600 hover:bg-emerald-200"
+                          )}
+                        >
+                          {c.estado === "ACTIVO" ? <Ban className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
                         </button>
                         <button 
                           onClick={() => { setEditingData(c); setIsModalOpen(true); }}

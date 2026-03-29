@@ -98,6 +98,17 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
     db.commit()
     return {"status": "success"}
 
+@router.patch("/{id}/toggle-status")
+def toggle_cliente_ie_status(id: int, db: Session = Depends(get_db)):
+    """Cambia el estado del cliente entre ACTIVO e INACTIVO."""
+    cliente = db.query(ClienteIE).filter(ClienteIE.id == id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Maestro no encontrado")
+    
+    cliente.estado = "INACTIVO" if cliente.estado == "ACTIVO" else "ACTIVO"
+    db.commit()
+    return {"status": "success", "new_status": cliente.estado}
+
 @router.delete("/{id}")
 def delete_cliente_ie(id: int, db: Session = Depends(get_db)):
     """Eliminación lógica o física del maestro."""
