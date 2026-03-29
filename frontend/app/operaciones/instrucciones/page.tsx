@@ -18,7 +18,9 @@ import {
   FileText,
   ChevronRight,
   MoreVertical,
-  ArrowRight
+  ArrowRight,
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -292,7 +294,7 @@ export default function InstruccionesEmbarque() {
                   <h3 className="text-sm font-black text-slate-900 tracking-widest uppercase mb-1">Historial de Emisiones</h3>
                 </div>
                 <div className="flex items-center gap-3">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total: {MOCK_HISTORY.length}</div>
+                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado: Módulo Activo</div>
                 </div>
               </div>
 
