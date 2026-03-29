@@ -120,7 +120,20 @@ export default function InstruccionesEmbarque() {
                   className="pl-12 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-14 font-bold"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchTerm.length > 5) {
+                      handleBookingSelect({ booking: searchTerm.toUpperCase(), id: searchTerm.toUpperCase() });
+                    }
+                  }}
                 />
+                {searchTerm.length > 5 && (
+                   <button 
+                     onClick={() => handleBookingSelect({ booking: searchTerm.toUpperCase(), id: searchTerm.toUpperCase() })}
+                     className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-500 text-white p-2 rounded-xl hover:bg-emerald-600 transition-all animate-in fade-in"
+                   >
+                     <ArrowRight className="h-4 w-4" />
+                   </button>
+                )}
               </div>
             </div>
 
