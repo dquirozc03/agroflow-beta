@@ -101,6 +101,7 @@ class ClienteIE(Base):
     consignatario_bl = Column(String(500), nullable=True)
     direccion_consignatario = Column(String(1000), nullable=True)
     notify_bl = Column(String(500), nullable=True)
+    direccion_notify = Column(String(1000), nullable=True)
     eori_consignatario = Column(String(100), nullable=True)
     eori_notify = Column(String(100), nullable=True)
     emision_bl = Column(String(100), nullable=True)
