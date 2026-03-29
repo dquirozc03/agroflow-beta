@@ -37,8 +37,11 @@ export default function ClientesIEPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
-  const [showInhabilitado, setShowInhabilitado] = useState(false);
-  const [lastActionTitle, setLastActionTitle] = useState("");
+  const [statusModal, setStatusModal] = useState<{ open: boolean; mode: 'ACTIVO' | 'INACTIVO'; title: string }>({
+    open: false,
+    mode: 'ACTIVO',
+    title: ''
+  });
 
   useEffect(() => {
     fetchClientes();
@@ -78,12 +81,18 @@ export default function ClientesIEPage() {
         method: 'PATCH'
       });
       if (response.ok) {
-        if (currentStatus === "ACTIVO") {
-          setLastActionTitle(nombre);
-          setShowInhabilitado(true);
-        } else {
-          toast.success("Maestro habilitado correctamente 💎");
-        }
+        const nextStatus = currentStatus === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+        setStatusModal({
+          open: true,
+          mode: nextStatus as any,
+          title: nombre
+        });
+        
+        // Auto-cierre en 2 segundos
+        setTimeout(() => {
+          setStatusModal(prev => ({ ...prev, open: false }));
+        }, 2000);
+
         fetchClientes();
       }
     } catch (error) {
@@ -106,21 +115,39 @@ export default function ClientesIEPage() {
         editingData={editingData}
       />
 
-      {/* Modal de Inhabilitado estilo Carlos 💎 */}
-      {showInhabilitado && (
+      {/* Modal de Estado dinámico estilo Carlos 💎 */}
+      {statusModal.open && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 animate-in fade-in duration-500">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowInhabilitado(false)} />
-          <div className="relative bg-white rounded-[3.5rem] shadow-2xl p-12 max-w-md w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border border-rose-50">
-             <div className="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mx-auto relative group">
-                <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20" />
-                <Ban className="h-12 w-12 text-rose-600 relative z-10" />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setStatusModal(prev => ({ ...prev, open: false }))} />
+          <div className={cn(
+            "relative bg-white rounded-[3.5rem] shadow-2xl p-12 max-w-md w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border",
+            statusModal.mode === "ACTIVO" ? "border-emerald-50" : "border-rose-50"
+          )}>
+             <div className={cn(
+               "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
+               statusModal.mode === "ACTIVO" ? "bg-emerald-100" : "bg-rose-100"
+             )}>
+                <div className={cn(
+                  "absolute inset-0 rounded-full animate-ping opacity-20",
+                  statusModal.mode === "ACTIVO" ? "bg-emerald-500" : "bg-rose-500"
+                )} />
+                {statusModal.mode === "ACTIVO" ? (
+                  <ShieldCheck className="h-12 w-12 text-emerald-600 relative z-10" />
+                ) : (
+                  <Ban className="h-12 w-12 text-rose-600 relative z-10" />
+                )}
              </div>
              <div className="space-y-3">
-                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">¡Inhabilitado!</h2>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
+                   {statusModal.mode === "ACTIVO" ? "¡Habilitado!" : "¡Inhabilitado!"}
+                </h2>
                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
                   El cliente <br/>
-                  <span className="text-rose-600 border-b-2 border-rose-500/20">{lastActionTitle}</span> <br/>
-                  ha sido desactivado de la bandeja.
+                  <span className={cn(
+                    "border-b-2",
+                    statusModal.mode === "ACTIVO" ? "text-emerald-600 border-emerald-500/20" : "text-rose-600 border-rose-500/20"
+                  )}>{statusModal.title}</span> <br/>
+                  ha sido {statusModal.mode === "ACTIVO" ? "activado" : "desactivado"} correctamente.
                 </p>
              </div>
           </div>
