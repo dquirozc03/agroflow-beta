@@ -24,7 +24,7 @@ class ClienteIESchema(BaseModel):
     nombre_legal: str
     cultivo: Optional[str] = None
     pais: str
-    destino: str
+    destino: Optional[str] = None
     consignatario_bl: Optional[str] = None
     direccion_consignatario: Optional[str] = None
     notify_bl: Optional[str] = None
