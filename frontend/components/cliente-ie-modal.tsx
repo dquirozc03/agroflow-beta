@@ -17,11 +17,37 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface ClienteIEModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  editingData?: any;
+interface ClienteIE {
+  id: number;
+  nombre_legal: string;
+  pais: string;
+  destino: string;
+  estado: string;
+}
+
+function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+       <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-emerald-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
+          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto relative group">
+             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity" />
+             <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
+          </div>
+          <div className="space-y-3">
+             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">¡Operación Exitosa!</h2>
+             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Registro: {title}</p>
+          </div>
+          <button 
+             onClick={onClose}
+             className="w-full py-5 bg-emerald-950 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/20 active:scale-95"
+          >
+             Continuar Operación
+          </button>
+       </div>
+    </div>
+  );
 }
 
 export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: ClienteIEModalProps) {
@@ -44,6 +70,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -114,9 +141,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
       });
 
       if (response.ok) {
-        toast.success("Maestro de Cliente guardado exitosamente 💎");
-        onSuccess();
-        onClose();
+        setShowSuccess(true);
       } else {
         toast.error("Error al guardar el maestro");
       }
@@ -129,6 +154,16 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
+      <SuccessModal 
+        isOpen={showSuccess} 
+        onClose={() => {
+          setShowSuccess(false);
+          onSuccess();
+          onClose();
+        }} 
+        title={formData.nombre_legal} 
+      />
+
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-in fade-in" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-white rounded-[3rem] p-10 shadow-2xl z-[110] animate-in zoom-in-95 focus:outline-none max-h-[95vh] overflow-y-auto lc-scroll">
