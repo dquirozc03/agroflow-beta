@@ -500,9 +500,21 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         )}
                       />
                       {formData.fitosanitario.id && (
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-2 flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                          <CheckCircle2 className="h-3 w-3" /> Vinculado al Maestro #ID-{formData.fitosanitario.id.toString().padStart(3, '0')}
-                        </p>
+                        <div className="flex items-center justify-between mt-3 px-2">
+                           <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                             <ShieldCheck className="h-3 w-3" /> Vinculado al Maestro: {formData.fitosanitario.consignatario_fito}
+                           </p>
+                           <button 
+                             type="button"
+                             onClick={() => setFormData({
+                               ...formData,
+                               fitosanitario: { ...formData.fitosanitario, id: null }
+                             })}
+                             className="text-[9px] font-black text-rose-400 hover:text-rose-600 uppercase tracking-tighter transition-colors flex items-center gap-1 group/unlink"
+                           >
+                             <X className="h-3 w-3 group-hover:rotate-90 transition-transform" /> Desvincular para Editar
+                           </button>
+                        </div>
                       )}
                     </div>
                   </div>
