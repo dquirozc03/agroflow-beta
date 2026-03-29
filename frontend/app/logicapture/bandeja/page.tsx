@@ -189,23 +189,22 @@ function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSe
         {(loading || isSearchingLocal) && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 absolute right-4" />}
       </div>
       {showResults && !readOnly && !hideResults && (
-        <div className="absolute top-[110%] left-0 right-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[200] overflow-hidden animate-in fade-in slide-in-from-top-2">
+        <div className="fixed sm:absolute top-[105%] left-0 right-0 bg-white border border-slate-200 rounded-3xl shadow-2xl z-[999] overflow-hidden animate-in fade-in slide-in-from-top-2 max-w-[calc(100vw-4rem)]">
            <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados de Búsqueda</span>
-              <button onClick={() => setShowResults(false)} className="text-slate-400 hover:text-rose-500"><X className="h-3 w-3" /></button>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados encontrados</span>
+              <button onClick={(e) => { e.stopPropagation(); setShowResults(false); }} className="p-1 hover:bg-rose-100 hover:text-rose-600 rounded-lg transition-colors"><X className="h-3 w-3" /></button>
            </div>
-           <div className="lc-scroll max-h-[200px] overflow-y-auto">
+           <div className="lc-scroll max-h-[180px] overflow-y-auto">
               {results.map((res, i) => (
                  <div key={i} onClick={() => { onSelect(res); setShowResults(false); }} className="p-4 hover:bg-emerald-50 cursor-pointer flex items-center gap-4 group transition-colors border-b border-slate-50 last:border-none">
                     <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-slate-50 group-hover:bg-emerald-600 group-hover:text-white transition-all"><Icon className="h-4 w-4" /></div>
-                    <div className="flex flex-col">
-                       <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 uppercase">
+                    <div className="flex flex-col flex-1 min-w-0">
+                       <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 uppercase truncate">
                           {res.nombre || res.placa}
                        </span>
-                       <div className="flex flex-wrap gap-1 items-center">
+                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 items-center">
                           {res.dni && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni}</span>}
                           {res.marca && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.marca}</span>}
-                          {res.marca && res.transportista && <span className="text-[10px] font-bold text-slate-400 opacity-30">â€¢</span>}
                           {res.transportista && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{res.transportista}</span>}
                        </div>
                     </div>
@@ -966,9 +965,9 @@ export default function BandejaLogiCapture() {
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
-                        { id: 'maestros', label: 'Entidades', desc: 'Chofer, Transportista, Unidades', icon: Truck },
-                        { id: 'precintos', label: 'Seguridad', desc: 'Aduana, Beta, Sellos, Termos', icon: ShieldCheck },
-                        { id: 'embarque', label: 'Carga y Tiempo', desc: 'Booking, Contenedor, Orden, Cronos', icon: Inbox }
+                        { id: 'maestros', label: 'DATOS DE TRANSPORTE', desc: 'Chofer, Transportista, Unidades', icon: Truck },
+                        { id: 'precintos', label: 'DATOS DE SEGURIDAD', desc: 'Aduana, Beta, Sellos, Termos', icon: ShieldCheck },
+                        { id: 'embarque', label: 'DATOS DE EMBARQUE', desc: 'Booking, Contenedor, Orden, Cronos', icon: Inbox }
                       ].map((item) => (
                          <button 
                            key={item.id}
