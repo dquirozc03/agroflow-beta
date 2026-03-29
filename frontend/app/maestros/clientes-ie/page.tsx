@@ -17,11 +17,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/lib/constants";
-import { ClienteIEModal } from "@/components/cliente-ie-modal";
+import { ClienteIEModal } from "../../../components/cliente-ie-modal";
 
 interface ClienteIE {
   id: number;
   nombre_legal: string;
+  cultivo?: string;
   pais: string;
   destino: string;
   estado: string;
@@ -132,6 +133,7 @@ export default function ClientesIEPage() {
               <thead>
                 <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Identificación de Ruta</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Cultivo</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">País / Destino</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 border-r border-slate-200/80 text-center">Estado</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
@@ -152,6 +154,11 @@ export default function ClientesIEPage() {
                           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic">Consignatario BL</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-8 py-7 border-r border-slate-200/80">
+                       <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-black uppercase tracking-widest px-3 h-6">
+                          {c.cultivo || "N/A"}
+                       </Badge>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex flex-col gap-1.5">

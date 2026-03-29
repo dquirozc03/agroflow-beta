@@ -53,6 +53,7 @@ function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: ()
 export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: ClienteIEModalProps) {
   const [formData, setFormData] = useState({
     nombre_legal: "",
+    cultivo: "",
     pais: "",
     destino: "",
     consignatario_bl: "",
@@ -78,6 +79,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
       if (editingData) {
         setFormData({
           nombre_legal: editingData.nombre_legal || "",
+          cultivo: editingData.cultivo || "",
           pais: editingData.pais || "",
           destino: editingData.destino || "",
           consignatario_bl: editingData.consignatario_bl || "",
@@ -95,6 +97,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
       } else {
         setFormData({
           nombre_legal: "",
+          cultivo: "",
           pais: "",
           destino: "",
           consignatario_bl: "",
@@ -198,7 +201,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
               </TabsList>
 
               <TabsContent value="bl" className="mt-8 space-y-8 animate-in fade-in duration-500">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nombre Cliente</label>
                     <input 
@@ -215,7 +218,16 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     />
                     {errors.nombre_legal && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest px-2">{errors.nombre_legal}</p>}
                   </div>
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Cultivo</label>
+                    <input 
+                      value={formData.cultivo}
+                      onChange={e => setFormData({ ...formData, cultivo: e.target.value.toUpperCase() })}
+                      placeholder="EJ: ARANDANO"
+                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">País</label>
                     <input 
                       value={formData.pais}
@@ -231,8 +243,8 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     />
                     {errors.pais && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest px-2">{errors.pais}</p>}
                   </div>
-                  <div className="space-y-2 text-xs">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Puerto Destino <span className="text-slate-300 italic opacity-50 ml-1">(Opcional)</span></label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-[9px]">P. Destino <span className="text-slate-300 italic opacity-50 ml-1">(Opc)</span></label>
                     <input 
                       value={formData.destino}
                       onChange={e => setFormData({ ...formData, destino: e.target.value.toUpperCase() })}

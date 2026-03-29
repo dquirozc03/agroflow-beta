@@ -94,6 +94,7 @@ class ClienteIE(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre_legal = Column(String(255), nullable=False)
+    cultivo = Column(String(100), nullable=True)
     pais = Column(String(100), nullable=False)
     destino = Column(String(100), nullable=True)
     

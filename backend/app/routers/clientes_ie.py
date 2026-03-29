@@ -18,6 +18,7 @@ class ClienteIEFitoSchema(BaseModel):
 class ClienteIESchema(BaseModel):
     id: Optional[int] = None
     nombre_legal: str
+    cultivo: Optional[str] = None
     pais: str
     destino: str
     consignatario_bl: Optional[str] = None
@@ -45,6 +46,7 @@ def create_cliente_ie(req: ClienteIESchema, db: Session = Depends(get_db)):
     """Registro de nuevo cliente IE y sus requerimientos fitosanitarios."""
     new_cliente = ClienteIE(
         nombre_legal=req.nombre_legal.upper(),
+        cultivo=req.cultivo.upper() if req.cultivo else None,
         pais=req.pais.upper(),
         destino=req.destino.upper(),
         consignatario_bl=req.consignatario_bl,
@@ -116,6 +118,7 @@ def duplicate_cliente_ie(id: int, db: Session = Depends(get_db)):
     
     new_cliente = ClienteIE(
         nombre_legal=original.nombre_legal,
+        cultivo=original.cultivo,
         pais=original.pais + " (CLONE)",
         destino=original.destino,
         consignatario_bl=original.consignatario_bl,
