@@ -189,7 +189,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         value={formData.consignatario_bl}
                         onChange={e => setFormData({...formData, consignatario_bl: e.target.value.toUpperCase()})}
                         placeholder="DATOS DEL CONSIGNATARIO..."
-                        className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs resize-none"
+                        className="w-full min-h-[80px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
                     </div>
                     <div className="space-y-2">
@@ -198,7 +198,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         value={formData.notify_bl}
                         onChange={e => setFormData({...formData, notify_bl: e.target.value.toUpperCase()})}
                         placeholder="DATOS DEL NOTIFY PARTY..."
-                        className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs resize-none"
+                        className="w-full min-h-[80px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
                     </div>
                   </div>
@@ -210,7 +210,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                          value={formData.direccion_consignatario}
                          onChange={e => setFormData({...formData, direccion_consignatario: e.target.value.toUpperCase()})}
                          placeholder="DIRECCIÓN COMPLETA..."
-                         className="w-full min-h-[80px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs resize-none"
+                         className="w-full min-h-[160px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                        />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
