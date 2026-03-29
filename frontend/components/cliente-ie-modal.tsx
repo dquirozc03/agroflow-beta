@@ -39,8 +39,8 @@ function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClo
   const isEdit = mode === "edit";
   
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
-       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-500">
+       <div className="absolute inset-0 bg-slate-100/90 backdrop-blur-xl z-[-1]" onClick={onClose} />
        <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-slate-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
           <div className={cn(
             "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
@@ -57,20 +57,19 @@ function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClo
              )}
           </div>
           <div className="space-y-3">
-             <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+             <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
                {isEdit ? "¡Cliente Actualizado!" : "¡Operación Exitosa!"}
              </h2>
-             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">
-               {isEdit ? "Cambios Guardados:" : "Registro:"} {title}
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+               {isEdit ? "Cambios Guardados:" : "Registro:"} <br/>
+               <span className="text-slate-900 border-b-2 border-emerald-500/20">{title}</span>
              </p>
           </div>
           <button 
-             onClick={(e) => {
-               e.stopPropagation();
-               onClose();
-             }}
+             type="button"
+             onClick={onClose}
              className={cn(
-               "w-full py-5 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95",
+               "w-full py-6 text-white rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 hover:scale-[1.02] cursor-pointer",
                isEdit ? "bg-slate-900 hover:bg-blue-900 shadow-blue-900/20" : "bg-emerald-950 hover:bg-emerald-800 shadow-emerald-900/20"
              )}
           >
