@@ -71,8 +71,9 @@ class LogiCaptureService:
             
             # --- Formateo Excel Premium Carlos Style ---
             last_col = chr(64 + len(df.columns))
-            last_row = len(df) + 5
-            ref = f"A5:{last_col}{last_row-1}"
+            # Row 5 is header, so last row is 5 + len(df)
+            last_row_idx = len(df) + 5
+            ref = f"A5:{last_col}{last_row_idx}"
             tab = Table(displayName="TablaAuditoria", ref=ref)
             
             style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,

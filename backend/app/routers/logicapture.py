@@ -89,22 +89,22 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     Cruza la información de Posicionamientos (Plan Maestro) con el 
     Control de Embarque (Registro Operativo) para autocompletar el formulario.
     """
-    clean_booking_str_str = clean_booking_str(booking)
+    clean_booking_val = clean_booking(booking)
     
     # 1. Buscar en Posicionamientos (Orden Beta / Plan Maestro)
-    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == clean_booking_str).first()
+    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == clean_booking_val).first()
     
     # 2. Buscar en Control de Embarque (DAM / Contenedor)
-    emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == clean_booking_str).first()
+    emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == clean_booking_val).first()
     
     if not pos and not emb:
         raise HTTPException(
             status_code=404, 
-            detail=f"No se encontró información maestra para el Booking: {clean_booking_str}"
+            detail=f"No se encontró información maestra para el Booking: {clean_booking_val}"
         )
     
     return {
-        "booking": clean_booking_str,
+        "booking": clean_booking_val,
         "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
         "dam": emb.dam if emb else "PENDIENTE",
         "contenedor": emb.contenedor if emb else "PENDIENTE",
@@ -118,11 +118,11 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
 @router.get("/driver/{dni}")
 def get_driver_data(dni: str, db: Session = Depends(get_db)):
     """Busca chofer en maestros por DNI."""
-    clean_dni_str_str = clean_dni_str(dni)
-    driver = db.query(Chofer).filter(Chofer.dni == clean_dni_str).first()
+    clean_dni_val = clean_dni(dni)
+    driver = db.query(Chofer).filter(Chofer.dni == clean_dni_val).first()
     
     if not driver:
-        raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni_str} no registrado")
+        raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni_val} no registrado")
         
     return {
         "dni": driver.dni,
@@ -136,11 +136,11 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
 @router.get("/vehicle/{placa}")
 def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     """Busca vehículo y su transportista por placa."""
-    clean_placa_str_str = clean_plate(placa)
-    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa_str).first()
+    clean_placa_val = clean_plate(placa)
+    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa_val).first()
     
     if not vehicle:
-        raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_str} no registrado")
+        raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_val} no registrado")
         
     return {
         "placa": vehicle.placa_tracto,
@@ -156,19 +156,19 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
 @router.get("/check_unique")
 def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
     """Verifica si un dato ya existe en la tabla de registros operativos."""
-    clean_val_str_str = clean_container(value) if "contenedor" in field else value.strip().upper()
+    clean_val = clean_container(value) if "contenedor" in field else value.strip().upper()
     
-    if clean_val_str == "**":
+    if clean_val == "**":
         return {"field": field, "exists": False, "id": None}
     if field == "booking" and not treatment_buque:
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val_str).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val).first()
     elif field == "dam":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val_str).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val).first()
     elif field == "contenedor":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val_str).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val).first()
     elif field in ["precinto", "termografo"]:
         # Buscar en la tabla de blindaje detallado
-        det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val_str).first()
+        det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val).first()
         if det:
             # Si existe en detalles, devolvemos el registro padre
             exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == det.registro_id).first()
@@ -186,11 +186,11 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
 @router.get("/trailer/{placa}")
 def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     """Busca carreta en maestros por placa."""
-    clean_placa_str_str = clean_plate(placa)
-    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa_str).first()
+    clean_placa = clean_plate(placa)
+    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa).first()
     
     if not trailer:
-        raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa_str} no registrada")
+        raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
         
 @router.get("/drivers/search")
 def search_drivers(q: str, db: Session = Depends(get_db)):
