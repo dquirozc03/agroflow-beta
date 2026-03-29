@@ -153,7 +153,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
               <TabsContent value="bl" className="mt-8 space-y-8 animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nombre Legal Cliente</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nombre Cliente</label>
                     <input
                       required
                       value={formData.nombre_legal}
@@ -184,76 +184,79 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  {/* Bloque Izquierdo: Consignatario */}
+                  <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Consignatario (BL)</label>
-                      <textarea
+                      <input
                         value={formData.consignatario_bl}
                         onChange={e => setFormData({ ...formData, consignatario_bl: e.target.value.toUpperCase() })}
-                        placeholder="DATOS DEL CONSIGNATARIO..."
-                        className="w-full min-h-[80px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
+                        placeholder="NOMBRE DEL CONSIGNATARIO..."
+                        className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">Notify Party (BL)</label>
-                      <textarea
-                        value={formData.notify_bl}
-                        onChange={e => setFormData({ ...formData, notify_bl: e.target.value.toUpperCase() })}
-                        placeholder="DATOS DEL NOTIFY PARTY..."
-                        className="w-full min-h-[80px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Dirección Notify</label>
-                       <textarea 
-                         value={formData.direccion_notify}
-                         onChange={e => setFormData({...formData, direccion_notify: e.target.value.toUpperCase()})}
-                         placeholder="DIRECCIÓN DEL NOTIFY PARTY..."
-                         className="w-full min-h-[160px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
-                       />
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Dirección del Consignatario</label>
                       <textarea
                         value={formData.direccion_consignatario}
                         onChange={e => setFormData({ ...formData, direccion_consignatario: e.target.value.toUpperCase() })}
                         placeholder="DIRECCIÓN COMPLETA..."
-                        className="w-full min-h-[160px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
+                        className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Consignatario</label>
-                        <input
-                          value={formData.eori_consignatario}
-                          onChange={e => setFormData({ ...formData, eori_consignatario: e.target.value.toUpperCase() })}
-                          placeholder="EORI..."
-                          className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Notify</label>
-                        <input
-                          value={formData.eori_notify}
-                          onChange={e => setFormData({ ...formData, eori_notify: e.target.value.toUpperCase() })}
-                          placeholder="EORI..."
-                          className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
-                        />
-                      </div>
+                  </div>
+
+                  {/* Bloque Derecho: Notify Party */}
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">Notify (BL)</label>
+                      <input
+                        value={formData.notify_bl}
+                        onChange={e => setFormData({ ...formData, notify_bl: e.target.value.toUpperCase() })}
+                        placeholder="NOMBRE DEL NOTIFY PARTY..."
+                        className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
+                      />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Lugar de Emisión BL</label>
-                      <input
-                        value={formData.emision_bl}
-                        onChange={e => setFormData({ ...formData, emision_bl: e.target.value.toUpperCase() })}
-                        placeholder="EJ: PIURA, PERU"
-                        className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Dirección Notify</label>
+                      <textarea
+                        value={formData.direccion_notify}
+                        onChange={e => setFormData({ ...formData, direccion_notify: e.target.value.toUpperCase() })}
+                        placeholder="DIRECCIÓN DEL NOTIFY PARTY..."
+                        className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Consignatario</label>
+                    <input
+                      value={formData.eori_consignatario}
+                      onChange={e => setFormData({ ...formData, eori_consignatario: e.target.value.toUpperCase() })}
+                      placeholder="EORI..."
+                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Notify</label>
+                    <input
+                      value={formData.eori_notify}
+                      onChange={e => setFormData({ ...formData, eori_notify: e.target.value.toUpperCase() })}
+                      placeholder="EORI..."
+                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Emisión BL</label>
+                    <input
+                      value={formData.emision_bl}
+                      onChange={e => setFormData({ ...formData, emision_bl: e.target.value.toUpperCase() })}
+                      placeholder="EJ: SWB"
+                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
+                    />
                   </div>
                 </div>
               </TabsContent>
