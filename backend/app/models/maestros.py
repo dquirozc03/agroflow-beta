@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -111,19 +111,26 @@ class ClienteIE(Base):
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Relación 1:1 con Fito
-    fitosanitario = relationship("ClienteIEFito", back_populates="cliente", uselist=False, cascade="all, delete-orphan")
+    # Relación con Maestro Fito (Muchos a Uno: Varios clientes pueden usar el mismo Fito)
+    fito_id = Column(Integer, ForeignKey("maestro_fitos.id", ondelete="SET NULL"), nullable=True)
+    fitosanitario = relationship("MaestroFito", back_populates="clientes")
 
-class ClienteIEFito(Base):
-    __tablename__ = "clientes_ie_fito"
+    __table_args__ = (
+        UniqueConstraint('nombre_legal', 'cultivo', 'pais', 'destino', name='_cliente_ruta_uc'),
+    )
+
+class MaestroFito(Base):
+    __tablename__ = "maestro_fitos"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_ie_id = Column(Integer, ForeignKey("clientes_ie.id", ondelete="CASCADE"), unique=True)
-    
-    consignatario_fito = Column(String(500), nullable=True)
-    direccion_consignatario_fito = Column(String(1000), nullable=True)
+    consignatario_fito = Column(String(500), nullable=False)
+    direccion_fito = Column(String(1000), nullable=False)
     
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relación inversa
-    cliente = relationship("ClienteIE", back_populates="fitosanitario")
+    clientes = relationship("ClienteIE", back_populates="fitosanitario")
+
+    __table_args__ = (
+        UniqueConstraint('consignatario_fito', 'direccion_fito', name='_fito_data_uc'),
+    )
