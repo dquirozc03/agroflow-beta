@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/lib/constants";
 import { ClienteIEModal } from "@/components/cliente-ie-modal";
 
