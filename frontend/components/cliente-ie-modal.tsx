@@ -26,6 +26,13 @@ interface ClienteIE {
   estado: string;
 }
 
+interface ClienteIEModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  editingData?: any;
+}
+
 function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
   if (!isOpen) return null;
   return (
