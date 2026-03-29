@@ -92,6 +92,23 @@ import { cn } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com";
 
+// --- Tooltip Minimalista Carlos Style 💎 ---
+function NiceTooltip({ children, text }: { children: React.ReactNode, text: string }) {
+  const [show, setShow] = useState(false);
+  if (!text) return <>{children}</>;
+  return (
+    <div className="relative inline-block w-full" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      {show && (
+        <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl z-[1000] whitespace-nowrap animate-in fade-in zoom-in duration-200 border border-white/10">
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900/90" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Componentes UX Premium Carlos Style (Duplicados para Bandeja) ---
 function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicatedValues = [] }: any) {
   const [inputValue, setInputValue] = useState("");
@@ -889,13 +906,13 @@ export default function BandejaLogiCapture() {
                <div className="flex gap-4 mt-4">
                   <Button 
                     variant="ghost" 
-                    className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] text-slate-400"
+                    className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] text-slate-400 hover:bg-slate-100"
                     onClick={() => setIsAnularOpen(false)}
                   >
                      Cancelar
                   </Button>
                   <Button 
-                    className="flex-1 rounded-2xl h-14 bg-rose-600 hover:bg-rose-700 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-rose-600/20"
+                    className="flex-1 rounded-2xl h-14 bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-600/20 text-white"
                     onClick={handleAnularConfirm}
                   >
                      Confirmar Anulación
@@ -954,7 +971,7 @@ export default function BandejaLogiCapture() {
                       <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">Corrección Selectiva de Registro #{selectedReg?.id}</p>
                    </div>
                 </div>
-                <button onClick={() => setIsEditOpen(false)} className="h-12 w-12 bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all flex items-center justify-center group">
+                <button onClick={() => setIsEditOpen(false)} className="h-12 w-12 bg-white/10 hover:bg-emerald-500 text-white rounded-2xl transition-all flex items-center justify-center group">
                    <X className="h-6 w-6 group-hover:scale-110 transition-transform" />
                 </button>
              </div>
@@ -962,16 +979,16 @@ export default function BandejaLogiCapture() {
              <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-slate-50/30 pb-24">
                 {/* Modal Transitorio de Éxito Anulación */}
       <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
-          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-rose-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-rose-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
-             <div className="h-24 w-24 bg-rose-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-rose-200 animate-bounce">
-                <XCircle className="h-12 w-12" />
+          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-emerald-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-emerald-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
+             <div className="h-24 w-24 bg-emerald-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200 animate-bounce">
+                <CheckCircle2 className="h-12 w-12" />
              </div>
              <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Registro <span className="text-rose-600">Anulado</span></h2>
-                <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Operación invalidada correctamente</p>
+                <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Registro <span className="text-emerald-600">Actualizado</span></h2>
+                <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Operación modificada correctamente</p>
              </div>
              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
-                <div className="absolute inset-x-0 h-full bg-rose-500 animate-pulse" />
+                <div className="absolute inset-x-0 h-full bg-emerald-500 animate-pulse" />
              </div>
           </DialogContent>
       </Dialog>
@@ -1043,22 +1060,27 @@ export default function BandejaLogiCapture() {
                                         licencia_chofer: res.licencia
                                      })}
                                      placeholder="Escriba DNI para buscar..."
+                                     hideResults={true}
                                   />
                                </div>
                                <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-3 group/field">
                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre (Lectura)</label>
-                                     <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-not-allowed px-4 overflow-hidden">
-                                        <ShieldCheck className="h-4 w-4 mr-3 text-slate-300 min-w-[16px]" />
-                                        <input value={editData.nombre_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-slate-900 truncate" />
-                                     </div>
+                                     <NiceTooltip text={editData.nombre_chofer}>
+                                       <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-help px-4 overflow-hidden">
+                                          <ShieldCheck className="h-4 w-4 mr-3 text-emerald-500 min-w-[16px]" />
+                                          <input value={editData.nombre_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-xs font-black text-slate-900 truncate" />
+                                       </div>
+                                     </NiceTooltip>
                                   </div>
                                   <div className="space-y-3 group/field">
                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Licencia (Lectura)</label>
-                                     <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-not-allowed px-4">
-                                        <Truck className="h-4 w-4 mr-3 text-slate-300" />
-                                        <input value={editData.licencia_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900" />
-                                     </div>
+                                     <NiceTooltip text={editData.licencia_chofer}>
+                                       <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-help px-4 overflow-hidden">
+                                          <Truck className="h-4 w-4 mr-3 text-emerald-500 min-w-[16px]" />
+                                          <input value={editData.licencia_chofer} readOnly className="flex-1 bg-transparent border-none outline-none text-xs font-black text-slate-900 truncate" />
+                                       </div>
+                                     </NiceTooltip>
                                   </div>
                                </div>
                                <SearchableField 
