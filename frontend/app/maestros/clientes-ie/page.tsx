@@ -37,6 +37,18 @@ export default function ClientesIEPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
+
+  const getCultivoIcon = (cultivo: string) => {
+    const c = (cultivo || "").toUpperCase();
+    if (c.includes("GRANADA")) return "🍎";
+    if (c.includes("ARANDANO")) return "🫐";
+    if (c.includes("UVA")) return "🍇";
+    if (c.includes("PALTA") || c.includes("AVOCADO")) return "🥑";
+    if (c.includes("MANGO")) return "🥭";
+    if (c.includes("ESPARRAGO")) return "🎋";
+    if (c.includes("CITRICO") || c.includes("NARANJA") || c.includes("LIMON")) return "🍊";
+    return "📦";
+  };
   const [statusModal, setStatusModal] = useState<{ open: boolean; mode: 'ACTIVO' | 'INACTIVO'; title: string }>({
     open: false,
     mode: 'ACTIVO',
@@ -238,11 +250,12 @@ export default function ClientesIEPage() {
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex justify-center">
                           <Badge className={cn(
-                            "text-[9px] font-black uppercase tracking-widest px-3 h-6 transition-colors",
+                            "text-[9px] font-black uppercase tracking-widest px-3 h-7 transition-all flex items-center gap-2",
                             c.estado === "ACTIVO" 
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                              : "bg-slate-100 text-slate-400 border-slate-200"
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm" 
+                              : "bg-slate-100 text-slate-400 border-slate-200 grayscale opacity-70"
                           )}>
+                             <span className="text-sm">{getCultivoIcon(c.cultivo || "")}</span>
                              {c.cultivo || "N/A"}
                           </Badge>
                        </div>
