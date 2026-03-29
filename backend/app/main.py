@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Routers
-from app.routers import auth, sync, maestros, vehiculos, logicapture, clientes_ie
+from app.routers import auth, sync, maestros, vehiculos, logicapture, clientes_ie, instrucciones
 
 app.include_router(auth.router)
 app.include_router(sync.router)
@@ -29,6 +29,7 @@ app.include_router(maestros.router)
 app.include_router(vehiculos.router)
 app.include_router(logicapture.router)
 app.include_router(clientes_ie.router)
+app.include_router(instrucciones.router)
 
 @app.get("/health")
 @app.get("/api/v1/health")
