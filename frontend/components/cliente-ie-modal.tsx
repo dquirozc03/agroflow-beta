@@ -33,23 +33,42 @@ interface ClienteIEModalProps {
   editingData?: any;
 }
 
-function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
+function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClose: () => void, title: string, mode: "create" | "edit" }) {
   if (!isOpen) return null;
+  const isEdit = mode === "edit";
+  
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
-       <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-emerald-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
-          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto relative group">
-             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity" />
-             <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
+       <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-slate-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
+          <div className={cn(
+            "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
+            isEdit ? "bg-blue-100" : "bg-emerald-100"
+          )}>
+             <div className={cn(
+               "absolute inset-0 rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity",
+               isEdit ? "bg-blue-500" : "bg-emerald-500"
+             )} />
+             {isEdit ? (
+               <ShieldCheck className="h-12 w-12 text-blue-600 relative z-10 animate-in zoom-in-50 duration-500" />
+             ) : (
+               <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
+             )}
           </div>
           <div className="space-y-3">
-             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">¡Operación Exitosa!</h2>
-             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Registro: {title}</p>
+             <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+               {isEdit ? "¡Cliente Actualizado!" : "¡Operación Exitosa!"}
+             </h2>
+             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">
+               {isEdit ? "Cambios Guardados:" : "Registro:"} {title}
+             </p>
           </div>
           <button 
              onClick={onClose}
-             className="w-full py-5 bg-emerald-950 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/20 active:scale-95"
+             className={cn(
+               "w-full py-5 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95",
+               isEdit ? "bg-slate-900 hover:bg-blue-900 shadow-blue-900/20" : "bg-emerald-950 hover:bg-emerald-800 shadow-emerald-900/20"
+             )}
           >
              Continuar Operación
           </button>
@@ -173,6 +192,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
           onClose();
         }} 
         title={formData.nombre_legal} 
+        mode={editingData ? "edit" : "create"}
       />
 
       <Dialog.Portal>
