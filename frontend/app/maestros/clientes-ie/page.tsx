@@ -37,6 +37,8 @@ export default function ClientesIEPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
+  const [showInhabilitado, setShowInhabilitado] = useState(false);
+  const [lastActionTitle, setLastActionTitle] = useState("");
 
   useEffect(() => {
     fetchClientes();
@@ -70,13 +72,18 @@ export default function ClientesIEPage() {
     }
   };
 
-  const handleToggleStatus = async (id: number) => {
+  const handleToggleStatus = async (id: number, nombre: string, currentStatus: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/maestros/clientes-ie/${id}/toggle-status`, {
         method: 'PATCH'
       });
       if (response.ok) {
-        toast.success("Estado del maestro actualizado");
+        if (currentStatus === "ACTIVO") {
+          setLastActionTitle(nombre);
+          setShowInhabilitado(true);
+        } else {
+          toast.success("Maestro habilitado correctamente 💎");
+        }
         fetchClientes();
       }
     } catch (error) {
@@ -98,6 +105,27 @@ export default function ClientesIEPage() {
         onSuccess={fetchClientes}
         editingData={editingData}
       />
+
+      {/* Modal de Inhabilitado estilo Carlos 💎 */}
+      {showInhabilitado && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowInhabilitado(false)} />
+          <div className="relative bg-white rounded-[3.5rem] shadow-2xl p-12 max-w-md w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border border-rose-50">
+             <div className="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mx-auto relative group">
+                <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20" />
+                <Ban className="h-12 w-12 text-rose-600 relative z-10" />
+             </div>
+             <div className="space-y-3">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">¡Inhabilitado!</h2>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+                  El cliente <br/>
+                  <span className="text-rose-600 border-b-2 border-rose-500/20">{lastActionTitle}</span> <br/>
+                  ha sido desactivado de la bandeja.
+                </p>
+             </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -144,7 +172,7 @@ export default function ClientesIEPage() {
              <p className="text-xs font-black uppercase tracking-[0.2em]">Sincronizando Maestros...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
@@ -212,7 +240,7 @@ export default function ClientesIEPage() {
                           <Copy className="h-4 w-4 group-hover:scale-110 transition-transform" />
                         </button>
                         <button 
-                          onClick={() => handleToggleStatus(c.id)}
+                          onClick={() => handleToggleStatus(c.id, c.nombre_legal, c.estado)}
                           title={c.estado === "ACTIVO" ? "Inhabilitar" : "Habilitar"}
                           className={cn(
                             "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
