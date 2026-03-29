@@ -1077,51 +1077,38 @@ export default function LogiCaptureV2Page() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <SearchableField 
+                     <FormField 
                         label="DNI o Nombre del Chofer" 
-                        placeholder="Buscar por DNI o Nombre..." 
+                        placeholder="Escriba DNI o Nombre aquí..." 
                         icon={User} 
                         value={formData.dni} 
                         onChange={(v: string) => updateField("dni", v)}
-                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
-                        onSelect={(res: any) => {
-                           updateField("dni", res.dni);
-                           // Ejecutamos manualmente el blur/lookup
-                           handleChoferBlurWithVal(res.dni);
-                        }}
+                        onBlur={() => handleChoferBlurWithVal(formData.dni)}
                         loading={isLoadingChofer}
                         error={!!fieldErrors.dni}
                         errorMsg={fieldErrors.dni}
                         helperText={fieldErrors.dni_info}
                         readOnly={editId ? editField !== 'transporte' : false}
                      />
-                     <SearchableField 
+                     <FormField 
                         label="Placa Tracto" 
                         placeholder="ABC-123" 
                         icon={Maximize2} 
                         value={formData.placaTracto} 
                         onChange={(v: string) => updateField("placaTracto", v)} 
-                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/tracto/search`}
-                        onSelect={(res: any) => {
-                           updateField("placaTracto", res.placa);
-                           handleVehiculoBlurWithVal(res.placa);
-                        }}
+                        onBlur={() => handleVehiculoBlurWithVal(formData.placaTracto)}
                         loading={isLoadingVehiculo}
                         error={!!fieldErrors.placaTracto}
                         errorMsg={fieldErrors.placaTracto}
                         readOnly={editId ? editField !== 'transporte' : false}
                      />
-                     <SearchableField 
+                     <FormField 
                         label="Placa Carreta" 
                         placeholder="XYZ-987" 
                         icon={Maximize2} 
                         value={formData.placaCarreta} 
                         onChange={(v: string) => updateField("placaCarreta", v)} 
-                        searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/carreta/search`}
-                        onSelect={(res: any) => {
-                           updateField("placaCarreta", res.placa);
-                           handleCarretaBlurWithVal(res.placa);
-                        }}
+                        onBlur={() => handleCarretaBlurWithVal(formData.placaCarreta)}
                         loading={isLoadingCarreta}
                         error={!!fieldErrors.placaCarreta}
                         errorMsg={fieldErrors.placaCarreta}
