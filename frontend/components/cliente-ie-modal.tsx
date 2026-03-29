@@ -35,8 +35,18 @@ interface ClienteIEModalProps {
 }
 
 function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClose: () => void, title: string, mode: "create" | "edit" }) {
-  if (!isOpen) return null;
   const isEdit = mode === "edit";
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
   
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-500">
@@ -224,7 +234,16 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
     const newErrors: Record<string, string> = {};
     if (!formData.nombre_legal.trim()) newErrors.nombre_legal = "Identidad legal requerida";
     if (!formData.pais.trim()) newErrors.pais = "País destino obligatorio";
-    // Destino es opcional ahora
+    if (!formData.pais) newErrors.pais = "Completa el País";
+    
+    // Validación de Fitosanitario Maestra
+    if (!formData.fitosanitario.consignatario_fito) {
+      newErrors.consignatario_fito = "El Consignatario Fito es Obligatorio";
+    }
+    if (!formData.fitosanitario.direccion_fito) {
+      newErrors.direccion_fito = "La Dirección Fito es Obligatoria";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
