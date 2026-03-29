@@ -95,7 +95,7 @@ class ClienteIE(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre_legal = Column(String(255), nullable=False)
     pais = Column(String(100), nullable=False)
-    destino = Column(String(100), nullable=False)
+    destino = Column(String(100), nullable=True)
     
     # Datos BL
     consignatario_bl = Column(String(500), nullable=True)

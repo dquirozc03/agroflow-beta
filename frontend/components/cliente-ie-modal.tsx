@@ -43,9 +43,11 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen) {
+      setErrors({});
       if (editingData) {
         setFormData({
           nombre_legal: editingData.nombre_legal || "",
@@ -84,8 +86,18 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
     }
   }, [isOpen, editingData]);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.nombre_legal.trim()) newErrors.nombre_legal = "Identidad legal requerida";
+    if (!formData.pais.trim()) newErrors.pais = "País destino obligatorio";
+    // Destino es opcional ahora
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setIsSubmitting(true);
 
     const url = editingData
@@ -154,28 +166,39 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nombre Cliente</label>
-                    <input
-                      required
+                    <input 
                       value={formData.nombre_legal}
-                      onChange={e => setFormData({ ...formData, nombre_legal: e.target.value.toUpperCase() })}
+                      onChange={e => {
+                        setFormData({ ...formData, nombre_legal: e.target.value.toUpperCase() });
+                        if (errors.nombre_legal) setErrors({ ...errors, nombre_legal: "" });
+                      }}
                       placeholder="EJ: BETA BEST"
-                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
+                      className={cn(
+                        "w-full h-14 px-6 bg-slate-50 border rounded-2xl focus:outline-none transition-all font-extrabold text-sm",
+                        errors.nombre_legal ? "border-rose-400 focus:ring-rose-500/10" : "border-slate-100 focus:ring-emerald-500/10 focus:border-emerald-500"
+                      )}
                     />
+                    {errors.nombre_legal && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest px-2">{errors.nombre_legal}</p>}
                   </div>
                   <div className="space-y-2 text-xs">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">País</label>
-                    <input
-                      required
+                    <input 
                       value={formData.pais}
-                      onChange={e => setFormData({ ...formData, pais: e.target.value.toUpperCase() })}
+                      onChange={e => {
+                        setFormData({ ...formData, pais: e.target.value.toUpperCase() });
+                        if (errors.pais) setErrors({ ...errors, pais: "" });
+                      }}
                       placeholder="EJ: ESPAÑA"
-                      className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
+                      className={cn(
+                        "w-full h-14 px-6 bg-slate-50 border rounded-2xl focus:outline-none transition-all font-extrabold text-sm",
+                        errors.pais ? "border-rose-400 focus:ring-rose-500/10" : "border-slate-100 focus:ring-emerald-500/10 focus:border-emerald-500"
+                      )}
                     />
+                    {errors.pais && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest px-2">{errors.pais}</p>}
                   </div>
                   <div className="space-y-2 text-xs">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Puerto Destino</label>
-                    <input
-                      required
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Puerto Destino <span className="text-slate-300 italic opacity-50 ml-1">(Opcional)</span></label>
+                    <input 
                       value={formData.destino}
                       onChange={e => setFormData({ ...formData, destino: e.target.value.toUpperCase() })}
                       placeholder="EJ: BARCELONA"
