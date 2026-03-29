@@ -65,7 +65,10 @@ function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClo
              </p>
           </div>
           <button 
-             onClick={onClose}
+             onClick={(e) => {
+               e.stopPropagation();
+               onClose();
+             }}
              className={cn(
                "w-full py-5 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95",
                isEdit ? "bg-slate-900 hover:bg-blue-900 shadow-blue-900/20" : "bg-emerald-950 hover:bg-emerald-800 shadow-emerald-900/20"
