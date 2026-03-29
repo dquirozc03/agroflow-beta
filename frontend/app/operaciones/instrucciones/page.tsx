@@ -149,14 +149,16 @@ export default function InstruccionesEmbarque() {
                   <p className="text-[10px] font-black uppercase tracking-widest">No hay bookings pendientes</p>
                 </div>
               ) : bookingsReal.filter(b =>
-                b.booking.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map((b) => (
+                (b.BOOKING || b.booking || "").toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((b) => {
+                const bId = b.BOOKING || b.booking || "";
+                return (
                 <button
-                  key={b.id || b.booking}
-                  onClick={() => handleBookingSelect(b)}
+                  key={b.ID || b.id || bId}
+                  onClick={() => handleBookingSelect({ booking: bId, ID: b.ID || b.id, id: b.ID || b.id, CULTIVO: b.CULTIVO })}
                   className={cn(
                     "w-full p-6 rounded-[2.5rem] border-2 text-left transition-all duration-300 group relative overflow-hidden",
-                    (selectedBooking?.booking || selectedBooking?.id) === b.booking 
+                    (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId 
                       ? "border-emerald-500 bg-emerald-50/10 shadow-xl shadow-emerald-500/5 scale-[1.02]" 
                       : "border-slate-50 bg-white hover:border-slate-200"
                   )}
@@ -166,9 +168,9 @@ export default function InstruccionesEmbarque() {
                       <div className="flex items-center gap-2">
                         <div className={cn(
                           "h-2 w-2 rounded-full",
-                          (selectedBooking?.booking || selectedBooking?.id) === b.booking ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                          (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                         )} />
-                        <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{b.booking}</span>
+                        <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{bId}</span>
                       </div>
                       <h4 className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter truncate max-w-[220px]">
                          NAVE: {b.NAVE || "POR DEFINIR"}
@@ -179,11 +181,11 @@ export default function InstruccionesEmbarque() {
                     </div>
                     <ChevronRight className={cn(
                       "h-5 w-5 transition-transform duration-300",
-                      (selectedBooking?.booking || selectedBooking?.id) === b.booking ? "text-emerald-500 translate-x-1" : "text-slate-200"
+                      (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "text-emerald-500 translate-x-1" : "text-slate-200"
                     )} />
                   </div>
                 </button>
-              ))}
+              )})}
             </div>
           </aside>
 
