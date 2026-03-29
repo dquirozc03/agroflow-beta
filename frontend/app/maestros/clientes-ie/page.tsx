@@ -218,11 +218,17 @@ export default function ClientesIEPage() {
                   <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-7 border-r border-slate-200/80">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                        <div className={cn(
+                          "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-colors",
+                          c.estado === "ACTIVO" ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+                        )}>
                           <Globe className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-extrabold text-slate-800 tracking-tight uppercase truncate">
+                          <p className={cn(
+                             "text-sm font-extrabold tracking-tight uppercase truncate transition-colors",
+                             c.estado === "ACTIVO" ? "text-slate-800" : "text-slate-400"
+                          )}>
                              {c.nombre_legal}
                           </p>
                           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic">Consignatario BL</p>
@@ -231,7 +237,12 @@ export default function ClientesIEPage() {
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex justify-center">
-                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] font-black uppercase tracking-widest px-3 h-6">
+                          <Badge className={cn(
+                            "text-[9px] font-black uppercase tracking-widest px-3 h-6 transition-colors",
+                            c.estado === "ACTIVO" 
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                              : "bg-slate-100 text-slate-400 border-slate-200"
+                          )}>
                              {c.cultivo || "N/A"}
                           </Badge>
                        </div>
@@ -239,8 +250,14 @@ export default function ClientesIEPage() {
                     <td className="px-8 py-7 border-r border-slate-200/80">
                        <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-2">
-                             <Navigation className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                             <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{c.pais}</span>
+                             <Navigation className={cn(
+                               "h-3.5 w-3.5 shrink-0 transition-colors",
+                               c.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-300"
+                             )} />
+                             <span className={cn(
+                               "text-xs font-black uppercase tracking-tight transition-colors",
+                               c.estado === "ACTIVO" ? "text-slate-700" : "text-slate-400"
+                             )}>{c.pais}</span>
                           </div>
                           <div className="flex items-center gap-2 pl-5">
                              <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
