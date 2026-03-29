@@ -125,7 +125,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
               </div>
               <div>
                 <Dialog.Title className="text-3xl font-extrabold tracking-tighter text-[#022c22]">
-                  {editingData ? "Editar Ruta Logística" : "Nueva Ruta Logística"}
+                  {editingData ? "Editar Cliente" : "Nuevo Cliente"}
                 </Dialog.Title>
                 <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[0.2em]">Configuración de Instrucciones de Embarque</p>
               </div>
@@ -297,7 +297,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
               ) : (
                 <>
                   <Save className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-                  {editingData ? "Actualizar Maestro de Cliente" : "Registrar Nueva Ruta Logística"}
+                  {editingData ? "Actualizar Cliente" : "Registrar Nuevo Cliente"}
                 </>
               )}
             </button>
