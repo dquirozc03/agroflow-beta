@@ -48,7 +48,12 @@ export function AppSidebar({ className }: { className?: string }) {
       items: [
         { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
         { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja" },
-        { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/logicapture/instrucciones", active: pathname === "/logicapture/instrucciones" },
+      ]
+    },
+    {
+      label: "Gestión Operativa",
+      items: [
+        { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones" },
       ]
     },
     {
