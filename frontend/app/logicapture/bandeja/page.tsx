@@ -281,9 +281,9 @@ export default function BandejaLogiCapture() {
       if (newStatus === "PROCESADO") {
         setIsSuccessOpen(true);
         setTimeout(() => setIsSuccessOpen(false), 2500);
+      } else {
+        toast.success(`Registro marcado como ${newStatus} correctamente 💎`);
       }
-      
-      toast.success(`Registro marcado como ${newStatus} correctamente ðŸ’Ž`);
       fetchRegistros();
       setIsPanelOpen(false);
     } catch (error) {
@@ -363,7 +363,7 @@ export default function BandejaLogiCapture() {
 
        if (!response.ok) throw new Error();
        
-       toast.success("Cambios aplicados correctamente ðŸ’Ž");
+       toast.success("Cambios aplicados correctamente 💎");
        setIsEditOpen(false);
        fetchRegistros();
     } catch (error) {
