@@ -414,9 +414,9 @@ export default function BandejaLogiCapture() {
       a.click();
       a.remove();
       
-      toast.success('Reporte Excel generado correctamente ðŸ’Ž');
+      toast.success('Reporte Excel generado correctamente 💎');
     } catch (error) {
-      setErrorTitle("ERROR DE EXPORTACIÃ“N");
+      setErrorTitle("ERROR DE EXPORTACIÓN");
       setErrorMessage("No se pudo generar el reporte premium. Verifique que existan datos en el periodo seleccionado o contacte a soporte TI.");
       setIsErrorOpen(true);
     } finally {
@@ -464,13 +464,13 @@ export default function BandejaLogiCapture() {
                </div>
 
                <div className="flex items-center gap-4">
-                  <Button onClick={handleExportExcel} className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none">
-                     <FileDown className="h-4 w-4" />
+                  <Button onClick={handleExportExcel} className="rounded-2xl bg-emerald-950 text-white h-12 px-6 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none">
+                     <FileDown className="h-4 w-4 mr-2" />
                      {isExporting ? "Generando..." : "Exportar Excel"}
                   </Button>
                   <Button 
                     variant="default" 
-                    className="rounded-2xl bg-emerald-950 hover:bg-emerald-900 shadow-xl shadow-emerald-950/20 font-bold uppercase tracking-widest text-xs h-10 px-6"
+                    className="rounded-2xl bg-emerald-950 hover:bg-emerald-900 shadow-xl shadow-emerald-950/20 font-bold uppercase tracking-widest text-xs h-12 px-6"
                   >
                      Sincronizar SAP
                   </Button>
@@ -498,10 +498,10 @@ export default function BandejaLogiCapture() {
                      <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
                         <SelectValue placeholder="Todas las Plantas" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl bg-white focus:ring-emerald-500">
-                        <SelectItem value="all" className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer">Todas las Plantas</SelectItem>
+                     <SelectContent className="rounded-2xl border-slate-200 shadow-2xl bg-white border">
+                        <SelectItem value="all" className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer font-bold">Todas las Plantas</SelectItem>
                         {plantasUnicas.map(p => (
-                           <SelectItem key={p} value={p} className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{p}</SelectItem>
+                           <SelectItem key={p} value={p} className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{p}</SelectItem>
                         ))}
                      </SelectContent>
                   </Select>
@@ -513,10 +513,10 @@ export default function BandejaLogiCapture() {
                      <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
                         <SelectValue placeholder="Todos los Cultivos" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-100 shadow-2xl bg-white focus:ring-emerald-500">
-                        <SelectItem value="all" className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer">Todos los Cultivos</SelectItem>
+                     <SelectContent className="rounded-2xl border-slate-200 shadow-2xl bg-white border">
+                        <SelectItem value="all" className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer font-bold">Todos los Cultivos</SelectItem>
                         {cultivosUnicos.map(c => (
-                           <SelectItem key={c} value={c} className="focus:bg-emerald-50 focus:text-emerald-900 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{c}</SelectItem>
+                           <SelectItem key={c} value={c} className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{c}</SelectItem>
                         ))}
                      </SelectContent>
                   </Select>
