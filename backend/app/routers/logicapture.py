@@ -1,3 +1,4 @@
+from app.utils.formatters import clean_booking, clean_plate, clean_container, clean_dni
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -88,22 +89,22 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     Cruza la información de Posicionamientos (Plan Maestro) con el 
     Control de Embarque (Registro Operativo) para autocompletar el formulario.
     """
-    clean_booking = booking.strip().upper()
+    clean_booking_str_str = clean_booking_str(booking)
     
     # 1. Buscar en Posicionamientos (Orden Beta / Plan Maestro)
-    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == clean_booking).first()
+    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == clean_booking_str).first()
     
     # 2. Buscar en Control de Embarque (DAM / Contenedor)
-    emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == clean_booking).first()
+    emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == clean_booking_str).first()
     
     if not pos and not emb:
         raise HTTPException(
             status_code=404, 
-            detail=f"No se encontró información maestra para el Booking: {clean_booking}"
+            detail=f"No se encontró información maestra para el Booking: {clean_booking_str}"
         )
     
     return {
-        "booking": clean_booking,
+        "booking": clean_booking_str,
         "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
         "dam": emb.dam if emb else "PENDIENTE",
         "contenedor": emb.contenedor if emb else "PENDIENTE",
@@ -117,11 +118,11 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
 @router.get("/driver/{dni}")
 def get_driver_data(dni: str, db: Session = Depends(get_db)):
     """Busca chofer en maestros por DNI."""
-    clean_dni = dni.strip().upper()
-    driver = db.query(Chofer).filter(Chofer.dni == clean_dni).first()
+    clean_dni_str_str = clean_dni_str(dni)
+    driver = db.query(Chofer).filter(Chofer.dni == clean_dni_str).first()
     
     if not driver:
-        raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni} no registrado")
+        raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni_str} no registrado")
         
     return {
         "dni": driver.dni,
@@ -135,11 +136,11 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
 @router.get("/vehicle/{placa}")
 def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     """Busca vehículo y su transportista por placa."""
-    clean_placa = placa.strip().upper().replace("-", "")
-    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa).first()
+    clean_placa_str_str = clean_plate(placa)
+    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa_str).first()
     
     if not vehicle:
-        raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa} no registrado")
+        raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_str} no registrado")
         
     return {
         "placa": vehicle.placa_tracto,
@@ -155,19 +156,19 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
 @router.get("/check_unique")
 def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
     """Verifica si un dato ya existe en la tabla de registros operativos."""
-    clean_val = value.strip().upper()
+    clean_val_str_str = clean_container(value) if "contenedor" in field else value.strip().upper()
     
-    if clean_val == "**":
+    if clean_val_str == "**":
         return {"field": field, "exists": False, "id": None}
     if field == "booking" and not treatment_buque:
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val_str).first()
     elif field == "dam":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val_str).first()
     elif field == "contenedor":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val_str).first()
     elif field in ["precinto", "termografo"]:
         # Buscar en la tabla de blindaje detallado
-        det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val).first()
+        det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val_str).first()
         if det:
             # Si existe en detalles, devolvemos el registro padre
             exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == det.registro_id).first()
@@ -185,11 +186,11 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
 @router.get("/trailer/{placa}")
 def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     """Busca carreta en maestros por placa."""
-    clean_placa = placa.strip().upper().replace("-", "")
-    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa).first()
+    clean_placa_str_str = clean_plate(placa)
+    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa_str).first()
     
     if not trailer:
-        raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
+        raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa_str} no registrada")
         
 @router.get("/drivers/search")
 def search_drivers(q: str, db: Session = Depends(get_db)):
@@ -241,7 +242,7 @@ def search_carretas(q: str, db: Session = Depends(get_db)):
 @router.get("/bookings/search")
 def search_bookings(q: str, db: Session = Depends(get_db)):
     """Busca bookings en maestros y cruza con posicionamiento."""
-    clean_q = q.strip().upper()
+    clean_q = clean_booking(q)
     results = db.query(ControlEmbarque).filter(
         ControlEmbarque.booking.ilike(f"%{clean_q}%")
     ).limit(10).all()
@@ -503,80 +504,9 @@ def change_registro_status(id: int, status: str, motivo: Optional[str] = None, d
 @router.get("/export/excel")
 def export_to_excel(db: Session = Depends(get_db)):
     """Generación de reporte Excel Premium con formateo de tabla y auto-ajuste."""
-    regs = db.query(LogiCaptureRegistro).all()
+    from app.services.logicapture_service import LogiCaptureService
+    output = LogiCaptureService.generate_excel_report(db)
     
-    data = []
-    for r in regs:
-        # Formateo de nombres y placas estilo Carlos
-        placas = f"{r.placa_tracto} / {r.placa_carreta}" if r.placa_tracto else "-"
-        tuc_t = r.cert_tracto if r.cert_tracto else "**"
-        tuc_c = r.cert_carreta if r.cert_carreta else "**"
-        tuc = f"{tuc_t} / {tuc_c}"
-        
-        senasa_codes = ", ".join(r.precinto_senasa) if r.precinto_senasa else "**"
-        linea_codes = ", ".join(r.precinto_linea) if r.precinto_linea else "**"
-        senasa_linea = f"{senasa_codes} / PS.LIN: {linea_codes}"
-        
-        data.append({
-            "FECHA EMBARQUE": r.fecha_registro.strftime("%Y-%m-%d") if r.fecha_registro else "-",
-            "ORDEN BETA": r.orden_beta,
-            "BOOKING": r.booking,
-            "CONTENEDOR": r.contenedor,
-            "MARCA": r.marca_tracto,
-            "PLACAS": placas,
-            "CHOFER": r.nombre_chofer,
-            "DNI": r.dni_chofer,
-            "LICENCIA": r.licencia_chofer,
-            "TERMOGRAFOS": " / ".join(r.termografos) if r.termografos else "-",
-            "CODIGO SAP": r.codigo_sap,
-            "TRANSPORTISTA": r.empresa_transporte,
-            "NUMERO DE DAM": r.dam,
-            "PRECINTOS BETA": " / ".join(r.precintos_beta) if r.precintos_beta else "-",
-            "PRECINTO ADUANA": " / ".join(r.precinto_aduana) if r.precinto_aduana else "-",
-            "PRECINTO OPERADOR": " / ".join(r.precinto_operador) if r.precinto_operador else "-",
-            "SENASA/PS LÍNEA": senasa_linea,
-            "PARTIDA REGISTRAL": r.partida_registral,
-            "TUC (CERTIFICADOS)": tuc,
-            "ESTATUS": r.status
-        })
-    
-    df = pd.DataFrame(data)
-    output = io.BytesIO()
-    
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='LogiCapture_Auditoria')
-        worksheet = writer.sheets['LogiCapture_Auditoria']
-        
-        # --- Formateo Excel Premium Carlos Style 💎 ---
-        # 1. Crear Objeto Tabla Nativo de Excel (Habilita filtros y bandas)
-        last_col = chr(64 + len(df.columns))
-        last_row = len(df) + 1
-        ref = f"A1:{last_col}{last_row}"
-        tab = Table(displayName="TablaAuditoria", ref=ref)
-        
-        # 2. Estilo de Tabla Esmeralda Sobrio
-        style = TableStyleInfo(
-            name="TableStyleMedium9", 
-            showFirstColumn=False,
-            showLastColumn=False, 
-            showRowStripes=True, 
-            showColumnStripes=False
-        )
-        tab.tableStyleInfo = style
-        worksheet.add_table(tab)
-        
-        # 3. Auto-ajuste de columnas dinámico
-        for col in worksheet.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except: pass
-            worksheet.column_dimensions[column].width = (max_length + 6)
-
-    output.seek(0)
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

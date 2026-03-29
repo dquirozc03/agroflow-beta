@@ -33,13 +33,13 @@ class LogiCaptureRegistro(Base):
     termografos = Column(JSON)
     
     # Metadatos del Negocio (Auditoría y Gestión)
-    status = Column(String(50), default="PENDIENTE") # PENDIENTE, PROCESADO, ANULADO
+    status = Column(String(50), default="PENDIENTE", index=True) # PENDIENTE, PROCESADO, ANULADO
     motivo_anulacion = Column(String(200), nullable=True)
     fecha_embarque = Column(DateTime(timezone=True), nullable=True)
     
     # Datos del Maestro de Posicionamiento (Captura reactiva)
-    planta = Column(String(100), nullable=True)
-    cultivo = Column(String(100), nullable=True)
+    planta = Column(String(100), nullable=True, index=True)
+    cultivo = Column(String(100), nullable=True, index=True)
     codigo_sap = Column(String(50), nullable=True)
     
     # Datos Extendidos de Transporte (Trazabilidad)
