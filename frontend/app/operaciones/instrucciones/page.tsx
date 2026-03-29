@@ -53,6 +53,35 @@ const MOCK_HISTORY = [
 export default function InstruccionesEmbarque() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [lookupData, setLookupData] = useState<any>(null);
+  const [isLoadingLookup, setIsLoadingLookup] = useState(false);
+
+  const handleBookingSelect = async (b: any) => {
+    setSelectedBooking(b);
+    setLookupData(null);
+    setIsLoadingLookup(true);
+    
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/instrucciones/lookup/${b.id}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setLookupData(data);
+      } else {
+        // Si no está en el buscador master todavía, al menos mostramos lo del mock
+        setLookupData({
+            booking: b.id,
+            cliente_nombre: b.cliente,
+            cultivo: b.cultivo,
+            orden_beta: "PENDIENTE",
+            warning: "BOOKING_NO_ENCONTRADO_EN_SISTEMA"
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingLookup(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
@@ -87,7 +116,7 @@ export default function InstruccionesEmbarque() {
               {MOCK_BOOKINGS.map((b) => (
                 <button
                   key={b.id}
-                  onClick={() => setSelectedBooking(b)}
+                  onClick={() => handleBookingSelect(b)}
                   className={cn(
                     "w-full p-6 rounded-[2.5rem] border-2 text-left transition-all duration-300 group relative overflow-hidden",
                     selectedBooking?.id === b.id 
@@ -157,17 +186,60 @@ export default function InstruccionesEmbarque() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                  { label: "ID Booking", val: selectedBooking?.id || "N/A", icon: Inbox },
-                  { label: "Cliente", val: selectedBooking?.cliente || "SELECCIONE...", icon: RefreshCw },
-                  { label: "Orden Beta", val: "OB-2024-912", icon: ShieldCheck },
-                  { label: "Cultivo", val: selectedBooking?.cultivo || "PENDIENTE", icon: Zap }
+                  { 
+                    label: "ID Booking", 
+                    val: lookupData?.booking || selectedBooking?.id || "N/A", 
+                    icon: Inbox 
+                  },
+                  { 
+                    label: "Cliente", 
+                    val: lookupData?.cliente_nombre || selectedBooking?.cliente || "SELECCIONE...", 
+                    icon: RefreshCw,
+                    isWarning: lookupData?.warning === "CLIENTE_NO_MAESTRO"
+                  },
+                  { 
+                    label: "Orden Beta", 
+                    val: lookupData?.orden_beta || "PENDIENTE", 
+                    icon: ShieldCheck 
+                  },
+                  { 
+                    label: "Cultivo", 
+                    val: lookupData?.cultivo || selectedBooking?.cultivo || "PENDIENTE", 
+                    icon: Zap 
+                  }
                 ].map((f, i) => (
                   <div key={i} className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{f.label}</label>
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl h-14 px-5 flex items-center gap-3 opacity-80 cursor-not-allowed overflow-hidden">
-                      <f.icon className="h-4 w-4 text-slate-300 shrink-0" />
-                      <span className="text-xs font-black text-slate-950 uppercase truncate">{f.val}</span>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                        {f.label}
+                    </label>
+                    <div className={cn(
+                        "bg-slate-50/80 border rounded-2xl h-14 px-5 flex items-center gap-3 transition-all overflow-hidden relative group",
+                        f.isWarning ? "border-rose-500 bg-rose-50/30 ring-4 ring-rose-500/5" : "border-slate-100 opacity-80"
+                    )}>
+                      {isLoadingLookup && i === 0 ? (
+                        <Loader2 className="h-4 w-4 text-emerald-500 animate-spin" />
+                      ) : (
+                        <f.icon className={cn("h-4 w-4 shrink-0 transition-colors", f.isWarning ? "text-rose-500" : "text-slate-300")} />
+                      )}
+                      
+                      <span className={cn(
+                        "text-xs font-black uppercase truncate",
+                        f.isWarning ? "text-rose-600" : "text-slate-950"
+                      )}>
+                        {f.val}
+                      </span>
+
+                      {f.isWarning && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <AlertTriangle className="h-4 w-4 text-rose-500 animate-pulse" />
+                        </div>
+                      )}
                     </div>
+                    {f.isWarning && (
+                       <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1">
+                         âš ï¸ El cliente no existe en maestros
+                       </p>
+                    )}
                   </div>
                 ))}
               </div>
