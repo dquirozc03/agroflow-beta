@@ -499,23 +499,6 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                             : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
                         )}
                       />
-                      {formData.fitosanitario.id && (
-                        <div className="flex items-center justify-between mt-3 px-2">
-                           <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                             <ShieldCheck className="h-3 w-3" /> Vinculado al Maestro: {formData.fitosanitario.consignatario_fito}
-                           </p>
-                           <button 
-                             type="button"
-                             onClick={() => setFormData({
-                               ...formData,
-                               fitosanitario: { ...formData.fitosanitario, id: null }
-                             })}
-                             className="text-[9px] font-black text-rose-400 hover:text-rose-600 uppercase tracking-tighter transition-colors flex items-center gap-1 group/unlink"
-                           >
-                             <X className="h-3 w-3 group-hover:rotate-90 transition-transform" /> Desvincular para Editar
-                           </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
