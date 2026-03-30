@@ -425,14 +425,14 @@ export default function LogiCaptureV2Page() {
       
       setFormData(prev => ({
         ...prev,
-        empresa: data.transportista.nombre_transportista,
+        empresa: data.transportista,
         marca_tracto: data.marca,
         cert_tracto: data.configuracion_vehicular,
-        codigo_sap: data.transportista.codigo_sap,
-        partidaRegistral: data.transportista.partida_registral,
-        ruc_transportista: data.transportista.ruc_transportista
+        codigoSap: data.codigo_sap,
+        partidaRegistral: data.partida_registral,
+        ruc_transportista: data.ruc_transportista
       }));
-      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
+      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: error.message || "Placa no registrada en maestros" }));
       updateField("empresa", "");
@@ -625,7 +625,7 @@ export default function LogiCaptureV2Page() {
       marca_tracto: "",
       cert_tracto: "",
       cert_carreta: "",
-      codigo_sap: "",
+      codigoSap: "",
       partidaRegistral: "",
       ruc_transportista: "",
       planta: "",

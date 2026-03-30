@@ -39,7 +39,7 @@ class LogiCaptureSaveRequest(BaseModel):
     # Nuevos campos del ticket premium
     planta: Optional[str] = None
     cultivo: Optional[str] = None
-    codigo_sap: Optional[str] = None
+    codigoSap: Optional[str] = None
     ruc_transportista: Optional[str] = None
     marca_tracto: Optional[str] = None
     cert_tracto: Optional[str] = None
@@ -72,6 +72,8 @@ class LogiCaptureUpdateRequest(BaseModel):
     dam: Optional[str] = None
     contenedor: Optional[str] = None
     status: Optional[str] = None
+    codigoSAP: Optional[str] = None
+    partidaRegistral: Optional[str] = None
 
 class LookupResponse(BaseModel):
     booking: str
@@ -146,12 +148,10 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     return {
         "placa": vehicle.placa_tracto,
         "marca": vehicle.marca,
-        "transportista": {
-            "nombre_transportista": vehicle.transportista.nombre_transportista,
-            "ruc_transportista": vehicle.transportista.ruc,
-            "codigo_sap": vehicle.transportista.codigo_sap,
-            "partida_registral": vehicle.transportista.partida_registral
-        },
+        "transportista": vehicle.transportista.nombre_transportista,
+        "ruc_transportista": vehicle.transportista.ruc,
+        "codigo_sap": vehicle.transportista.codigo_sap,
+        "partida_registral": vehicle.transportista.partida_registral,
         "configuracion_vehicular": vehicle.certificado_vehicular_tracto
     }
 @router.get("/check_unique")
@@ -159,7 +159,7 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
     """Verifica si un dato ya existe en la tabla de registros operativos."""
     clean_val = clean_container(value) if "contenedor" in field else value.strip().upper()
     
-    if clean_val == "**":
+    if clean_val in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE"]:
         return {"field": field, "exists": False, "id": None}
     if field == "booking" and not treatment_buque:
         exists = db.query(LogiCaptureRegistro).filter(
@@ -236,7 +236,9 @@ def search_tractos(q: str, db: Session = Depends(get_db)):
         {
             "placa": v.placa_tracto,
             "marca": v.marca,
-            "transportista": v.transportista.nombre_transportista if v.transportista else "S/N"
+            "transportista": v.transportista.nombre_transportista if v.transportista else "S/N",
+            "codigo_sap": v.transportista.codigo_sap if v.transportista else None,
+            "partida_registral": v.transportista.partida_registral if v.transportista else None
         } for v in results
     ]
 
@@ -336,7 +338,7 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         # Nuevos campos del ticket premium
         planta=req.planta,
         cultivo=req.cultivo,
-        codigo_sap=req.codigo_sap,
+        codigo_sap=req.codigoSap,
         ruc_transportista=req.ruc_transportista,
         marca_tracto=req.marca_tracto,
         cert_tracto=req.cert_tracto,
@@ -440,6 +442,7 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
     if req.placaCarreta: reg.placa_carreta = req.placaCarreta
     if req.empresa: reg.empresa_transporte = req.empresa
     if req.partidaRegistral: reg.partida_registral = req.partidaRegistral
+    if req.codigoSAP: reg.codigo_sap = req.codigoSAP
 
     # 3.5 Datos de Despacho (Auditoría de Carga)
     if req.booking: reg.booking = req.booking

@@ -191,8 +191,7 @@ export default function BandejaLogiCapture() {
   const [isAnularSuccessOpen, setIsAnularSuccessOpen] = useState(false);
   const [anularReason, setAnularReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+
   const [editSector, setEditSector] = useState<string>(""); // 'maestros' | 'precintos' | 'fecha'
   const [editData, setEditData] = useState<any>({
      nombre_chofer: "",
@@ -207,8 +206,62 @@ export default function BandejaLogiCapture() {
      precinto_linea: [],
      precintos_beta: [],
      termografos: [],
-     fecha_embarque: ""
+     booking: "",
+     dam: "",
+     contenedor: "",
+     orden_beta: "",
+     planta: "",
+     cultivo: "",
+     fecha_embarque: new Date(),
+     codigo_sap: "",
+     partida_registral: ""
   });
+
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // --- Auto-búsqueda de Chofer por DNI Inteligente 💎 ---
+  useEffect(() => {
+    const dni = editData.dni_chofer;
+    if (dni && dni.length >= 8 && dni.length <= 10 && !editData.nombre_chofer) {
+       const timer = setTimeout(async () => {
+          try {
+             const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/drivers/search?q=${dni}`);
+             if (resp.ok) {
+                const data = await resp.json();
+                // Buscar coincidencia exacta por DNI (puede ser 8 u 9 dígitos)
+                const match = data.find((d: any) => d.dni === dni);
+                if (match) {
+                   setEditData((prev: any) => ({
+                      ...prev,
+                      nombre_chofer: match.nombre,
+                      licencia_chofer: match.licencia
+                   }));
+                }
+             }
+          } catch (e) {}
+       }, 500);
+       return () => clearTimeout(timer);
+    }
+  }, [editData.dni_chofer, editData.nombre_chofer]);
+
+  const refreshTractoData = async () => {
+    if (!editData.placa_tracto) return;
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${editData.placa_tracto}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setEditData(prev => ({
+          ...prev,
+          empresa_transporte: data.transportista,
+          codigo_sap: data.codigo_sap,
+          partida_registral: data.partida_registral
+        }));
+        toast.success("Sincronizado con maestros oficiales 💎");
+      }
+    } catch (e) {}
+  };
+
+   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const copyToClipboard = (text: string, label: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -313,6 +366,8 @@ export default function BandejaLogiCapture() {
              placaTracto: editData.placa_tracto,
              placaCarreta: editData.placa_carreta,
              empresa: editData.empresa_transporte,
+             codigoSap: editData.codigo_sap,
+             partidaRegistral: editData.partida_registral,
              booking: editData.booking,
              ordenBeta: editData.orden_beta,
              dam: editData.dam,
@@ -994,7 +1049,7 @@ export default function BandejaLogiCapture() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                <div className="space-y-6">
                                   <SearchableField 
-                                     label="Buscar Chofer (DNI o Nombre)"
+                                     label="BUSCAR CHOFER (DNI / CARNET)"
                                      icon={Search}
                                      value={editData.dni_chofer}
                                      onChange={(v: string) => setEditData({...editData, dni_chofer: v, nombre_chofer: "", licencia_chofer: ""})}
@@ -1005,9 +1060,10 @@ export default function BandejaLogiCapture() {
                                         dni_chofer: res.dni,
                                         licencia_chofer: res.licencia
                                      })}
-                                     placeholder="Escriba DNI o Apellido..."
-                                     error={editData.dni_chofer?.length >= 8 && !editData.nombre_chofer}
+                                     placeholder="INGRESE DNI O CARNET..."
+                                     error={editData.dni_chofer?.length >= 6 && !editData.nombre_chofer}
                                      errorMsg="Chofer no registrado en maestros oficiales"
+                                     hideResults={true}
                                   />
                                </div>
                                <div className="grid grid-cols-2 gap-4">
@@ -1030,19 +1086,33 @@ export default function BandejaLogiCapture() {
                                      </NiceTooltip>
                                   </div>
                                </div>
-                               <SearchableField 
-                                  label="PLACA TRACTO"
-                                  icon={Truck}
-                                  value={editData.placa_tracto}
-                                  onChange={(v: string) => setEditData({...editData, placa_tracto: v})}
-                                  searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/tracto/search`}
-                                  onSelect={(res: any) => setEditData({
-                                     ...editData, 
-                                     placa_tracto: res.placa,
-                                     empresa_transporte: res.transportista
-                                  })}
-                                  placeholder="ABC-123"
-                               />
+                               <div className="relative group/tracto">
+                                   <SearchableField 
+                                      label="PLACA TRACTO"
+                                      icon={Truck}
+                                      value={editData.placa_tracto}
+                                      onChange={(v: string) => setEditData({...editData, placa_tracto: v})}
+                                      searchUrl={`${API_BASE_URL}/api/v1/logicapture/vehicles/tracto/search`}
+                                      onSelect={(res: any) => setEditData({
+                                         ...editData, 
+                                         placa_tracto: res.placa,
+                                         empresa_transporte: res.transportista,
+                                         codigo_sap: res.codigo_sap,
+                                         partida_registral: res.partida_registral
+                                      })}
+                                      placeholder="ABC-123"
+                                   />
+                                   {editData.placa_tracto && (
+                                     <Button 
+                                       variant="ghost" 
+                                       size="icon" 
+                                       onClick={refreshTractoData}
+                                       className="absolute bottom-3 right-3 h-8 w-8 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover/tracto:opacity-100"
+                                     >
+                                        <RefreshCw className="h-3 w-3" />
+                                     </Button>
+                                   )}
+                                </div>
                                <SearchableField 
                                   label="PLACA CARRETA"
                                   icon={Truck}
