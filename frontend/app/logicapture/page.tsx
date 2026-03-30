@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { 
@@ -142,8 +142,8 @@ function SuccessModal({ isOpen, onClose, title }: any) {
         <div className="relative bg-white rounded-[3.5rem] p-12 max-w-md w-full text-center space-y-10 animate-in zoom-in-95 duration-500">
            <div className="w-28 h-28 bg-emerald-100 rounded-full flex items-center justify-center mx-auto"><CheckCircle2 className="h-16 w-16 text-emerald-600" /></div>
            <div className="space-y-4">
-              <h2 className="text-4xl font-extrabold text-[#022c22] tracking-tighter">¡LISTO!</h2>
-              <p className="text-slate-400 text-xs font-black uppercase tracking-widest leading-relaxed">OPERACIÓN {title} REGISTRADA</p>
+              <h2 className="text-4xl font-extrabold text-[#022c22] tracking-tighter">┬íLISTO!</h2>
+              <p className="text-slate-400 text-xs font-black uppercase tracking-widest leading-relaxed">OPERACI├ôN {title} REGISTRADA</p>
            </div>
            <button onClick={onClose} className="w-full py-6 bg-emerald-950 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-emerald-800 transition-all">REGRESAR A BANDEJA</button>
         </div>
@@ -248,9 +248,9 @@ export default function LogiCaptureFase3OriginalPage() {
 
                <div className="flex items-center gap-3 bg-white/80 p-2 rounded-[2rem] border border-slate-100 shadow-sm">
                   {[
-                    { id: "maritimo", icon: Ship, label: "MARÍTIMO" },
+                    { id: "maritimo", icon: Ship, label: "MAR├ìTIMO" },
                     { id: "terrestre", icon: Truck, label: "TERRESTRE" },
-                    { id: "aereo", icon: Plane, label: "AÉREO" }
+                    { id: "aereo", icon: Plane, label: "A├ëREO" }
                   ].map((mode) => (
                     <button
                       key={mode.id}
@@ -289,7 +289,7 @@ export default function LogiCaptureFase3OriginalPage() {
                      </div>
                      <div className="text-center space-y-2">
                         <p className="text-xl font-black text-white tracking-tight">PEGAR RECORTE O SOLTAR IMAGEN</p>
-                        <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-[0.2em]">PRESIONA <span className="text-emerald-400">CTRL + V</span> PARA PROCESAR INSTANTÁNEAMENTE</p>
+                        <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-[0.2em]">PRESIONA <span className="text-emerald-400">CTRL + V</span> PARA PROCESAR INSTANT├üNEAMENTE</p>
                      </div>
                      <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => e.target.files?.[0] && handleProcessImage(e.target.files[0])} />
                   </div>
@@ -299,7 +299,7 @@ export default function LogiCaptureFase3OriginalPage() {
                <div className="w-full lg:w-[450px] space-y-8 relative z-10">
                   <div className="space-y-1">
                      <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">SELECTOR DE DESTINO</h3>
-                     <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest">ELIGE DÓNDE APLICAR EL DATO EXTRAÍDO</p>
+                     <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest">ELIGE D├ôNDE APLICAR EL DATO EXTRA├ìDO</p>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -340,11 +340,11 @@ export default function LogiCaptureFase3OriginalPage() {
                         <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center ring-8 ring-emerald-50/10"><Ship className="h-6 w-6 text-emerald-600" /></div>
                         <div>
                            <h3 className="text-xl font-black text-[#022c22] tracking-tighter uppercase">01. DATOS DE EMBARQUE</h3>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">VALIDACIÓN ACTIVA SINCRO-NUBE</p>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">VALIDACI├ôN ACTIVA SINCRO-NUBE</p>
                         </div>
                      </div>
                      <button onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)} className={cn("px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all", formData.tratamientoBuque ? "bg-[#022c22] text-white shadow-xl scale-105" : "bg-slate-50 text-slate-300")}>
-                        {formData.tratamientoBuque ? "✓ TRATAMIENTO EN BUQUE" : "TRATAMIENTO EN BUQUE"}
+                        {formData.tratamientoBuque ? "Ô£ô TRATAMIENTO EN BUQUE" : "TRATAMIENTO EN BUQUE"}
                      </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -367,7 +367,7 @@ export default function LogiCaptureFase3OriginalPage() {
                      <FormField label="DNI CHOFER" placeholder="Escriba DNI" icon={User} value={formData.dni} onChange={(v: string) => updateField("dni", v)} helperText={formData.nombreChofer} />
                      <FormField label="PLACA TRACTO" placeholder="ABC-123" icon={Maximize2} value={formData.placaTracto} onChange={(v: string) => updateField("placaTracto", v)} />
                      <FormField label="PLACA CARRETA" placeholder="XYZ-987" icon={Maximize2} value={formData.placaCarreta} onChange={(v: string) => updateField("placaCarreta", v)} />
-                     <FormField label="EMPRESA" placeholder="AUTOMÁTICO..." icon={Layers} value={formData.empresa} onChange={(v: string) => updateField("empresa", v)} readOnly helperText={formData.empresa ? `RUC: ${formData.ruc_transportista}` : ""} />
+                     <FormField label="EMPRESA" placeholder="AUTOM├üTICO..." icon={Layers} value={formData.empresa} onChange={(v: string) => updateField("empresa", v)} readOnly helperText={formData.empresa ? `RUC: ${formData.ruc_transportista}` : ""} />
                   </div>
                </div>
 
@@ -383,15 +383,15 @@ export default function LogiCaptureFase3OriginalPage() {
                      <MultiInput label="ADUANA" placeholder="ADD" icon={ShieldCheck} values={formData.precintoAduana} onChange={(v) => updateField("precintoAduana", v)} />
                      <MultiInput label="OPERADOR" placeholder="OPP" icon={ShieldCheck} values={formData.precintoOperador} onChange={(v) => updateField("precintoOperador", v)} />
                      <MultiInput label="SENASA" placeholder="SEN" icon={BadgeCheck} values={formData.precintoSenasa} onChange={(v) => updateField("precintoSenasa", v)} />
-                     <MultiInput label="LÍNEA" placeholder="LIN" icon={Layers} values={formData.precintoLinea} onChange={(v) => updateField("precintoLinea", v)} />
+                     <MultiInput label="L├ìNEA" placeholder="LIN" icon={Layers} values={formData.precintoLinea} onChange={(v) => updateField("precintoLinea", v)} />
                      <MultiInput label="BETA" placeholder="BET" icon={Zap} values={formData.precintosBeta} onChange={(v) => updateField("precintosBeta", v)} />
-                     <MultiInput label="TERMÓGRAFOS" placeholder="TERM" icon={Thermometer} values={formData.termografos} onChange={(v) => updateField("termografos", v)} />
+                     <MultiInput label="TERM├ôGRAFOS" placeholder="TERM" icon={Thermometer} values={formData.termografos} onChange={(v) => updateField("termografos", v)} />
                   </div>
 
                   <div className="mt-16 pt-12 border-t border-slate-100 flex items-center justify-between">
                      <div className="flex items-center gap-4">
                         <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><Info className="h-6 w-6" /></div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-sm">Verifique que todos los datos sean legibles. El sistema validará la integridad de la operación al guardar.</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-sm">Verifique que todos los datos sean legibles. El sistema validar├í la integridad de la operaci├│n al guardar.</p>
                      </div>
                      <div className="flex items-center gap-8">
                         <button className="text-[10px] font-black text-slate-300 uppercase tracking-widest hover:text-emerald-600">BORRADOR</button>
