@@ -263,68 +263,31 @@ export default function BandejaLogiCapture() {
 
   const syncAllMasters = async () => {
     setIsLoading(true);
+    toast.info("Sincronizando...", { description: "Actualización masiva de datos maestros en curso..." });
+
     try {
-      const isMissing = (val: any) => !val || val === '-' || val === 'PENDIENTE' || val === 'S/P';
-      const recordsToSync = registros.filter(r => 
-        r.status === 'PROCESADO' && (isMissing(r.codigo_sap) || isMissing(r.partida_registral))
-      );
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/bulk_sync`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) throw new Error("Fallo en sincronización central");
+
+      const data = await response.json();
       
-      if (recordsToSync.length === 0) {
-        toast.info("Sin Pendientes", { description: "Todos los registros ya están sincronizados." });
-        setIsLoading(false);
-        return;
-      }
-
-      toast.info("Sincronizando...", { description: `Procesando ${recordsToSync.length} registros...` });
-
-      let count = 0;
-      let missingInMasters = 0;
-      for (const reg of recordsToSync) {
-        try {
-          const placaClean = (reg.placa_tracto || "").replace(/-/g, "").trim().toUpperCase();
-          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placaClean}`);
-          if (resp.ok) {
-            const master = await resp.json();
-            
-            // Validar que el maestro realmente tenga algo nuevo que aportar
-            const hasData = (master.codigo_sap && master.codigo_sap !== '-') || 
-                            (master.partida_registral && master.partida_registral !== '-');
-
-            if (!hasData) {
-              missingInMasters++;
-              continue;
-            }
-
-            const updateResp = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                codigoSap: master.codigo_sap || "-",
-                partidaRegistral: master.partida_registral || "-",
-                empresa: master.transportista
-              })
-            });
-            if (updateResp.ok) count++;
-          } else {
-            missingInMasters++;
-          }
-        } catch (inner) {
-          console.error("Error individual sync:", inner);
-        }
-      }
-      
-      if (count > 0) {
+      if (data.updated > 0) {
         toast.success("Sincronización Completada 💎", { 
-          description: `Se actualizaron ${count} registros. ${missingInMasters} no tenían datos en maestros.`
+          description: `Se actualizaron ${data.updated} de ${data.total_eligible} registros elegibles.`
         });
+      } else if (data.total_eligible === 0) {
+        toast.info("Sin Pendientes", { description: "Todos los registros procesados ya tienen información oficial." });
       } else {
         toast.error("Sincronización Incompleta", { 
-          description: `Se procesaron los registros pero ninguno tenía información nueva en los Maestros de Vehículos.` 
+          description: "Se procesaron los registros pero no se encontró información nueva en los maestros de vehículos." 
         });
       }
       fetchRegistros();
     } catch (e) {
-      toast.error("Error en la sincronización masiva");
+      toast.error("Error en la sincronización central", { description: "No se pudo completar el proceso masivo." });
     } finally {
       setIsLoading(false);
     }

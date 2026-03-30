@@ -380,6 +380,53 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
 
     return {"status": "success", "id": new_reg.id}
 
+@router.post("/bulk_sync")
+def bulk_sync_masters(db: Session = Depends(get_db)):
+    """Sincronización masiva interna para optimizar rendimiento y evitar CORS 💎."""
+    from sqlalchemy import or_
+    
+    # 1. Traer registros procesados que les falta Código SAP o Partida
+    registros = db.query(LogiCaptureRegistro).filter(
+        LogiCaptureRegistro.status == "PROCESADO",
+        or_(
+            LogiCaptureRegistro.codigo_sap == None,
+            LogiCaptureRegistro.codigo_sap == "-",
+            LogiCaptureRegistro.codigo_sap == "",
+            LogiCaptureRegistro.partida_registral == None,
+            LogiCaptureRegistro.partida_registral == "-",
+            LogiCaptureRegistro.partida_registral == ""
+        )
+    ).all()
+    
+    updated_count = 0
+    for reg in registros:
+        if not reg.placa_tracto:
+            continue
+            
+        # Limpiar placa y buscar en el maestro de tractos
+        placa_clean = clean_plate(reg.placa_tracto)
+        vehiculo = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == placa_clean).first()
+        
+        if vehiculo and vehiculo.transportista:
+            # Solo actualizar si hay info útil en el maestro
+            has_master_data = (vehiculo.transportista.codigo_sap and vehiculo.transportista.codigo_sap != "-") or \
+                              (vehiculo.transportista.partida_registral and vehiculo.transportista.partida_registral != "-")
+            
+            if has_master_data:
+                reg.codigo_sap = vehiculo.transportista.codigo_sap or "-"
+                reg.partida_registral = vehiculo.transportista.partida_registral or "-"
+                reg.empresa_transporte = vehiculo.transportista.nombre_transportista
+                updated_count += 1
+            
+    if updated_count > 0:
+        db.commit()
+        
+    return {
+        "status": "success", 
+        "updated": updated_count, 
+        "total_eligible": len(registros)
+    }
+
 @router.get("/registros")
 def list_registros(
     page: int = 1, 
