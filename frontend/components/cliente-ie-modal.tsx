@@ -80,81 +80,7 @@ function SuccessModal({ isOpen, onClose, title, mode }: { isOpen: boolean, onClo
   );
 }
 
-// --- SearchableField Carlos Style 💎 ---
-function SearchableField({ value, onChange, onSelect, searchUrl, placeholder }: any) {
-  const [results, setResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!value || value.length < 2) {
-        setResults([]);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const resp = await fetch(searchUrl);
-        if (resp.ok) {
-          const data = await resp.json();
-          // Filtrar por nombre
-          const filtered = data.filter((f: any) => 
-            f.consignatario_fito.toLowerCase().includes(value.toLowerCase())
-          );
-          setResults(filtered);
-          const isExactMatch = filtered.length === 1 && filtered[0].consignatario_fito.toLowerCase() === value.toLowerCase();
-          setShowResults(filtered.length > 0 && !isExactMatch);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [value, searchUrl]);
-
-  return (
-    <div className="relative group/search">
-      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 z-10 transition-colors group-focus-within/search:text-emerald-500">
-        <Search className={cn("h-5 w-5", isSearching && "animate-spin")} />
-      </div>
-      <input 
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => results.length > 0 && setShowResults(true)}
-        onBlur={() => setTimeout(() => setShowResults(false), 200)}
-        placeholder={placeholder}
-        className="w-full h-16 pl-14 pr-6 bg-white border border-slate-100 rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
-      />
-      {showResults && (
-        <div className="absolute top-[110%] left-0 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="max-h-60 overflow-y-auto p-4 space-y-2">
-            {results.map((res, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onMouseDown={() => {
-                  onSelect(res);
-                  setShowResults(false);
-                }}
-                className="w-full text-left p-5 hover:bg-emerald-50 rounded-2xl transition-all group/item border border-transparent hover:border-emerald-100 flex items-center justify-between"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{res.consignatario_fito}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[250px]">{res.direccion_fito}</p>
-                </div>
-                <div className="h-8 w-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
-                  <Navigation className="h-4 w-4" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+import { SearchableField } from "@/components/ui/searchable-field";
 
 export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: ClienteIEModalProps) {
   const [formData, setFormData] = useState({
@@ -465,9 +391,9 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                   </div>
 
                   <div className="space-y-6 relative z-10">
-                    <div className="space-y-2 relative">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Buscar o Crear Consignatario (FITO)</label>
                       <SearchableField 
+                         label="Buscar o Crear Consignatario (FITO)"
+                         icon={ShieldCheck}
                          placeholder="BUSCAR EN MAESTRO DE FITOS..."
                          value={formData.fitosanitario.consignatario_fito}
                          onChange={(v: string) => setFormData({
@@ -484,9 +410,8 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                          })}
                          searchUrl={`${API_BASE_URL}/api/v1/maestros/clientes-ie/maestro-fitos`}
                       />
-                    </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">Dirección (FITO)</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">DIRECCIÓN (FITO)</label>
                       <textarea
                         value={formData.fitosanitario.direccion_fito}
                         readOnly={!!formData.fitosanitario.id}
@@ -518,7 +443,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
               ) : (
                 <>
                   <Save className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-                  {editingData ? "Actualizar Cliente" : "Registrar Nuevo Cliente"}
+                  {editingData ? "ACTUALIZAR MAESTRO" : "GUARDAR EN MAESTRO"}
                 </>
               )}
             </button>

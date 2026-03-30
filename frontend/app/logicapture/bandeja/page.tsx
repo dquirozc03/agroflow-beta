@@ -90,6 +90,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/constants";
+import { SearchableField } from "@/components/ui/searchable-field";
 
 // --- Formateador de Contenedor Carlos Style 💎 ---
 const formatContainerId = (id: string) => {
@@ -168,77 +169,6 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicat
           className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 min-w-[80px] px-2"
         />
       </div>
-    </div>
-  );
-}
-
-function SearchableField({ label, placeholder, icon: Icon, value, onChange, onSelect, searchUrl, readOnly, loading, hideResults }: any) {
-  const [results, setResults] = useState<any[]>([]);
-  const [isSearchingLocal, setIsSearchingLocal] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!value || value.length < 2 || readOnly) {
-        setResults([]);
-        return;
-      }
-      setIsSearchingLocal(true);
-      try {
-        const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(value)}`);
-        if (resp.ok) {
-          const data = await resp.json();
-          setResults(data);
-          setShowResults(data.length > 0);
-        }
-      } catch (e) {} finally { setIsSearchingLocal(false); }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [value, searchUrl, readOnly]);
-
-  return (
-    <div className="space-y-3 group/field relative">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      <div className={cn(
-        "relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl h-14 group-hover/field:border-emerald-100 transition-all px-4",
-        readOnly && "opacity-60 cursor-not-allowed"
-      )}>
-        <Icon className={cn("h-4 w-4 mr-3", readOnly ? "text-slate-300" : "text-slate-300 group-focus-within/field:text-emerald-500")} />
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          readOnly={readOnly}
-          placeholder={placeholder}
-          onFocus={() => results.length > 0 && setShowResults(true)}
-          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 h-full"
-        />
-        {(loading || isSearchingLocal) && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 absolute right-4" />}
-      </div>
-      {showResults && !readOnly && !hideResults && (
-        <div className="fixed sm:absolute top-[105%] left-0 right-0 bg-white border border-slate-200 rounded-3xl shadow-2xl z-[999] overflow-hidden animate-in fade-in slide-in-from-top-2 max-w-[calc(100vw-4rem)]">
-           <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultados encontrados</span>
-              <button onClick={(e) => { e.stopPropagation(); setShowResults(false); }} className="p-1 hover:bg-rose-100 hover:text-rose-600 rounded-lg transition-colors"><X className="h-3 w-3" /></button>
-           </div>
-           <div className="lc-scroll max-h-[180px] overflow-y-auto">
-              {results.map((res, i) => (
-                 <div key={i} onClick={() => { onSelect(res); setShowResults(false); }} className="p-4 hover:bg-emerald-50 cursor-pointer flex items-center gap-4 group transition-colors border-b border-slate-50 last:border-none">
-                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-slate-50 group-hover:bg-emerald-600 group-hover:text-white transition-all"><Icon className="h-4 w-4" /></div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                       <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 uppercase truncate">
-                          {res.nombre || res.placa}
-                       </span>
-                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 items-center">
-                          {res.dni && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.dni}</span>}
-                          {res.marca && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{res.marca}</span>}
-                          {res.transportista && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[150px]">{res.transportista}</span>}
-                       </div>
-                    </div>
-                 </div>
-              ))}
-           </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -383,6 +313,10 @@ export default function BandejaLogiCapture() {
              placaTracto: editData.placa_tracto,
              placaCarreta: editData.placa_carreta,
              empresa: editData.empresa_transporte,
+             booking: editData.booking,
+             ordenBeta: editData.orden_beta,
+             dam: editData.dam,
+             contenedor: editData.contenedor,
              isAudit: true
           })
        });
@@ -689,21 +623,15 @@ export default function BandejaLogiCapture() {
                                 )}
                                 
                                 {activeTab === "PENDIENTE" && (
-                                    <>
-                                       <DropdownMenuItem 
-                                         className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
-                                         onClick={() => window.location.href = `/logicapture?edit=${reg.id}`}
-                                       >
-                                          <Zap className="h-4 w-4" /> Continuar Registro
-                                       </DropdownMenuItem>
-                                       <DropdownMenuItem 
-                                         className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer mt-1"
-                                         onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
-                                       >
-                                          <CheckCircle2 className="h-4 w-4" /> Cierre Rápido (SAP)
-                                       </DropdownMenuItem>
-                                    </>
-                                 )}
+                                   <>
+                                      <DropdownMenuItem 
+                                        className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
+                                        onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
+                                      >
+                                         <Zap className="h-4 w-4" /> Procesar Registro
+                                      </DropdownMenuItem>
+                                   </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -800,21 +728,12 @@ export default function BandejaLogiCapture() {
 
                  <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex gap-4">
                     {selectedReg.status === "PENDIENTE" ? (
-                       <div className="flex-1 flex gap-3">
-                          <Button 
-                            className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20"
-                            onClick={() => window.location.href = `/logicapture?edit=${selectedReg.id}`}
-                          >
-                             <Zap className="h-4 w-4 mr-2" /> Continuar Registro
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            className="rounded-2xl border-slate-200 hover:bg-slate-50 font-bold uppercase tracking-widest text-[10px] h-12"
-                            onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
-                          >
-                             Cierre Rápido
-                          </Button>
-                       </div>
+                       <Button 
+                         className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-[0.2em] text-[10px] h-14 shadow-xl shadow-emerald-950/40"
+                         onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
+                       >
+                          <Zap className="h-5 w-5 mr-3 animate-pulse text-emerald-400" /> Procesar Registro
+                       </Button>
                     ) : (
                        <Button className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none" onClick={() => handleEditOpen(selectedReg)}
                        >
@@ -1078,7 +997,7 @@ export default function BandejaLogiCapture() {
                                      label="Buscar Chofer (DNI o Nombre)"
                                      icon={Search}
                                      value={editData.dni_chofer}
-                                     onChange={(v: string) => setEditData({...editData, dni_chofer: v})}
+                                     onChange={(v: string) => setEditData({...editData, dni_chofer: v, nombre_chofer: "", licencia_chofer: ""})}
                                      searchUrl={`${API_BASE_URL}/api/v1/logicapture/drivers/search`}
                                      onSelect={(res: any) => setEditData({
                                         ...editData, 
@@ -1086,13 +1005,14 @@ export default function BandejaLogiCapture() {
                                         dni_chofer: res.dni,
                                         licencia_chofer: res.licencia
                                      })}
-                                     placeholder="Escriba DNI para buscar..."
-                                     hideResults={true}
+                                     placeholder="Escriba DNI o Apellido..."
+                                     error={editData.dni_chofer?.length >= 8 && !editData.nombre_chofer}
+                                     errorMsg="Chofer no registrado en maestros oficiales"
                                   />
                                </div>
                                <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-3 group/field">
-                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre (Lectura)</label>
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CHOFER (LECTURA)</label>
                                      <NiceTooltip text={editData.nombre_chofer}>
                                        <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-help px-4 overflow-hidden">
                                           <ShieldCheck className="h-4 w-4 mr-3 text-emerald-500 min-w-[16px]" />
@@ -1101,7 +1021,7 @@ export default function BandejaLogiCapture() {
                                      </NiceTooltip>
                                   </div>
                                   <div className="space-y-3 group/field">
-                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Licencia (Lectura)</label>
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">LICENCIA (LECTURA)</label>
                                      <NiceTooltip text={editData.licencia_chofer}>
                                        <div className="relative flex items-center bg-slate-100/50 border border-slate-100 rounded-2xl h-14 opacity-80 cursor-help px-4 overflow-hidden">
                                           <Truck className="h-4 w-4 mr-3 text-emerald-500 min-w-[16px]" />
@@ -1111,7 +1031,7 @@ export default function BandejaLogiCapture() {
                                   </div>
                                </div>
                                <SearchableField 
-                                  label="Placa Tracto"
+                                  label="PLACA TRACTO"
                                   icon={Truck}
                                   value={editData.placa_tracto}
                                   onChange={(v: string) => setEditData({...editData, placa_tracto: v})}
@@ -1124,7 +1044,7 @@ export default function BandejaLogiCapture() {
                                   placeholder="ABC-123"
                                />
                                <SearchableField 
-                                  label="Placa Carreta"
+                                  label="PLACA CARRETA"
                                   icon={Truck}
                                   value={editData.placa_carreta}
                                   onChange={(v: string) => setEditData({...editData, placa_carreta: v})}
@@ -1138,12 +1058,12 @@ export default function BandejaLogiCapture() {
 
                          {editSector === 'precintos' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                               <MultiInput label="Aduana" icon={ShieldCheck} values={editData.precinto_aduana} onChange={(v:any)=>setEditData({...editData, precinto_aduana: v})} placeholder="Ej: AD123" />
-                               <MultiInput label="Operador" icon={ShieldCheck} values={editData.precinto_operador} onChange={(v:any)=>setEditData({...editData, precinto_operador: v})} placeholder="Ej: OP123" />
-                               <MultiInput label="Senasa" icon={ShieldCheck} values={editData.precinto_senasa} onChange={(v:any)=>setEditData({...editData, precinto_senasa: v})} placeholder="Ej: SE123" />
-                               <MultiInput label="Línea" icon={Layers} values={editData.precinto_linea} onChange={(v:any)=>setEditData({...editData, precinto_linea: v})} placeholder="Ej: LN123" />
+                               <MultiInput label="ADUANA" icon={ShieldCheck} values={editData.precinto_aduana} onChange={(v:any)=>setEditData({...editData, precinto_aduana: v})} placeholder="Ej: AD123" />
+                               <MultiInput label="OPERADOR" icon={ShieldCheck} values={editData.precinto_operador} onChange={(v:any)=>setEditData({...editData, precinto_operador: v})} placeholder="Ej: OP123" />
+                               <MultiInput label="SENASA" icon={ShieldCheck} values={editData.precinto_senasa} onChange={(v:any)=>setEditData({...editData, precinto_senasa: v})} placeholder="Ej: SE123" />
+                               <MultiInput label="LÍNEA" icon={Layers} values={editData.precinto_linea} onChange={(v:any)=>setEditData({...editData, precinto_linea: v})} placeholder="Ej: LN123" />
                                <MultiInput label="BETA" icon={Zap} values={editData.precintos_beta} onChange={(v:any)=>setEditData({...editData, precintos_beta: v})} placeholder="Ej: BT123" />
-                               <MultiInput label="Termógrafos" icon={Thermometer} values={editData.termografos} onChange={(v:any)=>setEditData({...editData, termografos: v})} placeholder="Ej: T-999" />
+                               <MultiInput label="TERMOGRÁFOS" icon={Thermometer} values={editData.termografos} onChange={(v:any)=>setEditData({...editData, termografos: v})} placeholder="Ej: T-999" />
                             </div>
                          )}
 
@@ -1157,7 +1077,7 @@ export default function BandejaLogiCapture() {
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buscador de Despacho Master</span>
                                      </div>
                                      <SearchableField 
-                                        label="Nro de Booking"
+                                        label="NRO DE BOOKING"
                                         icon={Inbox}
                                         value={editData.booking}
                                         onChange={(v: string) => setEditData({...editData, booking: v})}
@@ -1178,7 +1098,7 @@ export default function BandejaLogiCapture() {
                                   {/* Resumen de Trazabilidad Cruzada 💎 */}
                                   <div className="grid grid-cols-1 gap-4">
                                      <div className="flex flex-col gap-1 px-6 py-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
-                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Orden Beta</span>
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">ORDEN BETA</span>
                                         <span className="text-sm font-black text-emerald-950 uppercase">{editData.orden_beta || "PENDIENTE"}</span>
                                      </div>
                                      <div className="flex gap-4">
@@ -1187,7 +1107,7 @@ export default function BandejaLogiCapture() {
                                            <span className="text-sm font-black text-emerald-950 uppercase">{editData.dam || "PENDIENTE"}</span>
                                         </div>
                                         <div className="flex-1 flex flex-col gap-1 px-6 py-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
-                                           <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Contenedor</span>
+                                           <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">CONTENEDOR</span>
                                            <span className="text-sm font-black text-emerald-950 uppercase">{editData.contenedor || "PENDIENTE"}</span>
                                         </div>
                                      </div>
@@ -1200,7 +1120,7 @@ export default function BandejaLogiCapture() {
                                      <div className="flex-1 space-y-4">
                                         <div className="flex items-center gap-2 ml-2">
                                            <Calendar className="h-3 w-3 text-emerald-500" />
-                                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Oficial</span>
+                                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FECHA OFICIAL</span>
                                         </div>
                                         <Popover>
                                            <PopoverTrigger asChild>

@@ -161,9 +161,12 @@ def delete_cliente_ie(id: int, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 @router.get("/maestro-fitos", response_model=List[MaestroFitoSchema])
-def list_maestro_fitos(db: Session = Depends(get_db)):
+def list_maestro_fitos(q: Optional[str] = None, db: Session = Depends(get_db)):
     """Listado de Fitos para selección en el catálogo."""
-    return db.query(MaestroFito).all()
+    query = db.query(MaestroFito)
+    if q:
+        query = query.filter(MaestroFito.consignatario_fito.ilike(f"%{q}%"))
+    return query.limit(10).all()
 
 @router.post("/{id}/duplicate")
 def duplicate_cliente_ie(id: int, db: Session = Depends(get_db)):
