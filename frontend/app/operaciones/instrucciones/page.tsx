@@ -277,9 +277,10 @@ export default function InstruccionesEmbarque() {
                       )}
                     </div>
                     {f.isWarning && (
-                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1">
-                        âš ï¸ El cliente no existe en maestros
-                      </p>
+                       <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1 flex items-center gap-1">
+                         <AlertTriangle className="h-3 w-3" />
+                         EL CLIENTE NO EXISTE EN MAESTROS
+                       </p>
                     )}
                   </div>
                 ))}
