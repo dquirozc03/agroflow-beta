@@ -213,8 +213,8 @@ export default function BandejaLogiCapture() {
      planta: "",
      cultivo: "",
      fecha_embarque: new Date(),
-     codigo_sap: "",
-     partida_registral: ""
+     codigoSap: "",
+     partidaRegistral: ""
   });
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -253,8 +253,8 @@ export default function BandejaLogiCapture() {
         setEditData((prev: any) => ({
           ...prev,
           empresa_transporte: data.transportista,
-          codigo_sap: data.codigo_sap,
-          partida_registral: data.partida_registral
+          codigoSap: data.codigo_sap,
+          partidaRegistral: data.partida_registral
         }));
         toast.success("Sincronizado con maestros oficiales 💎");
       }
@@ -366,8 +366,8 @@ export default function BandejaLogiCapture() {
              placaTracto: editData.placa_tracto,
              placaCarreta: editData.placa_carreta,
              empresa: editData.empresa_transporte,
-             codigoSap: editData.codigo_sap,
-             partidaRegistral: editData.partida_registral,
+             codigoSap: editData.codigoSap,
+             partidaRegistral: editData.partidaRegistral,
              booking: editData.booking,
              ordenBeta: editData.orden_beta,
              dam: editData.dam,
@@ -1097,8 +1097,8 @@ export default function BandejaLogiCapture() {
                                          ...editData, 
                                          placa_tracto: res.placa,
                                          empresa_transporte: res.transportista,
-                                         codigo_sap: res.codigo_sap,
-                                         partida_registral: res.partida_registral
+                                         codigoSap: res.codigo_sap,
+                                         partidaRegistral: res.partida_registral
                                       })}
                                       placeholder="ABC-123"
                                    />

@@ -266,7 +266,7 @@ export default function LogiCaptureV2Page() {
     marca_tracto: "",
     cert_tracto: "",
     cert_carreta: "",
-    codigo_sap: "",
+    codigoSap: "",
     partidaRegistral: "",
     ruc_transportista: "",
     planta: "",
@@ -333,7 +333,7 @@ export default function LogiCaptureV2Page() {
         contenedor: result.contenedor || "",
         planta: result.planta || "",
         cultivo: result.cultivo || "",
-        codigo_sap: result.codigo_sap || ""
+        codigoSap: result.codigo_sap || ""
       }));
       
       const found: string[] = [];
