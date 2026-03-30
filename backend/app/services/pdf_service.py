@@ -125,7 +125,11 @@ class InstructionPDFService:
         else:
             fecha_llenado = f"{f_str} {h_str}".strip()
 
-        t_data = [
+        eta_dt = getattr(pos, 'ETA', None)
+        eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
+        puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
+
+        t1_data = [
             [b_p(pos.ORDEN_BETA or 'S/N'), b_p("")],
             [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
             [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
@@ -149,8 +153,8 @@ class InstructionPDFService:
             [b_p("FREIGHT"), n_p("COLLECT")],
             [b_p("EMISION B/L"), n_p("SWB")],
             [b_p("PUERTO EMBARQUE"), n_p(getattr(pos, 'POL', "CALLAO") or "CALLAO")],
-            [b_p("ETA"), n_p(getattr(pos, 'ETA', ''))],
-            [b_p("PUERTO DESTINO"), n_p(cliente_maestro.destino if cliente_maestro else "")],
+            [b_p("ETA"), n_p(eta_str)],
+            [b_p("PUERTO DESTINO"), n_p(puerto_destino)],
             [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")],
             [b_p("PRODUCTO"), n_p(pos.CULTIVO or "GRANADAS")],
             [b_p("VARIEDAD"), n_p(variedad)],
@@ -163,35 +167,47 @@ class InstructionPDFService:
             [b_p("FILTROS"), b_p("NO")],
             [b_p("COLD TREAMENT"), b_p("NO")],
             [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
-            [b_p("VALOR FOB APROXIMADO"), n_p("")],
-            [b_p("OBSERVACIONES"), n_p(observaciones)],
-            
+            [b_p("VALOR FOB APROXIMADO"), n_p("USD 34,560.00")],
+        ]
+
+        t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=8, leading=9, alignment=1, fontName='Helvetica-Bold')), ""],
-            
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
             [b_p("PAIS DE DESTINO"), b_p(cliente_maestro.pais if cliente_maestro else "")],
-            [b_p("PUNTO DE LLEGADA"), b_p(cliente_maestro.destino if cliente_maestro else "")],
+            [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
             [b_p("PRESENTACION"), b_p(getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG")],
             [b_p("ETIQUETAS"), b_p("GENERICA")],
             [b_p("PESO NETO ESTIMADO"), b_p(f"{total_cajas * float(peso_kg if peso_kg else 3.8):,.3f} KG")],
-            [b_p("PESO BRUTO ESTIMADO"), b_p(f"{peso_bruto:,.3f} KG")]
+            [b_p("PESO BRUTO ESTIMADO"), b_p(f"{peso_bruto:,.3f} KG")],
+            [b_p("OBSERVACIONES"), n_p(observaciones or "SIN OBSERVACIONES ADICIONALES.")]
         ]
 
-        t = Table(t_data, colWidths=[6.5*cm, 12.5*cm])
-        t_styles = [
+        # Estilo Tabla 1
+        t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
+        t1.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0,0), (0,-1), bg_gray), # 1ra col gris
-            ('BACKGROUND', (0,3), (-1,3), bg_orange), # OP Log
-            ('BACKGROUND', (0,6), (-1,6), bg_orange), # Fecha
-            ('BACKGROUND', (0,28), (-1,29), bg_orange), # Filtros y Cold
-            ('BACKGROUND', (0,33), (-1,33), bg_orange), # Fito Header
-            ('SPAN', (0,33), (1,33)), # Merge fito header
-            ('ALIGN', (0,33), (1,33), 'CENTER'),
-            ('ALIGN', (1,6), (1,6), 'CENTER'), # Centrar fecha y hora llenado
-        ]
-        t.setStyle(TableStyle(t_styles))
-        elements.append(t)
+            ('BACKGROUND', (0,0), (0,-1), bg_gray),
+            ('BACKGROUND', (0,3), (-1,3), bg_orange),
+            ('BACKGROUND', (0,6), (-1,6), bg_orange),
+            ('ALIGN', (1,6), (1,6), 'CENTER'),
+            ('BACKGROUND', (0,28), (-1,29), bg_orange),
+        ]))
+        elements.append(t1)
+
+        elements.append(Spacer(1, 12))
+
+        # Estilo Tabla 2
+        t2 = Table(t2_data, colWidths=[6.5*cm, 12.5*cm])
+        t2.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BACKGROUND', (0,0), (0,-1), bg_gray),
+            ('BACKGROUND', (0,0), (-1,0), bg_orange),
+            ('SPAN', (0,0), (1,0)),
+            ('ALIGN', (0,0), (1,0), 'CENTER'),
+        ]))
+        elements.append(t2)
 
         # Build PDF
         doc.build(elements)
