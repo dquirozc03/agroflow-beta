@@ -47,25 +47,37 @@ class InstructionPDFService:
 
         # Header con Logo Local
         try:
-             # Construir rutas absolutas a prueba de balas hacia /backend/assets
+             # Validación Estricta de Imágenes en Memoria
+             from PIL import Image as PILImage
              current_dir = os.path.dirname(os.path.abspath(__file__))
              assets_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "assets"))
-             logo_path = os.path.join(assets_dir, "logo_beta.png")
              
-             logo_obj = Image(logo_path, width=120, height=45)
+             def get_safe_image(path, w, h):
+                 try:
+                     if not os.path.exists(path): return None
+                     with open(path, "rb") as f: data = f.read()
+                     # Validamos si es una imagen real para no crashear en doc.build()
+                     PILImage.open(io.BytesIO(data)).verify()
+                     return Image(io.BytesIO(data), width=w, height=h)
+                 except Exception:
+                     return None
 
-             # Verificar si es granada y adjuntar imagen local
-             if "GRANADA" in (pos.CULTIVO or "").upper():
-                 granada_path = os.path.join(assets_dir, "image_granada.png")
-                 if os.path.exists(granada_path):
-                     granada_img = Image(granada_path, width=40, height=40)
-                     header_table_data = [[logo_obj, Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]), granada_img]]
-                 else:
-                     header_table_data = [[logo_obj, Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]), Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"])]]
-             else:
-                 header_table_data = [[logo_obj, Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]), Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"])]]
+             logo_obj = get_safe_image(os.path.join(assets_dir, "logo_beta.png"), 120, 45)
              
-             header_table = Table(header_table_data, colWidths=[4*cm, 11*cm, 3*cm])
+             # Verificar si es granada y adjuntar imagen local
+             header_row = []
+             if logo_obj: header_row.append(logo_obj)
+             header_row.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]))
+
+             if "GRANADA" in (pos.CULTIVO or "").upper():
+                 granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 40, 40)
+                 if granada_obj: header_row.append(granada_obj)
+             
+             # Si no hay logo para anclar el título, poner fecha.
+             if len(header_row) < 3:
+                 header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
+                 
+             header_table = Table([header_row])
              header_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,0), (-1,-1), 1, colors.HexColor("#7CC546"))]))
              elements.append(header_table)
         except Exception as e:
