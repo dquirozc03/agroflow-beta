@@ -26,10 +26,14 @@ class InstructionPDFService:
         if not pos: raise Exception(f"Booking {booking} no encontrado")
 
         normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
-        pedidos = db.query(PedidoComercial).filter(
-            PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%"),
-            PedidoComercial.cultivo.ilike(pos.CULTIVO)
-        ).all()
+        pedidos = []
+        if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
+            query_pedidos = db.query(PedidoComercial).filter(
+                PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
+            )
+            if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
+            pedidos = query_pedidos.all()
 
         total_cajas = sum(p.total_cajas or 0 for p in pedidos)
         total_pallets = sum(p.total_pallets or 0 for p in pedidos)

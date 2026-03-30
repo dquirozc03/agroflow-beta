@@ -6,6 +6,7 @@ from app.database import get_db
 from app.configuracion import settings
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
+from app.models.embarque import ReporteEmbarques
 import logging
 import re
 import json
@@ -376,3 +377,97 @@ def list_posicionamiento(db: Session = Depends(get_db)):
 def list_pedidos(db: Session = Depends(get_db)):
     """Retorna listado completo de Pedidos Comerciales para auditoría."""
     return db.query(PedidoComercial).order_by(PedidoComercial.id.asc()).all()
+
+@router.post("/reportes/embarques/raw")
+async def sync_reportes_embarques_raw(
+    payload: Any = Body(...),
+    x_sync_token: str = Header(None, alias="X-Sync-Token"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para sincronización de Reporte Embarques de Exportaciones.
+    Extrae "Reserva" (Booking) y "Nave de arribo" de SharePoint vía Power Automate.
+    Estrategia Atómica: Delete & Insert.
+    """
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except Exception:
+            raise HTTPException(status_code=400, detail="El payload enviado no es un JSON válido.")
+
+    expected_token = settings.SYNC_TOKEN.strip() if settings.SYNC_TOKEN else None
+    if not x_sync_token or x_sync_token.strip() != expected_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido.")
+
+    if not payload or len(payload) < 2:
+        return {"status": "error", "mensaje": "Payload vacío.", "procesados": 0}
+
+    import re
+    def clean_header(h: str): return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
+
+    headers = [clean_header(h) for h in payload[0]]
+    data_rows = payload[1:]
+
+    # Buscar índices
+    idx_booking = -1
+    idx_nave = -1
+    
+    # "Reserva" (AB)
+    target_booking = clean_header("RESERVA")
+    # "Nave de arribo" (AF)
+    target_nave = clean_header("NAVE DE ARRIBO")
+
+    if target_booking in headers: idx_booking = headers.index(target_booking)
+    if target_nave in headers: idx_nave = headers.index(target_nave)
+    
+    # Fallback si no encaja exacto pero contiene las palabras:
+    if idx_booking == -1:
+        for i, h in enumerate(headers):
+            if "RESERVA" in h or "BOOKING" in h:
+                idx_booking = i; break
+    if idx_nave == -1:
+        for i, h in enumerate(headers):
+            if "NAVE" in h and "ARRIBO" in h:
+                idx_nave = i; break
+
+    if idx_booking == -1:
+        raise HTTPException(status_code=400, detail="Columna 'Reserva' o 'Booking' no encontrada.")
+
+    try:
+        db.query(ReporteEmbarques).delete()
+        
+        mappings = []
+        for row in data_rows:
+            if not row or not any(str(c).strip() for c in row if c is not None): continue
+            if idx_booking >= len(row): continue
+            
+            bkg_val = str(row[idx_booking]).strip().upper()
+            if not bkg_val or bkg_val in ["", "-", "N/A"]: continue
+            
+            nave_val = None
+            if idx_nave != -1 and idx_nave < len(row) and row[idx_nave]:
+                nave_val = str(row[idx_nave]).strip().upper()
+                if nave_val in ["", "-", "N/A"]: nave_val = None
+
+            mappings.append({
+                "booking": bkg_val,
+                "nave_arribo": nave_val
+            })
+            
+        if mappings:
+            db.bulk_insert_mappings(ReporteEmbarques, mappings)
+        db.commit()
+        
+        return {
+            "status": "success",
+            "mensaje": f"Sincronización exitosa. {len(mappings)} filas guardadas."
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error en BD: {str(e)}")
+
+@router.get("/reportes/embarques/list")
+def list_reportes_embarques(db: Session = Depends(get_db)):
+    """Lista auditoría de modelo 01"""
+    return db.query(ReporteEmbarques).all()
+

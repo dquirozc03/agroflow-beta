@@ -38,3 +38,15 @@ class ControlEmbarque(Base):
         if 'contenedor' in kwargs:
             kwargs['contenedor'] = clean_container_code(kwargs['contenedor'])
         super(ControlEmbarque, self).__init__(**kwargs)
+
+class ReporteEmbarques(Base):
+    """
+    Tabla para reporte de embarques de exportaciones proveniente de SharePoint 
+    "Reporte Embarques de Exportaciones - Granada 2026"
+    """
+    __tablename__ = "reporte_embarques"
+
+    id = Column(Integer, primary_key=True, index=True)
+    booking = Column(String(100), index=True)
+    nave_arribo = Column(String(200))
+
