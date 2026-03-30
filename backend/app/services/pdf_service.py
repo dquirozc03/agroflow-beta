@@ -59,12 +59,30 @@ class InstructionPDFService:
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
 
-        # 🎯 Match Inteligente (Fuzzy) - v2.0.8 
+        # 🎯 Match Inteligente (Westfalia Style 💎) v2.0.9
         if not cliente_maestro:
-            words = [w.replace('(', '').replace(')', '').strip() for w in cliente_nombre.split() if len(w) > 2]
-            if len(words) >= 2:
-                fuzzy_query = f"%{words[0]}%{words[-1]}%"
-                cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(fuzzy_query)).first()
+            # A. Normalización de ruido común
+            noise = ['LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'LLC']
+            clean_name = cliente_nombre.upper()
+            for n in noise:
+                clean_name = f" {clean_name} ".replace(f" {n} ", " ").strip()
+
+            from sqlalchemy import func
+            # B. Estrategia por Nombre Limpio (Contenido) + Pais
+            cliente_maestro = db.query(ClienteIE).filter(
+                (ClienteIE.nombre_legal.ilike(f"%{clean_name}%")) | 
+                (func.upper(clean_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
+                ClienteIE.pais.ilike(pais_val),
+                ClienteIE.estado == "ACTIVO"
+            ).first()
+
+            # C. Fallback: Solo Nombre Limpio
+            if not cliente_maestro:
+                cliente_maestro = db.query(ClienteIE).filter(
+                    (ClienteIE.nombre_legal.ilike(f"%{clean_name}%")) | 
+                    (func.upper(clean_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
+                    ClienteIE.estado == "ACTIVO"
+                ).first()
 
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
 

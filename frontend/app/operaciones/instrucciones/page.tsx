@@ -283,7 +283,7 @@ export default function InstruccionesEmbarque() {
                   },
                   {
                     label: "Cliente",
-                    val: lookupData?.cliente_nombre || selectedBooking?.cliente || "SELECCIONE...",
+                    val: lookupData?.maestro?.nombre_legal || lookupData?.cliente_nombre || selectedBooking?.cliente || "SELECCIONE...",
                     icon: RefreshCw,
                     isWarning: lookupData?.warning === "CLIENTE_NO_MAESTRO"
                   },
