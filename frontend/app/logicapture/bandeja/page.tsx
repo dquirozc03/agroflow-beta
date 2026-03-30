@@ -264,7 +264,10 @@ export default function BandejaLogiCapture() {
   const syncAllMasters = async () => {
     setIsLoading(true);
     try {
-      const recordsToSync = registros.filter(r => r.status === 'PROCESADO' && (!r.codigo_sap || !r.partida_registral));
+      const isMissing = (val: any) => !val || val === '-' || val === 'PENDIENTE' || val === 'S/P';
+      const recordsToSync = registros.filter(r => 
+        r.status === 'PROCESADO' && (isMissing(r.codigo_sap) || isMissing(r.partida_registral))
+      );
       
       if (recordsToSync.length === 0) {
         toast.info("Sin Pendientes", { description: "Todos los registros ya están sincronizados." });
@@ -277,10 +280,11 @@ export default function BandejaLogiCapture() {
       let count = 0;
       for (const reg of recordsToSync) {
         try {
-          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${reg.placa_tracto}`);
+          const placaClean = (reg.placa_tracto || "").replace(/-/g, "").trim();
+          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${placaClean}`);
           if (resp.ok) {
             const master = await resp.json();
-            await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}`, {
+            const updateResp = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -289,14 +293,20 @@ export default function BandejaLogiCapture() {
                 empresa: master.transportista
               })
             });
-            count++;
+            if (updateResp.ok) count++;
           }
         } catch (inner) {}
       }
       
-      toast.success("Sincronización Completada 💎", { 
-        description: `Se actualizaron ${count} registros satisfactoriamente.`
-      });
+      if (count > 0) {
+        toast.success("Sincronización Completada 💎", { 
+          description: `Se actualizaron ${count} de ${recordsToSync.length} registros satisfactoriamente.`
+        });
+      } else {
+        toast.error("Sincronización Fallida", { 
+          description: "No se encontró información en maestros para los registros procesados." 
+        });
+      }
       fetchRegistros();
     } catch (e) {
       toast.error("Error en la sincronización masiva");
@@ -613,10 +623,9 @@ export default function BandejaLogiCapture() {
                  <div className="flex items-center gap-3">
                      {activeTab === "PROCESADO" && (
                         <Button
-                           variant="outline"
                            onClick={syncAllMasters}
                            disabled={isLoading}
-                           className="rounded-2xl px-6 py-2.5 font-black uppercase tracking-widest text-[10px] bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50 transition-all hover:scale-105 active:scale-95 shadow-sm h-auto flex items-center gap-2"
+                           className="rounded-2xl px-6 py-2.5 font-black uppercase tracking-widest text-[10px] bg-emerald-600 text-white hover:bg-emerald-700 transition-all hover:scale-105 active:scale-95 shadow-md h-auto flex items-center gap-2 border-none"
                         >
                            <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
                            Sincronizar Maestros
