@@ -60,11 +60,19 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "maestro": None
         }
 
-    # 4. Buscar en Maestros Cliente IE
-    # El campo en PedidoComercial es 'cliente'
+    # 4. Buscar en Maestros Cliente IE con desambiguación por País
+    # El campo en PedidoComercial es 'cliente' y 'pais'
+    # Intentamos primero por nombre y país para evitar colisiones (ej. OGL Holanda vs OGL Inglaterra)
     cliente_maestro = db.query(ClienteIE).filter(
-        ClienteIE.nombre_legal.ilike(pedido.cliente)
+        ClienteIE.nombre_legal.ilike(pedido.cliente),
+        ClienteIE.pais.ilike(pedido.pais)
     ).first()
+
+    # Si no hay match por país, intentamos solo por nombre (fallback legacy)
+    if not cliente_maestro:
+        cliente_maestro = db.query(ClienteIE).filter(
+            ClienteIE.nombre_legal.ilike(pedido.cliente)
+        ).first()
 
     response = {
         "booking": booking,
