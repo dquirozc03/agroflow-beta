@@ -261,6 +261,50 @@ export default function BandejaLogiCapture() {
     } catch (e) {}
   };
 
+  const syncAllMasters = async () => {
+    setIsLoading(true);
+    try {
+      const recordsToSync = registros.filter(r => r.status === 'PROCESADO' && (!r.codigo_sap || !r.partida_registral));
+      
+      if (recordsToSync.length === 0) {
+        toast.info("Sin Pendientes", { description: "Todos los registros ya están sincronizados." });
+        setIsLoading(false);
+        return;
+      }
+
+      toast.info("Sincronizando...", { description: `Procesando ${recordsToSync.length} registros...` });
+
+      let count = 0;
+      for (const reg of recordsToSync) {
+        try {
+          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${reg.placa_tracto}`);
+          if (resp.ok) {
+            const master = await resp.json();
+            await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                codigoSap: master.codigo_sap,
+                partidaRegistral: master.partida_registral,
+                empresa: master.transportista
+              })
+            });
+            count++;
+          }
+        } catch (inner) {}
+      }
+      
+      toast.success("Sincronización Completada 💎", { 
+        description: `Se actualizaron ${count} registros satisfactoriamente.`
+      });
+      fetchRegistros();
+    } catch (e) {
+      toast.error("Error en la sincronización masiva");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
    const [isEditOpen, setIsEditOpen] = useState(false);
 
   const copyToClipboard = (text: string, label: string, key: string) => {
@@ -566,10 +610,23 @@ export default function BandejaLogiCapture() {
                    </TabsTrigger>
                  </TabsList>
                  
-                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-6 py-2.5 rounded-2xl border border-slate-100 flex items-center gap-3">
-                    <CircleDot className="h-3 w-3 text-emerald-500 animate-pulse" />
-                    {registros.length} Registros encontrados
-                 </div>
+                 <div className="flex items-center gap-3">
+                     {activeTab === "PROCESADO" && (
+                        <Button
+                           variant="outline"
+                           onClick={syncAllMasters}
+                           disabled={isLoading}
+                           className="rounded-2xl px-6 py-2.5 font-black uppercase tracking-widest text-[10px] bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50 transition-all hover:scale-105 active:scale-95 shadow-sm h-auto flex items-center gap-2"
+                        >
+                           <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+                           Sincronizar Maestros
+                        </Button>
+                     )}
+                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-6 py-2.5 rounded-2xl border border-slate-100 flex items-center gap-3">
+                        <CircleDot className="h-3 w-3 text-emerald-500 animate-pulse" />
+                        {registros.length} Registros encontrados
+                     </div>
+                  </div>
               </div>
 
               <TabsContent value={activeTab} className="p-0 border-none outline-none">
