@@ -26,7 +26,8 @@ import {
   Truck,
   Users,
   UserRound,
-  FileUp
+  FileUp,
+  ShieldCheck
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -81,9 +82,10 @@ export function AppSidebar({ className }: { className?: string }) {
       {
         id: "sistema",
         label: "Sistema",
-        visible: !!p.sistema || user?.rol === "ADMIN",
+        visible: !!p.sistema || (user?.rol as string) === "ADMIN",
         items: [
           { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios" },
+          { name: "Master Roles", icon: ShieldCheck, href: "/configuracion/roles", active: pathname === "/configuracion/roles" },
           { name: "Configuración", icon: Settings, href: "#", active: false },
         ]
       }

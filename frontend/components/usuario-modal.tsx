@@ -124,7 +124,37 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     }
   };
 
+  const [rolesData, setRolesData] = useState<any[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/roles`);
+      if (response.ok) {
+        const data = await response.json();
+        setRolesData(data);
+      }
+    } catch (error) {
+      console.error("Error al cargar roles:", error);
+    }
+  };
+
+  const handleRoleChange = (rolName: string) => {
+    const rolSpec = rolesData.find(r => r.nombre_rol === rolName);
+    if (rolSpec) {
+      setFormData({
+        ...formData,
+        rol: rolName,
+        permisos: rolSpec.permisos_plantilla
+      });
+    } else {
+      setFormData({...formData, rol: rolName});
+    }
+  };
 
   const recoverPassword = async () => {
     setConfirmOpen(true);
@@ -248,22 +278,40 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rol Maestro</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["ADMIN", "SUPERVISOR", "OPERATIVO"].map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setFormData({...formData, rol: r})}
-                      className={cn(
-                        "py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all",
-                        formData.rol === r 
-                          ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20" 
-                          : "bg-white text-slate-400 border-slate-100 hover:border-emerald-200"
-                      )}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {rolesData.length > 0 ? (
+                    rolesData.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => handleRoleChange(r.nombre_rol)}
+                        className={cn(
+                          "py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all",
+                          formData.rol === r.nombre_rol 
+                            ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20" 
+                            : "bg-white text-slate-400 border-slate-100 hover:border-emerald-200"
+                        )}
+                      >
+                        {r.nombre_rol}
+                      </button>
+                    ))
+                  ) : (
+                    ["ADMIN", "SUPERVISOR", "OPERATIVO"].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => handleRoleChange(r)}
+                        className={cn(
+                          "py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all",
+                          formData.rol === r 
+                            ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20" 
+                            : "bg-white text-slate-400 border-slate-100 hover:border-emerald-200"
+                        )}
+                      >
+                        {r}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 
