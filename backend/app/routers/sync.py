@@ -371,3 +371,8 @@ async def sync_pedidos_raw(
 def list_posicionamiento(db: Session = Depends(get_db)):
     """Retorna listado completo del Plan Maestro para el módulo de Instrucciones."""
     return db.query(Posicionamiento).order_by(Posicionamiento.FECHA_CREACION.desc()).all()
+
+@router.get("/pedidos/list")
+def list_pedidos(db: Session = Depends(get_db)):
+    """Retorna listado completo de Pedidos Comerciales para auditoría."""
+    return db.query(PedidoComercial).order_by(PedidoComercial.id.asc()).all()
