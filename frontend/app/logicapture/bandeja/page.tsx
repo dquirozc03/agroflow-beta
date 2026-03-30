@@ -624,7 +624,7 @@ export default function BandejaLogiCapture() {
                           <TableCell>
                              <div className="flex flex-col gap-1.5 py-4">
                                 <div className="flex items-center gap-3"><span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border border-emerald-100/50 shadow-sm">{reg.booking}</span></div><div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
-                                   {reg.dam} â€¢ {reg.contenedor}
+                                   {reg.dam} {"•"} {(() => { const c = reg.contenedor || ""; const m = c.match(/^([A-Z]{4})(\d+)(\d)$/); return m ? `${m[1]} ${m[2]}-${m[3]}` : c; })()}
                                 </div>
                              </div>
                           </TableCell>
@@ -717,7 +717,7 @@ export default function BandejaLogiCapture() {
                     <div className="flex items-center justify-between mb-2">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2">
                           <CircleDot className="h-3 w-3 animate-pulse" />
-                          PANEL SAP â€¢ {selectedReg.status}
+                          {"PANEL SAP • "}{selectedReg.status}
                        </span>
                        <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(false)} className="rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all">
                           <X className="h-5 w-5" />
@@ -738,7 +738,7 @@ export default function BandejaLogiCapture() {
                          { label: "FECHA DE EMBARQUE", value: new Date(selectedReg.fecha_registro).toLocaleDateString(), key: "fecha" },
                          { label: "ORDEN BETA", value: selectedReg.orden_beta, key: "orden" },
                          { label: "BOOKING", value: selectedReg.booking, key: "booking" },
-                         { label: "CONTENEDOR", value: selectedReg.contenedor, key: "cnt" },
+                         { label: "CONTENEDOR", value: (() => { const c = selectedReg.contenedor || ""; const m = c.match(/^([A-Z]{4})(\d+)(\d)$/); return m ? `${m[1]} ${m[2]}-${m[3]}` : c; })(), key: "cnt" },
                          { label: "MARCA", value: selectedReg.marca_tracto, key: "marca" },
                          { label: "PLACAS", value: `${selectedReg.placa_tracto} / ${selectedReg.placa_carreta}`, key: "placas" },
                          { label: "CHOFER", value: selectedReg.nombre_chofer, key: "chofer_n" },
