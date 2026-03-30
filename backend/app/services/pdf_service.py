@@ -85,46 +85,91 @@ class InstructionPDFService:
 
         elements.append(Spacer(1, 12))
 
-        # Sección 1: Datos Cliente
-        elements.append(Paragraph("<b>I. DATOS DEL CLIENTE Y DESTINO</b>", ParagraphStyle('Section', fontSize=9, textColor=colors.HexColor("#2D5A27"), backColor=colors.HexColor("#F8FAF7"), leftIndent=5, padding=5)))
-        client_data = [
-            ["CLIENTE / CONSIGNATARIO BL", "NOTIFY PARTY"],
-            [cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre, cliente_maestro.notify_bl if cliente_maestro else "SAME AS CONSIGNEE"],
-            [cliente_maestro.direccion_consignatario if cliente_maestro else "", cliente_maestro.direccion_notify if cliente_maestro else ""]
-        ]
-        ct = Table(client_data, colWidths=[9.5*cm, 8.5*cm])
-        ct.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8), ('GRID', (0,0), (-1,-1), 0.5, colors.grey), ('VALIGN',(0,0),(-1,-1),'TOP')]))
-        elements.append(ct)
+        # --- MASTER TABLE (Diseño Corporativo Consolidado) ---
+        normal_font = ParagraphStyle('N', fontSize=7, leading=8)
+        bold_font = ParagraphStyle('B', fontSize=7, leading=8, fontName='Helvetica-Bold')
 
-        elements.append(Spacer(1, 12))
+        bg_orange = colors.HexColor("#F5A623") # Naranja Corporativo suave
+        bg_gray = colors.HexColor("#F3F4F6")
 
-        # Sección 2: Carga
-        elements.append(Paragraph("<b>II. DATOS DE LA CARGA</b>", ParagraphStyle('Section', fontSize=9, textColor=colors.HexColor("#2D5A27"), backColor=colors.HexColor("#F8FAF7"), leftIndent=5, padding=5)))
-        carga_data = [
-            ["CULTIVO", "CAJAS", "PALLETS", "PESO BRUTO KG", "VARIEDAD"],
-            [pos.CULTIVO, f"{total_cajas}", f"{total_pallets}", f"{round(peso_bruto,2)} KG", pedidos[0].variedad if pedidos else "S/N"]
-        ]
-        cat = Table(carga_data, colWidths=[3.6*cm]*5)
-        cat.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8), ('GRID', (0,0), (-1,-1), 0.5, colors.grey), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
-        elements.append(cat)
+        def b_p(text): return Paragraph(f"<b>{text}</b>", bold_font)
+        def n_p(text): return Paragraph(str(text), normal_font)
+        def format_desc(t1, t2): return Paragraph(f"{t1}<br/>{t2}", normal_font)
 
-        elements.append(Spacer(1, 12))
-
-        # Sección 3: Logística
-        elements.append(Paragraph("<b>III. PORMENORES LOGÍSTICOS</b>", ParagraphStyle('Section', fontSize=9, textColor=colors.HexColor("#2D5A27"), backColor=colors.HexColor("#F8FAF7"), leftIndent=5, padding=5)))
-        log_data = [
-            ["NAVE / VIAJE", pos.NAVE or "PENDIENTE", "PUERTO DESTINO", cliente_maestro.destino if cliente_maestro else "N/A"],
-            ["NAVIERA", pos.NAVIERA or "S/N", "PLANTA LLENADO", pos.PLANTA_LLENADO or "S/N"]
-        ]
-        lt = Table(log_data, colWidths=[4.5*cm, 4.5*cm, 4.5*cm, 4.5*cm])
-        lt.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8), ('GRID', (0,0), (-1,-1), 0.5, colors.grey)]))
-        elements.append(lt)
-
-        elements.append(Spacer(1, 12))
+        fito = cliente_maestro.fitosanitario if hasattr(cliente_maestro, 'fitosanitario') and cliente_maestro.fitosanitario else None
         
-        # Observaciones
-        elements.append(Paragraph("<b>IV. OBSERVACIONES</b>", styles["Normal"]))
-        elements.append(Paragraph(observaciones or "SIN OBSERVACIONES ADICIONALES.", styles["Normal"]))
+        cult_en = "POMEGRANATES" if "GRANADA" in (pos.CULTIVO or "").upper() else pos.CULTIVO
+        cult_es = "GRANADAS" if "GRANADA" in (pos.CULTIVO or "").upper() else pos.CULTIVO
+        variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
+        
+        desc_en = f"{total_cajas} BOXES WITH FRESH {cult_en} {variedad} ON {total_pallets} PALLETS"
+        desc_es = f"{total_cajas} CAJAS CON FRESCA {cult_es} {variedad} EN {total_pallets} PALETAS"
+
+        fecha_llenado = f"{getattr(pos, 'FECHA_CITA', '')} - {getattr(pos, 'HORA_CITA', '')}".strip(" - ")
+
+        t_data = [
+            [b_p(pos.ORDEN_BETA or 'S/N'), b_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
+            [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
+            [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
+            [b_p("OPERADOR LOGISTICO"), b_p(getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L."))],
+            [b_p("DIRECCION DE LA PLANTA"), n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
+            [b_p("UBIGEO PLANTA"), n_p("110111")],
+            [b_p("FECHA Y HORA DEL LLENADO"), b_p(fecha_llenado)],
+            
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
+            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
+            
+            [b_p("DATOS REFERENCIALES"), n_p("EORI CONSIGNE: PENDIENTE<br/>EORI NOTIFY: PENDIENTE")],
+            
+            [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
+            [b_p("AGENCIA NAVIERA"), n_p(pos.NAVIERA or "")],
+            [b_p("MOTONAVE"), n_p(pos.NAVE or "")],
+            [b_p("BOOKING No."), b_p(pos.BOOKING or "")],
+            [b_p("FREIGHT"), n_p("COLLECT")],
+            [b_p("EMISION B/L"), n_p("SWB")],
+            [b_p("PUERTO EMBARQUE"), n_p(pos.PUERTO_ORIGEN or "CALLAO")],
+            [b_p("ETA"), n_p(getattr(pos, 'ETA_DESTINO', ''))],
+            [b_p("PUERTO DESTINO"), n_p(cliente_maestro.destino if cliente_maestro else pos.PUERTO_DESTINO)],
+            [b_p("CANTIDAD DE CONTENEDORES"), n_p(getattr(pos, 'CANTIDAD_CTNS', "01"))],
+            [b_p("PRODUCTO"), n_p(pos.CULTIVO or "GRANADAS")],
+            [b_p("VARIEDAD"), n_p(variedad)],
+            [b_p("TEMPERATURA"), n_p("6.0°C" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("VENTILACION"), n_p("15CBM" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("HUMEDAD"), n_p("OFF" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("ATMOSFERA CONTROLADA"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("OXIGENO"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("CO2"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
+            [b_p("FILTROS"), b_p("NO")],
+            [b_p("COLD TREAMENT"), b_p("NO")],
+            [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
+            [b_p("VALOR FOB APROXIMADO"), n_p("")],
+            [b_p("OBSERVACIONES"), n_p(observaciones)],
+            
+            [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=8, leading=9, alignment=1, fontName='Helvetica-Bold')), ""],
+            
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
+            [b_p("PAIS DE DESTINO"), b_p(cliente_maestro.pais if cliente_maestro else "")],
+            [b_p("PUNTO DE LLEGADA"), b_p(cliente_maestro.destino if cliente_maestro else pos.PUERTO_DESTINO)],
+            [b_p("PRESENTACION"), b_p(getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG")],
+            [b_p("ETIQUETAS"), b_p("GENERICA")],
+            [b_p("PESO NETO ESTIMADO"), b_p(f"{total_cajas * float(peso_kg if peso_kg else 3.8):,.3f} KG")],
+            [b_p("PESO BRUTO ESTIMADO"), b_p(f"{peso_bruto:,.3f} KG")]
+        ]
+
+        t = Table(t_data, colWidths=[6.5*cm, 12.5*cm])
+        t_styles = [
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BACKGROUND', (0,0), (0,-1), bg_gray), # 1ra col gris
+            ('BACKGROUND', (0,3), (-1,3), bg_orange), # OP Log
+            ('BACKGROUND', (0,6), (-1,6), bg_orange), # Fecha
+            ('BACKGROUND', (0,28), (-1,29), bg_orange), # Filtros y Cold
+            ('BACKGROUND', (0,33), (-1,33), bg_orange), # Fito Header
+            ('SPAN', (0,33), (1,33)), # Merge fito header
+            ('ALIGN', (0,33), (1,33), 'CENTER'),
+        ]
+        t.setStyle(TableStyle(t_styles))
+        elements.append(t)
 
         # Build PDF
         doc.build(elements)
