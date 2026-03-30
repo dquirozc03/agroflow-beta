@@ -14,8 +14,8 @@ class LogiCaptureRegistro(Base):
     # Datos de Embarque (Identificadores del despacho)
     booking = Column(String(50), index=True)
     orden_beta = Column(String(50), index=True) 
-    contenedor = Column(String(50), unique=True, index=True) 
-    dam = Column(String(50), unique=True, index=True)
+    contenedor = Column(String(50), index=True) 
+    dam = Column(String(50), index=True)
     tratamiento_buque = Column(Boolean, default=False)
     
     # Datos de Transporte
