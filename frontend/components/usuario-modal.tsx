@@ -110,9 +110,13 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
       const payload = { ...formData };
       if (editingData) delete (payload as any).password; // No enviar password en update parcial
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(payload),
       });
 
@@ -140,7 +144,12 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/roles`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/roles`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setRolesData(data);
@@ -172,9 +181,13 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     setConfirmOpen(false);
     setLoading(true);
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios/${editingData.id}/reset-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ nueva_password: "123456" }),
       });
       if (response.ok) {
@@ -191,8 +204,12 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     if (!editingData) return;
     setLoading(true);
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios/${editingData.id}/desbloquear`, {
         method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       });
       if (response.ok) {
         toast.success("Cuenta desbloqueada correctamente");
