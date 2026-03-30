@@ -250,7 +250,7 @@ export default function BandejaLogiCapture() {
       const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${editData.placa_tracto}`);
       if (resp.ok) {
         const data = await resp.json();
-        setEditData(prev => ({
+        setEditData((prev: any) => ({
           ...prev,
           empresa_transporte: data.transportista,
           codigo_sap: data.codigo_sap,
