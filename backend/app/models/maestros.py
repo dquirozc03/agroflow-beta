@@ -134,3 +134,14 @@ class MaestroFito(Base):
     __table_args__ = (
         UniqueConstraint('consignatario_fito', 'direccion_fito', name='_fito_data_uc'),
     )
+
+class Planta(Base):
+    __tablename__ = "plantas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    planta = Column(String(100), unique=True, nullable=False)
+    direccion = Column(String(500), nullable=False)
+    ubigeo = Column(String(50), nullable=False)
+    
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

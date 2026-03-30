@@ -12,7 +12,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
-from app.models.maestros import ClienteIE
+from app.models.maestros import ClienteIE, Planta
 
 class InstructionPDFService:
     def _normalize_orden(self, raw_orden: str) -> str:
@@ -38,6 +38,7 @@ class InstructionPDFService:
         peso_bruto = float(total_cajas) * float(peso_kg) * 1.05
 
         cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
+        planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
 
         # 2. Construcción PDF (ReportLab - No requiere dependencias del sistema)
         buffer = io.BytesIO()
@@ -121,8 +122,8 @@ class InstructionPDFService:
             [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
             [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
             [b_p("OPERADOR LOGISTICO"), b_p(getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L."))],
-            [b_p("DIRECCION DE LA PLANTA"), n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
-            [b_p("UBIGEO PLANTA"), n_p("110111")],
+            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_maestro.planta}</b>", planta_maestro.direccion) if planta_maestro else n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
+            [b_p("UBIGEO PLANTA"), n_p(planta_maestro.ubigeo if planta_maestro else "110111")],
             [b_p("FECHA Y HORA DEL LLENADO"), b_p(fecha_llenado)],
             
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
