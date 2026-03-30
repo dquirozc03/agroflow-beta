@@ -309,9 +309,13 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         if existing_bk:
             raise HTTPException(status_code=400, detail=f"El Booking {req.booking} ya fue registrado anteriormente. Si es una carga compartida, active 'Tratamiento en Buque'.")
 
-    # 2. Validar Unicidad de Precintos/Termógrafos
+    # 2. Validar Unicidad de Precintos/Termógrafos (Excluyendo 'no aplica')
     codes_to_check = (req.precintoAduana + req.precintoOperador + req.precintoSenasa + 
                       req.precintoLinea + req.precintosBeta + req.termografos)
+    
+    # Carlos Style 💎: No validamos duplicidad para valores que indican "vacío" o "no aplica"
+    ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]
+    codes_to_check = [c.strip().upper() for c in codes_to_check if c.strip().upper() not in ignore_values]
     
     if codes_to_check:
         dup = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo.in_(codes_to_check)).first()
