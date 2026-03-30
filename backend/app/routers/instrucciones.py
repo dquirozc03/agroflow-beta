@@ -107,7 +107,7 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
     Genera y retorna el PDF de la Instrucción de Embarque consolidada.
     """
     try:
-        pdf_bytes = instruction_pdf_service.generate_instruction_pdf(
+        pdf_data = instruction_pdf_service.generate_instruction_pdf(
             booking=req.booking,
             db=db,
             observaciones=req.observaciones
