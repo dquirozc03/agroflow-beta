@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  Map, 
-  Search, 
+import {
+  Map,
+  Search,
   Plus,
   RefreshCw,
   Loader2,
@@ -34,7 +34,7 @@ export default function ClientesIEPage() {
   const [clientes, setClientes] = useState<ClienteIE[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
 
@@ -99,7 +99,7 @@ export default function ClientesIEPage() {
           mode: nextStatus as any,
           title: nombre
         });
-        
+
         // Auto-cierre en 3 segundos
         setTimeout(() => {
           setStatusModal(prev => ({ ...prev, open: false }));
@@ -117,13 +117,13 @@ export default function ClientesIEPage() {
     const nombre = (c.nombre_legal || "").toLowerCase();
     const pais = (c.pais || "").toLowerCase();
     const destino = (c.destino || "").toLowerCase();
-    
+
     return nombre.includes(search) || pais.includes(search) || destino.includes(search);
   });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <ClienteIEModal 
+      <ClienteIEModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchClientes}
@@ -138,33 +138,33 @@ export default function ClientesIEPage() {
             "relative bg-white rounded-[3.5rem] shadow-2xl p-12 max-w-md w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border",
             statusModal.mode === "ACTIVO" ? "border-emerald-50" : "border-rose-50"
           )}>
-             <div className={cn(
-               "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
-               statusModal.mode === "ACTIVO" ? "bg-emerald-100" : "bg-rose-100"
-             )}>
-                <div className={cn(
-                  "absolute inset-0 rounded-full animate-ping opacity-20",
-                  statusModal.mode === "ACTIVO" ? "bg-emerald-500" : "bg-rose-500"
-                )} />
-                {statusModal.mode === "ACTIVO" ? (
-                  <ShieldCheck className="h-12 w-12 text-emerald-600 relative z-10" />
-                ) : (
-                  <Ban className="h-12 w-12 text-rose-600 relative z-10" />
-                )}
-             </div>
-             <div className="space-y-3">
-                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
-                   {statusModal.mode === "ACTIVO" ? "¡Habilitado!" : "¡Inhabilitado!"}
-                </h2>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
-                  El cliente <br/>
-                  <span className={cn(
-                    "border-b-2",
-                    statusModal.mode === "ACTIVO" ? "text-emerald-600 border-emerald-500/20" : "text-rose-600 border-rose-500/20"
-                  )}>{statusModal.title}</span> <br/>
-                  ha sido {statusModal.mode === "ACTIVO" ? "activado" : "desactivado"} correctamente.
-                </p>
-             </div>
+            <div className={cn(
+              "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
+              statusModal.mode === "ACTIVO" ? "bg-emerald-100" : "bg-rose-100"
+            )}>
+              <div className={cn(
+                "absolute inset-0 rounded-full animate-ping opacity-20",
+                statusModal.mode === "ACTIVO" ? "bg-emerald-500" : "bg-rose-500"
+              )} />
+              {statusModal.mode === "ACTIVO" ? (
+                <ShieldCheck className="h-12 w-12 text-emerald-600 relative z-10" />
+              ) : (
+                <Ban className="h-12 w-12 text-rose-600 relative z-10" />
+              )}
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
+                {statusModal.mode === "ACTIVO" ? "¡Habilitado!" : "¡Inhabilitado!"}
+              </h2>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+                El cliente <br />
+                <span className={cn(
+                  "border-b-2",
+                  statusModal.mode === "ACTIVO" ? "text-emerald-600 border-emerald-500/20" : "text-rose-600 border-rose-500/20"
+                )}>{statusModal.title}</span> <br />
+                ha sido {statusModal.mode === "ACTIVO" ? "activado" : "desactivado"} correctamente.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -175,43 +175,43 @@ export default function ClientesIEPage() {
           <p className="text-sm text-slate-500 font-medium tracking-tight">Rutas y consignatarios para Instrucciones de Embarque.</p>
         </div>
         <div className="flex items-center gap-3">
-           <button 
-             onClick={fetchClientes}
-             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm group"
-           >
-              <RefreshCw className={cn("h-5 w-5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} />
-           </button>
-           <button 
-             onClick={() => { setEditingData(null); setIsModalOpen(true); }}
-             className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
-              <Plus className="h-5 w-5" />
-              Nuevo Cliente IE
-           </button>
+          <button
+            onClick={fetchClientes}
+            className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm group"
+          >
+            <RefreshCw className={cn("h-5 w-5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} />
+          </button>
+          <button
+            onClick={() => { setEditingData(null); setIsModalOpen(true); }}
+            className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
+            <Plus className="h-5 w-5" />
+            Nuevo Cliente IE
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         <div className="lg:col-span-3 relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Buscar por Cliente, País o Destino..."
-              className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-         </div>
-         <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Rutas</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
-         </div>
+        <div className="lg:col-span-3 relative group">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Buscar por Cliente, País o Destino..."
+            className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Clientes</p>
+          <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4 text-slate-300 font-['Outfit']">
-             <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
-             <p className="text-xs font-black uppercase tracking-[0.2em]">Sincronizando Maestros...</p>
+            <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+            <p className="text-xs font-black uppercase tracking-[0.2em]">Sincronizando Maestros...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -238,68 +238,68 @@ export default function ClientesIEPage() {
                         </div>
                         <div className="min-w-0">
                           <p className={cn(
-                             "text-sm font-extrabold tracking-tight uppercase truncate transition-colors",
-                             c.estado === "ACTIVO" ? "text-slate-800" : "text-slate-400"
+                            "text-sm font-extrabold tracking-tight uppercase truncate transition-colors",
+                            c.estado === "ACTIVO" ? "text-slate-800" : "text-slate-400"
                           )}>
-                             {c.nombre_legal}
+                            {c.nombre_legal}
                           </p>
                           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic">Consignatario BL</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
-                       <div className="flex justify-center">
-                          <Badge className={cn(
-                            "text-[9px] font-black uppercase tracking-widest px-3 h-7 transition-all flex items-center gap-2",
-                            c.estado === "ACTIVO" 
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm" 
-                              : "bg-slate-100 text-slate-400 border-slate-200 grayscale opacity-70"
-                          )}>
-                             <span className="text-sm">{getCultivoIcon(c.cultivo || "")}</span>
-                             {c.cultivo || "N/A"}
-                          </Badge>
-                       </div>
+                      <div className="flex justify-center">
+                        <Badge className={cn(
+                          "text-[9px] font-black uppercase tracking-widest px-3 h-7 transition-all flex items-center gap-2",
+                          c.estado === "ACTIVO"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm"
+                            : "bg-slate-100 text-slate-400 border-slate-200 grayscale opacity-70"
+                        )}>
+                          <span className="text-sm">{getCultivoIcon(c.cultivo || "")}</span>
+                          {c.cultivo || "N/A"}
+                        </Badge>
+                      </div>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
-                       <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                             <Navigation className={cn(
-                               "h-3.5 w-3.5 shrink-0 transition-colors",
-                               c.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-300"
-                             )} />
-                             <span className={cn(
-                               "text-xs font-black uppercase tracking-tight transition-colors",
-                               c.estado === "ACTIVO" ? "text-slate-700" : "text-slate-400"
-                             )}>{c.pais}</span>
-                          </div>
-                          <div className="flex items-center gap-2 pl-5">
-                             <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
-                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.destino}</span>
-                          </div>
-                       </div>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <Navigation className={cn(
+                            "h-3.5 w-3.5 shrink-0 transition-colors",
+                            c.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-300"
+                          )} />
+                          <span className={cn(
+                            "text-xs font-black uppercase tracking-tight transition-colors",
+                            c.estado === "ACTIVO" ? "text-slate-700" : "text-slate-400"
+                          )}>{c.pais}</span>
+                        </div>
+                        <div className="flex items-center gap-2 pl-5">
+                          <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.destino}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-7 border-r border-slate-200/80">
-                       <div className="flex justify-center">
-                          <Badge className={cn(
-                            "text-[9px] font-black uppercase tracking-widest px-3 h-6",
-                            c.estado === "ACTIVO" 
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                              : "bg-slate-100 text-slate-400 border-slate-200"
-                          )}>
-                             {c.estado}
-                          </Badge>
-                       </div>
+                      <div className="flex justify-center">
+                        <Badge className={cn(
+                          "text-[9px] font-black uppercase tracking-widest px-3 h-6",
+                          c.estado === "ACTIVO"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : "bg-slate-100 text-slate-400 border-slate-200"
+                        )}>
+                          {c.estado}
+                        </Badge>
+                      </div>
                     </td>
                     <td className="px-8 py-7">
                       <div className="flex items-center justify-center gap-3">
-                        <button 
+                        <button
                           onClick={() => handleDuplicate(c.id)}
                           title="Duplicar para nueva ruta"
                           className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all duration-300 shadow-sm group active:scale-95"
                         >
                           <Copy className="h-4 w-4 group-hover:scale-110 transition-transform" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleToggleStatus(c.id, c.nombre_legal, c.estado)}
                           title={c.estado === "ACTIVO" ? "Inhabilitar" : "Habilitar"}
                           className={cn(
@@ -311,7 +311,7 @@ export default function ClientesIEPage() {
                         >
                           {c.estado === "ACTIVO" ? <Ban className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
                         </button>
-                        <button 
+                        <button
                           onClick={() => { setEditingData(c); setIsModalOpen(true); }}
                           className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm group active:scale-95"
                         >

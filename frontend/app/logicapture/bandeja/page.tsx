@@ -89,8 +89,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com";
+import { API_BASE_URL } from "@/lib/constants";
 
 // --- Tooltip Minimalista Carlos Style 💎 ---
 function NiceTooltip({ children, text }: { children: React.ReactNode, text: string }) {

@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/constants";
 
 // --- Data Real Binding (Eliminado Mocks Carlos Style) ---
 
@@ -54,8 +55,7 @@ export default function InstruccionesEmbarque() {
   React.useEffect(() => {
     const loadBookings = async () => {
       try {
-        // Consultamos directamente al Plan Maestro, no a los registros de LogiCapture
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/sync/posicionamiento/list`);
+        const resp = await fetch(`${API_BASE_URL}/api/v1/sync/posicionamiento/list`);
         if (resp.ok) {
           const data = await resp.json();
           setBookingsReal(data || []);
@@ -75,7 +75,7 @@ export default function InstruccionesEmbarque() {
 
     setIsGeneratingPdf(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/instrucciones/generate-pdf`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/instrucciones/generate-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -123,7 +123,7 @@ export default function InstruccionesEmbarque() {
     setIsLoadingLookup(true);
 
     try {
-      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/instrucciones/lookup/${bookingId}`);
+      const resp = await fetch(`${API_BASE_URL}/api/v1/instrucciones/lookup/${bookingId}`);
       if (resp.ok) {
         const data = await resp.json();
         setLookupData(data);
