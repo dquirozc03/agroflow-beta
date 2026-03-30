@@ -142,8 +142,8 @@ class InstructionPDFService:
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
             
             [b_p("DATOS REFERENCIALES"), format_desc(
-                f"EORI CONSIGNE: {cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else 'PENDIENTE'}",
-                f"EORI NOTIFY: {cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else 'PENDIENTE'}"
+                f"EORI CONSIGNE: {cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else '----'}",
+                f"EORI NOTIFY: {cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else '----'}"
             )],
             
             [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
