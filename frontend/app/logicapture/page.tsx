@@ -40,6 +40,7 @@ import { API_BASE_URL } from "@/lib/constants";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { 
   Select, 
   SelectContent, 
@@ -178,15 +179,12 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
         {error && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
              <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
-             {/* Tooltip Alert Style */}
              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[100] origin-bottom">
                 {errorMsg}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
              </div>
           </div>
         )}
-
-        {/* Tooltip de Información Adicional (Helper) */}
         {helperText && !error && !loading && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-5 py-3 bg-[#022c22] backdrop-blur-md border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-[0.15em] uppercase rounded-2xl shadow-2xl opacity-0 scale-90 -translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[110] whitespace-nowrap origin-bottom">
              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-10" />
@@ -195,110 +193,6 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
                 <span>{helperText}</span>
              </div>
              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#022c22]" />
-          </div>
-        )}
-
-        {/* Tooltip Premium para Datos (Solo si el dato es largo y no hay error) */}
-        {value && value.length > 14 && !error && !loading && !helperText && (
-          <div className="absolute top-[110%] left-1/2 -translate-x-1/2 px-5 py-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/20 text-emerald-400 text-xs font-black tracking-widest uppercase rounded-2xl shadow-2xl opacity-0 scale-90 translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap origin-top overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-20" />
-             <span className="relative z-10">{value}</span>
-             <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-emerald-950/90" />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-function SearchableField({ 
-  label, 
-  placeholder, 
-  icon: Icon, 
-  value, 
-  onChange, 
-  onSelect,
-  searchUrl,
-  readOnly,
-  loading,
-  error,
-  errorMsg,
-  helperText
-}: any) {
-  const [results, setResults] = useState<any[]>([]);
-  const [isSearchingLocal, setIsSearchingLocal] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!value || value.length < 2 || readOnly) {
-        setResults([]);
-        return;
-      }
-      
-      setIsSearchingLocal(true);
-      try {
-        const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(value)}`);
-        if (resp.ok) {
-          const data = await resp.json();
-          setResults(data);
-          setShowResults(data.length > 0);
-        }
-      } catch (e) {
-        console.error("Search error", e);
-      } finally {
-        setIsSearchingLocal(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [value, searchUrl, readOnly]);
-
-  return (
-    <div className="space-y-3 relative group/field">
-      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{label}</label>
-      <div className="relative group/input">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 z-10">
-          {(loading || isSearchingLocal) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
-        </div>
-        <input
-          value={value}
-          readOnly={readOnly}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          onBlur={() => setTimeout(() => setShowResults(false), 200)}
-          onFocus={() => results.length > 0 && setShowResults(true)}
-          className={cn(
-            "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
-            readOnly ? "bg-slate-50/50 text-slate-400 border-slate-100" : "bg-white border-slate-100 text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-          )}
-        />
-        
-        {showResults && !readOnly && (
-          <div className="absolute top-[110%] left-0 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-[50] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="max-h-60 overflow-y-auto p-3 space-y-2">
-                {results.map((res: any, idx: number) => (
-                   <button
-                      key={idx}
-                      onMouseDown={() => {
-                         onSelect(res);
-                         setShowResults(false);
-                      }}
-                      className="w-full text-left p-4 hover:bg-emerald-50 rounded-2xl transition-all group/item border border-transparent hover:border-emerald-100 flex items-center justify-between"
-                   >
-                      <div className="space-y-1">
-                         <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{res.nombre || res.placa}</p>
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{res.dni || res.transportista || res.marca}</p>
-                      </div>
-                      <Plus className="h-4 w-4 text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                   </button>
-                ))}
-             </div>
-          </div>
-        )}
-
-        {helperText && (
-          <div className="absolute top-[110%] left-0 z-40 bg-emerald-950 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-xl">
-             {helperText}
           </div>
         )}
       </div>
@@ -348,10 +242,8 @@ export default function LogiCaptureV2Page() {
     return () => mainElement.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Calcular posición dinámica (se mueve entre 30% y 70% de la pantalla)
   const dynamicY = Math.min(70, 30 + (scrollY / 10));
 
-  // Estado del Formulario
   const [formData, setFormData] = useState({
     booking: "",
     ordenBeta: "",
@@ -368,7 +260,6 @@ export default function LogiCaptureV2Page() {
     precintosBeta: [] as string[],
     termografos: [] as string[],
     tratamientoBuque: false,
-    // Nuevos campos de gestión premium
     planta: "",
     cultivo: "",
     codigo_sap: "",
@@ -377,7 +268,6 @@ export default function LogiCaptureV2Page() {
     cert_tracto: "",
     cert_carreta: "",
     fecha_embarque: new Date().toISOString(),
-    // Campos v2
     nombreChofer: "",
     licenciaChofer: "",
     partidaRegistral: ""
@@ -388,7 +278,6 @@ export default function LogiCaptureV2Page() {
   const [bookingError, setBookingError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [duplicatedCodes, setDuplicatedCodes] = useState<string[]>([]);
-
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
   const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
@@ -422,7 +311,6 @@ export default function LogiCaptureV2Page() {
       const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}`);
       if (!resp.ok) throw new Error();
       const data = await resp.json();
-      
       setFormData({
         booking: data.booking,
         ordenBeta: data.orden_beta,
@@ -451,7 +339,6 @@ export default function LogiCaptureV2Page() {
         licenciaChofer: data.licencia_chofer || "",
         partidaRegistral: data.partida_registral || ""
       });
-      
       setValidatedFields(["booking", "ordenBeta", "contenedor", "dam", "dni", "placaTracto", "placaCarreta"]);
       toast.success("Información cargada para Auditoría");
     } catch (e) {
@@ -467,30 +354,18 @@ export default function LogiCaptureV2Page() {
       toast.error("Ingrese un Booking para comenzar");
       return;
     }
-
     setIsSearching(true);
     setValidatedFields([]);
     setBookingError(false);
     setFieldErrors({});
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
       if (!response.ok) {
         setBookingError(true);
         setIsSearching(false);
-        // Limpiar campos para evitar confusión con el booking anterior
-        setFormData(prev => ({
-          ...prev,
-          ordenBeta: "",
-          dam: "",
-          contenedor: ""
-        }));
         return;
       }
-      
       const result = await response.json();
-      
-      // Sanitización de DAM Carlos Style (quitar ceros a la izquierda del último segmento)
       let cleanDam = result.dam;
       if (cleanDam && cleanDam.includes("-")) {
         const parts = cleanDam.split("-");
@@ -498,7 +373,6 @@ export default function LogiCaptureV2Page() {
         parts[parts.length - 1] = suffix.replace(/^0+(?!$)/, "");
         cleanDam = parts.join("-");
       }
-      
       setFormData(prev => ({
         ...prev,
         booking: cleanBooking,
@@ -508,27 +382,11 @@ export default function LogiCaptureV2Page() {
         planta: result.planta || "",
         cultivo: result.cultivo || "",
       }));
-      
       const found: string[] = [];
-      const errors: { [key: string]: string } = {};
-
       if (result.orden_beta) found.push("ordenBeta");
-      else errors.ordenBeta = "No se encontró Orden Beta en el Posicionamiento";
-
       if (result.contenedor) found.push("contenedor");
-      else errors.contenedor = "No se encontró Contenedor en Datos Maestros";
-
       if (result.dam) found.push("dam");
-      else errors.dam = "No se encontró DAM en el Control de Embarque";
-
       setValidatedFields(found);
-      setFieldErrors(errors);
-
-      setFieldErrors(errors);
-
-      if (found.length < 3) {
-        // En lugar de toast, los errores ya están en fieldErrors
-      }
     } catch (error: any) {
       setBookingError(true);
     } finally {
@@ -538,759 +396,254 @@ export default function LogiCaptureV2Page() {
 
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
-    
-    // Al editar un campo, deja de estar validado hasta el siguiente blur/lookup
     setValidatedFields(prev => prev.filter(f => f !== field));
-    
-    // Al borrar placa, limpiar empresa y su info de forma reactiva
-    if (field === "placaTracto" && !value) {
-      setFormData(prev => ({ ...prev, empresa: "" }));
-      setFieldErrors(prev => {
-        const next = { ...prev };
-        delete next.empresa_info;
-        return next;
-      });
-    }
-
-    // Al borrar DNI, limpiar su info reactivada
-    if (field === "dni" && !value) {
-      setFieldErrors(prev => {
-        const next = { ...prev };
-        delete next.dni_info;
-        return next;
-      });
-    }
-
-    // Limpiar error específico al editar
-    if (fieldErrors[field]) {
-      setFieldErrors(prev => {
-        const newState = { ...prev };
-        delete newState[field];
-        return newState;
-      });
-    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  const handleVehiculoBlurWithVal = async (val?: string) => {
-    const placa = (val || formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
-    if (!placa) return;
-
-    setIsLoadingVehiculo(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
-      if (!response.ok) throw new Error("Placa no registrada en maestros");
-      const data = await response.json();
-      
-      updateField("empresa", data.transportista.nombre_transportista);
-      updateField("ruc_transportista", data.transportista.ruc_transportista);
-      updateField("marca_tracto", data.marca);
-      updateField("cert_tracto", data.configuracion_vehicular);
-      updateField("codigo_sap", data.transportista.codigo_sap);
-      updateField("partidaRegistral", data.transportista.partida_registral);
-      
-      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
-    } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
-      updateField("empresa", "");
-    } finally {
-      setIsLoadingVehiculo(false);
-    }
-  };
-
-  const handleVehiculoBlur = () => handleVehiculoBlurWithVal();
 
   const handleChoferBlurWithVal = async (val?: string) => {
     const dni = (val || formData.dni || "").trim();
     if (!dni) return;
-
     setIsLoadingChofer(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
-      if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
+      if (!response.ok) throw new Error();
       const data = await response.json();
       updateField("nombreChofer", data.nombre_operativo);
       updateField("licenciaChofer", data.licencia);
       setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
-    } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
+    } catch (e) {
+      setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado" }));
     } finally {
       setIsLoadingChofer(false);
     }
   };
 
-  const handleChoferBlur = () => handleChoferBlurWithVal();
-
-  const handleFieldBlur = async (field: string, value: string) => {
-    const cleanVal = (value || "").trim().toUpperCase();
-    if (!cleanVal) return;
-
-    // Solo validamos duplicados para campos clave de logicapture_registros
-    if (!["booking", "dam", "contenedor"].includes(field)) return;
-
+  const handleVehiculoBlurWithVal = async (val?: string) => {
+    const placa = (val || formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
+    if (!placa) return;
+    setIsLoadingVehiculo(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=${field}&value=${cleanVal}&treatment_buque=${formData.tratamientoBuque}`);
-      if (!response.ok) return;
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
+      if (!response.ok) throw new Error();
       const data = await response.json();
-      
-      if (data.exists) {
-         setFieldErrors(prev => ({ 
-            ...prev, 
-            [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
-         }));
-         // Quitamos de validados si es duplicado
-         setValidatedFields(prev => prev.filter(f => f !== field));
-      } else {
-         // Si existía un error previo de duplicado para este campo, lo borramos
-         setFieldErrors(prev => {
-            const next = { ...prev };
-            if (next[field]?.includes("Duplicado")) delete next[field];
-            return next;
-         });
-         // Marcamos como validado
-         setValidatedFields(prev => [...new Set([...prev, field])]);
-      }
-    } catch (error) {
-       console.error("Error check unique", error);
-    }
-  };
-
-  const validateSeal = async (field: keyof typeof formData, newValues: string[]) => {
-    const oldValues = formData[field] as string[];
-    updateField(field as string, newValues);
-
-    // Si el array creció, validamos el último elemento
-    if (newValues.length > oldValues.length) {
-       const lastValue = newValues[newValues.length - 1];
-       try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=precinto&value=${lastValue}`);
-          if (!response.ok) return;
-          const data = await response.json();
-          if (data.exists) {
-             setDuplicatedCodes(prev => [...new Set([...prev, lastValue])]);
-             setFieldErrors(prev => ({ ...prev, [field]: `Precinto Duplicado: ${lastValue}` }));
-          } else {
-             setFieldErrors(prev => {
-                const n = { ...prev };
-                delete n[field];
-                return n;
-             });
-          }
-       } catch (e) { console.error(e); }
+      setFormData(prev => ({
+        ...prev,
+        empresa: data.transportista.nombre_transportista,
+        ruc_transportista: data.transportista.ruc_transportista,
+        marca_tracto: data.marca,
+        cert_tracto: data.configuracion_vehicular,
+        codigo_sap: data.transportista.codigo_sap,
+        partidaRegistral: data.transportista.partida_registral
+      }));
+      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
+    } catch (e) {
+      setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada" }));
+    } finally {
+      setIsLoadingVehiculo(false);
     }
   };
 
   const handleCarretaBlurWithVal = async (val?: string) => {
     const placa = (val || formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
     if (!placa) return;
-
     setIsLoadingCarreta(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
-      if (!response.ok) throw new Error("Carreta no registrada en maestros");
-      const data = await response.json();
-      updateField("cert_carreta", data.status === "success" ? "" : ""); 
-    } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
-    } finally {
+      await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
+    } catch (e) {} finally {
       setIsLoadingCarreta(false);
     }
   };
 
-  const handleCarretaBlur = () => handleCarretaBlurWithVal();
-
-  const handleSaveNetwork = async (isFinalize: boolean = false) => {
-    setServerError(null);
-    if (!formData.booking) {
-       toast.error("Debe ingresar al menos el Booking para guardar en red");
-       return;
-    }
-
-    // Sanitización de campos opcionales por defecto (**) si es FINALIZADO
-    const payload = {
-       ...formData,
-       status: isFinalize ? "PROCESADO" : "PENDIENTE",
-       precintoOperador: isFinalize && formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
-       precintoSenasa: isFinalize && formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
-    };
-
-    setIsSearching(true);
+  const handleFieldBlur = async (field: string, value: string) => {
+    const cleanVal = (value || "").trim().toUpperCase();
+    if (!cleanVal || !["booking", "dam", "contenedor"].includes(field)) return;
     try {
-      const url = editId 
-        ? `${API_BASE_URL}/api/v1/logicapture/registros/${editId}` 
-        : `${API_BASE_URL}/api/v1/logicapture/register`;
-      
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=${field}&value=${cleanVal}`);
+      const data = await response.json();
+      if (data.exists) {
+        setFieldErrors(prev => ({ ...prev, [field]: `Duplicado en #${data.id}` }));
+      }
+    } catch (e) {}
+  };
+
+  const validateSeal = async (field: keyof typeof formData, newValues: string[]) => {
+    updateField(field as string, newValues);
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem("logicapture_draft", JSON.stringify({ formData, validatedFields }));
+    toast.info("Borrador local guardado");
+  };
+
+  useEffect(() => {
+    const draft = localStorage.getItem("logicapture_draft");
+    if (draft && !editId) {
+      const parsed = JSON.parse(draft);
+      setFormData(parsed.formData);
+      setValidatedFields(parsed.validatedFields || []);
+      toast.success("Borrador recuperado");
+    }
+  }, [editId]);
+
+  const handleSave = async () => {
+    setIsSearching(true);
+    setServerError(null);
+    try {
+      const url = editId ? `${API_BASE_URL}/api/v1/logicapture/registros/${editId}` : `${API_BASE_URL}/api/v1/logicapture/register`;
       const response = await fetch(url, {
         method: editId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...formData, status: "PROCESADO" })
       });
-
       if (!response.ok) {
-         const errData = await response.json();
-         setServerError(errData.detail || "Hubo un problema al sincronizar con la red.");
-         return;
+        const err = await response.json();
+        setServerError(err.detail || "Error al procesar");
+        return;
       }
-      
-      const resData = await response.json();
-      
-      if (isFinalize) {
-         setSuccessTitle(formData.ordenBeta || "REGISTRO FINALIZADO");
-         setShowSuccess(true);
-         localStorage.removeItem("logicapture_draft");
-         if (editId) {
-            setTimeout(() => window.location.href = "/logicapture/bandeja", 2000);
-         }
-      } else {
-         if (!editId && resData.id) {
-            setEditId(resData.id); // Capturar ID para seguir editando el mismo registro en nube
-         }
-         toast.success("Borrador sincronizado en red 💎", {
-            description: "Sus compañeros ya pueden ver y completar este registro."
-         });
-      }
-    } catch (error: any) {
-      setServerError("Error de sincronización. Verifique su conexión.");
+      setSuccessTitle(formData.ordenBeta || "REGISTRO");
+      setShowSuccess(true);
+      localStorage.removeItem("logicapture_draft");
+    } catch (e) {
+      setServerError("Error de red");
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleSave = () => handleSaveNetwork(true);
-
   const handleReset = () => {
-    setFormData({
-      booking: "",
-      ordenBeta: "",
-      contenedor: "",
-      dam: "",
-      dni: "",
-      placaTracto: "",
-      placaCarreta: "",
-      empresa: "",
-      precintoAduana: [],
-      precintoOperador: [],
-      precintoSenasa: [],
-      precintoLinea: [],
-      precintosBeta: [],
-      termografos: [],
-      tratamientoBuque: false,
-      planta: "",
-      cultivo: "",
-      codigo_sap: "",
-      ruc_transportista: "",
-      marca_tracto: "",
-      cert_tracto: "",
-      cert_carreta: "",
-      fecha_embarque: new Date().toISOString(),
-      nombreChofer: "",
-      licenciaChofer: "",
-      partidaRegistral: ""
-    });
-    setValidatedFields([]);
-    setFieldErrors({});
-    setBookingError(false);
-    setServerError(null);
-    localStorage.removeItem("logicapture_draft");
-    toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
+     window.location.reload();
   };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
       <AppSidebar />
-
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AppHeader />
-
         <main ref={mainRef} className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
           <div className="max-w-[1200px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             
-            {/* Header de Sección Carlos Style (Sin Sticky por petición de Inge Daniel) */}
             <div className="py-6 flex flex-col md:flex-row md:items-end justify-between gap-6 transition-all duration-300">
               <div className="space-y-2">
-                <div className="flex items-center gap-3 group">
-                   <div className="h-10 w-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                      <Scan className="h-5 w-5" />
-                   </div>
-                   <h1 className="text-4xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit'] group-hover:tracking-tight transition-all duration-500">
-                      Logi<span className="text-emerald-500 drop-shadow-sm">Capture</span>
-                      {editId && <span className="ml-4 text-xs bg-amber-500 text-white px-3 py-1 rounded-full animate-pulse">MODO AUDITORÍA</span>}
-                   </h1>
-                </div>
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] ml-13">
-                  {editId ? `Editando Auditoría de Registro #${editId}` : "Registro Operativo de Salida - Fase 3"}
-                </p>
+                 <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                       <Scan className="h-5 w-5" />
+                    </div>
+                    <h1 className="text-4xl font-extrabold tracking-tighter text-emerald-950">
+                       Logi<span className="text-emerald-500">Capture</span>
+                    </h1>
+                 </div>
+                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-13">
+                    {editId ? "Modo Auditoría" : "Registro Operativo"}
+                 </p>
               </div>
 
-              {/* Selector de Modalidad Carlos Style */}
-              <div className="flex bg-white/50 backdrop-blur-sm p-2 rounded-[1.8rem] border border-slate-100 shadow-sm gap-2">
+              <div className="flex bg-white p-2 rounded-[1.8rem] border border-slate-100 shadow-sm gap-2">
                 {[
                   { id: "maritimo", icon: Ship, label: "Marítimo" },
-                  { id: "terrestre", icon: Truck, label: "Terrestre" },
-                  { id: "aereo", icon: Plane, label: "Aéreo" }
+                  { id: "terrestre", icon: Truck, label: "Terrestre" }
                 ].map((mode) => (
                   <button
                     key={mode.id}
                     onClick={() => setTransportMode(mode.id as any)}
                     className={cn(
-                      "group relative flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 overflow-hidden",
-                      transportMode === mode.id 
-                        ? "bg-emerald-950 text-white shadow-xl shadow-emerald-900/10 scale-105" 
-                        : "hover:bg-emerald-50 text-slate-400 hover:text-emerald-700"
+                      "flex items-center gap-3 px-6 py-3 rounded-2xl transition-all",
+                      transportMode === mode.id ? "bg-emerald-950 text-white shadow-xl" : "text-slate-400"
                     )}
                   >
-                    <mode.icon className={cn("h-5 w-5 transition-transform duration-500 group-hover:scale-110", transportMode === mode.id ? "text-emerald-400" : "")} />
+                    <mode.icon className="h-5 w-5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">{mode.label}</span>
-                    {transportMode === mode.id && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-scan-slow opacity-30" />
-                    )}
                   </button>
                 ))}
               </div>
 
               <div className="flex items-center gap-3">
-                 <button 
-                    onClick={handleReset}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm text-[11px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-700 transition-all duration-300 hover:scale-[1.02] active:scale-95 group"
-                 >
-                    <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-500" />
-                    Limpiar Pantalla
-                 </button>
-                 <button 
-                    onClick={handleLookup}
-                    disabled={isSearching}
-                    className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl shadow-lg text-[11px] font-black uppercase tracking-widest hover:from-emerald-700 hover:to-emerald-600 transition-all duration-300 active:scale-95 animate-venom disabled:opacity-50"
-                  >
-                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Sparkles className="h-4 w-4 animate-pulse" />}
-                    Autocompletar Inteligente
-                  </button>
+                 <Button onClick={handleReset} variant="outline" className="rounded-2xl h-14 px-6 uppercase font-black tracking-widest text-[10px]">Limpiar</Button>
+                 <Button onClick={handleLookup} disabled={isSearching} className="rounded-2xl h-14 px-8 bg-emerald-600 hover:bg-emerald-700 uppercase font-black tracking-widest text-[10px]">Autocompletar</Button>
               </div>
             </div>
 
-            {/* Panel de Auditoría Inteligente Carlos Style */}
-            {editId && (
-              <div className="bg-amber-50/50 backdrop-blur-md border border-amber-100 p-8 rounded-[3rem] shadow-sm animate-in slide-in-from-top-4 duration-500 overflow-hidden relative">
-                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
-                    <div className="space-y-2">
-                       <div className="flex items-center gap-3">
-                          <ShieldAlert className="h-6 w-6 text-amber-600 animate-pulse" />
-                          <h3 className="text-xl font-black text-amber-950 tracking-tight uppercase">Panel de Corrección Dirigida</h3>
-                       </div>
-                       <p className="text-xs font-bold text-amber-700/70 max-w-lg leading-relaxed uppercase tracking-widest"> 
-                          La edición de datos maestros está restringida. Seleccione un campo para desbloquear su corrección mediante el sistema de búsqueda.
-                       </p>
-                    </div>
-                    
-                    <div className="min-w-[300px] space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Campo a Corregir</label>
-                       <Select value={editField} onValueChange={setEditField}>
-                          <SelectTrigger className="rounded-2xl border-amber-200 bg-white h-14 font-black text-amber-950 uppercase tracking-widest text-[11px] shadow-sm">
-                             <SelectValue placeholder="Seleccione campo..." />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-amber-100 shadow-2xl">
-                             {AUDIT_OPTIONS.map(opt => (
-                                <SelectItem key={opt.id} value={opt.id} className="font-bold text-slate-600 focus:bg-amber-50 focus:text-amber-800 uppercase tracking-widest text-[10px]">{opt.label}</SelectItem>
-                             ))}
-                          </SelectContent>
-                       </Select>
-                    </div>
-                 </div>
-                 {/* Aura Amber */}
-                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-400 opacity-5 blur-[100px] rounded-full" />
-              </div>
-            )}
-
-            {/* Fila 0: Inteligencia Operativa (OCR Hub Unificado) Carlos Edition */}
-            <div className="bg-gradient-to-br from-[#022c22] to-slate-900 rounded-[2.5rem] p-1 shadow-2xl shadow-emerald-900/20 group overflow-hidden relative">
-               {/* Efecto de Brillo de Fondo */}
-               <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-1000" />
-               
-               <div className="bg-white/5 backdrop-blur-xl rounded-[2.4rem] p-8 md:p-12 relative z-10 border border-white/5">
-                  <div className="grid grid-cols-12 gap-12 items-center">
-                    
-                    {/* IZQUIERDA: Terminal de Captura (Drop/Paste) */}
-                    <div className="col-span-12 lg:col-span-7 space-y-6">
-                       <div className="flex items-center gap-3 mb-2">
-                          <Zap className="h-5 w-5 text-emerald-400 animate-pulse" />
-                          <h2 className="text-xs font-black text-emerald-400/80 uppercase tracking-[0.3em]">IA Capture Terminal v2.0</h2>
-                       </div>
-                       
-                       <div className="relative group/terminal">
-                          <div className="absolute inset-0 bg-emerald-500/20 rounded-[2rem] blur-xl opacity-0 group-hover/terminal:opacity-100 transition-opacity duration-700" />
-                          <div className="relative h-64 bg-[#011a14]/80 border-2 border-dashed border-emerald-500/30 rounded-[2rem] flex flex-col items-center justify-center gap-6 cursor-pointer hover:border-emerald-400/60 transition-all group/area hover:bg-[#011a14]">
-                             <div className="h-20 w-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-400 group-hover/area:scale-110 group-hover/area:bg-emerald-500 group-hover/area:text-white transition-all duration-500 shadow-inner">
-                                <FileText className="h-10 w-10" />
-                             </div>
-                             <div className="text-center space-y-2">
-                                <p className="text-base font-black text-white uppercase tracking-widest">Pegar Recorte o Soltar Imagen</p>
-                                <p className="text-xs font-bold text-emerald-500/50 uppercase tracking-widest">Presiona <kbd className="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Ctrl + V</kbd> para procesar instantáneamente</p>
-                             </div>
-                             
-                             {/* Lineas de Escaneo Simuladas */}
-                             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent animate-scan" />
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* DERECHA: Centro de Mapeo y Destino */}
-                    <div className="col-span-12 lg:col-span-5 space-y-8">
-                       <div className="bg-[#022c22]/50 border border-white/5 rounded-3xl p-8 space-y-6">
-                          <div className="space-y-1">
-                             <h3 className="text-sm font-black text-white uppercase tracking-widest">Selector de Destino</h3>
-                             <p className="text-xs font-bold text-emerald-500/40 uppercase tracking-widest">Elige dónde aplicar el dato extraído</p>
-                          </div>
-                          
-                          <div className="grid grid-cols-6 gap-4">
-                             {[
-                                { id: "booking", label: "Booking", icon: BookOpen, span: "col-span-2" },
-                                { id: "dam", label: "DAM", icon: Hash, span: "col-span-2" },
-                                { id: "contenedor", label: "Contenedor", icon: Container, span: "col-span-2" },
-                                { id: "tracto", label: "Placa Tracto", icon: Truck, span: "col-span-3" },
-                                { id: "carreta", label: "Placa Carreta", icon: Truck, span: "col-span-3" }
-                             ].map((target) => (
-                                <button 
-                                   key={target.id}
-                                   className={cn(
-                                      "flex flex-col items-center gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-emerald-500 hover:border-emerald-400 group/btn transition-all duration-300",
-                                      target.span
-                                   )}
-                                >
-                                   <target.icon className="h-5 w-5 text-emerald-500 group-hover/btn:text-white transition-colors" />
-                                   <span className="text-xs font-black text-emerald-500/70 group-hover/btn:text-white uppercase tracking-widest">{target.label}</span>
-                                </button>
-                             ))}
-                          </div>
-
-                          <button className="w-full py-5 bg-white text-[#022c22] rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all shadow-xl shadow-black/20">
-                             Procesar con IA Avanzada
-                          </button>
-                       </div>
-                    </div>
-
-                  </div>
-               </div>
-            </div>
-
-            {/* CUERPO DEL FORMULARIO: Columnas de Datos */}
             <div className="grid grid-cols-12 gap-6">
-               
-                {/* BLOQUE 1: DATOS DE EMBARQUE */}
-                <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
-                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-3xl" />
-                   <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-4">
-                         <div className="flex items-center gap-3">
-                            <BadgeCheck className="h-5 w-5 text-emerald-600" />
-                            <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
-                         </div>
-                         
-                         {/* Toggle Tratamiento en Buque (Compacto en Cabecera) */}
-                         {transportMode === "maritimo" && (
-                           <button 
-                              onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
-                              className={cn(
-                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 border",
-                                 formData.tratamientoBuque 
-                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" 
-                                    : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200"
-                              )}
-                           >
-                              <div className={cn(
-                                 "w-2 h-2 rounded-full",
-                                 formData.tratamientoBuque ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
-                              )} />
-                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Tratamiento en Buque</span>
-                           </button>
-                         )}
+               <div className="col-span-12 bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm">
+                  <div className="flex items-center gap-4 mb-8">
+                      <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                         <Search className="h-5 w-5 text-emerald-600" />
                       </div>
-                      
-                      {/* Oráculo de Unicidad: Alerta Centralizada */}
-                      {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
-                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[200px]">
-                           <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
-                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight truncate">
-                              {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
-                           </span>
-                        </div>
-                      )}
-                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField 
-                        label="Booking / Reserva" 
-                        placeholder="BK-XXXXXXXX" 
-                        icon={BookOpen} 
-                        value={formData.booking} 
-                        onChange={(v) => updateField("booking", v)} 
-                        onBlur={() => handleFieldBlur("booking", formData.booking)}
-                        error={bookingError}
-                        errorMsg="Booking no registrado en posicionamiento"
-                        highlightError={!!fieldErrors.booking}
-                     />
-                     <FormField 
-                        label="Orden Beta" 
-                        placeholder="O-99999" 
-                        icon={Target} 
-                        value={formData.ordenBeta} 
-                        onChange={(v) => updateField("ordenBeta", v)} 
-                        onBlur={() => handleFieldBlur("ordenBeta", formData.ordenBeta)}
-                        readOnly
-                        success={validatedFields.includes("ordenBeta")}
-                        highlightError={!!fieldErrors.ordenBeta}
-                     />
-                     <FormField 
-                        label="Número Contenedor" 
-                        placeholder="ABCD 123456-7" 
-                        icon={Container} 
-                        value={formData.contenedor} 
-                        onChange={(v) => updateField("contenedor", v)} 
-                        onBlur={() => handleFieldBlur("contenedor", formData.contenedor)}
-                        readOnly
-                        success={validatedFields.includes("contenedor")}
-                        highlightError={!!fieldErrors.contenedor}
-                     />
-                     <FormField 
-                        label="Número DAM" 
-                        placeholder="118-2026-XX-XXXXXX" 
-                        icon={Hash} 
-                        value={formData.dam} 
-                        onChange={(v) => updateField("dam", v)} 
-                        onBlur={() => handleFieldBlur("dam", formData.dam)}
-                        readOnly
-                        success={validatedFields.includes("dam")}
-                        highlightError={!!fieldErrors.dam}
-                     />
+                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-widest">01. Identificadores</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                     <FormField label="Booking" placeholder="BK-123" icon={Search} value={formData.booking} onChange={(v) => updateField("booking", v)} onBlur={handleLookup} error={bookingError} />
+                     <FormField label="Orden Beta" placeholder="O-123" icon={Hash} value={formData.ordenBeta} onChange={(v) => updateField("ordenBeta", v)} readOnly />
+                     <FormField label="Contenedor" placeholder="CONT-123" icon={Container} value={formData.contenedor} onChange={(v) => updateField("contenedor", v)} readOnly />
+                     <FormField label="DAM" placeholder="DAM-123" icon={FileText} value={formData.dam} onChange={(v) => updateField("dam", v)} readOnly />
                   </div>
                </div>
 
-               {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-3xl" />
-                  <div className="flex items-center gap-3 mb-5">
-                     <Truck className="h-5 w-5 text-slate-900" />
-                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Información del Transporte</h3>
+               <div className="col-span-12 bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm">
+                  <div className="flex items-center gap-4 mb-8">
+                      <div className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center">
+                         <Truck className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-widest">02. Transporte</h3>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField 
-                        label="DNI o Nombre del Chofer" 
-                        placeholder="Escriba DNI o Nombre aquí..." 
-                        icon={User} 
-                        value={formData.dni} 
-                        onChange={(v: string) => updateField("dni", v)}
-                        onBlur={() => handleChoferBlurWithVal(formData.dni)}
-                        loading={isLoadingChofer}
-                        error={!!fieldErrors.dni}
-                        errorMsg={fieldErrors.dni}
-                        helperText={fieldErrors.dni_info}
-                        readOnly={editId ? editField !== 'transporte' : false}
-                     />
-                     <FormField 
-                        label="Placa Tracto" 
-                        placeholder="ABC-123" 
-                        icon={Maximize2} 
-                        value={formData.placaTracto} 
-                        onChange={(v: string) => updateField("placaTracto", v)} 
-                        onBlur={() => handleVehiculoBlurWithVal(formData.placaTracto)}
-                        loading={isLoadingVehiculo}
-                        error={!!fieldErrors.placaTracto}
-                        errorMsg={fieldErrors.placaTracto}
-                        readOnly={editId ? editField !== 'transporte' : false}
-                     />
-                     <FormField 
-                        label="Placa Carreta" 
-                        placeholder="XYZ-987" 
-                        icon={Maximize2} 
-                        value={formData.placaCarreta} 
-                        onChange={(v: string) => updateField("placaCarreta", v)} 
-                        onBlur={() => handleCarretaBlurWithVal(formData.placaCarreta)}
-                        loading={isLoadingCarreta}
-                        error={!!fieldErrors.placaCarreta}
-                        errorMsg={fieldErrors.placaCarreta}
-                        readOnly={editId ? editField !== 'transporte' : false}
-                     />
-                     <FormField 
-                        label="Empresa Transportes" 
-                        placeholder="AUTOMÁTICO..." 
-                        icon={Layers} 
-                        value={formData.empresa} 
-                        onChange={(v) => updateField("empresa", v)} 
-                        readOnly
-                        helperText={fieldErrors.empresa_info}
-                     />
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                     <FormField label="DNI Chofer" placeholder="12345678" icon={User} value={formData.dni} onChange={(v) => updateField("dni", v)} onBlur={() => handleChoferBlurWithVal()} helperText={fieldErrors.dni_info} />
+                     <FormField label="Placa Tracto" placeholder="ABC-123" icon={Maximize2} value={formData.placaTracto} onChange={(v) => updateField("placaTracto", v)} onBlur={() => handleVehiculoBlurWithVal()} />
+                     <FormField label="Placa Carreta" placeholder="XYZ-987" icon={Maximize2} value={formData.placaCarreta} onChange={(v) => updateField("placaCarreta", v)} onBlur={() => handleCarretaBlurWithVal()} />
+                     <FormField label="Empresa" placeholder="Transportista..." icon={Layers} value={formData.empresa} onChange={() => {}} readOnly helperText={fieldErrors.empresa_info} />
                   </div>
                </div>
 
-               {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
-                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-3xl border border-slate-100 p-6 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
-                  <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-3">
+               <div className="col-span-12 bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm">
+                  <div className="flex items-center gap-4 mb-8">
+                      <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center">
                          <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
                       </div>
-                      {/* Espacio para estatus de la sección */}
-                      {serverError && (
-                         <div className="flex items-center gap-2 text-rose-500 animate-in slide-in-from-right-4 duration-500">
-                            <AlertCircle className="h-4 w-4" />
-                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Problema Detectado</span>
-                         </div>
-                      )}
+                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-widest">03. Precintos</h3>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                     <MultiInput 
-                        label="Precinto Aduana" 
-                        placeholder="Ej: AD123" 
-                        values={formData.precintoAduana} 
-                        onChange={(v) => validateSeal("precintoAduana", v)}
-                        icon={ShieldCheck}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'precintos' : false}
-                        autoFocus
-                     />
-                     <MultiInput 
-                        label="Precinto Operador" 
-                        placeholder="Ej: OP456" 
-                        values={formData.precintoOperador} 
-                        onChange={(v) => validateSeal("precintoOperador", v)}
-                        icon={ShieldCheck}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'precintos' : false}
-                     />
-                     <MultiInput 
-                        label="Precinto SENASA" 
-                        placeholder="Ej: SE789" 
-                        values={formData.precintoSenasa} 
-                        onChange={(v) => validateSeal("precintoSenasa", v)}
-                        icon={BadgeCheck}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'precintos' : false}
-                     />
-                     <MultiInput 
-                        label="Precinto Línea" 
-                        placeholder="Ej: LN012" 
-                        values={formData.precintoLinea} 
-                        onChange={(v) => validateSeal("precintoLinea", v)}
-                        icon={Layers}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'precintos' : false}
-                     />
-                     <MultiInput 
-                        label="Precintos BETA" 
-                        placeholder="Ej: BT345" 
-                        values={formData.precintosBeta} 
-                        onChange={(v) => validateSeal("precintosBeta", v)}
-                        icon={Zap}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'precintos' : false}
-                     />
-                     <MultiInput 
-                        label="Termógrafos / Key" 
-                        placeholder="Ej: T-9999" 
-                        values={formData.termografos} 
-                        onChange={(v) => validateSeal("termografos", v)}
-                        icon={Thermometer}
-                        duplicatedValues={duplicatedCodes}
-                        readOnly={editId ? editField !== 'termografos' : false}
-                     />
-                     {editField === 'fecha' && (
-                        <div className="col-span-full bg-amber-50/30 p-6 rounded-3xl border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-left-4">
-                           <div className="flex items-center gap-4">
-                              <CalendarIcon className="h-8 w-8 text-amber-600" />
-                              <div>
-                                 <h4 className="text-xs font-black text-amber-950 uppercase tracking-widest">Fecha de Embarque Operativa</h4>
-                                 <p className="text-[10px] font-bold text-amber-700/60 uppercase">Especifique la fecha oficial del despacho</p>
-                              </div>
-                           </div>
-                           <Input 
-                              type="datetime-local"
-                              value={formData.fecha_embarque ? new Date(formData.fecha_embarque).toISOString().slice(0, 16) : ""}
-                              onChange={(e) => updateField("fecha_embarque", e.target.value)}
-                              className="max-w-[250px] rounded-2xl border-amber-200 bg-white h-14 font-black text-amber-950 focus:ring-amber-500"
-                           />
-                        </div>
-                     )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <MultiInput label="Aduana" placeholder="ADD" icon={ShieldCheck} values={formData.precintoAduana} onChange={(v) => validateSeal("precintoAduana", v)} />
+                     <MultiInput label="Operador" placeholder="OPP" icon={ShieldCheck} values={formData.precintoOperador} onChange={(v) => validateSeal("precintoOperador", v)} />
+                     <MultiInput label="SENASA" placeholder="SEN" icon={BadgeCheck} values={formData.precintoSenasa} onChange={(v) => validateSeal("precintoSenasa", v)} />
+                     <MultiInput label="Línea" placeholder="LIN" icon={Layers} values={formData.precintoLinea} onChange={(v) => validateSeal("precintoLinea", v)} />
+                     <MultiInput label="BETA" placeholder="BET" icon={Zap} values={formData.precintosBeta} onChange={(v) => validateSeal("precintosBeta", v)} />
+                     <MultiInput label="Termógrafos" placeholder="TERM" icon={Thermometer} values={formData.termografos} onChange={(v) => validateSeal("termografos", v)} />
                   </div>
 
-                  {/* PANEL DE ESTATUS AMIGABLE 'CARLOS STYLE' */}
-                  <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
-                     <div className="max-w-[60%] min-h-[40px] flex items-center">
-                        {serverError ? (
-                           <div className="flex items-start gap-4 text-rose-700 bg-rose-50/50 p-4 rounded-2xl border border-rose-100/50 animate-in slide-in-from-left-4 duration-500 shadow-sm">
-                              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                              <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-800">No se pudo procesar</p>
-                                 <p className="text-sm font-medium leading-tight opacity-90 leading-relaxed">{serverError}</p>
-                              </div>
-                           </div>
-                        ) : isSearching ? (
-                           <div className="flex items-center gap-4 text-emerald-700 animate-pulse">
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Sincronizando con LogiCapture Central...</p>
-                           </div>
-                        ) : (
-                           <div className="flex items-start gap-4 text-slate-400 group-hover:text-emerald-600/50 transition-colors duration-500">
-                              <Info className="h-5 w-5 mt-0.5" />
-                              <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Operación Protegida</p>
-                                 <p className="text-[11px] font-medium leading-tight max-w-sm">Verifique que todos los datos sean legibles. El sistema validará la integridad de la operación al guardar.</p>
-                              </div>
-                           </div>
-                        )}
+                  <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-8 border-t border-slate-100 pt-10">
+                     <div className="flex-1">
+                        {serverError && <p className="text-rose-600 text-xs font-bold uppercase tracking-widest flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {serverError}</p>}
+                        {isSearching && <p className="text-emerald-600 text-xs font-bold uppercase tracking-widest animate-pulse flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Procesando...</p>}
                      </div>
-
-                           className={cn(
-                              "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
-                              isSearching 
-                                 ? "bg-slate-100 text-slate-400 cursor-wait" 
-                                 : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
-                           )}
+                     <div className="flex items-center gap-4">
+                        <button onClick={handleSaveDraft} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-all">Pausar Borrador</button>
+                        <Button 
+                           onClick={handleSave} 
+                           disabled={isSearching || (validatedFields.length < 3 && !editId)}
+                           className="h-20 px-12 bg-emerald-950 text-white rounded-[2.5rem] font-black uppercase tracking-[0.2em] text-[11px] hover:bg-emerald-800 transition-all shadow-2xl shadow-emerald-900/20"
                         >
-                           {isSearching ? "Sincronizando..." : "Guardar Registro"}
-                           {!isSearching && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
-                        </button>
+                           Finalizar Salida Operativa
+                        </Button>
                      </div>
                   </div>
                </div>
-
             </div>
           </div>
         </main>
       </div>
 
-      {/* Botón VENOM Flotante e Inteligente (Inge Daniel Edition) */}
       <div 
         style={{ top: `${dynamicY}%` }}
         className={cn(
-          "fixed right-12 z-[100] transition-all duration-1000 ease-out pointer-events-none",
-          showFloatingButton ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-64"
+          "fixed right-12 z-[100] transition-all duration-1000 ease-out",
+          showFloatingButton ? "opacity-100 translate-x-0" : "opacity-0 translate-x-64 pointer-events-none"
         )}
       >
-          <button 
-            onClick={handleLookup}
-            disabled={isSearching}
-            className="group relative flex flex-col items-center gap-3 outline-none pointer-events-auto"
-          >
-              {/* Tooltip Venom */}
-              <div className="absolute right-full mr-10 py-2.5 px-6 bg-[#022c22] text-emerald-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl border border-emerald-500/20 opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0 whitespace-nowrap">
-                 IA Autocomplete
-              </div>
-              
-              {/* El Botón Orgánico "Venom" */}
-              <div className="h-24 w-24 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-3xl shadow-2xl shadow-emerald-500/50 flex items-center justify-center text-white animate-venom cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 disabled:opacity-50">
-                 {isSearching ? <Loader2 className="h-10 w-10 animate-spin text-white" /> : <Sparkles className="h-12 w-12 animate-pulse" />}
-              </div>
-              
-              {/* Aura Venom */}
-              <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full animate-pulse z-[-1]" />
+          <button onClick={handleLookup} className="h-24 w-24 bg-emerald-500 rounded-3xl shadow-2xl flex items-center justify-center text-white animate-venom hover:scale-110 active:scale-95 transition-all">
+             {isSearching ? <Loader2 className="h-10 w-10 animate-spin" /> : <Sparkles className="h-12 w-12 animate-pulse" />}
           </button>
       </div>
 
-      <SuccessModal 
-         isOpen={showSuccess} 
-         onClose={() => setShowSuccess(false)} 
-         title={successTitle} 
-      />
+      <SuccessModal isOpen={showSuccess} onClose={() => window.location.href="/logicapture/bandeja"} title={successTitle} />
     </div>
   );
 }
