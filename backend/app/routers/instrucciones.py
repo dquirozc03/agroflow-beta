@@ -65,32 +65,54 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     cliente_maestro = db.query(ClienteIE).filter(
         ClienteIE.nombre_legal.ilike(pedido.cliente),
         ClienteIE.pais.ilike(pedido.pais),
-        ClienteIE.destino.ilike(pedido.pod)
+        ClienteIE.destino.ilike(pedido.pod),
+        ClienteIE.estado == "ACTIVO"
     ).first()
 
     # Prioridad 2: Match por Nombre + País (Sigue siendo muy seguro)
     if not cliente_maestro:
         cliente_maestro = db.query(ClienteIE).filter(
             ClienteIE.nombre_legal.ilike(pedido.cliente),
-            ClienteIE.pais.ilike(pedido.pais)
+            ClienteIE.pais.ilike(pedido.pais),
+            ClienteIE.estado == "ACTIVO"
         ).first()
 
     # Prioridad 3: Match solo por Nombre (Fallback legacy)
     if not cliente_maestro:
         cliente_maestro = db.query(ClienteIE).filter(
-            ClienteIE.nombre_legal.ilike(pedido.cliente)
+            ClienteIE.nombre_legal.ilike(pedido.cliente),
+            ClienteIE.estado == "ACTIVO"
         ).first()
 
-    # Prioridad 4: Match Inteligente (Fuzzy) para discrepancias menores (v2.0.8) 🎯
-    # Ej: "WESTFALIA FRUIT (HAUSLADEN)" -> matches -> "WESTFALIA FRUIT GMBH (EX-HAUSLADEN)"
+    # Prioridad 4: Match Inteligente (Westfalia Style 💎)
+    # Maneja discrepancias como: "BETA BEST HOLLAND" -> "BETA BEST" 
+    # o "WESTFALIA FRUIT (HAUSLADEN)" -> "WESTFALIA FRUIT GMBH"
     if not cliente_maestro:
-        # Extraemos palabras clave (más de 2 letras) y quitamos paréntesis
-        words = [w.replace('(', '').replace(')', '').strip() for w in pedido.cliente.split() if len(w) > 2]
-        if len(words) >= 2:
-            fuzzy_query = f"%{words[0]}%{words[-1]}%"
-            cliente_maestro = db.query(ClienteIE).filter(
-                ClienteIE.nombre_legal.ilike(fuzzy_query)
-            ).first()
+        # A. Normalización de ruido común
+        noise = ['LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'LLC']
+        clean_excel_name = pedido.cliente.upper()
+        for n in noise:
+            # Reemplazo con espacios para no pegar palabras accidentalmente
+            clean_excel_name = f" {clean_excel_name} ".replace(f" {n} ", " ").strip()
+        
+        # B. Estrategia por Nombre Limpio (Contenido)
+        # Si el nombre del maestro está contenido en el nombre limpio del Excel o viceversa
+        cliente_maestro = db.query(ClienteIE).filter(
+            (ClienteIE.nombre_legal.ilike(f"%{clean_excel_name}%")) | 
+            (func.upper(clean_excel_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
+            ClienteIE.estado == "ACTIVO"
+        ).first()
+
+        # C. Estrategia por Palabras Clave (Fuzzy Directo)
+        if not cliente_maestro:
+            words = [w.replace('(', '').replace(')', '').strip() for w in pedido.cliente.split() if len(w) > 2]
+            if len(words) >= 2:
+                # Caso: "BETA BEST ..." -> Match con "%BETA%BEST%"
+                fuzzy_query = f"%{words[0]}%{words[1]}%"
+                cliente_maestro = db.query(ClienteIE).filter(
+                    ClienteIE.nombre_legal.ilike(fuzzy_query),
+                    ClienteIE.estado == "ACTIVO"
+                ).first()
 
     response = {
         "booking": booking,

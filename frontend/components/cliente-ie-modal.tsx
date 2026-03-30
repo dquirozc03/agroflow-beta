@@ -346,6 +346,9 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">País</label>
                     <input 

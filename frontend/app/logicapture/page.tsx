@@ -260,6 +260,17 @@ export default function LogiCaptureV2Page() {
     precintosBeta: [] as string[],
     termografos: [] as string[],
     tratamientoBuque: false,
+    // Datos de Trazabilidad SAP/Auditoría
+    nombreChofer: "",
+    licenciaChofer: "",
+    marca_tracto: "",
+    cert_tracto: "",
+    cert_carreta: "",
+    codigo_sap: "",
+    partidaRegistral: "",
+    ruc_transportista: "",
+    planta: "",
+    cultivo: "",
   });
 
   const [isSearching, setIsSearching] = useState(false);
@@ -319,7 +330,10 @@ export default function LogiCaptureV2Page() {
         booking: cleanBooking,
         ordenBeta: result.orden_beta || "",
         dam: cleanDam || "",
-        contenedor: result.contenedor || ""
+        contenedor: result.contenedor || "",
+        planta: result.planta || "",
+        cultivo: result.cultivo || "",
+        codigo_sap: result.codigo_sap || ""
       }));
       
       const found: string[] = [];
@@ -357,7 +371,15 @@ export default function LogiCaptureV2Page() {
     
     // Al borrar placa, limpiar empresa y su info de forma reactiva
     if (field === "placaTracto" && !value) {
-      setFormData(prev => ({ ...prev, empresa: "" }));
+      setFormData(prev => ({ 
+        ...prev, 
+        empresa: "",
+        marca_tracto: "",
+        cert_tracto: "",
+        codigo_sap: "",
+        partidaRegistral: "",
+        ruc_transportista: ""
+      }));
       setFieldErrors(prev => {
         const next = { ...prev };
         delete next.empresa_info;
@@ -367,6 +389,11 @@ export default function LogiCaptureV2Page() {
 
     // Al borrar DNI, limpiar su info reactivada
     if (field === "dni" && !value) {
+      setFormData(prev => ({
+        ...prev,
+        nombreChofer: "",
+        licenciaChofer: ""
+      }));
       setFieldErrors(prev => {
         const next = { ...prev };
         delete next.dni_info;
@@ -394,7 +421,15 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
       if (!response.ok) throw new Error("Placa no registrada en maestros");
       const data = await response.json();
-      updateField("empresa", data.transportista.nombre_transportista);
+      setFormData(prev => ({
+        ...prev,
+        empresa: data.transportista.nombre_transportista,
+        marca_tracto: data.marca,
+        cert_tracto: data.configuracion_vehicular,
+        codigo_sap: data.transportista.codigo_sap,
+        partidaRegistral: data.transportista.partida_registral,
+        ruc_transportista: data.transportista.ruc_transportista
+      }));
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
@@ -413,6 +448,11 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
       const data = await response.json();
+      setFormData(prev => ({
+        ...prev,
+        nombreChofer: data.nombre_operativo,
+        licenciaChofer: data.licencia
+      }));
       setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
@@ -488,7 +528,11 @@ export default function LogiCaptureV2Page() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
       if (!response.ok) throw new Error("Carreta no registrada en maestros");
-      // No necesitamos info extra por ahora, solo validar existencia
+      const data = await response.json();
+      setFormData(prev => ({
+        ...prev,
+        cert_carreta: data.configuracion_vehicular
+      }));
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
     } finally {
@@ -570,6 +614,16 @@ export default function LogiCaptureV2Page() {
       precintosBeta: [],
       termografos: [],
       tratamientoBuque: false,
+      nombreChofer: "",
+      licenciaChofer: "",
+      marca_tracto: "",
+      cert_tracto: "",
+      cert_carreta: "",
+      codigo_sap: "",
+      partidaRegistral: "",
+      ruc_transportista: "",
+      planta: "",
+      cultivo: "",
     });
     setValidatedFields([]);
     setFieldErrors({});
