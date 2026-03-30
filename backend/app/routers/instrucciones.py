@@ -8,6 +8,8 @@ from app.models.maestros import ClienteIE, MaestroFito
 from app.services.pdf_service import instruction_pdf_service
 from pydantic import BaseModel
 from sqlalchemy import func
+from app.utils.logging import logger
+import traceback
 import re
 import io
 
@@ -121,4 +123,6 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
+        logger.error(f"Error crítico en generación de PDF: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
