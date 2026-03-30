@@ -40,24 +40,28 @@ class InstructionPDFService:
         peso_neto = float(total_cajas) * float(peso_kg)
         peso_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
 
+        from sqlalchemy import func
         # 2. Búsqueda de Maestro con Triple Validación (Sincronizado con Lookup)
-        pais_val = pedidos[0].pais if pedidos else ""
-        pod_val = pedidos[0].pod if pedidos else ""
+        pais_val = pedidos[0].pais.strip() if pedidos and pedidos[0].pais else ""
+        pod_val = pedidos[0].pod.strip() if pedidos and pedidos[0].pod else ""
+        cliente_clean_val = cliente_nombre.strip()
 
         cliente_maestro = db.query(ClienteIE).filter(
-            ClienteIE.nombre_legal.ilike(cliente_nombre),
-            ClienteIE.pais.ilike(pais_val),
-            ClienteIE.destino.ilike(pod_val)
+            func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
+            func.trim(ClienteIE.pais).ilike(pais_val),
+            func.trim(ClienteIE.destino).ilike(pod_val)
         ).first()
 
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
-                ClienteIE.nombre_legal.ilike(cliente_nombre),
-                ClienteIE.pais.ilike(pais_val)
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
+                func.trim(ClienteIE.pais).ilike(pais_val)
             ).first()
 
         if not cliente_maestro:
-            cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
+            cliente_maestro = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
+            ).first()
 
         # 🎯 Match Inteligente (Westfalia Style 💎) v2.0.9
         if not cliente_maestro:
@@ -70,17 +74,17 @@ class InstructionPDFService:
             from sqlalchemy import func
             # B. Estrategia por Nombre Limpio (Contenido) + Pais
             cliente_maestro = db.query(ClienteIE).filter(
-                (ClienteIE.nombre_legal.ilike(f"%{clean_name}%")) | 
-                (func.upper(clean_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
-                ClienteIE.pais.ilike(pais_val),
+                (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
+                (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
+                func.trim(ClienteIE.pais).ilike(pais_val),
                 ClienteIE.estado == "ACTIVO"
             ).first()
 
             # C. Fallback: Solo Nombre Limpio
             if not cliente_maestro:
                 cliente_maestro = db.query(ClienteIE).filter(
-                    (ClienteIE.nombre_legal.ilike(f"%{clean_name}%")) | 
-                    (func.upper(clean_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
+                    (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
+                    (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
                     ClienteIE.estado == "ACTIVO"
                 ).first()
 

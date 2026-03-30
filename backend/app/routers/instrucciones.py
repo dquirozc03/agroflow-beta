@@ -60,27 +60,30 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "maestro": None
         }
 
-    # 4. Buscar en Maestros Cliente IE con desambiguación TRIPLE
+    pedido_cliente_clean = pedido.cliente.strip()
+    pedido_pais_clean = pedido.pais.strip() if pedido.pais else ""
+    pedido_pod_clean = pedido.pod.strip() if pedido.pod else ""
+
     # Prioridad 1: Match por Nombre + País + Puerto de Destino (POD)
     cliente_maestro = db.query(ClienteIE).filter(
-        ClienteIE.nombre_legal.ilike(pedido.cliente),
-        ClienteIE.pais.ilike(pedido.pais),
-        ClienteIE.destino.ilike(pedido.pod),
+        func.trim(ClienteIE.nombre_legal).ilike(pedido_cliente_clean),
+        func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
+        func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
         ClienteIE.estado == "ACTIVO"
     ).first()
 
     # Prioridad 2: Match por Nombre + País (Sigue siendo muy seguro)
     if not cliente_maestro:
         cliente_maestro = db.query(ClienteIE).filter(
-            ClienteIE.nombre_legal.ilike(pedido.cliente),
-            ClienteIE.pais.ilike(pedido.pais),
+            func.trim(ClienteIE.nombre_legal).ilike(pedido_cliente_clean),
+            func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
             ClienteIE.estado == "ACTIVO"
         ).first()
 
     # Prioridad 3: Match solo por Nombre (Fallback legacy)
     if not cliente_maestro:
         cliente_maestro = db.query(ClienteIE).filter(
-            ClienteIE.nombre_legal.ilike(pedido.cliente),
+            func.trim(ClienteIE.nombre_legal).ilike(pedido_cliente_clean),
             ClienteIE.estado == "ACTIVO"
         ).first()
 
@@ -98,8 +101,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         # B. Estrategia por Nombre Limpio (Contenido)
         # Si el nombre del maestro está contenido en el nombre limpio del Excel o viceversa
         cliente_maestro = db.query(ClienteIE).filter(
-            (ClienteIE.nombre_legal.ilike(f"%{clean_excel_name}%")) | 
-            (func.upper(clean_excel_name).like(func.concat('%', ClienteIE.nombre_legal, '%'))),
+            (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_excel_name}%")) | 
+            (func.upper(clean_excel_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
             ClienteIE.estado == "ACTIVO"
         ).first()
 
