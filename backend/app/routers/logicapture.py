@@ -202,6 +202,11 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     if not trailer:
         raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
         
+    return {
+        "placa": trailer.placa_carreta,
+        "configuracion_vehicular": trailer.certificado_vehicular_carreta
+    }
+        
 @router.get("/drivers/search")
 def search_drivers(q: str, db: Session = Depends(get_db)):
     """Busca choferes por coincidencia de nombre o DNI."""

@@ -421,6 +421,8 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
       if (!response.ok) throw new Error("Placa no registrada en maestros");
       const data = await response.json();
+      if (!data || !data.transportista) throw new Error("Datos de vehículo incompletos");
+      
       setFormData(prev => ({
         ...prev,
         empresa: data.transportista.nombre_transportista,
@@ -432,7 +434,7 @@ export default function LogiCaptureV2Page() {
       }));
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
     } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
+      setFieldErrors(prev => ({ ...prev, placaTracto: error.message || "Placa no registrada en maestros" }));
       updateField("empresa", "");
     } finally {
       setIsLoadingVehiculo(false);
@@ -448,14 +450,16 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
       const data = await response.json();
+      if (!data) throw new Error("Datos de chofer no encontrados");
+      
       setFormData(prev => ({
         ...prev,
-        nombreChofer: data.nombre_operativo,
+        nombreChofer: data.nombre_operativo || `${data.nombres || ""} ${data.apellido_paterno || ""}`.trim(),
         licenciaChofer: data.licencia
       }));
-      setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
+      setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo || data.nombres}` }));
     } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
+      setFieldErrors(prev => ({ ...prev, dni: error.message || "Chofer no registrado en maestros" }));
     } finally {
       setIsLoadingChofer(false);
     }
@@ -529,12 +533,14 @@ export default function LogiCaptureV2Page() {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
       if (!response.ok) throw new Error("Carreta no registrada en maestros");
       const data = await response.json();
+      if (!data) throw new Error("Datos de carreta no encontrados");
+      
       setFormData(prev => ({
         ...prev,
         cert_carreta: data.configuracion_vehicular
       }));
     } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
+      setFieldErrors(prev => ({ ...prev, placaCarreta: error.message || "Carreta no registrada en maestros" }));
     } finally {
       setIsLoadingCarreta(false);
     }
