@@ -27,6 +27,8 @@ import {
   Camera,
   Loader2,
   AlertTriangle,
+  AlertCircle,
+  Info,
   Ship,
   Plane
 } from "lucide-react";
@@ -45,13 +47,14 @@ interface MultiInputProps {
   onChange: (newValues: string[]) => void;
   icon: any;
   autoFocus?: boolean;
+  duplicatedValues?: string[];
 }
 
-function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus }: MultiInputProps) {
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus, duplicatedValues = [] }: MultiInputProps) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       const cleanValue = inputValue.trim().toUpperCase();
       if (!cleanValue) return;
@@ -83,14 +86,22 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocu
         <div className="pl-3 pr-1 text-slate-300">
           <Icon className="h-4 w-4" />
         </div>
-        {values.map((v, i) => (
-          <div key={i} className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl text-sm font-bold animate-in zoom-in-95 duration-200">
-            {v}
-            <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors">
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
+        {values.map((v, i) => {
+          const isDuplicated = duplicatedValues.includes(v);
+          return (
+            <div key={i} className={cn(
+               "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold animate-in zoom-in-95 duration-200 border",
+               isDuplicated 
+                  ? "bg-rose-50 border-rose-200 text-rose-700 animate-pulse shadow-sm shadow-rose-100" 
+                  : "bg-emerald-50 border-emerald-100 text-emerald-700"
+            )}>
+               {v}
+               <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors">
+                  <X className="h-3 w-3" />
+               </button>
+            </div>
+          );
+        })}
         <input
           ref={inputRef}
           autoFocus={autoFocus}
@@ -143,11 +154,11 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           className={cn(
             "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
             readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
-            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
+            success && !error && !highlightError && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
             (error || highlightError) && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
           )}
         />
-        {success && (
+        {success && !error && !highlightError && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in-50">
              <CheckCircle2 className="h-5 w-5" />
           </div>
@@ -255,6 +266,7 @@ export default function LogiCaptureV2Page() {
   const [validatedFields, setValidatedFields] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [duplicatedCodes, setDuplicatedCodes] = useState<string[]>([]);
 
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
@@ -262,6 +274,7 @@ export default function LogiCaptureV2Page() {
   const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
   const [showSuccess, setShowSuccess] = useState(false);
   const [successTitle, setSuccessTitle] = useState("");
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -338,6 +351,9 @@ export default function LogiCaptureV2Page() {
 
   const updateField = (field: string, value: any) => {
     if (field === "booking") setBookingError(false);
+    
+    // Al editar un campo, deja de estar validado hasta el siguiente blur/lookup
+    setValidatedFields(prev => prev.filter(f => f !== field));
     
     // Al borrar placa, limpiar empresa y su info de forma reactiva
     if (field === "placaTracto" && !value) {
@@ -422,6 +438,8 @@ export default function LogiCaptureV2Page() {
             ...prev, 
             [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
          }));
+         // Quitamos de validados si es duplicado
+         setValidatedFields(prev => prev.filter(f => f !== field));
       } else {
          // Si exist├¡a un error previo de duplicado para este campo, lo borramos
          setFieldErrors(prev => {
@@ -429,9 +447,36 @@ export default function LogiCaptureV2Page() {
             if (next[field]?.includes("Duplicado")) delete next[field];
             return next;
          });
+         // Marcamos como validado
+         setValidatedFields(prev => [...new Set([...prev, field])]);
       }
     } catch (error) {
        console.error("Error check unique", error);
+    }
+  };
+
+  const validateSeal = async (field: keyof typeof formData, newValues: string[]) => {
+    const oldValues = formData[field] as string[];
+    updateField(field as string, newValues);
+
+    // Si el array creci├│, validamos el ├║ltimo elemento
+    if (newValues.length > oldValues.length) {
+       const lastValue = newValues[newValues.length - 1];
+       try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=precinto&value=${lastValue}`);
+          if (!response.ok) return;
+          const data = await response.json();
+          if (data.exists) {
+             setDuplicatedCodes(prev => [...new Set([...prev, lastValue])]);
+             setFieldErrors(prev => ({ ...prev, [field]: `Precinto Duplicado: ${lastValue}` }));
+          } else {
+             setFieldErrors(prev => {
+                const n = { ...prev };
+                delete n[field];
+                return n;
+             });
+          }
+       } catch (e) { console.error(e); }
     }
   };
 
@@ -474,22 +519,27 @@ export default function LogiCaptureV2Page() {
   }, []);
 
   const handleSave = async () => {
-    if (!formData.booking || !formData.dam || !formData.contenedor) {
-      toast.error("Complete los datos de embarque antes de guardar");
-      return;
-    }
+    setServerError(null);
+
+    // Sanitizaci├│n de campos opcionales por defecto (**)
+    const payload = {
+       ...formData,
+       precintoOperador: formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
+       precintoSenasa: formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
+    };
 
     setIsSearching(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
          const errData = await response.json();
-         throw new Error(errData.detail || "Error al persistir registro");
+         setServerError(errData.detail || "Hubo un problema al procesar el registro. Verifique los datos.");
+         return;
       }
       
       const resData = await response.json();
@@ -497,9 +547,7 @@ export default function LogiCaptureV2Page() {
       setShowSuccess(true);
       // Mantenemos la data visible por petici├│n del usuario
     } catch (error: any) {
-      // Para errores, usamos toast pero solo si es un error real de sistema 
-      // (aunque el usuario pida quitarlos, un error cr├¡tico debe avisar)
-      toast.error(error.message, { position: "top-center" });
+      setServerError("Error de conexi├│n con el servidor. Intente nuevamente en unos momentos.");
     } finally {
       setIsSearching(false);
     }
@@ -526,6 +574,7 @@ export default function LogiCaptureV2Page() {
     setValidatedFields([]);
     setFieldErrors({});
     setBookingError(false);
+    setServerError(null);
     localStorage.removeItem("logicapture_draft");
     toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
   };
@@ -673,29 +722,50 @@ export default function LogiCaptureV2Page() {
             </div>
 
             {/* CUERPO DEL FORMULARIO: Columnas de Datos */}
-            <div className="grid grid-cols-12 gap-8">
+            <div className="grid grid-cols-12 gap-6">
                
                 {/* BLOQUE 1: DATOS DE EMBARQUE */}
-                <div className="col-span-12 lg:col-span-6 bg-white rounded-[1.75rem] border border-slate-100 p-7 shadow-sm relative">
-                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[1.75rem]" />
-                   <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                         <BadgeCheck className="h-5 w-5 text-emerald-600" />
-                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
+                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-3xl" />
+                   <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-3">
+                            <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                            <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                         </div>
+                         
+                         {/* Toggle Tratamiento en Buque (Compacto en Cabecera) */}
+                         {transportMode === "maritimo" && (
+                           <button 
+                              onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                              className={cn(
+                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 border",
+                                 formData.tratamientoBuque 
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" 
+                                    : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200"
+                              )}
+                           >
+                              <div className={cn(
+                                 "w-2 h-2 rounded-full",
+                                 formData.tratamientoBuque ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                              )} />
+                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Tratamiento en Buque</span>
+                           </button>
+                         )}
                       </div>
                       
-                      {/* Or├ículo de Unicidad: Alerta Centralizada (Reference Drawing) */}
+                      {/* Or├ículo de Unicidad: Alerta Centralizada */}
                       {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
-                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[200px]">
                            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
-                           <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">
+                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight truncate">
                               {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
                            </span>
                         </div>
                       )}
                    </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
                         label="Booking / Reserva" 
                         placeholder="BK-XXXXXXXX" 
@@ -741,41 +811,17 @@ export default function LogiCaptureV2Page() {
                         highlightError={!!fieldErrors.dam}
                      />
                   </div>
-
-                  {/* Toggle Tratamiento en Buque Carlos Style */}
-                  {transportMode === "maritimo" && (
-                    <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between bg-emerald-50/20 p-6 rounded-3xl border-dashed border-emerald-500/20">
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Tratamiento en Buque</p>
-                          <p className="text-[9px] text-emerald-600/70 font-bold">Activar solo para m├║ltiples contenedores por booking</p>
-                       </div>
-                       <button 
-                          onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
-                          className={cn(
-                             "w-14 h-8 rounded-full transition-all duration-500 relative flex items-center px-1",
-                             formData.tratamientoBuque ? "bg-emerald-600 shadow-lg shadow-emerald-200" : "bg-slate-200"
-                          )}
-                       >
-                          <div className={cn(
-                             "h-6 w-6 bg-white rounded-full shadow-md transition-all duration-500 flex items-center justify-center",
-                             formData.tratamientoBuque ? "translate-x-6" : "translate-x-0"
-                          )}>
-                             {formData.tratamientoBuque && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
-                          </div>
-                       </button>
-                    </div>
-                  )}
                </div>
 
                {/* BLOQUE 2: INFORMACI├ôN DE TRANSPORTE */}
-               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm relative">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2rem]" />
-                  <div className="flex items-center gap-3 mb-6">
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-3xl" />
+                  <div className="flex items-center gap-3 mb-5">
                      <Truck className="h-5 w-5 text-slate-900" />
                      <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Informaci├│n del Transporte</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
                         label="DNI del Chofer" 
                         placeholder="XXXXXXXX" 
@@ -823,75 +869,121 @@ export default function LogiCaptureV2Page() {
                </div>
 
                {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
-                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-[2rem] border border-slate-100 p-7 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
-                  <div className="flex items-center gap-3 mb-6">
-                     <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
+                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-3xl border border-slate-100 p-6 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
+                  <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                         <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
+                      </div>
+                      {/* Espacio para estatus de la secci├│n */}
+                      {serverError && (
+                         <div className="flex items-center gap-2 text-rose-500 animate-in slide-in-from-right-4 duration-500">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Problema Detectado</span>
+                         </div>
+                      )}
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                      <MultiInput 
                         label="Precinto Aduana" 
                         placeholder="Ej: AD123" 
                         values={formData.precintoAduana} 
-                        onChange={(v) => updateField("precintoAduana", v)}
+                        onChange={(v) => validateSeal("precintoAduana", v)}
                         icon={ShieldCheck}
+                        duplicatedValues={duplicatedCodes}
                         autoFocus
                      />
                      <MultiInput 
                         label="Precinto Operador" 
                         placeholder="Ej: OP456" 
                         values={formData.precintoOperador} 
-                        onChange={(v) => updateField("precintoOperador", v)}
+                        onChange={(v) => validateSeal("precintoOperador", v)}
                         icon={ShieldCheck}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precinto SENASA" 
                         placeholder="Ej: SE789" 
                         values={formData.precintoSenasa} 
-                        onChange={(v) => updateField("precintoSenasa", v)}
+                        onChange={(v) => validateSeal("precintoSenasa", v)}
                         icon={BadgeCheck}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precinto L├¡nea" 
                         placeholder="Ej: LN012" 
                         values={formData.precintoLinea} 
-                        onChange={(v) => updateField("precintoLinea", v)}
+                        onChange={(v) => validateSeal("precintoLinea", v)}
                         icon={Layers}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Precintos BETA" 
                         placeholder="Ej: BT345" 
                         values={formData.precintosBeta} 
-                        onChange={(v) => updateField("precintosBeta", v)}
+                        onChange={(v) => validateSeal("precintosBeta", v)}
                         icon={Zap}
+                        duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
                         label="Term├│grafos / Key" 
                         placeholder="Ej: T-9999" 
                         values={formData.termografos} 
-                        onChange={(v) => updateField("termografos", v)}
+                        onChange={(v) => validateSeal("termografos", v)}
                         icon={Thermometer}
+                        duplicatedValues={duplicatedCodes}
                      />
                   </div>
 
-                  {/* Acciones Finales Carlos Style */}
-                  <div className="mt-16 flex items-center justify-end border-t border-slate-50 pt-10 gap-6">
-                    <button 
-                       onClick={handleSaveDraft}
-                       className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300 px-6 py-3 rounded-2xl hover:bg-emerald-50"
-                    >
-                      Guardar como borrador
-                    </button>
-                    <button 
-                       onClick={handleSave}
-                       disabled={isSearching}
-                       className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative disabled:opacity-50"
-                    >
-                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar Registro"}</span>
-                       <ArrowRight className="h-5 w-5 text-emerald-400 group-hover:translate-x-1 transition-transform relative z-10" />
-                    </button>
+                  {/* PANEL DE ESTATUS AMIGABLE 'CARLOS STYLE' */}
+                  <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+                     <div className="max-w-[60%] min-h-[40px] flex items-center">
+                        {serverError ? (
+                           <div className="flex items-start gap-4 text-rose-700 bg-rose-50/50 p-4 rounded-2xl border border-rose-100/50 animate-in slide-in-from-left-4 duration-500 shadow-sm">
+                              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-800">No se pudo procesar</p>
+                                 <p className="text-sm font-medium leading-tight opacity-90 leading-relaxed">{serverError}</p>
+                              </div>
+                           </div>
+                        ) : isSearching ? (
+                           <div className="flex items-center gap-4 text-emerald-700 animate-pulse">
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Sincronizando con LogiCapture Central...</p>
+                           </div>
+                        ) : (
+                           <div className="flex items-start gap-4 text-slate-400 group-hover:text-emerald-600/50 transition-colors duration-500">
+                              <Info className="h-5 w-5 mt-0.5" />
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Operaci├│n Protegida</p>
+                                 <p className="text-[11px] font-medium leading-tight max-w-sm">Verifique que todos los datos sean legibles. El sistema validar├í la integridad de la operaci├│n al guardar.</p>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     <div className="flex items-center gap-4">
+                        <button 
+                           onClick={handleSaveDraft}
+                           className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-all p-3 px-6"
+                        >
+                           Borrador Local
+                        </button>
+                        <button 
+                           onClick={handleSave}
+                           disabled={isSearching}
+                           className={cn(
+                              "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
+                              isSearching 
+                                 ? "bg-slate-100 text-slate-400 cursor-wait" 
+                                 : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
+                           )}
+                        >
+                           {isSearching ? "Sincronizando..." : "Guardar Registro"}
+                           {!isSearching && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                        </button>
+                     </div>
                   </div>
                </div>
 
