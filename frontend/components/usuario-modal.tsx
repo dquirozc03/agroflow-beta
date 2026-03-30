@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -245,6 +246,9 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
               <DialogTitle className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
                 {editingData ? "Gestión de Colaborador" : "Nuevo Usuario Maestro"}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Formulario para la gestión de usuarios y sus permisos dentro del sistema AgroFlow.
+              </DialogDescription>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
                 {editingData ? `ID de Sistema: #${editingData.id}` : "Definición de perfil y accesos operativos"}
               </p>

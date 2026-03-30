@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,6 +151,9 @@ export default function RolesPage() {
                <DialogTitle className="text-3xl font-black text-[#022c22] uppercase tracking-tighter">
                   {editingRol ? "Modificar Rol Maestro" : "Nuevo Perfil Operativo"}
                </DialogTitle>
+               <DialogDescription className="sr-only">
+                  Panel de configuración de permisos globales y plantillas para nuevos usuarios del sistema.
+               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-6">
