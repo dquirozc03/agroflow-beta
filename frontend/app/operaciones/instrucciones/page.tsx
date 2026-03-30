@@ -55,8 +55,8 @@ export default function InstruccionesEmbarque() {
         // Consultamos directamente al Plan Maestro, no a los registros de LogiCapture
         const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/sync/posicionamiento/list`);
         if (resp.ok) {
-           const data = await resp.json();
-           setBookingsReal(data || []);
+          const data = await resp.json();
+          setBookingsReal(data || []);
         }
       } catch (e) {
         console.error("Error cargando Plan Maestro:", e);
@@ -69,11 +69,11 @@ export default function InstruccionesEmbarque() {
 
   const handleBookingSelect = async (b: any) => {
     // b puede ser el objeto del booking real de la lista
-    const bookingId = b.booking || b.id; 
+    const bookingId = b.booking || b.id;
     setSelectedBooking(b);
     setLookupData(null);
     setIsLoadingLookup(true);
-    
+
     try {
       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/instrucciones/lookup/${bookingId}`);
       if (resp.ok) {
@@ -128,17 +128,17 @@ export default function InstruccionesEmbarque() {
                   }}
                 />
                 {searchTerm.length > 5 && (
-                   <button 
-                     onClick={() => handleBookingSelect({ booking: searchTerm.toUpperCase(), id: searchTerm.toUpperCase() })}
-                     className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-500 text-white p-2 rounded-xl hover:bg-emerald-600 transition-all animate-in fade-in"
-                   >
-                     <ArrowRight className="h-4 w-4" />
-                   </button>
+                  <button
+                    onClick={() => handleBookingSelect({ booking: searchTerm.toUpperCase(), id: searchTerm.toUpperCase() })}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-500 text-white p-2 rounded-xl hover:bg-emerald-600 transition-all animate-in fade-in"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-4 lc-scroll">
+            <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-4 lc-scroll">
               {isLoadingBookings ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-32 w-full bg-slate-50 border border-slate-100 rounded-[2.5rem] animate-pulse" />
@@ -153,39 +153,40 @@ export default function InstruccionesEmbarque() {
               ).map((b) => {
                 const bId = b.BOOKING || b.booking || "";
                 return (
-                <button
-                  key={b.ID || b.id || bId}
-                  onClick={() => handleBookingSelect({ booking: bId, ID: b.ID || b.id, id: b.ID || b.id, CULTIVO: b.CULTIVO })}
-                  className={cn(
-                    "w-full p-6 rounded-[2.5rem] border-2 text-left transition-all duration-300 group relative overflow-hidden",
-                    (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId 
-                      ? "border-emerald-500 bg-emerald-50/10 shadow-xl shadow-emerald-500/5 scale-[1.02]" 
-                      : "border-slate-50 bg-white hover:border-slate-200"
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className={cn(
-                          "h-2 w-2 rounded-full",
-                          (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
-                        )} />
-                        <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{bId}</span>
+                  <button
+                    key={b.ID || b.id || bId}
+                    onClick={() => handleBookingSelect({ booking: bId, ID: b.ID || b.id, id: b.ID || b.id, CULTIVO: b.CULTIVO })}
+                    className={cn(
+                      "w-full p-6 rounded-[2.5rem] border-2 text-left transition-all duration-300 group relative overflow-hidden",
+                      (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId
+                        ? "border-emerald-500 bg-emerald-50/10 shadow-xl shadow-emerald-500/10"
+                        : "border-slate-50 bg-white hover:border-slate-200 shadow-sm"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "h-2 w-2 rounded-full",
+                            (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                          )} />
+                          <span className="text-xs font-black text-slate-950 uppercase tracking-widest">{bId}</span>
+                        </div>
+                        <h4 className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter truncate max-w-[220px]">
+                          NAVE: {b.NAVE || "POR DEFINIR"}
+                        </h4>
+                        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-tighter px-3 h-6 border-none">
+                          {b.CULTIVO}
+                        </Badge>
                       </div>
-                      <h4 className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter truncate max-w-[220px]">
-                         NAVE: {b.NAVE || "POR DEFINIR"}
-                      </h4>
-                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-tighter px-3 h-6 border-none">
-                        {b.CULTIVO}
-                      </Badge>
+                      <ChevronRight className={cn(
+                        "h-5 w-5 transition-transform duration-300",
+                        (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "text-emerald-500 translate-x-1" : "text-slate-200"
+                      )} />
                     </div>
-                    <ChevronRight className={cn(
-                      "h-5 w-5 transition-transform duration-300",
-                      (selectedBooking?.booking || selectedBooking?.BOOKING || selectedBooking?.id) === bId ? "text-emerald-500 translate-x-1" : "text-slate-200"
-                    )} />
-                  </div>
-                </button>
-              )})}
+                  </button>
+                )
+              })}
             </div>
           </aside>
 
@@ -227,10 +228,10 @@ export default function InstruccionesEmbarque() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                  { 
-                    label: "ID Booking", 
-                    val: lookupData?.booking || selectedBooking?.booking || selectedBooking?.id || "N/A", 
-                    icon: Inbox 
+                  {
+                    label: "Booking",
+                    val: lookupData?.booking || selectedBooking?.booking || selectedBooking?.id || "N/A",
+                    icon: Inbox
                   },
                   {
                     label: "Cliente",
@@ -277,10 +278,10 @@ export default function InstruccionesEmbarque() {
                       )}
                     </div>
                     {f.isWarning && (
-                       <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1 flex items-center gap-1">
-                         <AlertTriangle className="h-3 w-3" />
-                         EL CLIENTE NO EXISTE EN MAESTROS
-                       </p>
+                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        EL CLIENTE NO EXISTE EN MAESTROS
+                      </p>
                     )}
                   </div>
                 ))}
