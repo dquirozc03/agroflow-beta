@@ -31,6 +31,8 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { ActionConfirmModal } from "./action-confirm-modal";
+import { StatusModal } from "./status-modal";
 
 interface UsuarioModalProps {
   isOpen: boolean;
@@ -122,10 +124,15 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     }
   };
 
-  const recoverPassword = async () => {
-    if (!editingData) return;
-    if (!confirm("¿Seguro que deseas restablecer la contraseña a '123456'?")) return;
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
+  const recoverPassword = async () => {
+    setConfirmOpen(true);
+  };
+
+  const executeRecover = async () => {
+    if (!editingData) return;
+    setConfirmOpen(false);
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios/${editingData.id}/reset-password`, {
@@ -163,6 +170,15 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      <ActionConfirmModal 
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={executeRecover}
+        variant="danger"
+        title="Restablecer Contraseña"
+        message="¿Estás seguro de resetear la contraseña del usuario a '123456'? Se obligará al usuario a cambiarla al ingresar."
+        confirmText="Sí, Resetear"
+      />
       <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2rem] overflow-hidden p-0">
         <div className="h-2 bg-emerald-500" />
         
