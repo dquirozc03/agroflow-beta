@@ -120,7 +120,7 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
         return StreamingResponse(
             io.BytesIO(pdf_data["pdf_bytes"]),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
     except Exception as e:
         logger.error(f"Error crítico en generación de PDF: {str(e)}")

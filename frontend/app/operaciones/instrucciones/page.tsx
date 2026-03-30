@@ -87,11 +87,15 @@ export default function InstruccionesEmbarque() {
       if (response.ok) {
         const blob = await response.blob();
         
-        // Extraer nombre del archivo del header Content-Disposition si existe
+        // Extraer nombre del archivo del header Content-Disposition si existe, priorizando ORDEN BETA
         const disposition = response.headers.get('Content-Disposition');
-        let filename = `IE_${bookingId}.pdf`;
+        let filename = lookupData?.orden_beta ? `IE_${lookupData.orden_beta}.pdf` : `IE_${bookingId}.pdf`;
+        
         if (disposition && disposition.indexOf('filename=') !== -1) {
-            filename = disposition.split('filename=')[1].replace(/"/g, '');
+            const matches = /filename="?([^";]+)"?/g.exec(disposition);
+            if (matches && matches[1]) {
+                filename = matches[1];
+            }
         }
 
         const url = window.URL.createObjectURL(blob);
