@@ -11,20 +11,27 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
-  Shield, 
-  User, 
-  Lock, 
-  Key, 
-  Save, 
-  CheckCircle2, 
+  FileBarChart, 
+  RefreshCw,
+  History,
+  FileUp,
+  Package,
+  Tractor,
+  Users,
+  UserRound,
+  ShieldCheck,
+  Map,
+  Shield,
+  User,
+  Lock,
+  Key,
+  Save,
   AlertCircle,
-  Activity,
   Unlock,
-  Contact,
+  Activity,
   Scan,
   Truck,
-  FileBarChart,
-  RefreshCw
+  Contact
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -50,10 +57,10 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     password: "123456",
     activo: true,
     permisos: {
-      logicapture: true,
-      maestros: true,
-      operaciones: true,
-      sistema: false
+      lc_registro: true, lc_bandeja: true,
+      op_instrucciones: true,
+      m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
+      sys_usuarios: false, sys_roles: false
     }
   });
 
@@ -66,10 +73,10 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         password: "", // No se edita password aquí normalmente
         activo: editingData.activo ?? true,
         permisos: editingData.permisos || {
-          logicapture: true,
-          maestros: true,
-          operaciones: true,
-          sistema: false
+          lc_registro: true, lc_bandeja: true,
+          op_instrucciones: true,
+          m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
+          sys_usuarios: false, sys_roles: false
         }
       });
     } else {
@@ -80,10 +87,10 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         password: "123456",
         activo: true,
         permisos: {
-          logicapture: true,
-          maestros: true,
-          operaciones: true,
-          sistema: false
+          lc_registro: true, lc_bandeja: true,
+          op_instrucciones: true,
+          m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
+          sys_usuarios: false, sys_roles: false
         }
       });
     }
@@ -335,63 +342,91 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
               )}
             </TabsContent>
 
-            {/* TAB: PERMISOS */}
-            <TabsContent value="permisos" className="space-y-6 animate-in fade-in slide-in-from-top-2 pt-2">
-               <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                       <Scan className="h-5 w-5 text-emerald-500" />
-                       <div>
-                          <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Módulo LogiCapture</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Registro de contenedores y blindaje.</p>
-                       </div>
-                    </div>
-                    <Switch 
-                      checked={formData.permisos.logicapture} 
-                      onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, logicapture: v}})} 
-                    />
+            {/* TAB: PERMISOS ATÓMICOS */}
+            <TabsContent value="permisos" className="space-y-6 animate-in fade-in slide-in-from-top-2 pt-2 h-[450px] overflow-y-auto pr-2 custom-scroll">
+               
+               {/* LOGICAPTURE */}
+               <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 ml-1">Módulo LogiCapture</p>
+                  <div className="grid grid-cols-1 gap-2">
+                     {[
+                        { id: "lc_registro", label: "Formulario Registro", icon: Scan },
+                        { id: "lc_bandeja", label: "Bandeja de Datos", icon: History }
+                     ].map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <item.icon className="h-4 w-4 text-emerald-500" />
+                              <span className="text-[11px] font-bold text-slate-700 uppercase">{item.label}</span>
+                           </div>
+                           <Switch 
+                              checked={(formData.permisos as any)[item.id]} 
+                              onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, [item.id]: v}})} 
+                           />
+                        </div>
+                     ))}
                   </div>
+               </div>
 
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                       <Truck className="h-5 w-5 text-emerald-500" />
-                       <div>
-                          <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Módulo Maestros</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Gestión de choferes, vehículos y transportistas.</p>
-                       </div>
-                    </div>
-                    <Switch 
-                      checked={formData.permisos.maestros} 
-                      onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, maestros: v}})} 
-                    />
+               {/* OPERACIONES */}
+               <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 ml-1">Gestión Operativa</p>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                     <div className="flex items-center gap-3">
+                        <FileBarChart className="h-4 w-4 text-emerald-500" />
+                        <span className="text-[11px] font-bold text-slate-700 uppercase">Instrucciones de Embarque</span>
+                     </div>
+                     <Switch 
+                        checked={(formData.permisos as any).op_instrucciones} 
+                        onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, op_instrucciones: v}})} 
+                     />
                   </div>
+               </div>
 
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                       <FileBarChart className="h-5 w-5 text-emerald-500" />
-                       <div>
-                          <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Módulo Operaciones</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Instrucciones de embarque y reportes técnicos.</p>
-                       </div>
-                    </div>
-                    <Switch 
-                      checked={formData.permisos.operaciones} 
-                      onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, operaciones: v}})} 
-                    />
+               {/* DATOS MAESTROS */}
+               <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 ml-1">Datos Maestros</p>
+                  <div className="grid grid-cols-1 gap-2">
+                     {[
+                        { id: "m_bulk", label: "Carga Masiva (Excel)", icon: FileUp },
+                        { id: "m_contenedores", label: "Contenedores y Dam's", icon: Package },
+                        { id: "m_transportistas", label: "Transportistas", icon: Truck },
+                        { id: "m_vehiculos", label: "Vehículos", icon: Tractor },
+                        { id: "m_choferes", label: "Choferes", icon: Users },
+                        { id: "m_clientes_ie", label: "Clientes IE", icon: Map }
+                     ].map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <item.icon className="h-4 w-4 text-emerald-500" />
+                              <span className="text-[11px] font-bold text-slate-700 uppercase">{item.label}</span>
+                           </div>
+                           <Switch 
+                              checked={(formData.permisos as any)[item.id]} 
+                              onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, [item.id]: v}})} 
+                           />
+                        </div>
+                     ))}
                   </div>
+               </div>
 
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 ring-2 ring-rose-500/5">
-                    <div className="flex items-center gap-3">
-                       <Shield className="h-5 w-5 text-rose-500" />
-                       <div>
-                          <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Módulo Sistema</p>
-                          <p className="text-[10px] text-slate-400 font-medium font-bold italic text-rose-400">Acceso a configuración de usuarios.</p>
-                       </div>
-                    </div>
-                    <Switch 
-                      checked={formData.permisos.sistema} 
-                      onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, sistema: v}})} 
-                    />
+               {/* SISTEMA */}
+               <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600/60 ml-1">Configuración Sistema</p>
+                  <div className="grid grid-cols-1 gap-2">
+                     {[
+                        { id: "sys_usuarios", label: "Gestión de Usuarios", icon: UserRound },
+                        { id: "sys_roles", label: "Master Roles", icon: ShieldCheck }
+                     ].map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-rose-50/30 rounded-xl border border-rose-100/50">
+                           <div className="flex items-center gap-3">
+                              <item.icon className="h-4 w-4 text-rose-500" />
+                              <span className="text-[11px] font-bold text-slate-700 uppercase">{item.label}</span>
+                           </div>
+                           <Switch 
+                              checked={(formData.permisos as any)[item.id]} 
+                              onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, [item.id]: v}})} 
+                           />
+                        </div>
+                     ))}
                   </div>
                </div>
             </TabsContent>

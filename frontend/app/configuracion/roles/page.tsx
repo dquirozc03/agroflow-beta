@@ -13,7 +13,14 @@ import {
   Scan,
   Truck,
   FileBarChart,
-  Shield
+  Shield,
+  History,
+  Package,
+  Tractor,
+  Users,
+  UserRound,
+  Map,
+  FileUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -45,10 +52,10 @@ export default function RolesPage() {
     nombre_rol: "",
     descripcion: "",
     permisos_plantilla: {
-      logicapture: true,
-      maestros: false,
-      operaciones: false,
-      sistema: false
+      lc_registro: true, lc_bandeja: true,
+      op_instrucciones: true,
+      m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
+      sys_usuarios: false, sys_roles: false
     }
   });
 
@@ -86,10 +93,10 @@ export default function RolesPage() {
       nombre_rol: "",
       descripcion: "",
       permisos_plantilla: {
-        logicapture: true,
-        maestros: false,
-        operaciones: false,
-        sistema: false
+        lc_registro: true, lc_bandeja: true,
+        op_instrucciones: true,
+        m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
+        sys_usuarios: false, sys_roles: false
       }
     });
     setIsModalOpen(true);
@@ -157,30 +164,104 @@ export default function RolesPage() {
                   </div>
                </div>
 
-               <div className="space-y-4 border-t border-slate-100 pt-6">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plantilla de Permisos por Defecto</Label>
+               <div className="space-y-6 border-t border-slate-100 pt-6 h-[400px] overflow-y-auto pr-2 custom-scroll">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plantilla de Permisos Granulares</Label>
                   
-                  <div className="grid grid-cols-1 gap-3">
-                     {[
-                        { id: 'logicapture', label: 'LogiCapture', icon: Scan },
-                        { id: 'maestros', label: 'Maestros', icon: Truck },
-                        { id: 'operaciones', label: 'Operaciones', icon: FileBarChart },
-                        { id: 'sistema', label: 'Sistema (Admin)', icon: Shield, color: 'rose' }
-                     ].map(mod => (
-                        <div key={mod.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                           <div className="flex items-center gap-3">
-                              <mod.icon className={cn("h-5 w-5", mod.color === 'rose' ? 'text-rose-500' : 'text-indigo-500')} />
-                              <span className="text-xs font-bold text-slate-700 uppercase">{mod.label}</span>
+                  {/* LOGICAPTURE */}
+                  <div className="space-y-2">
+                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">LogiCapture</p>
+                     <div className="grid grid-cols-1 gap-2">
+                        {[
+                           { id: 'lc_registro', label: 'Formulario Registro', icon: Scan },
+                           { id: 'lc_bandeja', label: 'Bandeja de Datos', icon: History }
+                        ].map(mod => (
+                           <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
+                              </div>
+                              <Switch 
+                                 checked={(formData.permisos_plantilla as any)[mod.id]}
+                                 onCheckedChange={v => setFormData({
+                                    ...formData, 
+                                    permisos_plantilla: { ...formData.permisos_plantilla, [mod.id]: v }
+                                 })}
+                              />
                            </div>
-                           <Switch 
-                              checked={(formData.permisos_plantilla as any)[mod.id]}
-                              onCheckedChange={v => setFormData({
-                                 ...formData, 
-                                 permisos_plantilla: { ...formData.permisos_plantilla, [mod.id]: v }
-                              })}
-                           />
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* OPERACIONES */}
+                  <div className="space-y-2">
+                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">Operaciones</p>
+                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-3">
+                           <FileBarChart className="h-4 w-4 text-indigo-600" />
+                           <span className="text-[10px] font-bold text-slate-700 uppercase">Instrucciones de Embarque</span>
                         </div>
-                     ))}
+                        <Switch 
+                           checked={(formData.permisos_plantilla as any).op_instrucciones}
+                           onCheckedChange={v => setFormData({
+                              ...formData, 
+                              permisos_plantilla: { ...formData.permisos_plantilla, op_instrucciones: v }
+                           })}
+                        />
+                     </div>
+                  </div>
+
+                  {/* DATOS MAESTROS */}
+                  <div className="space-y-2">
+                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">Datos Maestros</p>
+                     <div className="grid grid-cols-1 gap-2">
+                        {[
+                           { id: 'm_bulk', label: 'Carga Masiva', icon: FileUp },
+                           { id: 'm_contenedores', label: 'Contenedores', icon: Package },
+                           { id: 'm_transportistas', label: 'Transportistas', icon: Truck },
+                           { id: 'm_vehiculos', label: 'Vehículos', icon: Tractor },
+                           { id: 'm_choferes', label: 'Choferes', icon: Users },
+                           { id: 'm_clientes_ie', label: 'Clientes IE', icon: Map }
+                        ].map(mod => (
+                           <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
+                              </div>
+                              <Switch 
+                                 checked={(formData.permisos_plantilla as any)[mod.id]}
+                                 onCheckedChange={v => setFormData({
+                                    ...formData, 
+                                    permisos_plantilla: { ...formData.permisos_plantilla, [mod.id]: v }
+                                 })}
+                              />
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* SISTEMA */}
+                  <div className="space-y-2">
+                     <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/50">Sistema</p>
+                     <div className="grid grid-cols-1 gap-2">
+                        {[
+                           { id: 'sys_usuarios', label: 'Usuarios', icon: UserRound },
+                           { id: 'sys_roles', label: 'Master Roles', icon: ShieldCheck }
+                        ].map(mod => (
+                           <div key={mod.id} className="flex items-center justify-between p-3 bg-rose-50/20 rounded-xl border border-rose-100/50">
+                              <div className="flex items-center gap-3">
+                                 <mod.icon className="h-4 w-4 text-rose-500" />
+                                 <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
+                              </div>
+                              <Switch 
+                                 checked={(formData.permisos_plantilla as any)[mod.id]}
+                                 onCheckedChange={v => setFormData({
+                                    ...formData, 
+                                    permisos_plantilla: { ...formData.permisos_plantilla, [mod.id]: v }
+                                 })}
+                              />
+                           </div>
+                        ))}
+                     </div>
                   </div>
                </div>
 

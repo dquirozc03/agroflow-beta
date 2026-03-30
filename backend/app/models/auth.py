@@ -17,8 +17,13 @@ class Usuario(Base):
     intentos_fallidos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     bloqueado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
-    # NUEVO: Control granular por módulos (logicapture, maestros, operaciones, sistema)
-    permisos: Mapped[dict] = mapped_column(JSON, default=lambda: {"logicapture": True, "maestros": True, "operaciones": True, "sistema": False}, nullable=False)
+    # NUEVO: Control atómico por sub-módulos (Fase 3 Industrial)
+    permisos: Mapped[dict] = mapped_column(JSON, default=lambda: {
+        "lc_registro": True, "lc_bandeja": True,
+        "op_instrucciones": True,
+        "m_bulk": True, "m_contenedores": True, "m_transportistas": True, "m_vehiculos": True, "m_choferes": True, "m_clientes_ie": True,
+        "sys_usuarios": False, "sys_roles": False
+    }, nullable=False)
     
     creado_en: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -33,7 +38,12 @@ class RolMaster(Base):
     descripcion: Mapped[str] = mapped_column(String(255), nullable=True)
     
     # Plantilla de permisos por defecto para este rol
-    permisos_plantilla: Mapped[dict] = mapped_column(JSON, nullable=False)
+    permisos_plantilla: Mapped[dict] = mapped_column(JSON, default=lambda: {
+        "lc_registro": True, "lc_bandeja": True,
+        "op_instrucciones": True,
+        "m_bulk": True, "m_contenedores": True, "m_transportistas": True, "m_vehiculos": True, "m_choferes": True, "m_clientes_ie": True,
+        "sys_usuarios": False, "sys_roles": False
+    }, nullable=False)
     
     creado_en: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
