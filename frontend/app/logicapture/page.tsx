@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, KeyboardEvent, useEffect } from "react";
 import { 
   Scan, 
   Container, 
@@ -18,24 +18,25 @@ import {
   Search,
   CheckCircle2,
   X,
+  CreditCard,
   User,
   ArrowRight,
   Maximize2,
   Sparkles,
+  RefreshCw,
+  Camera,
   Loader2,
   AlertTriangle,
   Ship,
-  Plane,
-  Info
+  Plane
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { Button } from "@/components/ui/button";
 
-// --- Componentes UX Premium Fase 3 ---
+// --- Componentes UX Premium Carlos Style ---
 
 interface MultiInputProps {
   label: string;
@@ -43,68 +44,93 @@ interface MultiInputProps {
   values: string[];
   onChange: (newValues: string[]) => void;
   icon: any;
-  readOnly?: boolean;
+  autoFocus?: boolean;
 }
 
-function MultiInput({ label, placeholder, values, onChange, icon: Icon, readOnly }: MultiInputProps) {
+function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocus }: MultiInputProps) {
   const [inputValue, setInputValue] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (readOnly) return;
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       const cleanValue = inputValue.trim().toUpperCase();
       if (!cleanValue) return;
+
       e.preventDefault();
+      // Silencioso: Solo a├▒ade si no existe, limpia en cualquier caso
       if (!values.includes(cleanValue)) {
         onChange([...values, cleanValue]);
       }
       setInputValue("");
+      
+      // Asegurar que el foco se mantenga para el siguiente escaneo (pistola modo r├ífaga)
+      setTimeout(() => inputRef.current?.focus(), 10);
     } else if (e.key === "Backspace" && !inputValue && values.length > 0) {
       onChange(values.slice(0, -1));
     }
   };
 
+  const removeValue = (index: number) => {
+    onChange(values.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-3 group">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within:text-emerald-500 transition-colors">
         {label}
       </label>
-      <div className="bg-white/80 border border-slate-100 rounded-[1.5rem] p-2 min-h-[64px] flex flex-wrap gap-2 items-center transition-all duration-300 focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:border-emerald-500 shadow-sm">
+      <div className="bg-white border border-slate-100 rounded-2xl p-2 min-h-[56px] flex flex-wrap gap-2 items-center transition-all duration-300 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 hover:border-emerald-200 shadow-sm hover:shadow-md hover:scale-[1.01]">
         <div className="pl-3 pr-1 text-slate-300">
           <Icon className="h-4 w-4" />
         </div>
         {values.map((v, i) => (
-          <div key={i} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-xs font-bold text-emerald-700">
-             {v}
-             <button onClick={() => onChange(values.filter((_, idx) => idx !== i))} className="hover:text-emerald-900">
-                <X className="h-3 w-3" />
-             </button>
+          <div key={i} className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl text-sm font-bold animate-in zoom-in-95 duration-200">
+            {v}
+            <button onClick={() => removeValue(i)} className="hover:text-emerald-900 transition-colors">
+              <X className="h-3 w-3" />
+            </button>
           </div>
         ))}
         <input
           ref={inputRef}
+          autoFocus={autoFocus}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={values.length === 0 ? placeholder : "..."}
-          className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 px-2 min-w-[80px]"
+          placeholder={values.length === 0 ? placeholder : "A├▒adir m├ís..."}
+          className="flex-1 bg-transparent border-none outline-none text-base font-medium text-slate-900 placeholder:text-slate-300 min-w-[120px] px-2"
         />
       </div>
     </div>
   );
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, onBlur, helperText }: any) {
+interface FormFieldProps {
+  label: string;
+  placeholder: string;
+  icon: any;
+  value: string;
+  onChange: (v: string) => void;
+  readOnly?: boolean;
+  success?: boolean;
+  loading?: boolean;
+  error?: boolean;
+  errorMsg?: string;
+  onBlur?: () => void;
+  helperText?: string;
+  highlightError?: boolean;
+}
+
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText, highlightError }: FormFieldProps) {
   return (
     <div className="space-y-3 group/field">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
+      <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
         {label}
       </label>
-      <div className="relative group/input">
+      <div className={cn("relative group/input", (error || highlightError) && "z-20 hover:z-30")}>
         <div className={cn(
-          "absolute left-5 top-1/2 -translate-y-1/2 transition-colors z-10",
-          success ? "text-emerald-500" : (error ? "text-rose-400" : "text-slate-300 group-focus-within:text-emerald-500")
+          "absolute left-4 top-1/2 -translate-y-1/2 transition-colors z-10",
+          success ? "text-emerald-500" : (error || highlightError ? "text-rose-400" : "text-slate-300 group-focus-within:text-emerald-500")
         )}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
         </div>
@@ -115,308 +141,798 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           onBlur={onBlur}
           placeholder={placeholder}
           className={cn(
-            "w-full border rounded-[1.5rem] py-5 pl-13 pr-12 text-sm font-bold transition-all duration-300 shadow-sm outline-none",
-            readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-200 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 hover:shadow-md",
-            success && "border-emerald-500 bg-emerald-50/10 text-emerald-700",
-            error && "border-rose-500 bg-rose-50/10 text-rose-800"
+            "w-full border rounded-2xl py-4 pl-11 pr-12 text-base font-medium transition-all duration-300 shadow-sm outline-none",
+            readOnly ? "bg-slate-50/50 text-slate-500 cursor-not-allowed border-slate-100" : "bg-white border-slate-100 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:shadow-md hover:border-emerald-100 focus:scale-[1.01]",
+            success && "border-emerald-500 ring-2 ring-emerald-500/5 bg-emerald-50/10 text-emerald-700 font-bold",
+            (error || highlightError) && "border-rose-500 ring-2 ring-rose-500/5 bg-rose-50/10 text-rose-800"
           )}
         />
-        {success && !error && <div className="absolute right-5 top-1/2 -translate-y-1/2 text-emerald-500"><CheckCircle2 className="h-5 w-5" /></div>}
-        {error && <div className="absolute right-5 top-1/2 -translate-y-1/2 text-rose-500 animate-pulse"><AlertTriangle className="h-5 w-5" /></div>}
-        
-        {helperText && (
-          <div className="absolute bottom-full left-5 mb-3 px-4 py-3 bg-[#022c22] text-white rounded-2xl shadow-2xl opacity-0 translate-y-2 group-hover/input:opacity-100 group-hover/input:translate-y-0 transition-all duration-300 z-[100] whitespace-nowrap">
-             <span className="text-[10px] font-black uppercase text-emerald-400">Validado:</span>
-             <p className="text-xs font-bold mt-1">{helperText}</p>
+        {success && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in-50">
+             <CheckCircle2 className="h-5 w-5" />
+          </div>
+        )}
+        {error && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
+             <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
+             {/* Tooltip Alert Style */}
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[100] origin-bottom">
+                {errorMsg}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
+             </div>
+          </div>
+        )}
+
+        {/* Tooltip de Informaci├│n Adicional (Helper) */}
+        {helperText && !error && !loading && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-5 py-3 bg-[#022c22] backdrop-blur-md border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-[0.15em] uppercase rounded-2xl shadow-2xl opacity-0 scale-90 -translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[110] whitespace-nowrap origin-bottom">
+             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-10" />
+             <div className="flex items-center gap-2 relative z-10">
+                <CheckCircle2 className="h-3 w-3" />
+                <span>{helperText}</span>
+             </div>
+             <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#022c22]" />
+          </div>
+        )}
+
+        {/* Tooltip Premium para Datos (Solo si el dato es largo y no hay error) */}
+        {value && value.length > 14 && !error && !loading && !helperText && (
+          <div className="absolute top-[110%] left-1/2 -translate-x-1/2 px-5 py-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/20 text-emerald-400 text-xs font-black tracking-widest uppercase rounded-2xl shadow-2xl opacity-0 scale-90 translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap origin-top overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-20" />
+             <span className="relative z-10">{value}</span>
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-emerald-950/90" />
           </div>
         )}
       </div>
     </div>
   );
 }
-
-function SuccessModal({ isOpen, onClose, title }: any) {
+function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: () => void, title: string }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-lg">
-        <div className="relative bg-white rounded-[3.5rem] p-12 max-w-md w-full text-center space-y-10 animate-in zoom-in-95 duration-500">
-           <div className="w-28 h-28 bg-emerald-100 rounded-full flex items-center justify-center mx-auto"><CheckCircle2 className="h-16 w-16 text-emerald-600" /></div>
-           <div className="space-y-4">
-              <h2 className="text-4xl font-extrabold text-[#022c22] tracking-tighter">┬íLISTO!</h2>
-              <p className="text-slate-400 text-xs font-black uppercase tracking-widest leading-relaxed">OPERACI├ôN {title} REGISTRADA</p>
-           </div>
-           <button onClick={onClose} className="w-full py-6 bg-emerald-950 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-emerald-800 transition-all">REGRESAR A BANDEJA</button>
-        </div>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+       <div className="relative bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(2,44,34,0.3)] p-12 max-w-md w-full border border-emerald-50 text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out">
+          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto relative group">
+             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20 group-hover:opacity-40 transition-opacity" />
+             <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
+          </div>
+          <div className="space-y-3">
+             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">┬íOperaci├│n Exitosa!</h2>
+             <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Registro: {title}</p>
+          </div>
+          <button 
+             onClick={onClose}
+             className="w-full py-5 bg-emerald-950 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/20 active:scale-95"
+          >
+             Continuar Operaci├│n
+          </button>
+       </div>
     </div>
   );
 }
 
-export default function LogiCaptureFase3OriginalPage() {
-  const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
-  const [isProcessingIA, setIsProcessingIA] = useState(false);
-  const [ocrTarget, setOcrTarget] = useState<string>("booking");
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successTitle, setSuccessTitle] = useState("");
-  const [validatedFields, setValidatedFields] = useState<string[]>([]);
-  const [bookingError, setBookingError] = useState(false);
+export default function LogiCaptureV2Page() {
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const [scrollY, setScrollY] = useState(0);
 
+  useEffect(() => {
+    const mainElement = mainRef.current;
+    if (!mainElement) return;
+
+    const handleScroll = () => {
+      setScrollY(mainElement.scrollTop);
+      setShowFloatingButton(mainElement.scrollTop > 100);
+    };
+    mainElement.addEventListener("scroll", handleScroll);
+    return () => mainElement.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Calcular posici├│n din├ímica (se mueve entre 30% y 70% de la pantalla)
+  const dynamicY = Math.min(70, 30 + (scrollY / 10));
+
+  // Estado del Formulario
   const [formData, setFormData] = useState({
-    booking: "", ordenBeta: "", contenedor: "", dam: "", dni: "", placaTracto: "", placaCarreta: "", empresa: "",
-    precintoAduana: [] as string[], precintoOperador: [] as string[], precintoSenasa: [] as string[],
-    precintoLinea: [] as string[], precintosBeta: [] as string[], termografos: [] as string[],
-    tratamientoBuque: false, planta: "", cultivo: "", ruc_transportista: "", nombreChofer: "", licenciaChofer: ""
+    booking: "",
+    ordenBeta: "",
+    contenedor: "",
+    dam: "",
+    dni: "",
+    placaTracto: "",
+    placaCarreta: "",
+    empresa: "",
+    precintoAduana: [] as string[],
+    precintoOperador: [] as string[],
+    precintoSenasa: [] as string[],
+    precintoLinea: [] as string[],
+    precintosBeta: [] as string[],
+    termografos: [] as string[],
+    tratamientoBuque: false,
   });
 
-  const updateField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (value) setValidatedFields(prev => [...new Set([...prev, field])]);
-    else setValidatedFields(prev => prev.filter(f => f !== field));
-  };
+  const [isSearching, setIsSearching] = useState(false);
+  const [validatedFields, setValidatedFields] = useState<string[]>([]);
+  const [bookingError, setBookingError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+  const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
+  const [isLoadingChofer, setIsLoadingChofer] = useState(false);
+  const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
+  const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successTitle, setSuccessTitle] = useState("");
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
-    if (!cleanBooking) return;
+    if (!cleanBooking) {
+      toast.error("Ingrese un Booking para comenzar");
+      return;
+    }
+
     setIsSearching(true);
+    setValidatedFields([]);
     setBookingError(false);
-    try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
-      if (!resp.ok) { setBookingError(true); return; }
-      const res = await resp.json();
-      setFormData(prev => ({ ...prev, ordenBeta: res.orden_beta || "", dam: res.dam || "", contenedor: res.contenedor || "", planta: res.planta || "", cultivo: res.cultivo || "" }));
-      setValidatedFields(prev => [...new Set([...prev, "booking", "ordenBeta", "dam", "contenedor"])]);
-    } catch (e) { setBookingError(true); } finally { setIsSearching(false); }
-  };
+    setFieldErrors({});
 
-  const handleProcessImage = async (file: File) => {
-    setIsProcessingIA(true);
-    const fd = new FormData(); 
-    fd.append("file", file); 
-    fd.append("target", ocrTarget);
     try {
-        const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/ocr`, { method: "POST", body: fd });
-        const d = await resp.json();
-        if (d.text) { 
-           updateField(ocrTarget, d.text.toUpperCase()); 
-           toast.success("Captura Exitosa"); 
-           if (ocrTarget === "booking") setTimeout(handleLookup, 500); 
-        }
-    } catch (e) { 
-        toast.error("Error OCR"); 
-    } finally { 
-        setIsProcessingIA(false); 
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/lookup/${cleanBooking}`);
+      if (!response.ok) {
+        setBookingError(true);
+        setIsSearching(false);
+        // Limpiar campos para evitar confusi├│n con el booking anterior
+        setFormData(prev => ({
+          ...prev,
+          ordenBeta: "",
+          dam: "",
+          contenedor: ""
+        }));
+        return;
+      }
+      
+      const result = await response.json();
+      
+      // Sanitizaci├│n de DAM Carlos Style (quitar ceros a la izquierda del ├║ltimo segmento)
+      let cleanDam = result.dam;
+      if (cleanDam && cleanDam.includes("-")) {
+        const parts = cleanDam.split("-");
+        const suffix = parts[parts.length - 1];
+        parts[parts.length - 1] = suffix.replace(/^0+(?!$)/, "");
+        cleanDam = parts.join("-");
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        booking: cleanBooking,
+        ordenBeta: result.orden_beta || "",
+        dam: cleanDam || "",
+        contenedor: result.contenedor || ""
+      }));
+      
+      const found: string[] = [];
+      const errors: { [key: string]: string } = {};
+
+      if (result.orden_beta) found.push("ordenBeta");
+      else errors.ordenBeta = "No se encontr├│ Orden Beta en el Posicionamiento";
+
+      if (result.contenedor) found.push("contenedor");
+      else errors.contenedor = "No se encontr├│ Contenedor en Datos Maestros";
+
+      if (result.dam) found.push("dam");
+      else errors.dam = "No se encontr├│ DAM en el Control de Embarque";
+
+      setValidatedFields(found);
+      setFieldErrors(errors);
+
+      setFieldErrors(errors);
+
+      if (found.length < 3) {
+        // En lugar de toast, los errores ya est├ín en fieldErrors
+      }
+    } catch (error: any) {
+      setBookingError(true);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const handlePaste = async (e: any) => {
-    const item = Array.from(e.clipboardData.items).find((i: any) => i.type.indexOf("image") !== -1);
-    if (item) {
-        const file = (item as any).getAsFile();
-        if (file) handleProcessImage(file);
+  const updateField = (field: string, value: any) => {
+    if (field === "booking") setBookingError(false);
+    
+    // Al borrar placa, limpiar empresa y su info de forma reactiva
+    if (field === "placaTracto" && !value) {
+      setFormData(prev => ({ ...prev, empresa: "" }));
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.empresa_info;
+        return next;
+      });
+    }
+
+    // Al borrar DNI, limpiar su info reactivada
+    if (field === "dni" && !value) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.dni_info;
+        return next;
+      });
+    }
+
+    // Limpiar error espec├¡fico al editar
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const newState = { ...prev };
+        delete newState[field];
+        return newState;
+      });
+    }
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleVehiculoBlur = async () => {
+    const placa = (formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
+    if (!placa) return;
+
+    setIsLoadingVehiculo(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
+      if (!response.ok) throw new Error("Placa no registrada en maestros");
+      const data = await response.json();
+      updateField("empresa", data.transportista.nombre_transportista);
+      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista.nombre_transportista}` }));
+    } catch (error: any) {
+      setFieldErrors(prev => ({ ...prev, placaTracto: "Placa no registrada en maestros" }));
+      updateField("empresa", "");
+    } finally {
+      setIsLoadingVehiculo(false);
     }
   };
+
+  const handleChoferBlur = async () => {
+    const dni = (formData.dni || "").trim();
+    if (!dni) return;
+
+    setIsLoadingChofer(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
+      if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
+      const data = await response.json();
+      setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo}` }));
+    } catch (error: any) {
+      setFieldErrors(prev => ({ ...prev, dni: "Chofer no registrado en maestros" }));
+    } finally {
+      setIsLoadingChofer(false);
+    }
+  };
+
+  const handleFieldBlur = async (field: string, value: string) => {
+    const cleanVal = (value || "").trim().toUpperCase();
+    if (!cleanVal) return;
+
+    // Solo validamos duplicados para campos clave de logicapture_registros
+    if (!["booking", "dam", "contenedor"].includes(field)) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/check_unique?field=${field}&value=${cleanVal}&treatment_buque=${formData.tratamientoBuque}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      
+      if (data.exists) {
+         setFieldErrors(prev => ({ 
+            ...prev, 
+            [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
+         }));
+      } else {
+         // Si exist├¡a un error previo de duplicado para este campo, lo borramos
+         setFieldErrors(prev => {
+            const next = { ...prev };
+            if (next[field]?.includes("Duplicado")) delete next[field];
+            return next;
+         });
+      }
+    } catch (error) {
+       console.error("Error check unique", error);
+    }
+  };
+
+  const handleCarretaBlur = async () => {
+    const placa = (formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
+    if (!placa) return;
+
+    setIsLoadingCarreta(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
+      if (!response.ok) throw new Error("Carreta no registrada en maestros");
+      // No necesitamos info extra por ahora, solo validar existencia
+    } catch (error: any) {
+      setFieldErrors(prev => ({ ...prev, placaCarreta: "Carreta no registrada en maestros" }));
+    } finally {
+      setIsLoadingCarreta(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem("logicapture_draft", JSON.stringify({
+      formData,
+      validatedFields,
+      fieldErrors,
+      transportMode
+    }));
+    toast.info("Borrador guardado localmente (Congelado)");
+  };
+
+  useEffect(() => {
+    const draft = localStorage.getItem("logicapture_draft");
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      setFormData(parsed.formData);
+      setValidatedFields(parsed.validatedFields || []);
+      setFieldErrors(parsed.fieldErrors || {});
+      setTransportMode(parsed.transportMode || "maritimo");
+      toast.success("Borrador recuperado autom├íticamente");
+    }
+  }, []);
 
   const handleSave = async () => {
+    if (!formData.booking || !formData.dam || !formData.contenedor) {
+      toast.error("Complete los datos de embarque antes de guardar");
+      return;
+    }
+
     setIsSearching(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData, status: "PROCESADO" }) });
-      if (!resp.ok) throw new Error();
-      setSuccessTitle(formData.ordenBeta || "REGISTRO"); setShowSuccess(true);
-    } catch (e) { toast.error("Error al guardar"); } finally { setIsSearching(false); }
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+         const errData = await response.json();
+         throw new Error(errData.detail || "Error al persistir registro");
+      }
+      
+      const resData = await response.json();
+      setSuccessTitle(formData.ordenBeta || formData.contenedor);
+      setShowSuccess(true);
+      // Mantenemos la data visible por petici├│n del usuario
+    } catch (error: any) {
+      // Para errores, usamos toast pero solo si es un error real de sistema 
+      // (aunque el usuario pida quitarlos, un error cr├¡tico debe avisar)
+      toast.error(error.message, { position: "top-center" });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      booking: "",
+      ordenBeta: "",
+      contenedor: "",
+      dam: "",
+      dni: "",
+      placaTracto: "",
+      placaCarreta: "",
+      empresa: "",
+      precintoAduana: [],
+      precintoOperador: [],
+      precintoSenasa: [],
+      precintoLinea: [],
+      precintosBeta: [],
+      termografos: [],
+      tratamientoBuque: false,
+    });
+    setValidatedFields([]);
+    setFieldErrors({});
+    setBookingError(false);
+    localStorage.removeItem("logicapture_draft");
+    toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
   };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
       <AppSidebar />
+
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AppHeader />
-        
-        <main onPaste={handlePaste} className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
-          <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-700">
+
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
+          <div className="max-w-[1200px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             
-            {/* --- CABECERA ORIGINAL --- */}
-            <div className="flex items-center justify-between gap-8 py-2">
-               <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
-                     <Scan className="h-6 w-6" />
-                  </div>
-                  <div className="flex flex-col">
-                     <h1 className="text-3xl font-black tracking-tighter text-[#022c22] uppercase">LogiCapture</h1>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">REGISTRO OPERATIVO DE SALIDA - FASE 3</p>
-                  </div>
-               </div>
+            {/* Header de Secci├│n Carlos Style (Sin Sticky por petici├│n de Inge Daniel) */}
+            <div className="py-6 flex flex-col md:flex-row md:items-end justify-between gap-6 transition-all duration-300">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 group">
+                   <div className="h-10 w-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                      <Scan className="h-5 w-5" />
+                   </div>
+                   <h1 className="text-4xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit'] group-hover:tracking-tight transition-all duration-500">
+                      Logi<span className="text-emerald-500 drop-shadow-sm">Capture</span>
+                   </h1>
+                </div>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] ml-13">
+                  Registro Operativo de Salida - Fase 3
+                </p>
+              </div>
 
-               <div className="flex items-center gap-3 bg-white/80 p-2 rounded-[2rem] border border-slate-100 shadow-sm">
-                  {[
-                    { id: "maritimo", icon: Ship, label: "MAR├ìTIMO" },
-                    { id: "terrestre", icon: Truck, label: "TERRESTRE" },
-                    { id: "aereo", icon: Plane, label: "A├ëREO" }
-                  ].map((mode) => (
-                    <button
-                      key={mode.id}
-                      onClick={() => setTransportMode(mode.id as any)}
-                      className={cn("flex items-center gap-3 px-6 py-3 rounded-[1.5rem] transition-all", transportMode === mode.id ? "bg-[#022c22] text-white shadow-lg" : "text-slate-400 hover:text-emerald-600")}
-                    >
-                      <mode.icon className="h-4 w-4" />
-                      <span className="text-[10px] font-black tracking-widest">{mode.label}</span>
-                    </button>
-                  ))}
-               </div>
+              {/* Selector de Modalidad Carlos Style */}
+              <div className="flex bg-white/50 backdrop-blur-sm p-2 rounded-[1.8rem] border border-slate-100 shadow-sm gap-2">
+                {[
+                  { id: "maritimo", icon: Ship, label: "Mar├¡timo" },
+                  { id: "terrestre", icon: Truck, label: "Terrestre" },
+                  { id: "aereo", icon: Plane, label: "A├®reo" }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setTransportMode(mode.id as any)}
+                    className={cn(
+                      "group relative flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 overflow-hidden",
+                      transportMode === mode.id 
+                        ? "bg-emerald-950 text-white shadow-xl shadow-emerald-900/10 scale-105" 
+                        : "hover:bg-emerald-50 text-slate-400 hover:text-emerald-700"
+                    )}
+                  >
+                    <mode.icon className={cn("h-5 w-5 transition-transform duration-500 group-hover:scale-110", transportMode === mode.id ? "text-emerald-400" : "")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{mode.label}</span>
+                    {transportMode === mode.id && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-scan-slow opacity-30" />
+                    )}
+                  </button>
+                ))}
+              </div>
 
-               <div className="flex items-center gap-3">
-                  <button onClick={() => window.location.reload()} className="h-12 px-6 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 shadow-sm">LIMPIAR PANTALLA</button>
-                  <Button onClick={handleLookup} disabled={isSearching} className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">AUTOCOMPLETAR INTELIGENTE</Button>
-               </div>
+              <div className="flex items-center gap-3">
+                 <button 
+                    onClick={handleReset}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm text-[11px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-700 transition-all duration-300 hover:scale-[1.02] active:scale-95 group"
+                 >
+                    <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-500" />
+                    Limpiar Pantalla
+                 </button>
+                 <button 
+                    onClick={handleLookup}
+                    disabled={isSearching}
+                    className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl shadow-lg text-[11px] font-black uppercase tracking-widest hover:from-emerald-700 hover:to-emerald-600 transition-all duration-300 active:scale-95 animate-venom disabled:opacity-50"
+                  >
+                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Sparkles className="h-4 w-4 animate-pulse" />}
+                    Autocompletar Inteligente
+                  </button>
+              </div>
             </div>
 
-            {/* --- BLOQUE DARK UNIFICADO (TERMINAL + SELECTOR) --- */}
-            <div className="bg-[#0a1110] rounded-[3.5rem] border border-emerald-900/30 p-12 relative shadow-2xl flex flex-col lg:flex-row gap-12 overflow-hidden">
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#10b98115,transparent)]" />
+            {/* Fila 0: Inteligencia Operativa (OCR Hub Unificado) Carlos Edition */}
+            <div className="bg-gradient-to-br from-[#022c22] to-slate-900 rounded-[2.5rem] p-1 shadow-2xl shadow-emerald-900/20 group overflow-hidden relative">
+               {/* Efecto de Brillo de Fondo */}
+               <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-1000" />
                
-               {/* LADO IZQUIERDO: TERMINAL */}
-               <div className="flex-1 space-y-8 relative z-10">
-                  <div className="flex items-center gap-2">
-                     <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                     <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-[0.5em]">IA CAPTURE TERMINAL V2.0</span>
-                  </div>
-                  
-                  <div className={cn(
-                     "h-[280px] w-full rounded-[2.5rem] border-2 border-dashed border-emerald-900/50 flex flex-col items-center justify-center gap-6 transition-all group hover:border-emerald-500/40 bg-white/5",
-                     isProcessingIA && "border-emerald-500 animate-pulse"
-                  )}>
-                     <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center">
-                        {isProcessingIA ? <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" /> : <FileText className="h-10 w-10 text-emerald-500/80" />}
-                     </div>
-                     <div className="text-center space-y-2">
-                        <p className="text-xl font-black text-white tracking-tight">PEGAR RECORTE O SOLTAR IMAGEN</p>
-                        <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-[0.2em]">PRESIONA <span className="text-emerald-400">CTRL + V</span> PARA PROCESAR INSTANT├üNEAMENTE</p>
-                     </div>
-                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => e.target.files?.[0] && handleProcessImage(e.target.files[0])} />
-                  </div>
-               </div>
+               <div className="bg-white/5 backdrop-blur-xl rounded-[2.4rem] p-8 md:p-12 relative z-10 border border-white/5">
+                  <div className="grid grid-cols-12 gap-12 items-center">
+                    
+                    {/* IZQUIERDA: Terminal de Captura (Drop/Paste) */}
+                    <div className="col-span-12 lg:col-span-7 space-y-6">
+                       <div className="flex items-center gap-3 mb-2">
+                          <Zap className="h-5 w-5 text-emerald-400 animate-pulse" />
+                          <h2 className="text-xs font-black text-emerald-400/80 uppercase tracking-[0.3em]">IA Capture Terminal v2.0</h2>
+                       </div>
+                       
+                       <div className="relative group/terminal">
+                          <div className="absolute inset-0 bg-emerald-500/20 rounded-[2rem] blur-xl opacity-0 group-hover/terminal:opacity-100 transition-opacity duration-700" />
+                          <div className="relative h-64 bg-[#011a14]/80 border-2 border-dashed border-emerald-500/30 rounded-[2rem] flex flex-col items-center justify-center gap-6 cursor-pointer hover:border-emerald-400/60 transition-all group/area hover:bg-[#011a14]">
+                             <div className="h-20 w-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-400 group-hover/area:scale-110 group-hover/area:bg-emerald-500 group-hover/area:text-white transition-all duration-500 shadow-inner">
+                                <FileText className="h-10 w-10" />
+                             </div>
+                             <div className="text-center space-y-2">
+                                <p className="text-base font-black text-white uppercase tracking-widest">Pegar Recorte o Soltar Imagen</p>
+                                <p className="text-xs font-bold text-emerald-500/50 uppercase tracking-widest">Presiona <kbd className="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Ctrl + V</kbd> para procesar instant├íneamente</p>
+                             </div>
+                             
+                             {/* Lineas de Escaneo Simuladas */}
+                             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent animate-scan" />
+                          </div>
+                       </div>
+                    </div>
 
-               {/* LADO DERECHO: SELECTOR DE DESTINO (DARK) */}
-               <div className="w-full lg:w-[450px] space-y-8 relative z-10">
-                  <div className="space-y-1">
-                     <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">SELECTOR DE DESTINO</h3>
-                     <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest">ELIGE D├ôNDE APLICAR EL DATO EXTRA├ìDO</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                     {[
-                       { id: "booking", label: "BOOKING", icon: BookOpen },
-                       { id: "dam", label: "DAM", icon: Hash },
-                       { id: "contenedor", label: "CONTENEDOR", icon: Container },
-                       { id: "placaTracto", label: "PLACA TRACTO", icon: Truck },
-                       { id: "placaCarreta", label: "PLACA CARRETA", icon: Truck },
-                     ].map((item) => (
-                        <button
-                           key={item.id}
-                           onClick={() => setOcrTarget(item.id)}
-                           className={cn(
-                              "flex flex-col items-center justify-center gap-3 p-5 rounded-[2rem] border transition-all duration-300",
-                              ocrTarget === item.id 
-                                 ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]" 
-                                 : "bg-[#0d1615] border-emerald-900/30 text-emerald-500/40 hover:bg-[#14211f] hover:text-emerald-400"
-                           )}
-                        >
-                           <item.icon className="h-5 w-5" />
-                           <span className="text-[10px] font-black tracking-widest">{item.label}</span>
-                        </button>
-                     ))}
-                  </div>
+                    {/* DERECHA: Centro de Mapeo y Destino */}
+                    <div className="col-span-12 lg:col-span-5 space-y-8">
+                       <div className="bg-[#022c22]/50 border border-white/5 rounded-3xl p-8 space-y-6">
+                          <div className="space-y-1">
+                             <h3 className="text-sm font-black text-white uppercase tracking-widest">Selector de Destino</h3>
+                             <p className="text-xs font-bold text-emerald-500/40 uppercase tracking-widest">Elige d├│nde aplicar el dato extra├¡do</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-6 gap-4">
+                             {[
+                                { id: "booking", label: "Booking", icon: BookOpen, span: "col-span-2" },
+                                { id: "dam", label: "DAM", icon: Hash, span: "col-span-2" },
+                                { id: "contenedor", label: "Contenedor", icon: Container, span: "col-span-2" },
+                                { id: "tracto", label: "Placa Tracto", icon: Truck, span: "col-span-3" },
+                                { id: "carreta", label: "Placa Carreta", icon: Truck, span: "col-span-3" }
+                             ].map((target) => (
+                                <button 
+                                   key={target.id}
+                                   className={cn(
+                                      "flex flex-col items-center gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-emerald-500 hover:border-emerald-400 group/btn transition-all duration-300",
+                                      target.span
+                                   )}
+                                >
+                                   <target.icon className="h-5 w-5 text-emerald-500 group-hover/btn:text-white transition-colors" />
+                                   <span className="text-xs font-black text-emerald-500/70 group-hover/btn:text-white uppercase tracking-widest">{target.label}</span>
+                                </button>
+                             ))}
+                          </div>
 
-                  <Button className="w-full h-16 bg-white text-[#0a1110] hover:bg-emerald-50 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl mt-4">
-                     PROCESAR CON IA AVANZADA
-                  </Button>
-               </div>
-            </div>
+                          <button className="w-full py-5 bg-white text-[#022c22] rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all shadow-xl shadow-black/20">
+                             Procesar con IA Avanzada
+                          </button>
+                       </div>
+                    </div>
 
-            {/* --- SECCIONES DE FORMULARIO --- */}
-            <div className="space-y-8">
-               <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm">
-                  <div className="flex items-center justify-between mb-10">
-                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center ring-8 ring-emerald-50/10"><Ship className="h-6 w-6 text-emerald-600" /></div>
-                        <div>
-                           <h3 className="text-xl font-black text-[#022c22] tracking-tighter uppercase">01. DATOS DE EMBARQUE</h3>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">VALIDACI├ôN ACTIVA SINCRO-NUBE</p>
-                        </div>
-                     </div>
-                     <button onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)} className={cn("px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all", formData.tratamientoBuque ? "bg-[#022c22] text-white shadow-xl scale-105" : "bg-slate-50 text-slate-300")}>
-                        {formData.tratamientoBuque ? "Ô£ô TRATAMIENTO EN BUQUE" : "TRATAMIENTO EN BUQUE"}
-                     </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                     <FormField label="BOOKING / RESERVA" placeholder="BK-XXXXXXXX" icon={BookOpen} value={formData.booking} onChange={(v: string) => updateField("booking", v)} onBlur={handleLookup} success={validatedFields.includes("booking")} error={bookingError} />
-                     <FormField label="ORDEN BETA" placeholder="O-99999" icon={Hash} value={formData.ordenBeta} onChange={(v: string) => updateField("ordenBeta", v)} readOnly success={!!formData.ordenBeta} />
-                     <FormField label="CONTENEDOR" placeholder="ABCD 123" icon={Container} value={formData.contenedor} onChange={(v: string) => updateField("contenedor", v)} readOnly success={!!formData.contenedor} />
-                     <FormField label="DAM" placeholder="118-2026" icon={FileText} value={formData.dam} onChange={(v: string) => updateField("dam", v)} readOnly success={!!formData.dam} />
-                  </div>
-               </div>
-
-               <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm">
-                   <div className="flex items-center gap-4 mb-10">
-                        <div className="h-12 w-12 bg-slate-50 rounded-2xl flex items-center justify-center ring-8 ring-slate-50/10"><Truck className="h-6 w-6 text-slate-600" /></div>
-                        <div>
-                           <h3 className="text-xl font-black text-[#022c22] tracking-tighter uppercase">02. TRANSPORTE</h3>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">LECTURA DE PLACAS Y CHOFERES</p>
-                        </div>
-                     </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                     <FormField label="DNI CHOFER" placeholder="Escriba DNI" icon={User} value={formData.dni} onChange={(v: string) => updateField("dni", v)} helperText={formData.nombreChofer} />
-                     <FormField label="PLACA TRACTO" placeholder="ABC-123" icon={Maximize2} value={formData.placaTracto} onChange={(v: string) => updateField("placaTracto", v)} />
-                     <FormField label="PLACA CARRETA" placeholder="XYZ-987" icon={Maximize2} value={formData.placaCarreta} onChange={(v: string) => updateField("placaCarreta", v)} />
-                     <FormField label="EMPRESA" placeholder="AUTOM├üTICO..." icon={Layers} value={formData.empresa} onChange={(v: string) => updateField("empresa", v)} readOnly helperText={formData.empresa ? `RUC: ${formData.ruc_transportista}` : ""} />
-                  </div>
-               </div>
-
-               <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm">
-                   <div className="flex items-center gap-4 mb-10">
-                        <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center ring-8 ring-emerald-50/10"><ShieldCheck className="h-6 w-6 text-emerald-600" /></div>
-                        <div>
-                           <h3 className="text-xl font-black text-[#022c22] tracking-tighter uppercase">03. PRECINTOS Y SALIDA</h3>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SEGURIDAD Y CONTROL</p>
-                        </div>
-                     </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                     <MultiInput label="ADUANA" placeholder="ADD" icon={ShieldCheck} values={formData.precintoAduana} onChange={(v) => updateField("precintoAduana", v)} />
-                     <MultiInput label="OPERADOR" placeholder="OPP" icon={ShieldCheck} values={formData.precintoOperador} onChange={(v) => updateField("precintoOperador", v)} />
-                     <MultiInput label="SENASA" placeholder="SEN" icon={BadgeCheck} values={formData.precintoSenasa} onChange={(v) => updateField("precintoSenasa", v)} />
-                     <MultiInput label="L├ìNEA" placeholder="LIN" icon={Layers} values={formData.precintoLinea} onChange={(v) => updateField("precintoLinea", v)} />
-                     <MultiInput label="BETA" placeholder="BET" icon={Zap} values={formData.precintosBeta} onChange={(v) => updateField("precintosBeta", v)} />
-                     <MultiInput label="TERM├ôGRAFOS" placeholder="TERM" icon={Thermometer} values={formData.termografos} onChange={(v) => updateField("termografos", v)} />
-                  </div>
-
-                  <div className="mt-16 pt-12 border-t border-slate-100 flex items-center justify-between">
-                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><Info className="h-6 w-6" /></div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-sm">Verifique que todos los datos sean legibles. El sistema validar├í la integridad de la operaci├│n al guardar.</p>
-                     </div>
-                     <div className="flex items-center gap-8">
-                        <button className="text-[10px] font-black text-slate-300 uppercase tracking-widest hover:text-emerald-600">BORRADOR</button>
-                        <Button onClick={handleSave} disabled={isSearching || formData.booking.length < 3} className="h-20 px-16 bg-[#022c22] text-white rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-[11px] hover:bg-emerald-800 shadow-2xl transition-all group">
-                           {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <span>GUARDAR REGISTRO</span>}
-                           <ArrowRight className="ml-4 h-5 w-5 group-hover:translate-x-2 transition-transform" />
-                        </Button>
-                     </div>
                   </div>
                </div>
             </div>
 
-            <div className="h-20" />
+            {/* CUERPO DEL FORMULARIO: Columnas de Datos */}
+            <div className="grid grid-cols-12 gap-8">
+               
+                {/* BLOQUE 1: DATOS DE EMBARQUE */}
+                <div className="col-span-12 lg:col-span-6 bg-white rounded-[1.75rem] border border-slate-100 p-7 shadow-sm relative">
+                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-[1.75rem]" />
+                   <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                         <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                         <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                      </div>
+                      
+                      {/* Or├ículo de Unicidad: Alerta Centralizada (Reference Drawing) */}
+                      {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
+                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+                           <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
+                           <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">
+                              {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
+                           </span>
+                        </div>
+                      )}
+                   </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField 
+                        label="Booking / Reserva" 
+                        placeholder="BK-XXXXXXXX" 
+                        icon={BookOpen} 
+                        value={formData.booking} 
+                        onChange={(v) => updateField("booking", v)} 
+                        onBlur={() => handleFieldBlur("booking", formData.booking)}
+                        error={bookingError}
+                        errorMsg="Booking no registrado en posicionamiento"
+                        highlightError={!!fieldErrors.booking}
+                     />
+                     <FormField 
+                        label="Orden Beta" 
+                        placeholder="O-99999" 
+                        icon={Target} 
+                        value={formData.ordenBeta} 
+                        onChange={(v) => updateField("ordenBeta", v)} 
+                        onBlur={() => handleFieldBlur("ordenBeta", formData.ordenBeta)}
+                        readOnly
+                        success={validatedFields.includes("ordenBeta")}
+                        highlightError={!!fieldErrors.ordenBeta}
+                     />
+                     <FormField 
+                        label="N├║mero Contenedor" 
+                        placeholder="ABCD 123456-7" 
+                        icon={Container} 
+                        value={formData.contenedor} 
+                        onChange={(v) => updateField("contenedor", v)} 
+                        onBlur={() => handleFieldBlur("contenedor", formData.contenedor)}
+                        readOnly
+                        success={validatedFields.includes("contenedor")}
+                        highlightError={!!fieldErrors.contenedor}
+                     />
+                     <FormField 
+                        label="N├║mero DAM" 
+                        placeholder="118-2026-XX-XXXXXX" 
+                        icon={Hash} 
+                        value={formData.dam} 
+                        onChange={(v) => updateField("dam", v)} 
+                        onBlur={() => handleFieldBlur("dam", formData.dam)}
+                        readOnly
+                        success={validatedFields.includes("dam")}
+                        highlightError={!!fieldErrors.dam}
+                     />
+                  </div>
+
+                  {/* Toggle Tratamiento en Buque Carlos Style */}
+                  {transportMode === "maritimo" && (
+                    <div className="mt-8 pt-8 border-t border-slate-50 flex items-center justify-between bg-emerald-50/20 p-6 rounded-3xl border-dashed border-emerald-500/20">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Tratamiento en Buque</p>
+                          <p className="text-[9px] text-emerald-600/70 font-bold">Activar solo para m├║ltiples contenedores por booking</p>
+                       </div>
+                       <button 
+                          onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                          className={cn(
+                             "w-14 h-8 rounded-full transition-all duration-500 relative flex items-center px-1",
+                             formData.tratamientoBuque ? "bg-emerald-600 shadow-lg shadow-emerald-200" : "bg-slate-200"
+                          )}
+                       >
+                          <div className={cn(
+                             "h-6 w-6 bg-white rounded-full shadow-md transition-all duration-500 flex items-center justify-center",
+                             formData.tratamientoBuque ? "translate-x-6" : "translate-x-0"
+                          )}>
+                             {formData.tratamientoBuque && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                          </div>
+                       </button>
+                    </div>
+                  )}
+               </div>
+
+               {/* BLOQUE 2: INFORMACI├ôN DE TRANSPORTE */}
+               <div className="col-span-12 lg:col-span-6 bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm relative">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-[2rem]" />
+                  <div className="flex items-center gap-3 mb-6">
+                     <Truck className="h-5 w-5 text-slate-900" />
+                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Informaci├│n del Transporte</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField 
+                        label="DNI del Chofer" 
+                        placeholder="XXXXXXXX" 
+                        icon={User} 
+                        value={formData.dni} 
+                        onChange={(v) => updateField("dni", v)} 
+                        onBlur={handleChoferBlur}
+                        loading={isLoadingChofer}
+                        error={!!fieldErrors.dni}
+                        errorMsg={fieldErrors.dni}
+                        helperText={fieldErrors.dni_info}
+                     />
+                     <FormField 
+                        label="Placa Tracto" 
+                        placeholder="ABC-123" 
+                        icon={Maximize2} 
+                        value={formData.placaTracto} 
+                        onChange={(v) => updateField("placaTracto", v)} 
+                        onBlur={handleVehiculoBlur}
+                        loading={isLoadingVehiculo}
+                        error={!!fieldErrors.placaTracto}
+                        errorMsg={fieldErrors.placaTracto}
+                     />
+                     <FormField 
+                        label="Placa Carreta" 
+                        placeholder="XYZ-987" 
+                        icon={Maximize2} 
+                        value={formData.placaCarreta} 
+                        onChange={(v) => updateField("placaCarreta", v)} 
+                        onBlur={handleCarretaBlur}
+                        loading={isLoadingCarreta}
+                        error={!!fieldErrors.placaCarreta}
+                        errorMsg={fieldErrors.placaCarreta}
+                     />
+                     <FormField 
+                        label="Empresa Transportes" 
+                        placeholder="AUTOM├üTICO..." 
+                        icon={Layers} 
+                        value={formData.empresa} 
+                        onChange={(v) => updateField("empresa", v)} 
+                        readOnly
+                        helperText={fieldErrors.empresa_info}
+                     />
+                  </div>
+               </div>
+
+               {/* BLOQUE 3: PRECINTOS Y CONTROL (MULTIENTRADA) */}
+                <div className="col-span-12 bg-gradient-to-br from-white to-slate-50/50 rounded-[2rem] border border-slate-100 p-7 shadow-sm relative transition-all duration-500 hover:shadow-xl hover:border-emerald-100 group">
+                  <div className="flex items-center gap-3 mb-6">
+                     <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <MultiInput 
+                        label="Precinto Aduana" 
+                        placeholder="Ej: AD123" 
+                        values={formData.precintoAduana} 
+                        onChange={(v) => updateField("precintoAduana", v)}
+                        icon={ShieldCheck}
+                        autoFocus
+                     />
+                     <MultiInput 
+                        label="Precinto Operador" 
+                        placeholder="Ej: OP456" 
+                        values={formData.precintoOperador} 
+                        onChange={(v) => updateField("precintoOperador", v)}
+                        icon={ShieldCheck}
+                     />
+                     <MultiInput 
+                        label="Precinto SENASA" 
+                        placeholder="Ej: SE789" 
+                        values={formData.precintoSenasa} 
+                        onChange={(v) => updateField("precintoSenasa", v)}
+                        icon={BadgeCheck}
+                     />
+                     <MultiInput 
+                        label="Precinto L├¡nea" 
+                        placeholder="Ej: LN012" 
+                        values={formData.precintoLinea} 
+                        onChange={(v) => updateField("precintoLinea", v)}
+                        icon={Layers}
+                     />
+                     <MultiInput 
+                        label="Precintos BETA" 
+                        placeholder="Ej: BT345" 
+                        values={formData.precintosBeta} 
+                        onChange={(v) => updateField("precintosBeta", v)}
+                        icon={Zap}
+                     />
+                     <MultiInput 
+                        label="Term├│grafos / Key" 
+                        placeholder="Ej: T-9999" 
+                        values={formData.termografos} 
+                        onChange={(v) => updateField("termografos", v)}
+                        icon={Thermometer}
+                     />
+                  </div>
+
+                  {/* Acciones Finales Carlos Style */}
+                  <div className="mt-16 flex items-center justify-end border-t border-slate-50 pt-10 gap-6">
+                    <button 
+                       onClick={handleSaveDraft}
+                       className="text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-emerald-600 transition-colors duration-300 px-6 py-3 rounded-2xl hover:bg-emerald-50"
+                    >
+                      Guardar como borrador
+                    </button>
+                    <button 
+                       onClick={handleSave}
+                       disabled={isSearching}
+                       className="flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-950 to-slate-900 text-white rounded-[1.5rem] shadow-xl shadow-emerald-900/10 text-[12px] font-black uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-95 transition-all duration-500 group overflow-hidden relative disabled:opacity-50"
+                    >
+                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                       <span className="relative z-10">{isSearching ? "Guardando..." : "Guardar Registro"}</span>
+                       <ArrowRight className="h-5 w-5 text-emerald-400 group-hover:translate-x-1 transition-transform relative z-10" />
+                    </button>
+                  </div>
+               </div>
+
+            </div>
           </div>
         </main>
       </div>
 
-      <SuccessModal isOpen={showSuccess} onClose={() => window.location.href="/logicapture/bandeja"} title={successTitle} />
-      
-      <div className="fixed bottom-12 right-12 z-[100]">
-         <button onClick={handleLookup} className="h-20 w-20 bg-emerald-500 rounded-3xl shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all shadow-emerald-500/20 group">
-            <div className="absolute inset-0 bg-emerald-400 rounded-3xl animate-ping opacity-20" />
-            <Sparkles className="h-10 w-10 animate-pulse relative z-10" />
-         </button>
+      {/* Bot├│n VENOM Flotante e Inteligente (Inge Daniel Edition) */}
+      <div 
+        style={{ top: `${dynamicY}%` }}
+        className={cn(
+          "fixed right-12 z-[100] transition-all duration-1000 ease-out pointer-events-none",
+          showFloatingButton ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-64"
+        )}
+      >
+          <button 
+            onClick={handleLookup}
+            disabled={isSearching}
+            className="group relative flex flex-col items-center gap-3 outline-none pointer-events-auto"
+          >
+              {/* Tooltip Venom */}
+              <div className="absolute right-full mr-10 py-2.5 px-6 bg-[#022c22] text-emerald-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl border border-emerald-500/20 opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0 whitespace-nowrap">
+                 IA Autocomplete
+              </div>
+              
+              {/* El Bot├│n Org├ínico "Venom" */}
+              <div className="h-24 w-24 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-3xl shadow-2xl shadow-emerald-500/50 flex items-center justify-center text-white animate-venom cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 disabled:opacity-50">
+                 {isSearching ? <Loader2 className="h-10 w-10 animate-spin text-white" /> : <Sparkles className="h-12 w-12 animate-pulse" />}
+              </div>
+              
+              {/* Aura Venom */}
+              <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full animate-pulse z-[-1]" />
+          </button>
       </div>
+
+      <SuccessModal 
+         isOpen={showSuccess} 
+         onClose={() => setShowSuccess(false)} 
+         title={successTitle} 
+      />
     </div>
   );
 }
