@@ -47,13 +47,19 @@ class InstructionPDFService:
 
         # Header con Logo (URL Beta o local)
         try:
+             import urllib.request
              logo_url = "https://beta.com.pe/wp-content/uploads/2021/05/logo-complejo-agroindustrial-beta.png"
-             header_table_data = [[Image(logo_url, width=120, height=45), Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]), Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"])]]
+             req = urllib.request.Request(logo_url, headers={'User-Agent': 'Mozilla/5.0'})
+             with urllib.request.urlopen(req) as response:
+                 img_data = io.BytesIO(response.read())
+             
+             logo_obj = Image(img_data, width=120, height=45)
+             header_table_data = [[logo_obj, Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]), Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"])]]
              header_table = Table(header_table_data, colWidths=[4*cm, 11*cm, 3*cm])
              header_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,0), (-1,-1), 1, colors.HexColor("#7CC546"))]))
              elements.append(header_table)
-        except:
-             elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - {pos.BOOKING}</b>", styles["Title"]))
+        except Exception as e:
+             elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</b>", styles["Title"]))
 
         elements.append(Spacer(1, 12))
 
