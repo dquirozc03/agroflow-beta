@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, KeyboardEvent, useEffect } from "react";
 import { 
@@ -60,13 +60,13 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocu
       if (!cleanValue) return;
 
       e.preventDefault();
-      // Silencioso: Solo a├▒ade si no existe, limpia en cualquier caso
+      // Silencioso: Solo añade si no existe, limpia en cualquier caso
       if (!values.includes(cleanValue)) {
         onChange([...values, cleanValue]);
       }
       setInputValue("");
       
-      // Asegurar que el foco se mantenga para el siguiente escaneo (pistola modo r├ífaga)
+      // Asegurar que el foco se mantenga para el siguiente escaneo (pistola modo ráfaga)
       setTimeout(() => inputRef.current?.focus(), 10);
     } else if (e.key === "Backspace" && !inputValue && values.length > 0) {
       onChange(values.slice(0, -1));
@@ -108,7 +108,7 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, autoFocu
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={values.length === 0 ? placeholder : "A├▒adir m├ís..."}
+          placeholder={values.length === 0 ? placeholder : "Añadir más..."}
           className="flex-1 bg-transparent border-none outline-none text-base font-medium text-slate-900 placeholder:text-slate-300 min-w-[120px] px-2"
         />
       </div>
@@ -174,7 +174,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           </div>
         )}
 
-        {/* Tooltip de Informaci├│n Adicional (Helper) */}
+        {/* Tooltip de Información Adicional (Helper) */}
         {helperText && !error && !loading && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-5 py-3 bg-[#022c22] backdrop-blur-md border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-[0.15em] uppercase rounded-2xl shadow-2xl opacity-0 scale-90 -translate-y-2 group-hover/input:opacity-100 group-hover/input:scale-100 group-hover/input:translate-y-0 pointer-events-none transition-all duration-300 z-[110] whitespace-nowrap origin-bottom">
              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-scan-slow opacity-10" />
@@ -209,14 +209,14 @@ function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: ()
              <CheckCircle2 className="h-12 w-12 text-emerald-600 relative z-10 animate-in zoom-in-50 duration-500" />
           </div>
           <div className="space-y-3">
-             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">┬íOperaci├│n Exitosa!</h2>
+             <h2 className="text-3xl font-black text-emerald-950 tracking-tighter">¡Operación Exitosa!</h2>
              <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Registro: {title}</p>
           </div>
           <button 
              onClick={onClose}
              className="w-full py-5 bg-emerald-950 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/20 active:scale-95"
           >
-             Continuar Operaci├│n
+             Continuar Operación
           </button>
        </div>
     </div>
@@ -240,7 +240,7 @@ export default function LogiCaptureV2Page() {
     return () => mainElement.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Calcular posici├│n din├ímica (se mueve entre 30% y 70% de la pantalla)
+  // Calcular posición dinámica (se mueve entre 30% y 70% de la pantalla)
   const dynamicY = Math.min(70, 30 + (scrollY / 10));
 
   // Estado del Formulario
@@ -293,7 +293,7 @@ export default function LogiCaptureV2Page() {
       if (!response.ok) {
         setBookingError(true);
         setIsSearching(false);
-        // Limpiar campos para evitar confusi├│n con el booking anterior
+        // Limpiar campos para evitar confusión con el booking anterior
         setFormData(prev => ({
           ...prev,
           ordenBeta: "",
@@ -305,7 +305,7 @@ export default function LogiCaptureV2Page() {
       
       const result = await response.json();
       
-      // Sanitizaci├│n de DAM Carlos Style (quitar ceros a la izquierda del ├║ltimo segmento)
+      // Sanitización de DAM Carlos Style (quitar ceros a la izquierda del último segmento)
       let cleanDam = result.dam;
       if (cleanDam && cleanDam.includes("-")) {
         const parts = cleanDam.split("-");
@@ -326,13 +326,13 @@ export default function LogiCaptureV2Page() {
       const errors: { [key: string]: string } = {};
 
       if (result.orden_beta) found.push("ordenBeta");
-      else errors.ordenBeta = "No se encontr├│ Orden Beta en el Posicionamiento";
+      else errors.ordenBeta = "No se encontró Orden Beta en el Posicionamiento";
 
       if (result.contenedor) found.push("contenedor");
-      else errors.contenedor = "No se encontr├│ Contenedor en Datos Maestros";
+      else errors.contenedor = "No se encontró Contenedor en Datos Maestros";
 
       if (result.dam) found.push("dam");
-      else errors.dam = "No se encontr├│ DAM en el Control de Embarque";
+      else errors.dam = "No se encontró DAM en el Control de Embarque";
 
       setValidatedFields(found);
       setFieldErrors(errors);
@@ -340,7 +340,7 @@ export default function LogiCaptureV2Page() {
       setFieldErrors(errors);
 
       if (found.length < 3) {
-        // En lugar de toast, los errores ya est├ín en fieldErrors
+        // En lugar de toast, los errores ya están en fieldErrors
       }
     } catch (error: any) {
       setBookingError(true);
@@ -374,7 +374,7 @@ export default function LogiCaptureV2Page() {
       });
     }
 
-    // Limpiar error espec├¡fico al editar
+    // Limpiar error específico al editar
     if (fieldErrors[field]) {
       setFieldErrors(prev => {
         const newState = { ...prev };
@@ -441,7 +441,7 @@ export default function LogiCaptureV2Page() {
          // Quitamos de validados si es duplicado
          setValidatedFields(prev => prev.filter(f => f !== field));
       } else {
-         // Si exist├¡a un error previo de duplicado para este campo, lo borramos
+         // Si existía un error previo de duplicado para este campo, lo borramos
          setFieldErrors(prev => {
             const next = { ...prev };
             if (next[field]?.includes("Duplicado")) delete next[field];
@@ -459,7 +459,7 @@ export default function LogiCaptureV2Page() {
     const oldValues = formData[field] as string[];
     updateField(field as string, newValues);
 
-    // Si el array creci├│, validamos el ├║ltimo elemento
+    // Si el array creció, validamos el último elemento
     if (newValues.length > oldValues.length) {
        const lastValue = newValues[newValues.length - 1];
        try {
@@ -514,14 +514,14 @@ export default function LogiCaptureV2Page() {
       setValidatedFields(parsed.validatedFields || []);
       setFieldErrors(parsed.fieldErrors || {});
       setTransportMode(parsed.transportMode || "maritimo");
-      toast.success("Borrador recuperado autom├íticamente");
+      toast.success("Borrador recuperado automáticamente");
     }
   }, []);
 
   const handleSave = async () => {
     setServerError(null);
 
-    // Sanitizaci├│n de campos opcionales por defecto (**)
+    // Sanitización de campos opcionales por defecto (**)
     const payload = {
        ...formData,
        precintoOperador: formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
@@ -545,9 +545,9 @@ export default function LogiCaptureV2Page() {
       const resData = await response.json();
       setSuccessTitle(formData.ordenBeta || formData.contenedor);
       setShowSuccess(true);
-      // Mantenemos la data visible por petici├│n del usuario
+      // Mantenemos la data visible por petición del usuario
     } catch (error: any) {
-      setServerError("Error de conexi├│n con el servidor. Intente nuevamente en unos momentos.");
+      setServerError("Error de conexión con el servidor. Intente nuevamente en unos momentos.");
     } finally {
       setIsSearching(false);
     }
@@ -589,7 +589,7 @@ export default function LogiCaptureV2Page() {
         <main ref={mainRef} className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
           <div className="max-w-[1200px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             
-            {/* Header de Secci├│n Carlos Style (Sin Sticky por petici├│n de Inge Daniel) */}
+            {/* Header de Sección Carlos Style (Sin Sticky por petición de Inge Daniel) */}
             <div className="py-6 flex flex-col md:flex-row md:items-end justify-between gap-6 transition-all duration-300">
               <div className="space-y-2">
                 <div className="flex items-center gap-3 group">
@@ -608,9 +608,9 @@ export default function LogiCaptureV2Page() {
               {/* Selector de Modalidad Carlos Style */}
               <div className="flex bg-white/50 backdrop-blur-sm p-2 rounded-[1.8rem] border border-slate-100 shadow-sm gap-2">
                 {[
-                  { id: "maritimo", icon: Ship, label: "Mar├¡timo" },
+                  { id: "maritimo", icon: Ship, label: "Marítimo" },
                   { id: "terrestre", icon: Truck, label: "Terrestre" },
-                  { id: "aereo", icon: Plane, label: "A├®reo" }
+                  { id: "aereo", icon: Plane, label: "Aéreo" }
                 ].map((mode) => (
                   <button
                     key={mode.id}
@@ -673,7 +673,7 @@ export default function LogiCaptureV2Page() {
                              </div>
                              <div className="text-center space-y-2">
                                 <p className="text-base font-black text-white uppercase tracking-widest">Pegar Recorte o Soltar Imagen</p>
-                                <p className="text-xs font-bold text-emerald-500/50 uppercase tracking-widest">Presiona <kbd className="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Ctrl + V</kbd> para procesar instant├íneamente</p>
+                                <p className="text-xs font-bold text-emerald-500/50 uppercase tracking-widest">Presiona <kbd className="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Ctrl + V</kbd> para procesar instantáneamente</p>
                              </div>
                              
                              {/* Lineas de Escaneo Simuladas */}
@@ -687,7 +687,7 @@ export default function LogiCaptureV2Page() {
                        <div className="bg-[#022c22]/50 border border-white/5 rounded-3xl p-8 space-y-6">
                           <div className="space-y-1">
                              <h3 className="text-sm font-black text-white uppercase tracking-widest">Selector de Destino</h3>
-                             <p className="text-xs font-bold text-emerald-500/40 uppercase tracking-widest">Elige d├│nde aplicar el dato extra├¡do</p>
+                             <p className="text-xs font-bold text-emerald-500/40 uppercase tracking-widest">Elige dónde aplicar el dato extraído</p>
                           </div>
                           
                           <div className="grid grid-cols-6 gap-4">
@@ -754,7 +754,7 @@ export default function LogiCaptureV2Page() {
                          )}
                       </div>
                       
-                      {/* Or├ículo de Unicidad: Alerta Centralizada */}
+                      {/* Oráculo de Unicidad: Alerta Centralizada */}
                       {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
                         <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[200px]">
                            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
@@ -789,7 +789,7 @@ export default function LogiCaptureV2Page() {
                         highlightError={!!fieldErrors.ordenBeta}
                      />
                      <FormField 
-                        label="N├║mero Contenedor" 
+                        label="Número Contenedor" 
                         placeholder="ABCD 123456-7" 
                         icon={Container} 
                         value={formData.contenedor} 
@@ -800,7 +800,7 @@ export default function LogiCaptureV2Page() {
                         highlightError={!!fieldErrors.contenedor}
                      />
                      <FormField 
-                        label="N├║mero DAM" 
+                        label="Número DAM" 
                         placeholder="118-2026-XX-XXXXXX" 
                         icon={Hash} 
                         value={formData.dam} 
@@ -813,12 +813,12 @@ export default function LogiCaptureV2Page() {
                   </div>
                </div>
 
-               {/* BLOQUE 2: INFORMACI├ôN DE TRANSPORTE */}
+               {/* BLOQUE 2: INFORMACIÓN DE TRANSPORTE */}
                <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
                   <div className="absolute top-0 left-0 w-2 h-full bg-slate-900 rounded-l-3xl" />
                   <div className="flex items-center gap-3 mb-5">
                      <Truck className="h-5 w-5 text-slate-900" />
-                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Informaci├│n del Transporte</h3>
+                     <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">02. Información del Transporte</h3>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -858,7 +858,7 @@ export default function LogiCaptureV2Page() {
                      />
                      <FormField 
                         label="Empresa Transportes" 
-                        placeholder="AUTOM├üTICO..." 
+                        placeholder="AUTOMÁTICO..." 
                         icon={Layers} 
                         value={formData.empresa} 
                         onChange={(v) => updateField("empresa", v)} 
@@ -875,7 +875,7 @@ export default function LogiCaptureV2Page() {
                          <ShieldCheck className="h-5 w-5 text-emerald-600" />
                          <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">03. Precintos y Control de Salida</h3>
                       </div>
-                      {/* Espacio para estatus de la secci├│n */}
+                      {/* Espacio para estatus de la sección */}
                       {serverError && (
                          <div className="flex items-center gap-2 text-rose-500 animate-in slide-in-from-right-4 duration-500">
                             <AlertCircle className="h-4 w-4" />
@@ -911,7 +911,7 @@ export default function LogiCaptureV2Page() {
                         duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
-                        label="Precinto L├¡nea" 
+                        label="Precinto Línea" 
                         placeholder="Ej: LN012" 
                         values={formData.precintoLinea} 
                         onChange={(v) => validateSeal("precintoLinea", v)}
@@ -927,7 +927,7 @@ export default function LogiCaptureV2Page() {
                         duplicatedValues={duplicatedCodes}
                      />
                      <MultiInput 
-                        label="Term├│grafos / Key" 
+                        label="Termógrafos / Key" 
                         placeholder="Ej: T-9999" 
                         values={formData.termografos} 
                         onChange={(v) => validateSeal("termografos", v)}
@@ -956,8 +956,8 @@ export default function LogiCaptureV2Page() {
                            <div className="flex items-start gap-4 text-slate-400 group-hover:text-emerald-600/50 transition-colors duration-500">
                               <Info className="h-5 w-5 mt-0.5" />
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Operaci├│n Protegida</p>
-                                 <p className="text-[11px] font-medium leading-tight max-w-sm">Verifique que todos los datos sean legibles. El sistema validar├í la integridad de la operaci├│n al guardar.</p>
+                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Operación Protegida</p>
+                                 <p className="text-[11px] font-medium leading-tight max-w-sm">Verifique que todos los datos sean legibles. El sistema validará la integridad de la operación al guardar.</p>
                               </div>
                            </div>
                         )}
@@ -992,7 +992,7 @@ export default function LogiCaptureV2Page() {
         </main>
       </div>
 
-      {/* Bot├│n VENOM Flotante e Inteligente (Inge Daniel Edition) */}
+      {/* Botón VENOM Flotante e Inteligente (Inge Daniel Edition) */}
       <div 
         style={{ top: `${dynamicY}%` }}
         className={cn(
@@ -1010,7 +1010,7 @@ export default function LogiCaptureV2Page() {
                  IA Autocomplete
               </div>
               
-              {/* El Bot├│n Org├ínico "Venom" */}
+              {/* El Botón Orgánico "Venom" */}
               <div className="h-24 w-24 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-3xl shadow-2xl shadow-emerald-500/50 flex items-center justify-center text-white animate-venom cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 disabled:opacity-50">
                  {isSearching ? <Loader2 className="h-10 w-10 animate-spin text-white" /> : <Sparkles className="h-12 w-12 animate-pulse" />}
               </div>
