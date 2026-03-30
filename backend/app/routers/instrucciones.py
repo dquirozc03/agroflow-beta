@@ -111,10 +111,14 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
             observaciones=req.observaciones
         )
         
+        filename = f"IE_{req.booking}.pdf"
+        if pdf_data.get("orden_beta"):
+            filename = f"IE_{pdf_data['orden_beta']}.pdf"
+            
         return StreamingResponse(
-            io.BytesIO(pdf_bytes),
+            io.BytesIO(pdf_data["pdf_bytes"]),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=IE_{req.booking}.pdf"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

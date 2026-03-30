@@ -86,10 +86,18 @@ export default function InstruccionesEmbarque() {
 
       if (response.ok) {
         const blob = await response.blob();
+        
+        // Extraer nombre del archivo del header Content-Disposition si existe
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = `IE_${bookingId}.pdf`;
+        if (disposition && disposition.indexOf('filename=') !== -1) {
+            filename = disposition.split('filename=')[1].replace(/"/g, '');
+        }
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `IE_${bookingId}.pdf`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

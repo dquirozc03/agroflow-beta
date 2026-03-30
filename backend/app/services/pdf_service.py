@@ -76,7 +76,11 @@ class InstructionPDFService:
         html_content = template.render(context)
 
         # 6. Generar PDF
-        # Note: We return the bytes of the PDF
-        return HTML(string=html_content).write_pdf()
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        
+        return {
+            "pdf_bytes": pdf_bytes,
+            "orden_beta": pos.ORDEN_BETA
+        }
 
 instruction_pdf_service = InstructionPDFService()
