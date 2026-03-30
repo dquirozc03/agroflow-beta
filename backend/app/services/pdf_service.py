@@ -40,7 +40,25 @@ class InstructionPDFService:
         peso_neto = float(total_cajas) * float(peso_kg)
         peso_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
 
-        cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
+        # 2. Búsqueda de Maestro con Triple Validación (Sincronizado con Lookup)
+        pais_val = pedidos[0].pais if pedidos else ""
+        pod_val = pedidos[0].pod if pedidos else ""
+
+        cliente_maestro = db.query(ClienteIE).filter(
+            ClienteIE.nombre_legal.ilike(cliente_nombre),
+            ClienteIE.pais.ilike(pais_val),
+            ClienteIE.destino.ilike(pod_val)
+        ).first()
+
+        if not cliente_maestro:
+            cliente_maestro = db.query(ClienteIE).filter(
+                ClienteIE.nombre_legal.ilike(cliente_nombre),
+                ClienteIE.pais.ilike(pais_val)
+            ).first()
+
+        if not cliente_maestro:
+            cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
+
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
 
         # 2. Construcción PDF (ReportLab - No requiere dependencias del sistema)
@@ -177,7 +195,7 @@ class InstructionPDFService:
         t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=8, leading=9, alignment=1, fontName='Helvetica-Bold')), ""],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
-            [b_p("PAIS DE DESTINO"), b_p(cliente_maestro.pais if cliente_maestro else "")],
+            [b_p("PAIS DE DESTINO"), b_p(pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else ""))],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
             [b_p("PRESENTACION"), b_p(getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG")],
             [b_p("ETIQUETAS"), b_p("GENERICA")],
