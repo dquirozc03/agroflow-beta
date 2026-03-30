@@ -505,7 +505,17 @@ export default function LogiCaptureFase3Page() {
                            </div>
                         </div>
                      </div>
-                     {formData.tratamientoBuque && <div className="px-5 py-2 bg-emerald-950 text-white rounded-full text-[9px] font-black uppercase tracking-widest animate-in zoom-in">TRATAMIENTO EN BUQUE</div>}
+                     <button 
+                        onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                        className={cn(
+                           "px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                           formData.tratamientoBuque 
+                              ? "bg-emerald-950 text-white shadow-lg active:scale-95" 
+                              : "bg-slate-50 text-slate-300 hover:bg-slate-100"
+                        )}
+                     >
+                        {formData.tratamientoBuque ? "✓ TRATAMIENTO EN BUQUE" : "TRATAMIENTO EN BUQUE"}
+                     </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
