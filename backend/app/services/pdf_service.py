@@ -105,7 +105,7 @@ class InstructionPDFService:
         desc_en = f"{total_cajas} BOXES WITH FRESH {cult_en} {variedad} ON {total_pallets} PALLETS"
         desc_es = f"{total_cajas} CAJAS CON FRESCA {cult_es} {variedad} EN {total_pallets} PALETAS"
 
-        fecha_llenado = f"{getattr(pos, 'FECHA_CITA', '')} - {getattr(pos, 'HORA_CITA', '')}".strip(" - ")
+        fecha_llenado = f"{getattr(pos, 'FECHA_PROGRAMADA', '')} - {getattr(pos, 'HORA_PROGRAMADA', '')}".strip(" - ")
 
         t_data = [
             [b_p(pos.ORDEN_BETA or 'S/N'), b_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
@@ -127,10 +127,10 @@ class InstructionPDFService:
             [b_p("BOOKING No."), b_p(pos.BOOKING or "")],
             [b_p("FREIGHT"), n_p("COLLECT")],
             [b_p("EMISION B/L"), n_p("SWB")],
-            [b_p("PUERTO EMBARQUE"), n_p(pos.PUERTO_ORIGEN or "CALLAO")],
-            [b_p("ETA"), n_p(getattr(pos, 'ETA_DESTINO', ''))],
-            [b_p("PUERTO DESTINO"), n_p(cliente_maestro.destino if cliente_maestro else pos.PUERTO_DESTINO)],
-            [b_p("CANTIDAD DE CONTENEDORES"), n_p(getattr(pos, 'CANTIDAD_CTNS', "01"))],
+            [b_p("PUERTO EMBARQUE"), n_p(getattr(pos, 'POL', "CALLAO") or "CALLAO")],
+            [b_p("ETA"), n_p(getattr(pos, 'ETA', ''))],
+            [b_p("PUERTO DESTINO"), n_p(cliente_maestro.destino if cliente_maestro else "")],
+            [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")],
             [b_p("PRODUCTO"), n_p(pos.CULTIVO or "GRANADAS")],
             [b_p("VARIEDAD"), n_p(variedad)],
             [b_p("TEMPERATURA"), n_p("6.0°C" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
@@ -149,7 +149,7 @@ class InstructionPDFService:
             
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
             [b_p("PAIS DE DESTINO"), b_p(cliente_maestro.pais if cliente_maestro else "")],
-            [b_p("PUNTO DE LLEGADA"), b_p(cliente_maestro.destino if cliente_maestro else pos.PUERTO_DESTINO)],
+            [b_p("PUNTO DE LLEGADA"), b_p(cliente_maestro.destino if cliente_maestro else "")],
             [b_p("PRESENTACION"), b_p(getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG")],
             [b_p("ETIQUETAS"), b_p("GENERICA")],
             [b_p("PESO NETO ESTIMADO"), b_p(f"{total_cajas * float(peso_kg if peso_kg else 3.8):,.3f} KG")],
