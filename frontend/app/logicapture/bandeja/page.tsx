@@ -247,7 +247,7 @@ export default function BandejaLogiCapture() {
   const refreshTractoData = async () => {
     if (!editData.placa_tracto) return;
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${editData.placa_tracto}`);
+      const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${editData.placa_tracto}`);
       if (resp.ok) {
         const data = await resp.json();
         setEditData((prev: any) => ({
@@ -282,7 +282,7 @@ export default function BandejaLogiCapture() {
       for (const reg of recordsToSync) {
         try {
           const placaClean = (reg.placa_tracto || "").replace(/-/g, "").trim().toUpperCase();
-          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/tracto/${placaClean}`);
+          const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placaClean}`);
           if (resp.ok) {
             const master = await resp.json();
             
@@ -885,6 +885,10 @@ export default function BandejaLogiCapture() {
       {/* Modal de Éxito Premium - ELIMINACIÃ“N DE TOAST FEO */}
       <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
          <DialogContent className="sm:max-w-md bg-emerald-950 border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl shadow-emerald-500/20 pointer-events-auto">
+            <DialogHeader className="sr-only">
+               <DialogTitle>Registro Procesado</DialogTitle>
+               <DialogDescription>Confirmación de operación exitosa</DialogDescription>
+            </DialogHeader>
             <div className="relative p-12 flex flex-col items-center text-center gap-6">
                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-950 opacity-50 pointer-events-none" />
                
@@ -916,6 +920,10 @@ export default function BandejaLogiCapture() {
       {/* Modal de Generación Excel Premium */}
       <Dialog open={isExporting} onOpenChange={setIsExporting}>
          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
+            <DialogHeader className="sr-only">
+               <DialogTitle>Exportando Excel</DialogTitle>
+               <DialogDescription>Procesando descarga de reporte</DialogDescription>
+            </DialogHeader>
             <div className="relative p-12 flex flex-col items-center text-center gap-6">
                <div className="h-24 w-24 bg-emerald-50 rounded-full flex items-center justify-center">
                   <FileDown className="h-10 w-10 text-emerald-600 animate-bounce" />
@@ -944,17 +952,13 @@ export default function BandejaLogiCapture() {
       {/* Modal de Anulación Premium */}
       <Dialog open={isAnularOpen} onOpenChange={setIsAnularOpen}>
          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
-            <div className="relative p-10 flex flex-col gap-6">
-               <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
-                     <AlertTriangle className="h-8 w-8" />
-                  </div>
-                  <div className="space-y-1">
-                     <h2 className="text-2xl font-black text-slate-950 tracking-tight uppercase">Anular Operación</h2>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Se marcará como error administrativo</p>
-                  </div>
-               </div>
-
+            <DialogHeader className="p-10 pb-0">
+               <DialogTitle className="text-2xl font-black text-rose-600 tracking-tighter uppercase font-['Outfit'] flex items-center gap-3">
+                  <AlertTriangle className="h-6 w-6" /> Anular Registro
+               </DialogTitle>
+               <DialogDescription className="text-xs font-bold text-slate-400 mt-2">¿Está seguro de que desea anular esta operación? Esta acción quedará registrada.</DialogDescription>
+            </DialogHeader>
+            <div className="relative p-10 pt-4 flex flex-col gap-6">
                <div className="space-y-4">
                   <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Motivo de Anulación</label>
@@ -1003,7 +1007,7 @@ export default function BandejaLogiCapture() {
             </div>
          </DialogContent>
       </Dialog>
-       {/* Modal de Error Premium Carlos Style ðŸ’Ž */}
+       {/* Modal de Error Premium Carlos Style 💎 */}
        <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
           <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-300">
              <DialogHeader className="sr-only">
@@ -1035,12 +1039,12 @@ export default function BandejaLogiCapture() {
              </div>
           </DialogContent>
        </Dialog>
-       {/* Modal de Edición Directa Carlos Style ðŸ’Ž */}
+       {/* Modal de Edición Directa Carlos Style 💎 */}
        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="sm:max-w-4xl bg-white border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl h-[90vh] flex flex-col">
+          <DialogContent className="max-w-[70vw] min-h-[85vh] h-[85vh] bg-emerald-950/40 backdrop-blur-3xl border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl pointer-events-auto flex flex-col scale-in flex-col">
              <DialogHeader className="sr-only">
-                <DialogTitle>Editar Auditoría</DialogTitle>
-                <DialogDescription>Corrección de datos operativos LogiCapture</DialogDescription>
+                <DialogTitle>Panel de Auditoría</DialogTitle>
+                <DialogDescription>Edición técnica de campos operativos</DialogDescription>
              </DialogHeader>
 
              <div className="p-10 bg-emerald-950 flex items-center justify-between shrink-0">
@@ -1062,6 +1066,10 @@ export default function BandejaLogiCapture() {
                 {/* Modal Transitorio de Éxito Anulación */}
       <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
           <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-emerald-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-emerald-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Registro Actualizado</DialogTitle>
+                <DialogDescription>Los cambios han sido guardados</DialogDescription>
+             </DialogHeader>
              <div className="h-24 w-24 bg-emerald-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200 animate-bounce">
                 <CheckCircle2 className="h-12 w-12" />
              </div>
