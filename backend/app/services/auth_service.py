@@ -14,7 +14,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
-from app.models.auth import Usuario
+from app.models.auth import Usuario, RolMaster
 from app.utils.password import hash_password, verify_password
 from app.utils.audit import registrar_evento
 from app.schemas.auth import (
@@ -23,6 +23,8 @@ from app.schemas.auth import (
     UsuarioUpdate,
     RestablecerPasswordBody,
     CambiarPasswordPropiaBody,
+    RolCreate,
+    RolUpdate
 )
 from app.core.exceptions import (
     UsuarioNoEncontradoError,
@@ -244,3 +246,42 @@ def desbloquear_usuario(db: Session, usuario: str) -> Usuario:
     user.bloqueado = False
     db.commit()
     return user
+
+
+# --- ROLES MAESTROS ---
+
+def listar_roles(db: Session):
+    return db.query(RolMaster).order_by(RolMaster.nombre_rol).all()
+
+
+def crear_rol(db: Session, payload: RolCreate):
+    existente = db.query(RolMaster).filter(RolMaster.nombre_rol == payload.nombre_rol.upper().strip()).first()
+    if existente:
+        raise RecursoDuplicadoError("El nombre de rol ya existe")
+    
+    nuevo = RolMaster(
+        nombre_rol=payload.nombre_rol.upper().strip(),
+        descripcion=payload.descripcion,
+        permisos_plantilla=payload.permisos_plantilla
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return nuevo
+
+
+def actualizar_rol(db: Session, rol_id: int, payload: RolUpdate):
+    rol = db.query(RolMaster).filter(RolMaster.id == rol_id).first()
+    if not rol:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+    
+    if payload.nombre_rol is not None:
+        rol.nombre_rol = payload.nombre_rol.upper().strip()
+    if payload.descripcion is not None:
+        rol.descripcion = payload.descripcion
+    if payload.permisos_plantilla is not None:
+        rol.permisos_plantilla = payload.permisos_plantilla
+        
+    db.commit()
+    db.refresh(rol)
+    return rol

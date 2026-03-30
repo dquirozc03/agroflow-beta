@@ -158,3 +158,26 @@ class CambiarPasswordPropiaBody(BaseModel):
     """
     password_actual: Optional[str] = None  # None si es primer login o tras reset
     nueva_password: str
+
+# -----------------------------------------------------------------------------
+# SCHEMAS DE GESTIÓN DE ROLES (Plantillas de permisos)
+# -----------------------------------------------------------------------------
+
+class RolCreate(BaseModel):
+    nombre_rol: str
+    descripcion: Optional[str] = None
+    permisos_plantilla: dict = {"logicapture": True, "maestros": True, "operaciones": True, "sistema": False}
+
+class RolResponse(BaseModel):
+    id: int
+    nombre_rol: str
+    descripcion: Optional[str] = None
+    permisos_plantilla: dict
+    
+    class Config:
+        from_attributes = True
+
+class RolUpdate(BaseModel):
+    nombre_rol: Optional[str] = None
+    descripcion: Optional[str] = None
+    permisos_plantilla: Optional[dict] = None

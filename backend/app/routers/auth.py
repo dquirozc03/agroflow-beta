@@ -18,6 +18,9 @@ from app.schemas.auth import (
     UsuarioUpdate,
     RestablecerPasswordBody,
     CambiarPasswordPropiaBody,
+    RolCreate,
+    RolResponse,
+    RolUpdate
 )
 from app.services import auth_service
 
@@ -115,3 +118,29 @@ def desbloquear_usuario(id: int, current_user: CurrentUser, db: Session = Depend
     
     auth_service.desbloquear_usuario(db, user.usuario)
     return {"status": "success", "message": "Usuario desbloqueado correctamente"}
+
+
+# ========== Endpoints de ROLES MAESTROS (Solo Admin) ==========
+
+@router.get("/roles", response_model=list[RolResponse])
+def listar_roles(current_user: CurrentUser, db: Session = Depends(get_db)):
+    """Lista todos los roles maestros."""
+    if current_user.rol != "ADMIN":
+        raise PermisoInsuficienteError()
+    return auth_service.listar_roles(db)
+
+
+@router.post("/roles", response_model=RolResponse)
+def crear_rol(payload: RolCreate, current_user: CurrentUser, db: Session = Depends(get_db)):
+    """Crea un nuevo rol maestro."""
+    if current_user.rol != "ADMIN":
+        raise PermisoInsuficienteError()
+    return auth_service.crear_rol(db, payload)
+
+
+@router.patch("/roles/{id}", response_model=RolResponse)
+def actualizar_rol(id: int, payload: RolUpdate, current_user: CurrentUser, db: Session = Depends(get_db)):
+    """Actualiza un rol maestro."""
+    if current_user.rol != "ADMIN":
+        raise PermisoInsuficienteError()
+    return auth_service.actualizar_rol(db, id, payload)
