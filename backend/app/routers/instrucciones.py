@@ -1,13 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, MaestroFito
+from app.services.pdf_service import instruction_pdf_service
+from pydantic import BaseModel
 from sqlalchemy import func
 import re
+import io
 
 router = APIRouter(prefix="/api/v1/instrucciones", tags=["instrucciones-ie"])
+
+class GeneratePDFRequest(BaseModel):
+    booking: str
+    observaciones: str = ""
 
 @router.get("/lookup/{booking}")
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
@@ -90,3 +98,23 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         response["warning"] = "CLIENTE_NO_MAESTRO"
 
     return response
+
+@router.post("/generate-pdf")
+def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
+    """
+    Genera y retorna el PDF de la Instrucción de Embarque consolidada.
+    """
+    try:
+        pdf_bytes = instruction_pdf_service.generate_instruction_pdf(
+            booking=req.booking,
+            db=db,
+            observaciones=req.observaciones
+        )
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=IE_{req.booking}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

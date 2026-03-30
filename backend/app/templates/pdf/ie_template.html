@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>INSTRUCCIONES DE EMBARQUE - {{ pos.BOOKING }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0.5cm;
+        }
+        body {
+            font-family: 'Inter', 'Helvetica', Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #7CC546;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .header-logo {
+            height: 45px;
+        }
+        .header-title {
+            text-align: center;
+            flex-grow: 1;
+        }
+        .header-title h1 {
+            margin: 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+        }
+        .header-info {
+            text-align: right;
+            font-size: 9px;
+            color: #666;
+        }
+        .section-header {
+            background-color: #F8FAF7; /* Un Naranja/Ocre suave o Verde suave */
+            border-left: 4px solid #7CC546;
+            padding: 5px 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: #2D5A27;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .data-box {
+            border: 1px solid #EEE;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .label {
+            font-weight: bold;
+            color: #888;
+            font-size: 8px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .value {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        th, td {
+            border: 1px solid #EEE;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #FAFAFA;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 8px;
+            color: #666;
+        }
+        .footer {
+            margin-top: 20px;
+            border-top: 1px solid #EEE;
+            padding-top: 10px;
+            font-size: 8px;
+            color: #999;
+            text-align: center;
+        }
+        .signature-grid {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 150px;
+            text-align: center;
+            padding-top: 5px;
+        }
+        /* Refinamiento Granada */
+        .atm-box {
+            background-color: #FFF5F5;
+            border: 1px dashed #F87171;
+            padding: 5px;
+            font-size: 9px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://beta.com.pe/wp-content/uploads/2021/05/logo-complejo-agroindustrial-beta.png" class="header-logo" alt="Logo Beta">
+        <div class="header-title">
+            <h1>Instrucciones de Embarque</h1>
+            <div>BOOKING: {{ pos.BOOKING }} | ORDEN: {{ pos.ORDEN_BETA or 'S/N' }}</div>
+        </div>
+        <div class="header-info">
+            EMISIÓN: {{ fecha_emision }}<br>
+            PÁGINA: 1 / 1
+        </div>
+    </div>
+
+    <div class="section-header">I. DATOS DEL CLIENTE Y DESTINO</div>
+    <div class="data-grid">
+        <div class="data-box">
+            <div class="label">CLIENTE / CONSIGNATARIO BL</div>
+            <div class="value">{{ cliente.nombre_legal or pedidos[0].cliente if cliente else 'POR DEFINIR' }}</div>
+            <div class="value" style="font-weight: normal; font-size: 9px; margin-top: 4px;">{{ cliente.direccion_consignatario or '' }}</div>
+        </div>
+        <div class="data-box">
+            <div class="label">NOTIFY PARTY</div>
+            <div class="value">{{ cliente.notify_bl or 'SAME AS CONSIGNEE' }}</div>
+            <div class="value" style="font-weight: normal; font-size: 9px; margin-top: 4px;">{{ cliente.direccion_notify or '' }}</div>
+        </div>
+    </div>
+
+    <div class="section-header">II. DATOS DE LA CARGA</div>
+    <table>
+        <thead>
+            <tr>
+                <th>CULTIVO</th>
+                <th>CAJAS</th>
+                <th>PALLETS</th>
+                <th>PESO BRUTO KG</th>
+                <th>VARIEDAD</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="value">{{ pos.CULTIVO }}</td>
+                <td class="value">{{ total_cajas }}</td>
+                <td class="value">{{ total_pallets }}</td>
+                <td class="value">{{ peso_bruto }} KG</td>
+                <td class="value">{{ pedidos[0].variedad if pedidos else 'S/N' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-header">III. DATOS LOGÍSTICOS Y ADUANEROS</div>
+    <div class="data-grid">
+        <div class="data-box">
+            <div class="label">NAVE / VIAJE</div>
+            <div class="value">{{ pos.NAVE or 'PENDIENTE' }}</div>
+        </div>
+        <div class="data-box">
+            <div class="label">PUERTO DESTINO</div>
+            <div class="value">{{ cliente.destino or 'N/A' }}</div>
+        </div>
+        <div class="data-box">
+            <div class="label">NAVIERA / LINEA</div>
+            <div class="value">{{ pos.NAVIERA or 'S/N' }}</div>
+        </div>
+        <div class="data-box">
+            <div class="label">PLANTA LLENADO</div>
+            <div class="value">{{ pos.PLANTA_LLENADO or 'S/N' }}</div>
+        </div>
+    </div>
+
+    {% if is_granada %}
+    <div class="section-header">IV. REQUERIMIENTOS ATMÓSFERA CONTROLADA</div>
+    <div class="data-box atm-box">
+        Granada Fresca - Refrigerada. ATMO. CONTROLADA: NO APLICA | O2: N/A | CO2: N/A
+    </div>
+    {% endif %}
+
+    <div class="section-header">V. OBSERVACIONES GENERALES</div>
+    <div class="data-box" style="min-height: 50px;">
+        {{ observaciones or 'SIN OBSERVACIONES ADICIONALES.' }}
+    </div>
+
+    <div class="signature-grid">
+        <div class="signature-line">
+            <div style="font-size: 9px;">DEPTO. EXPORTACIONES</div>
+        </div>
+        <div class="signature-line">
+            <div style="font-size: 9px;">LOGÍSTICA / PLANTA</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        DOCUMENTO ELECTRÓNICO GENERADO POR AGROFLOW V1.0 - COMPLEJO AGROINDUSTRIAL BETA S.A.
+    </div>
+</body>
+</html>

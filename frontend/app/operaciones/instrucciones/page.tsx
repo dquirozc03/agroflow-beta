@@ -45,6 +45,8 @@ export default function InstruccionesEmbarque() {
   const [searchTerm, setSearchTerm] = useState("");
   const [lookupData, setLookupData] = useState<any>(null);
   const [isLoadingLookup, setIsLoadingLookup] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [observaciones, setObservaciones] = useState("");
   const [bookingsReal, setBookingsReal] = useState<any[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
 
@@ -66,6 +68,40 @@ export default function InstruccionesEmbarque() {
     };
     loadBookings();
   }, []);
+
+  const handleGeneratePdf = async () => {
+    const bookingId = selectedBooking?.BOOKING || selectedBooking?.booking || selectedBooking?.id;
+    if (!bookingId) return;
+
+    setIsGeneratingPdf(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://agroflow-okkt.onrender.com"}/api/v1/instrucciones/generate-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking: bookingId,
+          observaciones: observaciones
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `IE_${bookingId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error("Error al generar PDF");
+      }
+    } catch (e) {
+      console.error("Fallo de conexión:", e);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleBookingSelect = async (b: any) => {
     // b puede ser el objeto del booking real de la lista
@@ -290,16 +326,23 @@ export default function InstruccionesEmbarque() {
               <div className="space-y-4">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Observaciones / Notas Adicionales</label>
                 <Textarea
-                  placeholder="Escriba aquí observaciones o datos adicionales..."
-                  className="rounded-3xl border-slate-100 bg-slate-50/30 min-h-[120px] p-6 text-sm font-bold resize-none transition-all focus:bg-white"
+                  placeholder="Escribe alguna observación técnica o comercial para la IE..."
+                  className="rounded-[2.5rem] border-slate-100 bg-white p-8 min-h-[160px] text-sm focus:border-emerald-500 transition-all lc-scroll"
+                  value={observaciones}
+                  onChange={(e) => setObservaciones(e.target.value)}
                 />
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <Button className="h-16 px-10 rounded-[2rem] bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-emerald-500/20 group transition-all duration-300 scale-100 active:scale-95">
-                  <FileText className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform" />
-                  Generar IE
-                  <ArrowRight className="h-4 w-4 ml-4 group-hover:translate-x-1 transition-transform" />
+                <Button 
+                  onClick={handleGeneratePdf}
+                  disabled={isGeneratingPdf || !selectedBooking}
+                  className="h-16 px-10 rounded-full bg-slate-900 hover:bg-black text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/40 group relative overflow-hidden flex items-center"
+                >
+                  {isGeneratingPdf ? (
+                    <Loader2 className="h-5 w-5 mr-3 animate-spin text-emerald-500" />
+                  ) : (
+                    <FileText className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform" />
+                  )}
+                  {isGeneratingPdf ? "Generando..." : "Generar IE"}
+                  {!isGeneratingPdf && <ArrowRight className="h-4 w-4 ml-4 group-hover:translate-x-1 transition-transform" />}
                 </Button>
               </div>
             </div>
