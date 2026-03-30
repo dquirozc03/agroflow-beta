@@ -115,7 +115,15 @@ class InstructionPDFService:
         desc_en = f"{total_cajas} BOXES WITH FRESH {cult_en} {variedad} ON {total_pallets} PALLETS"
         desc_es = f"{total_cajas} CAJAS CON FRESCA {cult_es} {variedad} EN {total_pallets} PALETAS"
 
-        fecha_llenado = f"{getattr(pos, 'FECHA_PROGRAMADA', '')} - {getattr(pos, 'HORA_PROGRAMADA', '')}".strip(" - ")
+        fecha_llenado = ""
+        f_prog = getattr(pos, 'FECHA_PROGRAMADA', None)
+        h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
+        f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
+        h_str = h_prog.strftime('%H:%M') if h_prog else ""
+        if f_str and h_str:
+            fecha_llenado = f"{f_str} - {h_str}"
+        else:
+            fecha_llenado = f"{f_str} {h_str}".strip()
 
         t_data = [
             [b_p(pos.ORDEN_BETA or 'S/N'), b_p("")],
@@ -177,6 +185,7 @@ class InstructionPDFService:
             ('BACKGROUND', (0,33), (-1,33), bg_orange), # Fito Header
             ('SPAN', (0,33), (1,33)), # Merge fito header
             ('ALIGN', (0,33), (1,33), 'CENTER'),
+            ('ALIGN', (1,6), (1,6), 'CENTER'), # Centrar fecha y hora llenado
         ]
         t.setStyle(TableStyle(t_styles))
         elements.append(t)
