@@ -67,7 +67,16 @@ class InstructionPDFService:
              # Verificar si es granada y adjuntar imagen local
              header_row = []
              if logo_obj: header_row.append(logo_obj)
-             header_row.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE</b><br/><font size=8>BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</font>", styles["Title"]))
+             # Construir Título Personalizado (CLIENTE - DESTINO - PAIS - CULTIVO)
+             cliente_txt = cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre
+             destino_txt = cliente_maestro.destino if cliente_maestro else getattr(pos, 'PUERTO_DESTINO', '')
+             pais_txt = cliente_maestro.pais if cliente_maestro else ''
+             
+             subtitle_parts = [p for p in [cliente_txt, destino_txt, pais_txt] if p]
+             subtitle_txt = " - ".join(subtitle_parts)
+             
+             titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos.CULTIVO or ''}"
+             header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=9, leading=10, alignment=1, fontName='Helvetica-Bold')))
 
              if "GRANADA" in (pos.CULTIVO or "").upper():
                  granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 40, 40)
@@ -108,7 +117,7 @@ class InstructionPDFService:
         fecha_llenado = f"{getattr(pos, 'FECHA_PROGRAMADA', '')} - {getattr(pos, 'HORA_PROGRAMADA', '')}".strip(" - ")
 
         t_data = [
-            [b_p(pos.ORDEN_BETA or 'S/N'), b_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
+            [b_p(pos.ORDEN_BETA or 'S/N'), b_p("")],
             [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
             [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
             [b_p("OPERADOR LOGISTICO"), b_p(getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L."))],
