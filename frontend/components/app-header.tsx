@@ -26,12 +26,12 @@ export function AppHeader({ onOpenScanner, title }: Props) {
   return (
     <header className="flex h-20 items-center justify-between px-10 bg-[#f6f8fa] relative z-40">
       
-      {/* IZQUIERDA: Saludo Personalizado "Carlos style" */}
+      {/* IZQUIERDA: Saludo Personalizado "Fase 3 Style" */}
       <div className="flex flex-col">
-        <h2 className="text-2xl font-extrabold text-[#022c22] tracking-tighter italic uppercase">
-          ¡Buen día, {user?.nombre || "Carlos"}!
+        <h2 className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
+          ¡Buen día, {user?.nombre || "ADMINISTRADOR AGROFLOW"}!
         </h2>
-        <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest leading-none">
+        <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em] leading-none">
           {title || "Tus campos están estables."}
         </p>
       </div>
