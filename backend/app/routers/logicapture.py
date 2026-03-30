@@ -435,19 +435,22 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
             pass
             
     # 3. Datos Maestros (Auditoría de Transporte)
-    if req.nombreChofer: reg.nombre_chofer = req.nombreChofer
-    if req.dni: reg.dni_chofer = req.dni
-    if req.licenciaChofer: reg.licencia_chofer = req.licenciaChofer
-    if req.placaTracto: reg.placa_tracto = req.placaTracto
-    if req.placaCarreta: reg.placa_carreta = req.placaCarreta
-    if req.empresa: reg.empresa_transporte = req.empresa
-    if req.partidaRegistral: reg.partida_registral = req.partidaRegistral
-    if req.codigoSAP: reg.codigo_sap = req.codigoSAP
+    if req.nombreChofer is not None: reg.nombre_chofer = req.nombreChofer
+    if req.dni is not None: reg.dni_chofer = req.dni
+    if req.licenciaChofer is not None: reg.licencia_chofer = req.licenciaChofer
+    if req.placaTracto is not None: reg.placa_tracto = req.placaTracto
+    if req.placaCarreta is not None: reg.placa_carreta = req.placaCarreta
+    if req.empresa is not None: reg.empresa_transporte = req.empresa
+    if req.partidaRegistral is not None: reg.partida_registral = req.partidaRegistral
+    if req.codigoSAP is not None: reg.codigo_sap = req.codigoSAP
 
     # 3.5 Datos de Despacho (Auditoría de Carga)
-    if req.booking: reg.booking = req.booking
-    if req.ordenBeta: reg.orden_beta = req.ordenBeta
-    if req.dam: reg.dam = req.dam
+    if req.booking is not None: reg.booking = req.booking
+    if req.ordenBeta is not None: reg.orden_beta = req.ordenBeta
+    if req.dam is not None: reg.dam = req.dam
+    if req.contenedor is not None: reg.contenedor = req.contenedor
+    if req.planta is not None: reg.planta = req.planta
+    if req.cultivo is not None: reg.cultivo = req.cultivo
     if req.contenedor: reg.contenedor = req.contenedor
         
     # Cambio de Estatus (Fase 3 Industrial)
