@@ -81,6 +81,17 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             ClienteIE.nombre_legal.ilike(pedido.cliente)
         ).first()
 
+    # Prioridad 4: Match Inteligente (Fuzzy) para discrepancias menores (v2.0.8) 🎯
+    # Ej: "WESTFALIA FRUIT (HAUSLADEN)" -> matches -> "WESTFALIA FRUIT GMBH (EX-HAUSLADEN)"
+    if not cliente_maestro:
+        # Extraemos palabras clave (más de 2 letras) y quitamos paréntesis
+        words = [w.replace('(', '').replace(')', '').strip() for w in pedido.cliente.split() if len(w) > 2]
+        if len(words) >= 2:
+            fuzzy_query = f"%{words[0]}%{words[-1]}%"
+            cliente_maestro = db.query(ClienteIE).filter(
+                ClienteIE.nombre_legal.ilike(fuzzy_query)
+            ).first()
+
     response = {
         "booking": booking,
         "orden_beta": pos.ORDEN_BETA,

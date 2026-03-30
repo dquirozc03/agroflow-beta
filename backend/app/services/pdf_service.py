@@ -59,6 +59,13 @@ class InstructionPDFService:
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
 
+        # 🎯 Match Inteligente (Fuzzy) - v2.0.8 
+        if not cliente_maestro:
+            words = [w.replace('(', '').replace(')', '').strip() for w in cliente_nombre.split() if len(w) > 2]
+            if len(words) >= 2:
+                fuzzy_query = f"%{words[0]}%{words[-1]}%"
+                cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(fuzzy_query)).first()
+
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
 
         # 2. Construcción PDF (ReportLab - No requiere dependencias del sistema)
@@ -101,7 +108,7 @@ class InstructionPDFService:
              header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=9, leading=10, alignment=1, fontName='Helvetica-Bold')))
 
              if "GRANADA" in (pos.CULTIVO or "").upper():
-                 granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 40, 40)
+                 granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
                  if granada_obj: header_row.append(granada_obj)
              
              # Si no hay logo para anclar el título, poner fecha.
