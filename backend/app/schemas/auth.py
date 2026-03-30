@@ -52,6 +52,7 @@ class LoginResponse(BaseModel):
     nombre: str
     rol: str
     requiere_cambio_password: Optional[bool] = False
+    permisos: Optional[dict] = None
 
 
 class MeResponse(BaseModel):
@@ -69,6 +70,7 @@ class MeResponse(BaseModel):
     nombre: str
     rol: str
     requiere_cambio_password: Optional[bool] = False
+    permisos: Optional[dict] = None
 
     class Config:
         from_attributes = True  # Habilita conversión desde modelo SQLAlchemy
@@ -91,6 +93,7 @@ class UsuarioCreate(BaseModel):
     nombre: str
     password: str = "123456"  # Contraseña temporal; se fuerza cambio en primer login
     rol: str
+    permisos: Optional[dict] = {"logicapture": True, "maestros": True, "operaciones": True, "sistema": False}
 
 
 class UsuarioResponse(BaseModel):
@@ -105,6 +108,8 @@ class UsuarioResponse(BaseModel):
     rol: str
     activo: bool
     requiere_cambio_password: Optional[bool] = False
+    permisos: Optional[dict] = None
+    bloqueado: Optional[bool] = False
 
     class Config:
         from_attributes = True  # Permite conversión desde ORM SQLAlchemy
@@ -120,6 +125,8 @@ class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     rol: Optional[str] = None
     usuario: Optional[str] = None
+    permisos: Optional[dict] = None
+    activo: Optional[bool] = None
 
 
 # -----------------------------------------------------------------------------

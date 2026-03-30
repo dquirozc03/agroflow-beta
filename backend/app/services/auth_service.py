@@ -50,6 +50,7 @@ def crear_usuario(db: Session, payload: UsuarioCreate, admin_user: str) -> Usuar
         nombre=payload.nombre.strip(),
         rol=payload.rol.strip(),
         password_hash=hash_password(payload.password),
+        permisos=payload.permisos or {"logicapture": True, "maestros": True, "operaciones": True, "sistema": False},
         activo=True,
         requiere_cambio_password=True
     )
@@ -116,6 +117,10 @@ def actualizar_usuario(db: Session, usuario_id: int, payload: UsuarioUpdate, adm
         user.nombre = payload.nombre.strip()
     if payload.rol is not None:
         user.rol = payload.rol.strip()
+    if payload.permisos is not None:
+        user.permisos = payload.permisos
+    if payload.activo is not None:
+        user.activo = payload.activo
     if payload.usuario is not None:
         new_usuario = payload.usuario.strip()
         if new_usuario != user.usuario:
@@ -124,6 +129,7 @@ def actualizar_usuario(db: Session, usuario_id: int, payload: UsuarioUpdate, adm
                 raise RecursoDuplicadoError("El ID de usuario ya está en uso por otro colaborador")
             user.usuario = new_usuario
         
+    db.commit()
     db.refresh(user)
 
     registrar_evento(
@@ -134,7 +140,9 @@ def actualizar_usuario(db: Session, usuario_id: int, payload: UsuarioUpdate, adm
         despues={
             "nombre": user.nombre,
             "rol": user.rol,
-            "usuario": user.usuario
+            "usuario": user.usuario,
+            "permisos": user.permisos,
+            "activo": user.activo
         },
         usuario=admin_user
     )
