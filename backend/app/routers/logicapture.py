@@ -162,11 +162,20 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
     if clean_val == "**":
         return {"field": field, "exists": False, "id": None}
     if field == "booking" and not treatment_buque:
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.booking == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.booking == clean_val,
+            LogiCaptureRegistro.status != "ANULADO"
+        ).first()
     elif field == "dam":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.dam == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.dam == clean_val,
+            LogiCaptureRegistro.status != "ANULADO"
+        ).first()
     elif field == "contenedor":
-        exists = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.contenedor == clean_val).first()
+        exists = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.contenedor == clean_val,
+            LogiCaptureRegistro.status != "ANULADO"
+        ).first()
     elif field in ["precinto", "termografo"]:
         # Buscar en la tabla de blindaje detallado
         det = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == clean_val).first()
