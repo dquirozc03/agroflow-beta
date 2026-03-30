@@ -71,6 +71,8 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "Datos Maestros",
         visible: !!p.maestros,
         items: [
+          { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios" },
+          { name: "Roles Maestros", icon: ShieldCheck, href: "/configuracion/roles", active: pathname === "/configuracion/roles" },
           { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
           { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams" },
           { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
@@ -84,8 +86,6 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "Sistema",
         visible: !!p.sistema || (user?.rol as string) === "ADMIN",
         items: [
-          { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios" },
-          { name: "Master Roles", icon: ShieldCheck, href: "/configuracion/roles", active: pathname === "/configuracion/roles" },
           { name: "Configuración", icon: Settings, href: "#", active: false },
         ]
       }
