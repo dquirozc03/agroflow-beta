@@ -11,8 +11,10 @@ from decimal import Decimal
 
 class InstructionPDFService:
     def __init__(self):
-        # Directorio base para las plantillas
-        self.template_dir = os.path.join(os.path.dirname(__file__), "../templates/pdf")
+        # Directorio base absoluto para las plantillas
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.template_dir = os.path.join(current_dir, "..", "templates", "pdf")
+        
         if not os.path.exists(self.template_dir):
             os.makedirs(self.template_dir, exist_ok=True)
             
