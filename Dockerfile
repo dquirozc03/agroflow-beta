@@ -1,4 +1,4 @@
-# Usamos una imagen de Python ligera pero funcional
+# Usamos una imagen de Python ligera pero funcional 🚀💎
 FROM python:3.11-slim
 
 # Evitar que Python genere archivos .pyc y asegurar que los logs se emitan sin buffer
@@ -17,12 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias de Python
-COPY requirements.txt .
+# Instalar dependencias de Python (desde la carpeta backend)
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el código de la aplicación
-COPY . .
+# Copiar el código del backend al contenedor
+COPY backend/ .
 
 # Exponer el puerto que usa FastAPI (ajustado para Render)
 EXPOSE 8000
