@@ -145,8 +145,11 @@ async def sync_posicionamiento_raw(
     # ... continuación del código ...
     
     # 1. Validación de Seguridad (Inge Daniel Sync Token)
-    if not x_sync_token or x_sync_token != settings.SYNC_TOKEN:
-        logger.warning(f"Intento de sincronización con token inválido: {x_sync_token}")
+    received_token = x_sync_token.strip() if x_sync_token else None
+    expected_token = settings.SYNC_TOKEN.strip() if settings.SYNC_TOKEN else None
+
+    if not received_token or received_token != expected_token:
+        logger.warning(f"Intento de sincronización con token inválido: {received_token}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de sincronización inválido o ausente."

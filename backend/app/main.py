@@ -34,7 +34,7 @@ app.include_router(instrucciones.router)
 @app.get("/health")
 @app.get("/api/v1/health")
 def health():
-    return {"status": "ok", "version": "2.0.1-dev"}
+    return {"status": "ok", "version": "2.0.2-dev"}
 
 @app.get("/")
 def root():
