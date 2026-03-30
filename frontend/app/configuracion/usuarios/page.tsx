@@ -53,7 +53,12 @@ export default function UsuariosPage() {
   const fetchUsuarios = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`Acceso denegado o error de red (${response.status})`);
       }

@@ -66,9 +66,16 @@ export default function RolesPage() {
   const fetchRoles = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/roles`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/roles`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         setRoles(await response.json());
+      } else {
+        throw new Error(`Error ${response.status}`);
       }
     } catch (error) {
       toast.error("Error al cargar roles");
@@ -109,9 +116,13 @@ export default function RolesPage() {
         ? `${API_BASE_URL}/api/v1/auth/roles/${editingRol.id}`
         : `${API_BASE_URL}/api/v1/auth/roles`;
       
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const response = await fetch(url, {
         method: editingRol ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(formData),
       });
 
