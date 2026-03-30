@@ -35,7 +35,10 @@ class InstructionPDFService:
         total_pallets = sum(p.total_pallets or 0 for p in pedidos)
         cliente_nombre = pedidos[0].cliente if pedidos else "POR DEFINIR"
         peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
-        peso_bruto = float(total_cajas) * float(peso_kg) * 1.05
+        
+        # Formula de Peso Bruto Real (Neto + Taras): Pallet (30kg) + Caja (0.25kg)
+        peso_neto = float(total_cajas) * float(peso_kg)
+        peso_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
 
         cliente_maestro = db.query(ClienteIE).filter(ClienteIE.nombre_legal.ilike(cliente_nombre)).first()
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
@@ -68,12 +71,12 @@ class InstructionPDFService:
              # Verificar si es granada y adjuntar imagen local
              header_row = []
              if logo_obj: header_row.append(logo_obj)
-             # Construir Título Personalizado (CLIENTE - DESTINO - PAIS - CULTIVO)
+             # Construir Título Personalizado (CLIENTE - POD - PAIS - CULTIVO)
              cliente_txt = cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre
-             destino_txt = cliente_maestro.destino if cliente_maestro else getattr(pos, 'PUERTO_DESTINO', '')
+             puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
              pais_txt = cliente_maestro.pais if cliente_maestro else ''
              
-             subtitle_parts = [p for p in [cliente_txt, destino_txt, pais_txt] if p]
+             subtitle_parts = [p for p in [cliente_txt, puerto_destino, pais_txt] if p]
              subtitle_txt = " - ".join(subtitle_parts)
              
              titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos.CULTIVO or ''}"
@@ -103,6 +106,7 @@ class InstructionPDFService:
         bg_gray = colors.HexColor("#F3F4F6")
 
         def b_p(text): return Paragraph(f"<b>{text}</b>", bold_font)
+        def b_pc(text): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=7, leading=8, fontName='Helvetica-Bold', alignment=1))
         def n_p(text): return Paragraph(str(text), normal_font)
         def format_desc(t1, t2): return Paragraph(f"{t1}<br/>{t2}", normal_font)
 
@@ -136,7 +140,7 @@ class InstructionPDFService:
             [b_p("OPERADOR LOGISTICO"), b_p(getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L."))],
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_maestro.planta}</b>", planta_maestro.direccion) if planta_maestro else n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
             [b_p("UBIGEO PLANTA"), n_p(planta_maestro.ubigeo if planta_maestro else "110111")],
-            [b_p("FECHA Y HORA DEL LLENADO"), b_p(fecha_llenado)],
+            [b_p("FECHA Y HORA DEL LLENADO"), b_pc(fecha_llenado)],
             
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
