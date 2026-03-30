@@ -36,45 +36,61 @@ export function AppSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const sections = useMemo(() => [
-    {
-      label: "General",
-      items: [
-        { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/" },
-      ]
-    },
-    {
-      label: "LogiCapture",
-      items: [
-        { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
-        { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja" },
-      ]
-    },
-    {
-      label: "Gestión Operativa",
-      items: [
-        { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones" },
-      ]
-    },
-    {
-      label: "Datos Maestros",
-      items: [
-        { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
-        { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams" },
-        { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
-        { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos" },
-        { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes" },
-        { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie" },
-      ]
-    },
-    {
-      label: "Sistema",
-      items: [
-        { name: "Analítica", icon: BarChart3, href: "#", active: false },
-        { name: "Configuración", icon: Settings, href: "#", active: false },
-      ]
-    }
-  ], [pathname]);
+  const sections = useMemo(() => {
+    const p = user?.permisos || { logicapture: true, maestros: true, operaciones: true, sistema: false };
+    
+    const allSections = [
+      {
+        id: "general",
+        label: "General",
+        visible: true,
+        items: [
+          { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/" },
+        ]
+      },
+      {
+        id: "logicapture",
+        label: "LogiCapture",
+        visible: !!p.logicapture,
+        items: [
+          { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture" },
+          { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja" },
+        ]
+      },
+      {
+        id: "operaciones",
+        label: "Gestión Operativa",
+        visible: !!p.operaciones,
+        items: [
+          { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones" },
+        ]
+      },
+      {
+        id: "maestros",
+        label: "Datos Maestros",
+        visible: !!p.maestros,
+        items: [
+          { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload" },
+          { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams" },
+          { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas" },
+          { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos" },
+          { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes" },
+          { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie" },
+        ]
+      },
+      {
+        id: "sistema",
+        label: "Sistema",
+        visible: !!p.sistema || user?.rol === "ADMIN",
+        items: [
+          { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios" },
+          { name: "Configuración", icon: Settings, href: "#", active: false },
+        ]
+      }
+    ];
+
+    return allSections.filter(s => s.visible);
+  }, [pathname, user]);
 
   return (
     <aside className={cn(

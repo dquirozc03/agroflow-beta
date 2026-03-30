@@ -89,6 +89,7 @@ export interface LoginResponse {
   nombre: string;
   rol: string;
   requiere_cambio_password: boolean;
+  permisos?: any;
 }
 
 /** Inicia sesión en el backend */
