@@ -371,6 +371,8 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
 
     for tipo, codes in category_map.items():
         for code in codes:
+            if not code or code.strip().upper() in ignore_values:
+                continue
             details.append(LogiCaptureDetalle(
                 registro_id=new_reg.id,
                 categoria="PRECINTO" if tipo != "TERMOGRAFO" else "TERMOGRAFO",
@@ -531,11 +533,12 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
             ("TERMOGRAFO", reg.termografos or [])
         ]
         
+        ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]
         nuevos_detalles = []
         for tipo, codigos in mapeo_detalles:
             cat = "TERMOGRAFO" if tipo == "TERMOGRAFO" else "PRECINTO"
             for code in codigos:
-                if not code or code == "**": continue
+                if not code or code.strip().upper() in ignore_values: continue
                 
                 # c. Blindaje contra duplicados sistémicos
                 duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code).first()
