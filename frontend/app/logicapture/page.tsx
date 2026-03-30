@@ -188,19 +188,31 @@ export default function LogiCaptureFase3OriginalPage() {
     } catch (e) { setBookingError(true); } finally { setIsSearching(false); }
   };
 
+  const handleProcessImage = async (file: File) => {
+    setIsProcessingIA(true);
+    const fd = new FormData(); 
+    fd.append("file", file); 
+    fd.append("target", ocrTarget);
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/ocr`, { method: "POST", body: fd });
+        const d = await resp.json();
+        if (d.text) { 
+           updateField(ocrTarget, d.text.toUpperCase()); 
+           toast.success("Captura Exitosa"); 
+           if (ocrTarget === "booking") setTimeout(handleLookup, 500); 
+        }
+    } catch (e) { 
+        toast.error("Error OCR"); 
+    } finally { 
+        setIsProcessingIA(false); 
+    }
+  };
+
   const handlePaste = async (e: any) => {
     const item = Array.from(e.clipboardData.items).find((i: any) => i.type.indexOf("image") !== -1);
     if (item) {
         const file = (item as any).getAsFile();
-        if (file) {
-            setIsProcessingIA(true);
-            const fd = new FormData(); fd.append("file", file); fd.append("target", ocrTarget);
-            try {
-                const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/ocr`, { method: "POST", body: fd });
-                const d = await resp.json();
-                if (d.text) { updateField(ocrTarget, d.text.toUpperCase()); toast.success("Captura Exitosa"); if (ocrTarget === "booking") setTimeout(handleLookup, 500); }
-            } catch (e) { toast.error("Error OCR"); } finally { setIsProcessingIA(false); }
-        }
+        if (file) handleProcessImage(file);
     }
   };
 
