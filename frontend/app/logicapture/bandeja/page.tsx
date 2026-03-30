@@ -679,13 +679,21 @@ export default function BandejaLogiCapture() {
                                 )}
                                 
                                 {activeTab === "PENDIENTE" && (
-                                   <DropdownMenuItem 
-                                     className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
-                                     onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
-                                   >
-                                      <CheckCircle2 className="h-4 w-4" /> Cerrar Operación
-                                   </DropdownMenuItem>
-                                )}
+                                    <>
+                                       <DropdownMenuItem 
+                                         className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
+                                         onClick={() => window.location.href = `/logicapture?edit=${reg.id}`}
+                                       >
+                                          <Zap className="h-4 w-4" /> Continuar Registro
+                                       </DropdownMenuItem>
+                                       <DropdownMenuItem 
+                                         className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer mt-1"
+                                         onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
+                                       >
+                                          <CheckCircle2 className="h-4 w-4" /> Cierre Rápido (SAP)
+                                       </DropdownMenuItem>
+                                    </>
+                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -782,12 +790,21 @@ export default function BandejaLogiCapture() {
 
                  <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex gap-4">
                     {selectedReg.status === "PENDIENTE" ? (
-                       <Button 
-                         className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20"
-                         onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
-                       >
-                          Cerrar Operación (Enviar a Procesados)
-                       </Button>
+                       <div className="flex-1 flex gap-3">
+                          <Button 
+                            className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-widest text-xs h-12 shadow-xl shadow-emerald-950/20"
+                            onClick={() => window.location.href = `/logicapture?edit=${selectedReg.id}`}
+                          >
+                             <Zap className="h-4 w-4 mr-2" /> Continuar Registro
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="rounded-2xl border-slate-200 hover:bg-slate-50 font-bold uppercase tracking-widest text-[10px] h-12"
+                            onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
+                          >
+                             Cierre Rápido
+                          </Button>
+                       </div>
                     ) : (
                        <Button className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none" onClick={() => handleEditOpen(selectedReg)}
                        >

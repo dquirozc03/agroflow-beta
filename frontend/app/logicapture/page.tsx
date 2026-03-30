@@ -699,36 +699,19 @@ export default function LogiCaptureV2Page() {
 
   const handleCarretaBlur = () => handleCarretaBlurWithVal();
 
-  const handleSaveDraft = () => {
-    localStorage.setItem("logicapture_draft", JSON.stringify({
-      formData,
-      validatedFields,
-      fieldErrors,
-      transportMode
-    }));
-    toast.info("Borrador guardado localmente (Congelado)");
-  };
-
-  useEffect(() => {
-    const draft = localStorage.getItem("logicapture_draft");
-    if (draft) {
-      const parsed = JSON.parse(draft);
-      setFormData(parsed.formData);
-      setValidatedFields(parsed.validatedFields || []);
-      setFieldErrors(parsed.fieldErrors || {});
-      setTransportMode(parsed.transportMode || "maritimo");
-      toast.success("Borrador recuperado automáticamente");
-    }
-  }, []);
-
-  const handleSave = async () => {
+  const handleSaveNetwork = async (isFinalize: boolean = false) => {
     setServerError(null);
+    if (!formData.booking) {
+       toast.error("Debe ingresar al menos el Booking para guardar en red");
+       return;
+    }
 
-    // Sanitización de campos opcionales por defecto (**)
+    // Sanitización de campos opcionales por defecto (**) si es FINALIZADO
     const payload = {
        ...formData,
-       precintoOperador: formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
-       precintoSenasa: formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
+       status: isFinalize ? "PROCESADO" : "PENDIENTE",
+       precintoOperador: isFinalize && formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
+       precintoSenasa: isFinalize && formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
     };
 
     setIsSearching(true);
@@ -745,23 +728,35 @@ export default function LogiCaptureV2Page() {
 
       if (!response.ok) {
          const errData = await response.json();
-         setServerError(errData.detail || "Hubo un problema al procesar el registro. Verifique los datos.");
+         setServerError(errData.detail || "Hubo un problema al sincronizar con la red.");
          return;
       }
       
       const resData = await response.json();
-      setSuccessTitle(formData.ordenBeta || formData.contenedor);
-      setShowSuccess(true);
-      if (editId) {
-        toast.success("Auditoría Finalizada con Éxito");
-        setTimeout(() => window.location.href = "/logicapture/bandeja", 2000);
+      
+      if (isFinalize) {
+         setSuccessTitle(formData.ordenBeta || "REGISTRO FINALIZADO");
+         setShowSuccess(true);
+         localStorage.removeItem("logicapture_draft");
+         if (editId) {
+            setTimeout(() => window.location.href = "/logicapture/bandeja", 2000);
+         }
+      } else {
+         if (!editId && resData.id) {
+            setEditId(resData.id); // Capturar ID para seguir editando el mismo registro en nube
+         }
+         toast.success("Borrador sincronizado en red 💎", {
+            description: "Sus compañeros ya pueden ver y completar este registro."
+         });
       }
     } catch (error: any) {
-      setServerError("Error de conexión con el servidor. Intente nuevamente en unos momentos.");
+      setServerError("Error de sincronización. Verifique su conexión.");
     } finally {
       setIsSearching(false);
     }
   };
+
+  const handleSave = () => handleSaveNetwork(true);
 
   const handleReset = () => {
     setFormData({
@@ -1244,16 +1239,6 @@ export default function LogiCaptureV2Page() {
                         )}
                      </div>
 
-                     <div className="flex items-center gap-4">
-                        <button 
-                           onClick={handleSaveDraft}
-                           className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-all p-3 px-6"
-                        >
-                           Borrador Local
-                        </button>
-                        <button 
-                           onClick={handleSave}
-                           disabled={isSearching}
                            className={cn(
                               "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
                               isSearching 

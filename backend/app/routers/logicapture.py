@@ -21,19 +21,19 @@ router = APIRouter(
 
 class LogiCaptureSaveRequest(BaseModel):
     booking: str
-    ordenBeta: str
-    contenedor: str
-    dam: str
-    dni: str
-    placaTracto: str
-    placaCarreta: str
-    empresa: str
-    precintoAduana: list[str]
-    precintoOperador: list[str]
-    precintoSenasa: list[str]
-    precintoLinea: list[str]
-    precintosBeta: list[str]
-    termografos: list[str]
+    ordenBeta: Optional[str] = None
+    contenedor: Optional[str] = None
+    dam: Optional[str] = None
+    dni: Optional[str] = None
+    placaTracto: Optional[str] = None
+    placaCarreta: Optional[str] = None
+    empresa: Optional[str] = None
+    precintoAduana: list[str] = []
+    precintoOperador: list[str] = []
+    precintoSenasa: list[str] = []
+    precintoLinea: list[str] = []
+    precintosBeta: list[str] = []
+    termografos: list[str] = []
     tratamientoBuque: bool = False
     
     # Nuevos campos del ticket premium
@@ -71,6 +71,7 @@ class LogiCaptureUpdateRequest(BaseModel):
     ordenBeta: Optional[str] = None
     dam: Optional[str] = None
     contenedor: Optional[str] = None
+    status: Optional[str] = None
 
 class LookupResponse(BaseModel):
     booking: str
@@ -432,6 +433,13 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
     if req.dam: reg.dam = req.dam
     if req.contenedor: reg.contenedor = req.contenedor
         
+    # Cambio de Estatus (Fase 3 Industrial)
+    if req.status:
+        clean_status = req.status.upper()
+        reg.status = clean_status
+        if clean_status == "ANULADO":
+             db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.registro_id == id).delete()
+
     # 4. Sincronización con LogiCaptureDetalle (Blindaje de Unicidad) 💎
     # Si hubo cambios en precintos o termógrafos, refrescamos la tabla de detalles
     if any([
