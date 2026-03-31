@@ -315,14 +315,30 @@ async def generate_packing_list_ogl(
         for conf_file in confirmaciones:
             content = await conf_file.read()
             try:
-                df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
+                # Primero leemos sin cabecera para buscarla dinámicamente
+                df_raw = pd.read_excel(io.BytesIO(content), engine="openpyxl", header=None)
+                
+                # Buscamos la fila que contiene la palabra "PALLET" o "HU"
+                header_index = 0
+                found_header = False
+                for i in range(min(20, len(df_raw))):
+                    row_values = [str(x).upper() for x in df_raw.iloc[i].values]
+                    if any("PALLET" in val or "HU" in val for val in row_values):
+                        header_index = i
+                        found_header = True
+                        break
+                
+                # Volvemos a cargar con la cabecera correcta
+                df = pd.read_excel(io.BytesIO(content), engine="openpyxl", header=header_index)
                 df.columns = df.columns.str.strip().str.upper()
-            except: continue
+            except Exception as e:
+                print(f"Error al procesar archivo {conf_file.filename}: {e}")
+                continue
 
             def find_col(df, kws):
-                for c in df.columns:
+                for c in [str(col) for col in df.columns]:
                     for kw in kws:
-                        if kw.upper() in c: return c
+                        if kw.upper() in c.upper(): return c
                 return None
 
             col_pallet  = find_col(df, ["PALLET", "HU", "ID PALLET"])
