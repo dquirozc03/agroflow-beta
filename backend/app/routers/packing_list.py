@@ -387,11 +387,34 @@ async def generate_packing_list_ogl(
                     cell.value = value
             except: pass
 
-        # Header consolidado
-        contenedores_all = " / ".join([bd["contenedor"] for bd in booking_data_map.values() if bd["contenedor"]])
-        safe_write(ws, "C3", primer_pedido.cliente if primer_pedido else "OGL")
-        safe_write(ws, "C7", contenedores_all)
-        safe_write(ws, "C8", primer_pos.NAVE if primer_pos else nave_clean)
+        # Header consolidado - REGLAS INGE DANIEL
+        ahora = datetime.now()
+        semana_actual = ahora.isocalendar()[1]
+        pl_id = f"WK{semana_actual}{len(booking_data_map)}"  # Ejemplo: WK162
+        
+        safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
+        safe_write(ws, "C4", pl_id)
+        safe_write(ws, "C5", ahora.strftime("%d/%m/%Y"))
+        safe_write(ws, "C6", "CIF")
+        safe_write(ws, "C7", "VESSEL")
+        
+        # C8: Nave Arribo (Reporte > Posicionamiento)
+        nave_final = primer_pos.NAVE if primer_pos else nave_clean
+        reporte_n = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == next(iter(bookings_set))).first()
+        if reporte_n and reporte_n.nave_arribo:
+            nave_final = reporte_n.nave_arribo
+        safe_write(ws, "C8", nave_final)
+
+        if primer_pedido:
+            safe_write(ws, "C11", primer_pedido.consignatario or "")
+            safe_write(ws, "C12", primer_pedido.port_id_orig or "")
+            safe_write(ws, "C14", primer_pedido.port_id_dest or "")
+            safe_write(ws, "C15", primer_pedido.pod or "")
+        
+        if primer_pos:
+            safe_write(ws, "C13", primer_pos.PUERTO_ORIGEN or "")
+            safe_write(ws, "C16", primer_pos.ETD.strftime("%d/%m/%Y") if primer_pos.ETD else "")
+            safe_write(ws, "C17", primer_pos.ETA.strftime("%d/%m/%Y") if primer_pos.ETA else "")
 
         def safe_float(val):
             try: return float(val) if pd.notna(val) else 0.0
