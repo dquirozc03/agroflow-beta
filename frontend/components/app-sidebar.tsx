@@ -73,7 +73,7 @@ export function AppSidebar({ className }: { className?: string }) {
         visible: hasOper,
         items: [
           { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones", visible: isAdmin || !!p.op_instrucciones },
-          { name: "Packing List OGL", icon: ClipboardList, href: "/operaciones/packing-list", active: pathname.startsWith("/operaciones/packing-list"), visible: isAdmin || !!p.op_packing_list },
+          { name: "Packing List Customizados", icon: ClipboardList, href: "/operaciones/packing-list", active: pathname.startsWith("/operaciones/packing-list"), visible: isAdmin || !!p.op_packing_list },
         ].filter(i => i.visible)
       },
       {
