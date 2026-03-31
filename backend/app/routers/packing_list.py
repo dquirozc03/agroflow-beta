@@ -183,18 +183,26 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
             .first()
         )
 
-        # Enriquecimiento OPCIONAL con PedidoComercial usando join normalizado:
+        # JOIN normalizado con PedidoComercial:
         # posicionamientos.ORDEN_BETA = 'BG0080' → strip letras → '0080'
         # pedidos_comerciales.orden_beta = '0080'
+        # FILTRO: solo incluir si el cliente es OGL
         pedido = None
         if pos and pos.ORDEN_BETA:
             orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
             if orden_numeric:
                 pedido = (
                     db.query(PedidoComercial)
-                    .filter(PedidoComercial.orden_beta == orden_numeric)
+                    .filter(
+                        PedidoComercial.orden_beta == orden_numeric,
+                        PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                    )
                     .first()
                 )
+
+        # Si no hay pedido OGL para este booking → EXCLUIR de la lista
+        if not pedido:
+            continue
 
         # Datos de control de embarque
         emb = (
@@ -204,18 +212,18 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
         )
 
         resultado.append({
-            "booking": booking,
+            "booking":       booking,
             "orden_beta":    pos.ORDEN_BETA if pos else None,
             "contenedor":    emb.contenedor if emb else None,
             "dam":           emb.dam if emb else None,
-            "port_id_orig":  pedido.port_id_orig if pedido else None,
-            "port_id_dest":  pedido.port_id_dest if pedido else None,
-            "variedad":      pedido.variedad if pedido else None,
-            "total_cajas":   pedido.total_cajas if pedido else None,
-            "presentacion":  pedido.presentacion if pedido else None,
-            "pod":           pedido.pod if pedido else None,
-            "consignatario": pedido.consignatario if pedido else None,
-            "cliente":       pedido.cliente if pedido else None,
+            "port_id_orig":  pedido.port_id_orig,
+            "port_id_dest":  pedido.port_id_dest,
+            "variedad":      pedido.variedad,
+            "total_cajas":   pedido.total_cajas,
+            "presentacion":  pedido.presentacion,
+            "pod":           pedido.pod,
+            "consignatario": pedido.consignatario,
+            "cliente":       pedido.cliente,
         })
 
     return resultado

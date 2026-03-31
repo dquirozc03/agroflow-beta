@@ -9,21 +9,8 @@ export default function OperacionesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
-      {/* SIDEBAR FIJO */}
-      <AppSidebar />
-
-      {/* CONTENIDO CENTRAL */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AppHeader />
-
-        <main className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
-          <div className="max-w-[1500px] mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+  // Layout transparente: cada página de operaciones gestiona su propio layout.
+  // La página de Instrucciones de Embarque ya incluye AppSidebar + AppHeader.
+  // La página de Packing List usa su propio layout interno.
+  return <>{children}</>;
 }
