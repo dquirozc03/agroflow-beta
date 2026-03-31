@@ -405,6 +405,12 @@ async def generate_packing_list_ogl(
     GRID_START_ROW = 20
     fila_secuencial = 1
 
+    def safe_float(val, default=0.0):
+        try:
+            if pd.isna(val): return default
+            return float(val)
+        except: return default
+
     for bk_id, _ in lista_ordenada:
         pallets_de_este_booking = agrupado_por_booking.get(bk_id, [])
         cont_f = booking_data_map[bk_id]["contenedor"]
@@ -415,8 +421,13 @@ async def generate_packing_list_ogl(
             ws.cell(row=fila_e, column=2).value = item["pallet"]
             ws.cell(row=fila_e, column=3).value = cont_f
             ws.cell(row=fila_e, column=4).value = item["calibre"]
-            ws.cell(row=fila_e, column=5).value = item["kilos"]
-            ws.cell(row=fila_e, column=6).value = round(item["cajas"] * 4.2, 2)
+            
+            # Valores numéricos seguros
+            kilos_v = safe_float(item["kilos"])
+            cajas_v = safe_float(item["cajas"])
+            
+            ws.cell(row=fila_e, column=5).value = kilos_v
+            ws.cell(row=fila_e, column=6).value = round(cajas_v * 4.2, 2)
             ws.cell(row=fila_e, column=7).value = item["cosecha"]
             ws.cell(row=fila_e, column=8).value = item["proceso"]
             ws.cell(row=fila_e, column=9).value = item["lote"]
@@ -429,22 +440,25 @@ async def generate_packing_list_ogl(
             ws.cell(row=fila_e, column=1).value = fila_secuencial
             ws.cell(row=fila_e, column=2).value = item["pallet"]
             ws.cell(row=fila_e, column=3).value = contenedor_default
-            # ... (demás campos)
+            ws.cell(row=fila_e, column=4).value = item["calibre"]
+            ws.cell(row=fila_e, column=5).value = safe_float(item["kilos"])
+            ws.cell(row=fila_e, column=6).value = round(safe_float(item["cajas"]) * 4.2, 2)
+            ws.cell(row=fila_e, column=7).value = item["cosecha"]
+            ws.cell(row=fila_e, column=8).value = item["proceso"]
+            ws.cell(row=fila_e, column=9).value = item["lote"]
             fila_secuencial += 1
 
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
     filename = f"PackingList_OGL_{nave_clean.replace(' ','_')}_{datetime.now().strftime('%H%M%S')}.xlsx"
-    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f"attachment; filename={filename}"})
-    wb.save(output)
-    output.seek(0)
-
-    filename = f"PackingList_OGL_{nave_clean.replace(' ','_')}_{datetime.now().strftime('%H%M%S')}.xlsx"
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )
 
 
