@@ -27,7 +27,8 @@ import {
   Users,
   UserRound,
   FileUp,
-  ShieldCheck
+  ShieldCheck,
+  ClipboardList
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -44,7 +45,7 @@ export function AppSidebar({ className }: { className?: string }) {
     
     // Visibilidad por sección: Visible si al menos un hijo es visible o es ADMIN
     const hasLogi = isAdmin || !!(p.lc_registro || p.lc_bandeja);
-    const hasOper = isAdmin || !!(p.op_instrucciones);
+    const hasOper = isAdmin || !!(p.op_instrucciones || p.op_packing_list);
     const hasMaestros = isAdmin || !!(p.m_bulk || p.m_contenedores || p.m_transportistas || p.m_vehiculos || p.m_choferes || p.m_clientes_ie);
     const hasSys = isAdmin || !!(p.sys_usuarios || p.sys_roles);
 
@@ -72,6 +73,7 @@ export function AppSidebar({ className }: { className?: string }) {
         visible: hasOper,
         items: [
           { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones", visible: isAdmin || !!p.op_instrucciones },
+          { name: "Packing List OGL", icon: ClipboardList, href: "/operaciones/packing-list", active: pathname.startsWith("/operaciones/packing-list"), visible: isAdmin || !!p.op_packing_list },
         ].filter(i => i.visible)
       },
       {
