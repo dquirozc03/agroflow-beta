@@ -380,24 +380,49 @@ async def generate_packing_list_ogl(
         wb = openpyxl.load_workbook(template_path, keep_vba=False)
         ws = wb.active
 
+        def safe_write(ws, cell_ref, value):
+            try:
+                cell = ws[cell_ref]
+                if not (isinstance(cell.value, str) and cell.value.startswith("=")):
+                    cell.value = value
+            except: pass
+
+        # Header consolidado
+        contenedores_all = " / ".join([bd["contenedor"] for bd in booking_data_map.values() if bd["contenedor"]])
+        safe_write(ws, "C3", primer_pedido.cliente if primer_pedido else "OGL")
+        safe_write(ws, "C7", contenedores_all)
+        safe_write(ws, "C8", primer_pos.NAVE if primer_pos else nave_clean)
+
         def safe_float(val):
             try: return float(val) if pd.notna(val) else 0.0
             except: return 0.0
 
         GRID_START_ROW = 20
         fila_secuencial = 1
+        
+        # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
             for item in agrupado_por_booking.get(bk_id, []):
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
                 ws.cell(row=fila_e, column=1).value = fila_secuencial
                 ws.cell(row=fila_e, column=2).value = item["pallet"]
                 ws.cell(row=fila_e, column=3).value = booking_data_map[bk_id]["contenedor"]
-                ws.cell(row=fila_e, column=4).value = item["calibre"]
-                ws.cell(row=fila_e, column=5).value = safe_float(item["kilos"])
-                ws.cell(row=fila_e, column=6).value = round(safe_float(item["cajas"]) * 4.2, 2)
-                ws.cell(row=fila_e, column=7).value = item["cosecha"]
-                ws.cell(row=fila_e, column=8).value = item["proceso"]
-                ws.cell(row=fila_e, column=9).value = item["lote"]
+                ws.cell(row=fila_e, column=4).value = item.get("variedad", "")
+                ws.cell(row=fila_e, column=7).value = item["calibre"]
+                ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
+                ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
+                fila_secuencial += 1
+
+        # Luego los "DESCONOCIDOS" o huérfanos (si los hay)
+        if agrupado_por_booking.get("DESCONOCIDO"):
+            for item in agrupado_por_booking["DESCONOCIDO"]:
+                fila_e = GRID_START_ROW + (fila_secuencial - 1)
+                ws.cell(row=fila_e, column=1).value = fila_secuencial
+                ws.cell(row=fila_e, column=2).value = item["pallet"]
+                ws.cell(row=fila_e, column=3).value = contenedor_default
+                ws.cell(row=fila_e, column=7).value = item["calibre"]
+                ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
+                ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
                 fila_secuencial += 1
 
         output = io.BytesIO()
