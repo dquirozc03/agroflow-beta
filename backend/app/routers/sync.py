@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Header, Depends, HTTPException, status, Body, Request
 from typing import List, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
@@ -380,63 +380,94 @@ def list_pedidos(db: Session = Depends(get_db)):
 
 @router.post("/reportes/embarques/raw")
 async def sync_reportes_embarques_raw(
-    payload: Any = Body(...),
+    request: Request,
     x_sync_token: str = Header(None, alias="X-Sync-Token"),
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint para sincronización de Reporte Embarques de Exportaciones.
-    Extrae "Reserva" (Booking) y "Nave de arribo" de SharePoint vía Power Automate.
-    Estrategia Atómica: Delete & Insert.
+    Endpoint ultra-flexible para sincronización de Reporte Embarques.
+    Usa el objeto Request directamente para evitar errores 422 de validación automática.
     """
-    if isinstance(payload, str):
-        try:
-            payload = json.loads(payload)
-        except Exception:
-            raise HTTPException(status_code=400, detail="El payload enviado no es un JSON válido.")
+    try:
+        body_bytes = await request.body()
+        if not body_bytes:
+            return {"status": "error", "mensaje": "El cuerpo de la petición (body) llegó totalmente vacío desde Power Automate."}
+        
+        payload = json.loads(body_bytes)
+    except Exception as e:
+        return {"status": "error", "mensaje": f"Error parseando el JSON enviado: {str(e)}"}
 
     expected_token = settings.SYNC_TOKEN.strip() if settings.SYNC_TOKEN else None
     if not x_sync_token or x_sync_token.strip() != expected_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido.")
 
-    if not payload or len(payload) < 2:
-        return {"status": "error", "mensaje": "Payload vacío.", "procesados": 0}
+    if not payload:
+        return {"status": "error", "mensaje": "Payload nulo o vacío.", "procesados": 0}
 
     import re
     def clean_header(h: str): return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
-
-    headers = [clean_header(h) for h in payload[0]]
-    data_rows = payload[1:]
-
-    # Buscar índices
-    idx_booking = -1
-    idx_nave = -1
     
-    # "Reserva" (AB)
-    target_booking = clean_header("RESERVA")
-    # "Nave de arribo" (AF)
-    target_nave = clean_header("NAVE DE ARRIBO")
-
-    if target_booking in headers: idx_booking = headers.index(target_booking)
-    if target_nave in headers: idx_nave = headers.index(target_nave)
+    # Manejar si el payload es un diccionario único o una lista
+    if isinstance(payload, dict):
+        payload = [payload]
     
-    # Fallback si no encaja exacto pero contiene las palabras:
-    if idx_booking == -1:
-        for i, h in enumerate(headers):
-            if "RESERVA" in h or "BOOKING" in h:
-                idx_booking = i; break
-    if idx_nave == -1:
-        for i, h in enumerate(headers):
-            if "NAVE" in h and "ARRIBO" in h:
-                idx_nave = i; break
+    if not isinstance(payload, list):
+         return {"status": "error", "mensaje": "El formato enviado no es una lista de objetos válida."}
 
-    if idx_booking == -1:
-        raise HTTPException(status_code=400, detail="Columna 'Reserva' o 'Booking' no encontrada.")
+    is_dict_payload = len(payload) > 0 and isinstance(payload[0], dict)
 
-    try:
-        db.query(ReporteEmbarques).delete()
+    # Identificación de nombres de columnas y extracción de modo dual
+    mappings = []
+    
+    if is_dict_payload:
+        # Modo Nativo de Power Automate
+        original_booking_key = None
+        original_nave_key = None
         
-        mappings = []
+        for k in payload[0].keys():
+            clean_k = clean_header(k)
+            if not original_booking_key and ("RESERVA" in clean_k or "BOOKING" in clean_k):
+                original_booking_key = k
+            if not original_nave_key and ("NAVE" in clean_k and "ARRIBO" in clean_k):
+                original_nave_key = k
+                
+        if not original_booking_key:
+            raise HTTPException(status_code=400, detail="Columna 'Reserva' o 'Booking' no encontrada en el JSON.")
+            
+        for row in payload:
+            bkg_raw = row.get(original_booking_key)
+            if not bkg_raw: continue
+            
+            bkg_val = str(bkg_raw).strip().upper()
+            if not bkg_val or bkg_val in ["", "-", "N/A"]: continue
+            
+            nave_val = None
+            if original_nave_key:
+                nave_raw = row.get(original_nave_key)
+                if nave_raw:
+                    n_val = str(nave_raw).strip().upper()
+                    if n_val not in ["", "-", "N/A"]: nave_val = n_val
+                    
+            mappings.append({"booking": bkg_val, "nave_arribo": nave_val})
+
+    else:
+        # Modo Legado Office Scripts (Array de Arrays)
+        if len(payload) < 2:
+            return {"status": "error", "mensaje": "Payload sin datos.", "procesados": 0}
+            
+        headers = [clean_header(h) for h in payload[0]]
+        data_rows = payload[1:]
+
+        idx_booking = -1
+        idx_nave = -1
+        
+        for i, h in enumerate(headers):
+            if idx_booking == -1 and ("RESERVA" in h or "BOOKING" in h): idx_booking = i
+            if idx_nave == -1 and ("NAVE" in h and "ARRIBO" in h): idx_nave = i
+
+        if idx_booking == -1:
+            raise HTTPException(status_code=400, detail="Columna 'Reserva' o 'Booking' no encontrada.")
+
         for row in data_rows:
             if not row or not any(str(c).strip() for c in row if c is not None): continue
             if idx_booking >= len(row): continue
@@ -449,11 +480,10 @@ async def sync_reportes_embarques_raw(
                 nave_val = str(row[idx_nave]).strip().upper()
                 if nave_val in ["", "-", "N/A"]: nave_val = None
 
-            mappings.append({
-                "booking": bkg_val,
-                "nave_arribo": nave_val
-            })
-            
+            mappings.append({"booking": bkg_val, "nave_arribo": nave_val})
+
+    try:
+        db.query(ReporteEmbarques).delete()
         if mappings:
             db.bulk_insert_mappings(ReporteEmbarques, mappings)
         db.commit()
