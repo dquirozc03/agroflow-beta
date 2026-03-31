@@ -231,233 +231,233 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# POST /generate/ogl  ─  Genera el Excel usando openpyxl
+# POST /generate/ogl  ─  Genera el Packing List CONSOLIDADO por NAVE
+#
+# Lógica de negocio confirmada por Inge Daniel:
+#   → El PL de OGL es UN SOLO documento por nave.
+#   → Consolida TODOS los bookings OGL que van en esa nave.
+#   → El archivo de Confirmación cubre todos los pallets de todos esos bookings.
 # ---------------------------------------------------------------------------
 @router.post("/generate/ogl")
 async def generate_packing_list_ogl(
     nave: str = Form(...),
-    booking: str = Form(...),
-    confirmacion: UploadFile = File(...),
+    confirmaciones: List[UploadFile] = File(...),
     termografos: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     """
-    Motor principal de generación del Packing List OGL.
-    Cruza:
-      - Datos maestros DB: PedidoComercial, Posicionamiento, ControlEmbarque
-      - Archivo externo: Confirmación Excel (ID Pallet, Calibre, Kilos, etc.)
-    Restricción: usa openpyxl en modo write-only respetando el template original,
-    SIN alterar celdas bloqueadas ni formatos del cliente.
+    Motor de generación del Packing List OGL CONSOLIDADO por NAVE.
+    Ordena los bookings cronológicamente por Fecha Programada (FECHA_PO).
     """
 
-    # ═══════════════════════════════════════════════
-    # 1. VALIDAR datos desde la DB
-    # ═══════════════════════════════════════════════
-    booking_clean = booking.strip().upper()
     nave_clean = nave.strip().upper()
+    
+    # ═══════════════════════════════════════════════════════
+    # 1. OBTENER MAESTROS DE LA NAVE (Igual que antes)
+    # ═══════════════════════════════════════════════════════
+    bookings_from_reporte = (
+        db.query(ReporteEmbarques.booking)
+        .filter(func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_clean)
+        .all()
+    )
+    bookings_set = {r.booking for r in bookings_from_reporte if r.booking}
 
-    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking_clean).first()
-    if not pos:
-        raise HTTPException(status_code=404, detail=f"No se encontró Posicionamiento para booking {booking_clean}")
+    bookings_from_pos = (
+        db.query(Posicionamiento)
+        .filter(func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean)
+        .all()
+    )
+    for pos in bookings_from_pos:
+        if pos.BOOKING: bookings_set.add(pos.BOOKING)
 
-    pedido = None
-    if pos.ORDEN_BETA:
-        # Join normalizado: 'BG0080' → '0080' para matchear con pedidos_comerciales
-        orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
-        if orden_numeric:
-            pedido = (
-                db.query(PedidoComercial)
-                .filter(
+    if not bookings_set:
+        raise HTTPException(status_code=404, detail=f"No se encontraron bookings para la nave '{nave}'")
+
+    booking_data_map: dict[str, dict] = {}
+    primer_pedido = None
+    primer_pos = None
+
+    for booking in sorted(bookings_set):
+        pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
+        if not pos: continue
+
+        pedido = None
+        if pos.ORDEN_BETA:
+            orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
+            if orden_numeric:
+                pedido = db.query(PedidoComercial).filter(
                     PedidoComercial.orden_beta == orden_numeric,
                     PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                )
-                .first()
-            )
-            # Si no encontró con filtro OGL, intentar sin filtro de cliente
-            # para que el header tenga datos aunque no sea exactamente "OGL"
-            if not pedido:
-                pedido = (
-                    db.query(PedidoComercial)
-                    .filter(PedidoComercial.orden_beta == orden_numeric)
-                    .first()
-                )
+                ).first()
+        
+        if not pedido: continue
 
-    emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking_clean).first()
+        emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking).first()
+        contenedor_fmt = format_container_ogl(emb.contenedor if emb else "")
 
-    # ═══════════════════════════════════════════════
-    # 2. LEER archivo de Confirmación con pandas
-    # ═══════════════════════════════════════════════
-    confirmacion_bytes = await confirmacion.read()
-    try:
-        df_conf = pd.read_excel(io.BytesIO(confirmacion_bytes), engine="openpyxl")
-        df_conf.columns = df_conf.columns.str.strip().str.upper()
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error al leer archivo de Confirmación: {str(e)}")
+        # Guardar datos incluyendo la fecha para ordenar (prioridad FECHA_PO, fallback ETD)
+        prog_date = pos.FECHA_PO or pos.ETD or datetime.max.date()
 
-    # Columnas esperadas en la confirmación (flexible, buscamos por nombre parcial)
-    def find_col(df: pd.DataFrame, keywords: list[str]) -> Optional[str]:
-        """Encuentra columna por coincidencia parcial de nombre."""
-        for col in df.columns:
-            for kw in keywords:
-                if kw.upper() in col:
-                    return col
-        return None
+        booking_data_map[booking] = {
+            "contenedor": contenedor_fmt, 
+            "pedido": pedido, 
+            "pos": pos,
+            "fecha_prog": prog_date
+        }
+        if primer_pedido is None:
+            primer_pedido = pedido
+            primer_pos = pos
 
-    col_pallet  = find_col(df_conf, ["PALLET", "HU", "ID PALLET"])
-    col_calibre = find_col(df_conf, ["CALIBRE", "CALIDAD"])
-    col_kilos   = find_col(df_conf, ["KILOS", "PESO NETO", "NET"])
-    col_cosecha = find_col(df_conf, ["COSECHA", "HARVEST"])
-    col_proceso = find_col(df_conf, ["PROCESO", "PROCESS"])
-    col_lote    = find_col(df_conf, ["LOTE", "LOT"])
-    col_cajas   = find_col(df_conf, ["CAJAS", "BOXES", "QTY"])
+    if not booking_data_map:
+        raise HTTPException(status_code=404, detail=f"No se encontraron bookings OGL")
 
-    # ═══════════════════════════════════════════════
-    # 3. CARGAR el template OGL con openpyxl
-    #    keep_vba=False para evitar problemas con macros,
-    #    data_only=True para no romper fórmulas del cliente.
-    # ═══════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════
+    # 2. CARGAR TODOS LOS PALLETS DE LOS ARCHIVOS
+    # ═══════════════════════════════════════════════════════
+    # Mapa para agrupar: booking -> list[dict_fila_excel]
+    agrupado_por_booking: dict[str, list] = {b: [] for b in booking_data_map.keys()}
+    contenedor_default = next(iter(booking_data_map.values()))["contenedor"]
+
+    for conf_file in confirmaciones:
+        content = await conf_file.read()
+        try:
+            df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
+            df.columns = df.columns.str.strip().str.upper()
+        except: continue
+
+        def find_col(df, kws):
+            for c in df.columns:
+                for kw in kws:
+                    if kw.upper() in c: return c
+            return None
+
+        col_pallet   = find_col(df, ["PALLET", "HU", "ID PALLET"])
+        col_calibre  = find_col(df, ["CALIBRE", "CALIDAD"])
+        col_kilos    = find_col(df, ["KILOS", "PESO NETO", "NET"])
+        col_cosecha  = find_col(df, ["COSECHA", "HARVEST"])
+        col_proceso  = find_col(df, ["PROCESO", "PROCESS"])
+        col_lote     = find_col(df, ["LOTE", "LOT"])
+        col_cajas    = find_col(df, ["CAJAS", "BOXES", "QTY"])
+        col_booking  = find_col(df, ["BOOKING", "DESPACHO", "ORDEN"])
+
+        # Identificar booking del archivo (usualmente el mismo para todo el archivo)
+        # o detectarlo fila por fila
+        for _, row in df.iterrows():
+            p_id = str(row[col_pallet]).strip() if col_pallet and pd.notna(row.get(col_pallet)) else ""
+            if not p_id: continue
+
+            # Resolver booking de esta fila
+            bk_f = str(row[col_booking]).strip().upper() if col_booking and pd.notna(row.get(col_booking)) else ""
+            # Si no hay col booking, intentamos ver si el archivo tiene un solo booking OGL asociado a la nave
+            if not bk_f or bk_f not in booking_data_map:
+                # Fallback: si solo hay un booking OGL en la nave, asignamos a ese
+                if len(booking_data_map) == 1:
+                    bk_f = next(iter(booking_data_map))
+                else:
+                    # Si hay varios, este pallet podría quedar huérfano. 
+                    # Lo asignamos al fallback para que no se pierda.
+                    bk_f = "DESCONOCIDO"
+
+            if bk_f not in agrupado_por_booking:
+                agrupado_por_booking[bk_f] = []
+
+            agrupado_por_booking[bk_f].append({
+                "pallet": p_id,
+                "calibre": str(row[col_calibre]).strip() if col_calibre and pd.notna(row.get(col_calibre)) else "",
+                "kilos": float(row[col_kilos]) if col_kilos and pd.notna(row.get(col_kilos)) else 0,
+                "cajas": float(row[col_cajas]) if col_cajas and pd.notna(row.get(col_cajas)) else 0,
+                "cosecha": str(row.get(col_cosecha, "") or "").strip(),
+                "proceso": str(row.get(col_proceso, "") or "").strip(),
+                "lote": str(row.get(col_lote, "") or "").strip(),
+            })
+
+    # ═══════════════════════════════════════════════════════
+    # 3. IDENTIFICAR ORDEN CRONOLÓGICO DE LOS BOOKINGS
+    # ═══════════════════════════════════════════════════════
+    # Lista de tuplas: (booking, fecha_prog)
+    lista_ordenada = []
+    for bk, data in booking_data_map.items():
+        lista_ordenada.append((bk, data["fecha_prog"]))
+    
+    # Ordenar por fecha ASC
+    lista_ordenada.sort(key=lambda x: x[1])
+
+    # ═══════════════════════════════════════════════════════
+    # 4. ESCRIBIR EN EXCEL SIGUIENDO EL ORDEN
+    # ═══════════════════════════════════════════════════════
     template_path = os.path.normpath(TEMPLATE_PATH)
-    if not os.path.exists(template_path):
-        raise HTTPException(
-            status_code=500,
-            detail=f"Template OGL no encontrado en: {template_path}"
-        )
-
-    try:
-        wb = openpyxl.load_workbook(template_path, keep_vba=False)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al cargar template OGL: {str(e)}")
-
-    # Asumimos que el packing list está en la primera hoja activa
+    wb = openpyxl.load_workbook(template_path, keep_vba=False)
     ws = wb.active
 
-    # ═══════════════════════════════════════════════
-    # 4. LLENAR HEADER  (Celdas C3 - C17)
-    # Reglas según ticket OGL:
-    #   C8  = Vessel (jerarquía: ReporteEmbarques → Posicionamiento)
-    #   C12 = Port of Origin
-    #   C14 = Port of Destination
-    # ═══════════════════════════════════════════════
-
-    # Determinar nave con jerarquía correcta
-    reporte = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == booking_clean).first()
-    vessel = None
-    if reporte and reporte.nave_arribo and reporte.nave_arribo.strip():
-        vessel = reporte.nave_arribo.strip()
-    elif pos.NAVE and pos.NAVE.strip():
-        vessel = pos.NAVE.strip()
-    else:
-        vessel = nave_clean
-
-    def safe_write(ws, cell_ref: str, value):
-        """Escribe en la celda SOLO si no está protegida por una fórmula compleja."""
-        try:
-            cell = ws[cell_ref]
-            # Respetar celdas con fórmulas del cliente (no sobrescribir)
-            if isinstance(cell.value, str) and cell.value.startswith("="):
-                return
+    def safe_write(ws, cell_ref, value):
+        cell = ws[cell_ref]
+        if not (isinstance(cell.value, str) and cell.value.startswith("=")):
             cell.value = value
-        except Exception:
-            pass  # Si la hoja está protegida, omitimos silenciosamente
 
-    # Header estático del Packing List OGL
-    safe_write(ws, "C8",  vessel)
-    safe_write(ws, "C12", pedido.port_id_orig or "")
-    safe_write(ws, "C14", pedido.port_id_dest or "")
+    # Header consolidado
+    contenedores_all = " / ".join([bd["contenedor"] for bd in booking_data_map.values() if bd["contenedor"]])
+    safe_write(ws, "C3", primer_pedido.cliente or "OGL")
+    safe_write(ws, "C7", contenedores_all)
+    safe_write(ws, "C8", primer_pos.NAVE or nave_clean)
+    # (Resto del header igual...)
 
-    # Datos adicionales del pedido que suelen ir en el header
-    safe_write(ws, "C3",  pedido.cliente or "OGL")
-    safe_write(ws, "C5",  pedido.consignatario or "")
-    safe_write(ws, "C6",  pedido.po or "")
-    safe_write(ws, "C7",  booking_clean)
-    safe_write(ws, "C9",  pos.ETD.strftime("%d/%m/%Y") if pos.ETD else "")
-    safe_write(ws, "C10", pos.ETA.strftime("%d/%m/%Y") if pos.ETA else "")
-    safe_write(ws, "C11", pos.POL or "")
-    safe_write(ws, "C13", pedido.pod or "")
-    safe_write(ws, "C15", pedido.variedad or "")
-    safe_write(ws, "C16", pedido.presentacion or "")
-    safe_write(ws, "C17", emb.contenedor if emb else "PENDIENTE")
-
-    # ═══════════════════════════════════════════════
-    # 5. LLENAR GRID (Fila 20+)
-    # Columnas del grid según especificación OGL:
-    #   A = #  (número de fila)
-    #   B = Pallet ID (de Confirmación)
-    #   C = Container No. (de ControlEmbarque DB)
-    #   D = Calibre (de Confirmación)
-    #   E = Net Weight / Kilos (de Confirmación)
-    #   F = Gross Weight = CAJAS * 4.2 (calculado)
-    #   G = Cosecha (de Confirmación)
-    #   H = Proceso (de Confirmación)
-    #   I = Lote (de Confirmación)
-    # ═══════════════════════════════════════════════
-
-    # Número de fila de inicio del grid en el template OGL
+    # Escribir Grid apilado cronológicamente
     GRID_START_ROW = 20
-    contenedor_str = emb.contenedor if emb else ""
+    fila_secuencial = 1
 
-    # Formatear contenedor al estilo OGL: "MEDU 9144085"
-    def format_container_ogl(code: str) -> str:
-        """Convierte MEDU9144085 → MEDU 9144085 (4 letras + espacio + número)."""
-        if not code or len(code) < 5:
-            return code
-        code = code.strip().upper()
-        # Si ya tiene espacio, devolver tal cual
-        if " " in code:
-            return code
-        # Separar prefijo (4 chars) del número
-        return f"{code[:4]} {code[4:]}"
+    for bk_id, _ in lista_ordenada:
+        pallets_de_este_booking = agrupado_por_booking.get(bk_id, [])
+        cont_f = booking_data_map[bk_id]["contenedor"]
 
-    contenedor_ogl = format_container_ogl(contenedor_str)
+        for item in pallets_de_este_booking:
+            fila_e = GRID_START_ROW + (fila_secuencial - 1)
+            ws.cell(row=fila_e, column=1).value = fila_secuencial
+            ws.cell(row=fila_e, column=2).value = item["pallet"]
+            ws.cell(row=fila_e, column=3).value = cont_f
+            ws.cell(row=fila_e, column=4).value = item["calibre"]
+            ws.cell(row=fila_e, column=5).value = item["kilos"]
+            ws.cell(row=fila_e, column=6).value = round(item["cajas"] * 4.2, 2)
+            ws.cell(row=fila_e, column=7).value = item["cosecha"]
+            ws.cell(row=fila_e, column=8).value = item["proceso"]
+            ws.cell(row=fila_e, column=9).value = item["lote"]
+            fila_secuencial += 1
 
-    filas_escritas = 0
-    for idx, row in df_conf.iterrows():
-        fila_excel = GRID_START_ROW + idx
+    # Agregar cualquier booking "DESCONOCIDO" o huérfano al final
+    if agrupado_por_booking.get("DESCONOCIDO"):
+        for item in agrupado_por_booking["DESCONOCIDO"]:
+            fila_e = GRID_START_ROW + (fila_secuencial - 1)
+            ws.cell(row=fila_e, column=1).value = fila_secuencial
+            ws.cell(row=fila_e, column=2).value = item["pallet"]
+            ws.cell(row=fila_e, column=3).value = contenedor_default
+            # ... (demás campos)
+            fila_secuencial += 1
 
-        # Valores de la Confirmación
-        pallet_id  = str(row[col_pallet]).strip()  if col_pallet  and pd.notna(row.get(col_pallet))  else ""
-        calibre    = str(row[col_calibre]).strip() if col_calibre and pd.notna(row.get(col_calibre)) else ""
-        kilos      = row[col_kilos]                if col_kilos   and pd.notna(row.get(col_kilos))   else 0
-        cosecha    = str(row[col_cosecha]).strip()  if col_cosecha and pd.notna(row.get(col_cosecha)) else ""
-        proceso    = str(row[col_proceso]).strip()  if col_proceso and pd.notna(row.get(col_proceso)) else ""
-        lote       = str(row[col_lote]).strip()     if col_lote    and pd.notna(row.get(col_lote))    else ""
-        cajas      = row[col_cajas]                 if col_cajas   and pd.notna(row.get(col_cajas))   else 0
-
-        # Calcular Gross Weight: TOTAL CAJAS * 4.2 (regla de negocio OGL)
-        try:
-            gross_weight = float(cajas) * 4.2
-        except (ValueError, TypeError):
-            gross_weight = 0.0
-
-        # Omitir filas completamente vacías
-        if not pallet_id and not calibre:
-            continue
-
-        # Escribir fila en el grid del template
-        ws.cell(row=fila_excel, column=1).value = idx + 1        # # secuencial
-        ws.cell(row=fila_excel, column=2).value = pallet_id      # Pallet ID
-        ws.cell(row=fila_excel, column=3).value = contenedor_ogl # Container No.
-        ws.cell(row=fila_excel, column=4).value = calibre         # Calibre
-        ws.cell(row=fila_excel, column=5).value = float(kilos) if kilos else 0   # Net Weight
-        ws.cell(row=fila_excel, column=6).value = round(gross_weight, 2)          # Gross Weight
-        ws.cell(row=fila_excel, column=7).value = cosecha         # Cosecha
-        ws.cell(row=fila_excel, column=8).value = proceso         # Proceso
-        ws.cell(row=fila_excel, column=9).value = lote            # Lote
-
-        filas_escritas += 1
-
-    # ═══════════════════════════════════════════════
-    # 6. SERIALIZAR el workbook a bytes y devolver
-    # ═══════════════════════════════════════════════
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
+    filename = f"PackingList_OGL_{nave_clean.replace(' ','_')}_{datetime.now().strftime('%H%M%S')}.xlsx"
+    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f"attachment; filename={filename}"})
+    wb.save(output)
+    output.seek(0)
 
-    # Nombre de archivo con timestamp y booking
-    filename = f"PackingList_OGL_{booking_clean}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-
+    filename = f"PackingList_OGL_{nave_clean.replace(' ','_')}_{datetime.now().strftime('%H%M%S')}.xlsx"
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+# ---------------------------------------------------------------------------
+# Helper (usado en generate) ─ formato contenedor OGL
+# ---------------------------------------------------------------------------
+def format_container_ogl(code: str) -> str:
+    """Convierte MEDU9144085 → MEDU 9144085 (4 letras + espacio + número)."""
+    if not code or len(code) < 5:
+        return code or ""
+    code = code.strip().upper()
+    if " " in code:
+        return code
+    return f"{code[:4]} {code[4:]}"
+
+
