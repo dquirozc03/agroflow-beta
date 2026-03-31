@@ -84,11 +84,21 @@ from dateutil.parser import parse as parse_date
 def clean_data_value(val: str, db_column: str):
     """
     Limpia y convierte valores de texto de Excel a tipos compatibles con la DB.
+    Maneja errores de fórmulas de Excel y valores nulos.
     """
-    if not val or str(val).strip().upper() in ["", "-", "N/A", "NONE", "NULL"]:
-        return None
+    # Lista extendida de valores que representan "Vacío" o "Error" en Excel
+    null_and_errors = {
+        "", "-", "N/A", "NONE", "NULL", "NAN", 
+        "#¡VALOR!", "#VALUE!", "#REF!", "#¡REF!", "#DIV/0!", "#N/A", "#NAME?", "#¿NOMBRE?"
+    }
     
+    if val is None:
+        return None
+        
     val_str = str(val).strip()
+    
+    if not val_str or val_str.upper() in null_and_errors:
+        return None
     
     # 1. Manejo de Enteros (ej. CAJAS_VACIAS)
     if db_column == "CAJAS_VACIAS":
@@ -207,12 +217,21 @@ async def sync_posicionamiento_raw(
             if not row_data.get("BOOKING"):
                 continue
 
-            # Upsert
+            # Upsert Inteligente (Protección contra NULLs)
             stmt = insert(Posicionamiento).values(**row_data)
-            upsert_stmt = stmt.on_conflict_do_update(
-                index_elements=[Posicionamiento.BOOKING],
-                set_={k: v for k, v in row_data.items() if k != "BOOKING"}
-            )
+            
+            # Solo actualizamos los campos que NO vienen nulos en esta fila de Excel,
+            # manteniendo la información previa si en esta sincronización el campo está vacío.
+            update_data = {k: v for k, v in row_data.items() if k != "BOOKING" and v is not None}
+            
+            if update_data:
+                upsert_stmt = stmt.on_conflict_do_update(
+                    index_elements=[Posicionamiento.BOOKING],
+                    set_=update_data
+                )
+            else:
+                # Si todo el payload es nulo excepto el ID, solo intentamos insertar si no existe
+                upsert_stmt = stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
             
             db.execute(upsert_stmt)
             procesados += 1
