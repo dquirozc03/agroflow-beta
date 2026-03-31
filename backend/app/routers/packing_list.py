@@ -293,8 +293,8 @@ async def generate_packing_list_ogl(
             emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking).first()
             contenedor_fmt = format_container_ogl(emb.contenedor if emb else "")
 
-            # Prioridad de fecha: FECHA_PO -> ETD -> Hoy
-            prog_date = getattr(pos, "FECHA_PO", None) or getattr(pos, "ETD", None) or datetime.now().date()
+            # Prioridad de fecha: FECHA_PROGRAMADA -> ETD -> Hoy
+            prog_date = getattr(pos, "FECHA_PROGRAMADA", None) or getattr(pos, "ETD", None) or datetime.now().date()
 
             booking_data_map[booking] = {
                 "contenedor": contenedor_fmt, 
@@ -412,7 +412,7 @@ async def generate_packing_list_ogl(
             safe_write(ws, "C15", primer_pedido.pod or "")
         
         if primer_pos:
-            safe_write(ws, "C13", primer_pos.PUERTO_ORIGEN or "")
+            safe_write(ws, "C13", primer_pos.POL or "")
             safe_write(ws, "C16", primer_pos.ETD.strftime("%d/%m/%Y") if primer_pos.ETD else "")
             safe_write(ws, "C17", primer_pos.ETA.strftime("%d/%m/%Y") if primer_pos.ETA else "")
 
