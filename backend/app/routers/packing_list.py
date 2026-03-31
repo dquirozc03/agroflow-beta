@@ -20,6 +20,7 @@ from openpyxl.styles import Font, Alignment
 from copy import copy
 import io
 import os
+import re
 from datetime import datetime
 
 router = APIRouter(
@@ -32,7 +33,22 @@ router = APIRouter(
 # ---------------------------------------------------------------------------
 OGL_KEYWORD = "OGL"
 
-# Ruta al template del cliente (openpyxl mantendrá los bloqueos y formatos)
+# ---------------------------------------------------------------------------
+# Helper: normalizar ORDEN_BETA para el JOIN con pedidos_comerciales
+#
+# Regla de negocio confirmada por Inge Daniel:
+#   posicionamientos.ORDEN_BETA  = "BG0080"  (con prefijo de letras)
+#   pedidos_comerciales.orden_beta = "0080"   (solo dígitos)
+#
+# La función extrae solo los dígitos para hacer el match correcto.
+# ---------------------------------------------------------------------------
+def strip_orden_beta(orden_beta: Optional[str]) -> Optional[str]:
+    """Extrae solo los dígitos de una cadena tipo 'BG0080' → '0080'."""
+    if not orden_beta:
+        return None
+    numeric = re.sub(r'[^0-9]', '', orden_beta)
+    return numeric if numeric else None
+
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__),  # app/routers/
     "..", "..",                  # backend/
@@ -59,47 +75,35 @@ class BookingOGL(BaseModel):
     total_cajas: Optional[int]
 
 # ---------------------------------------------------------------------------
-# GET /naves  ─  Lista naves con órdenes OGL (con jerarquía de fuente)
+# GET /naves  ─  Lista todas las naves disponibles (con jerarquía de fuente)
+# NO depende de pedidos_comerciales para mostrar naves.
 # ---------------------------------------------------------------------------
 @router.get("/naves", response_model=List[NaveInfo])
 def listar_naves_ogl(db: Session = Depends(get_db)):
     """
-    Retorna naves únicas que tienen al menos un Pedido Comercial de OGL.
-    Jerarquía:
-      1. ReporteEmbarques.nave_arribo  (fuente primaria)
+    Retorna naves únicas desde posicionamientos y reporte_embarques.
+    Jerarquía por booking:
+      1. ReporteEmbarques.nave_arribo  (fuente primaria si existe y no es NULL)
       2. Posicionamiento.NAVE          (fallback)
+
+    NOTA: No filtra por cliente OGL aquí para evitar fallos cuando
+    pedidos_comerciales no tiene el registro. El filtro OGL aplica
+    al nivel del botón de generación.
     """
 
-    # 1. Traer todos los pedidos del cliente OGL
-    pedidos_ogl = (
-        db.query(PedidoComercial)
-        .filter(PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%"))
-        .all()
-    )
+    # 1. Traer TODOS los posicionamientos que tengan una nave definida
+    #    (sea por Posicionamiento.NAVE o por ReporteEmbarques.nave_arribo)
+    todos_pos = db.query(Posicionamiento).all()
 
-    if not pedidos_ogl:
-        return []
+    # nave_map: { nombre_nave_upper -> {fuente, bookings: []} }
+    nave_map: dict[str, dict] = {}
 
-    # Mapear orden_beta -> pedido para lookup rápido
-    orden_betas_ogl = [p.orden_beta for p in pedidos_ogl if p.orden_beta]
-
-    # 2. Buscar posicionamientos asociados a esas órdenes OGL
-    posicionamientos = (
-        db.query(Posicionamiento)
-        .filter(Posicionamiento.ORDEN_BETA.in_(orden_betas_ogl))
-        .all()
-    )
-
-    # Mapa booking -> posicionamiento
-    booking_to_pos = {p.BOOKING: p for p in posicionamientos}
-
-    # 3. Para cada booking, buscar si existe en ReporteEmbarques (fuente primaria)
-    nave_map: dict[str, dict] = {}  # nave -> {fuente, bookings}
-
-    for pos in posicionamientos:
+    for pos in todos_pos:
         booking = pos.BOOKING
+        if not booking:
+            continue
 
-        # Intentar obtener nave desde ReporteEmbarques
+        # Intentar fuente primaria: ReporteEmbarques
         reporte = (
             db.query(ReporteEmbarques)
             .filter(ReporteEmbarques.booking == booking)
@@ -116,6 +120,7 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
             nave = pos.NAVE.strip().upper()
             fuente = "posicionamiento"
 
+        # Si no hay nave en ninguna fuente, omitir
         if not nave:
             continue
 
@@ -125,7 +130,7 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         if booking not in nave_map[nave]["bookings"]:
             nave_map[nave]["bookings"].append(booking)
 
-    # 4. Construir respuesta
+    # Ordenar alfabéticamente
     result = []
     for nave, data in sorted(nave_map.items()):
         result.append(NaveInfo(
@@ -138,17 +143,17 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# GET /bookings  ─  Bookings OGL para una nave específica
+# GET /bookings  ─  Todos los bookings de una nave
 # ---------------------------------------------------------------------------
 @router.get("/bookings")
 def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
     """
-    Dado un nombre de nave, retorna todos los bookings OGL asociados
-    con información completa para pre-poblar el formulario.
+    Dado un nombre de nave, retorna todos los bookings asociados
+    con información completa. Intenta enriquecer con PedidoComercial
+    pero NO bloquea si no existe el registro.
     """
     nave_upper = nave.strip().upper()
 
-    # Buscar posicionamientos con esa nave (jerarquía: reporte primero, luego pos)
     # Paso 1: bookings desde ReporteEmbarques con esa nave
     bookings_from_reporte = (
         db.query(ReporteEmbarques.booking)
@@ -157,45 +162,41 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
     )
     bookings_set = {r.booking for r in bookings_from_reporte if r.booking}
 
-    # Paso 2: bookings desde Posicionamiento fallback
+    # Paso 2: bookings desde Posicionamiento (fallback o adicionales)
     bookings_from_pos = (
         db.query(Posicionamiento)
         .filter(func.upper(func.trim(Posicionamiento.NAVE)) == nave_upper)
         .all()
     )
     for pos in bookings_from_pos:
-        bookings_set.add(pos.BOOKING)
+        if pos.BOOKING:
+            bookings_set.add(pos.BOOKING)
 
     if not bookings_set:
         raise HTTPException(status_code=404, detail=f"No se encontraron bookings para la nave '{nave}'")
 
-    # Paso 3: Filtrar solo los que son OGL (cruzando con PedidoComercial vía orden_beta)
     resultado = []
-    for booking in bookings_set:
+    for booking in sorted(bookings_set):
         pos = (
             db.query(Posicionamiento)
             .filter(Posicionamiento.BOOKING == booking)
             .first()
         )
-        if not pos:
-            continue
 
-        # Verificar que es OGL
+        # Enriquecimiento OPCIONAL con PedidoComercial usando join normalizado:
+        # posicionamientos.ORDEN_BETA = 'BG0080' → strip letras → '0080'
+        # pedidos_comerciales.orden_beta = '0080'
         pedido = None
-        if pos.ORDEN_BETA:
-            pedido = (
-                db.query(PedidoComercial)
-                .filter(
-                    PedidoComercial.orden_beta == pos.ORDEN_BETA,
-                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+        if pos and pos.ORDEN_BETA:
+            orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
+            if orden_numeric:
+                pedido = (
+                    db.query(PedidoComercial)
+                    .filter(PedidoComercial.orden_beta == orden_numeric)
+                    .first()
                 )
-                .first()
-            )
 
-        if not pedido:
-            continue
-
-        # Obtener datos de control de embarque
+        # Datos de control de embarque
         emb = (
             db.query(ControlEmbarque)
             .filter(ControlEmbarque.booking == booking)
@@ -204,19 +205,21 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 
         resultado.append({
             "booking": booking,
-            "orden_beta": pos.ORDEN_BETA,
-            "contenedor": emb.contenedor if emb else None,
-            "dam": emb.dam if emb else None,
-            "port_id_orig": pedido.port_id_orig,
-            "port_id_dest": pedido.port_id_dest,
-            "variedad": pedido.variedad,
-            "total_cajas": pedido.total_cajas,
-            "presentacion": pedido.presentacion,
-            "pod": pedido.pod,
-            "consignatario": pedido.consignatario,
+            "orden_beta":    pos.ORDEN_BETA if pos else None,
+            "contenedor":    emb.contenedor if emb else None,
+            "dam":           emb.dam if emb else None,
+            "port_id_orig":  pedido.port_id_orig if pedido else None,
+            "port_id_dest":  pedido.port_id_dest if pedido else None,
+            "variedad":      pedido.variedad if pedido else None,
+            "total_cajas":   pedido.total_cajas if pedido else None,
+            "presentacion":  pedido.presentacion if pedido else None,
+            "pod":           pedido.pod if pedido else None,
+            "consignatario": pedido.consignatario if pedido else None,
+            "cliente":       pedido.cliente if pedido else None,
         })
 
     return resultado
+
 
 
 # ---------------------------------------------------------------------------
@@ -251,17 +254,25 @@ async def generate_packing_list_ogl(
 
     pedido = None
     if pos.ORDEN_BETA:
-        pedido = (
-            db.query(PedidoComercial)
-            .filter(
-                PedidoComercial.orden_beta == pos.ORDEN_BETA,
-                PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+        # Join normalizado: 'BG0080' → '0080' para matchear con pedidos_comerciales
+        orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
+        if orden_numeric:
+            pedido = (
+                db.query(PedidoComercial)
+                .filter(
+                    PedidoComercial.orden_beta == orden_numeric,
+                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                )
+                .first()
             )
-            .first()
-        )
-
-    if not pedido:
-        raise HTTPException(status_code=404, detail=f"No se encontró Pedido Comercial OGL para la Orden Beta del booking {booking_clean}")
+            # Si no encontró con filtro OGL, intentar sin filtro de cliente
+            # para que el header tenga datos aunque no sea exactamente "OGL"
+            if not pedido:
+                pedido = (
+                    db.query(PedidoComercial)
+                    .filter(PedidoComercial.orden_beta == orden_numeric)
+                    .first()
+                )
 
     emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking_clean).first()
 
