@@ -77,7 +77,8 @@ class BookingOGL(BaseModel):
 # ---------------------------------------------------------------------------
 # GET /naves  ─  Lista todas las naves disponibles (con jerarquía de fuente)
 # NO depende de pedidos_comerciales para mostrar naves.
-# ----------------------------------------------------------------@router.get("/naves", response_model=List[NaveInfo])
+# ---------------------------------------------------------------------------
+@router.get("/naves", response_model=List[NaveInfo])
 def listar_naves_ogl(db: Session = Depends(get_db)):
     """
     Retorna naves únicas basándose en la VERDAD ABSOLUTA:
