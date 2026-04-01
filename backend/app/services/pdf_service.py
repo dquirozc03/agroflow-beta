@@ -202,7 +202,7 @@ class InstructionPDFService:
             [b_p("AGENCIA NAVIERA"), n_p(pos.NAVIERA or "")],
             [b_p("MOTONAVE"), n_p(pos.NAVE or "")],
             [b_p("BOOKING No."), b_p(pos.BOOKING or "")],
-            [b_p("FREIGHT"), n_p("COLLECT")],
+            [b_p("FREIGHT"), n_p("PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT")],
             [b_p("EMISION B/L"), n_p("SWB")],
             [b_p("PUERTO EMBARQUE"), n_p(getattr(pos, 'POL', "CALLAO") or "CALLAO")],
             [b_p("ETA"), n_p(eta_str)],

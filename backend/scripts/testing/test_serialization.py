@@ -1,8 +1,6 @@
-import sys
-import os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.getcwd())
+# Ajustar el path para encontrar el backend (estando en scripts/testing)
+_base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _base not in sys.path: sys.path.append(_base)
 
 from app.database import SessionLocal
 from app.routers.clientes_ie import ClienteIESchema, list_clientes_ie

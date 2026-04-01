@@ -1,30 +1,40 @@
 # BETA LogiCapture 1.0 (AgroFlow)
 
-Sistema para el área comercial y exportaciones: registro operativo, bandeja SAP e historial. Incluye login real (JWT), roles y auditoría.
+Sistema avanzado para el área comercial y exportaciones: registro operativo de embarques, gestión de Packing Lists (OGL) e historial. Implementado con FastAPI (Python) y Next.js (TypeScript).
 
-## Requisitos
+---
 
-- **Backend:** Python 3.x, PostgreSQL, dependencias en `backend/requirements.txt` y `backend/requirements-auth.txt`
-- **Frontend:** Node.js 18+, npm o pnpm
+## 📂 Organización del Proyecto (Arquitectura)
 
-## Arranque rápido
+Para mantener la escalabilidad y el orden, seguimos esta estructura:
+
+- **`/backend`**: API REST con FastAPI.
+  - **`/app`**: Código fuente (Models, Schemas, Services, Routers).
+  - **`/scripts`**: Utilidades de mantenimiento organizadas por:
+    - `db/`: Migraciones y carga de datos (seeds).
+    - `ops/`: Operaciones de sistema (crear admin, resets).
+    - `testing/`: Pruebas de integración y validación.
+- **`/frontend`**: Interfaz de usuario con Next.js (App Router) y Shadcn/UI.
+- **`/docs`**: Documentación técnica y operativa.
+  - **`documentacion/`**: Área de trabajo para el documentador (API, Arquitectura, Procesos).
+  - **`tickets/archive/`**: Historial de desarrollo y requerimientos finalizados.
+
+---
+
+## 🛠️ Requisitos e Instalación
 
 ### 1. Backend
 
 ```bash
 cd backend
-# Crear venv y activar (recomendado)
+# Crear venv y activar
 pip install -r requirements.txt
-pip install -r requirements-auth.txt   # JWT + bcrypt
 
-# Variables de entorno (copiar .env.example si existe o crear .env):
-# DATABASE_URL=postgresql://usuario:password@localhost:5432/nombre_bd
-# SYNC_TOKEN=un-token-secreto
-# Opcional: JWT_SECRET=clave-secreta (obligatorio si ENVIRONMENT=production)
+# Variables de entorno: copia .env.example a .env.local y completa:
+# DATABASE_URL, SYNC_TOKEN, JWT_SECRET (ver sección abajo)
 
 alembic upgrade head
-python -m app.scripts.seed_all_roles   # Usuarios de prueba: admin/admin, etc.
-
+python -m app.scripts.seed_all_roles   # Usuarios iniciales (admin/admin)
 uvicorn app.main:app --reload
 ```
 
@@ -36,35 +46,38 @@ El backend queda en **http://127.0.0.1:8000**.
 cd frontend
 npm install
 
-# En .env.local (crear si no existe):
-# API_PROXY_TARGET=http://127.0.0.1:8000
-
+# En .env.local: API_PROXY_TARGET=http://127.0.0.1:8000
 npm run dev
 ```
 
-El frontend queda en **http://localhost:3000**. Entrar a la app y hacer login con **admin** / **admin** (o el usuario creado por los seeds).
+El frontend queda en **http://localhost:3000**. Login: `admin` / `admin`.
 
-## Variables de entorno principales
+---
+
+## ⚙️ Configuración (Variables de Entorno)
 
 | Variable | Dónde | Descripción |
 |--------|--------|-------------|
-| `DATABASE_URL` | backend | URL de PostgreSQL |
-| `SYNC_TOKEN` | backend | Token para sincronización |
-| `JWT_SECRET` | backend | Secreto para firmar JWT (obligatorio en producción) |
-| `ENVIRONMENT` | backend | `development` (por defecto) o `production` |
-| `API_PROXY_TARGET` | frontend | URL del backend (dev: `http://127.0.0.1:8000`; prod: `https://api.tudominio.com`) |
-| `CORS_ORIGINS` | backend | Orígenes permitidos para CORS, separados por coma (prod: URL del frontend) |
+| `DATABASE_URL` | backend | URL de PostgreSQL (ej. Supabase o AWS RDS) |
+| `JWT_SECRET` | backend | Clave para firmar tokens (obligatorio en producción) |
+| `ENVIRONMENT` | backend | `development` o `production` |
+| `API_PROXY_TARGET` | frontend | URL del backend para el proxy de Next.js |
+| `CORS_ORIGINS` | backend | URLs permitidas (separadas por coma en prod) |
 
-## Documentación adicional
+---
 
-- **[docs/LOGIN_REAL.md](docs/LOGIN_REAL.md)** – Login JWT, migraciones auth, seeds
-- **[docs/SEGURIDAD.md](docs/SEGURIDAD.md)** – Checklist producción, JWT, HTTPS, rate limiting, auditoría
-- **[docs/BACKUPS.md](docs/BACKUPS.md)** – Copias de seguridad de la base de datos
+## 📑 Documentación Clave
 
-## Producción
+- **[docs/MANUAL_TECNICO.md](docs/MANUAL_TECNICO.md)** – Funcionamiento interno y lógica de negocio.
+- **[docs/SEGURIDAD.md](docs/SEGURIDAD.md)** – Checklist de producción y seguridad JWT.
+- **[docs/BACKUPS.md](docs/BACKUPS.md)** – Procedimientos de respaldo de base de datos.
 
-- **Backend:** Definir `ENVIRONMENT=production`, `JWT_SECRET` fuerte y `CORS_ORIGINS` con la URL real del frontend (ej. `https://app.tudominio.com`), separada por comas si hay varias.
-- **Frontend:** En el build/entorno de producción, definir `API_PROXY_TARGET` con la URL pública del backend (ej. `https://api.tudominio.com`).
-- Cambiar contraseñas por defecto de los usuarios.
-- Servir por HTTPS (reverse proxy o plataforma).
-- Ver [docs/SEGURIDAD.md](docs/SEGURIDAD.md) para el checklist completo.
+---
+
+## 🚀 Producción (AWS)
+
+1. Cambiar `ENVIRONMENT=production`.
+2. Generar un `JWT_SECRET` seguro.
+3. Configurar `CORS_ORIGINS` y `API_PROXY_TARGET` con los dominios oficiales.
+4. Ajustar el Pool de Conexiones en `backend/app/database.py` vía variables de entorno si la carga es alta.
+

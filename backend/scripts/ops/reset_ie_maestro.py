@@ -2,9 +2,9 @@ import sys
 import os
 from sqlalchemy import text
 
-# Cambiar CWD al directorio del script
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.getcwd())
+# Ajustar el path para encontrar el backend (estando en scripts/ops)
+_base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _base not in sys.path: sys.path.append(_base)
 
 from app.database import engine
 
