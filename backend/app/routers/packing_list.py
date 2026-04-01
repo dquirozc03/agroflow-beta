@@ -341,6 +341,7 @@ async def generate_packing_list_ogl(
             col_proceso = find_col(df, ["PROCESO", "PROCESS", "FECHA PROCESO"])
             col_lote_ogl = find_col(df, ["LOTE CLIENTE (OGL)", "LOTE OGL", "CLIENT LOT"])
             col_cajas   = find_col(df, ["TOTAL DE CAJAS", "CAJAS", "BOXES", "QTY"])
+            col_total_kilos = find_col(df, ["TOTAL KILOS", "NET WEIGHT", "PESO NETO TOTAL"])
             col_trazabilidad = find_col(df, ["CODIGO TRAZABILIDAD", "TRAZABILIDAD", "TRACEABILITY"])
 
             for _, row in df.iterrows():
@@ -353,13 +354,25 @@ async def generate_packing_list_ogl(
 
                 if bk_f not in agrupado_por_booking: agrupado_por_booking[bk_f] = []
 
+                def format_date_ogl(val):
+                    if pd.isna(val) or str(val).strip() == "": return ""
+                    try:
+                        if isinstance(val, (pd.Timestamp, datetime, date)):
+                            return val.strftime("%d/%m/%Y")
+                        # Si es string, intentar parsear
+                        dt = pd.to_datetime(val)
+                        return dt.strftime("%d/%m/%Y")
+                    except:
+                        return str(val).strip()
+
                 agrupado_por_booking[bk_f].append({
                     "pallet": p_id,
                     "calibre": str(row.get(col_calibre, "")).strip() if col_calibre and pd.notna(row.get(col_calibre)) else "",
                     "kilos": row.get(col_kilos) if col_kilos else 0,
+                    "total_kilos": row.get(col_total_kilos) if col_total_kilos else 0,
                     "cajas": row.get(col_cajas) if col_cajas else 0,
-                    "cosecha": str(row.get(col_cosecha, "")).strip() if col_cosecha and pd.notna(row.get(col_cosecha)) else "",
-                    "proceso": str(row.get(col_proceso, "")).strip() if col_proceso and pd.notna(row.get(col_proceso)) else "",
+                    "cosecha": format_date_ogl(row.get(col_cosecha)),
+                    "proceso": format_date_ogl(row.get(col_proceso)),
                     "lote_ogl": str(row.get(col_lote_ogl, "")).strip() if col_lote_ogl and pd.notna(row.get(col_lote_ogl)) else "",
                     "trazabilidad": str(row.get(col_trazabilidad, "")).strip() if col_trazabilidad and pd.notna(row.get(col_trazabilidad)) else "",
                 })
@@ -388,9 +401,10 @@ async def generate_packing_list_ogl(
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
         if primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
-            # Contamos cuántos bookings únicos estamos enviando en este archivo consolidado
-            # (que ya sabemos que son todos de OGL porque vienen filtrados)
-            cantidad_ordenes = len(bookings_set)
+            # Solo contamos bookings que realmente traen datos (agrupado_por_booking)
+            # Esto evita que bookings registrados en el reporte pero sin confirmación inflen el número
+            ordenes_reales = [b for b in bookings_set if b in agrupado_por_booking]
+            cantidad_ordenes = len(ordenes_reales) if ordenes_reales else 1
             pl_id = f"WK{semana_eta}{cantidad_ordenes}"
 
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
@@ -453,6 +467,9 @@ async def generate_packing_list_ogl(
                 cajas_num = safe_float(item["cajas"])
                 ws.cell(row=fila_e, column=14).value = round(cajas_num * 4.2, 2)
                 
+                # O: Net Weight (TOTAL KILOS)
+                ws.cell(row=fila_e, column=15).value = item["total_kilos"]
+
                 # P-Q: Fechas
                 ws.cell(row=fila_e, column=16).value = item["cosecha"]
                 ws.cell(row=fila_e, column=17).value = item["proceso"]
