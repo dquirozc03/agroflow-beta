@@ -252,21 +252,35 @@ async def generate_packing_list_ogl(
     try:
         nave_clean = nave.strip().upper()
         
-        # 1. Obtener bookings OGL de la nave
-        bookings_from_reporte = (
-            db.query(ReporteEmbarques.booking)
-            .filter(func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_clean)
-            .all()
-        )
-        bookings_set = {r.booking for r in bookings_from_reporte if r.booking}
+        # 1. Obtener bookings cuya "VERDAD ABSOLUTA" es esta nave en el Reporte
+        bookings_reporte = db.query(ReporteEmbarques.booking).filter(
+            func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_clean
+        ).all()
+        bookings_reporte_set = {r.booking for r in bookings_reporte if r.booking}
 
-        bookings_from_pos = (
-            db.query(Posicionamiento)
-            .filter(func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean)
-            .all()
-        )
-        for pos in bookings_from_pos:
-            if pos.BOOKING: bookings_set.add(pos.BOOKING)
+        # 2. Obtener bookings que en el Posicionamiento están en esta nave
+        bookings_pos = db.query(Posicionamiento.BOOKING).filter(
+            func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean
+        ).all()
+        bookings_pos_set = {r.BOOKING for r in bookings_pos if r.BOOKING}
+
+        # 3. Fusión inteligente: Prioridad TOTAL al Reporte
+        # Empezamos con los que el reporte dice que están aquí
+        bookings_set = set(bookings_reporte_set)
+
+        # Añadimos los de posicionamiento SOLO SI el reporte no dice que están en OTRA nave
+        for b in bookings_pos_set:
+            if b in bookings_set: continue
+            
+            # Verificar si el reporte lo movió a OTRA nave distinta a la limpia
+            otra_nave = db.query(ReporteEmbarques).filter(
+                ReporteEmbarques.booking == b,
+                ReporteEmbarques.nave_arribo != None,
+                func.upper(func.trim(ReporteEmbarques.nave_arribo)) != nave_clean
+            ).first()
+            
+            if not otra_nave:
+                bookings_set.add(b)
 
         if not bookings_set:
             raise HTTPException(status_code=404, detail=f"No se encontraron bookings para la nave '{nave}'")
@@ -389,9 +403,27 @@ async def generate_packing_list_ogl(
 
         # Header consolidado - REGLAS INGE DANIEL
         ahora = datetime.now()
-        semana_actual = ahora.isocalendar()[1]
-        pl_id = f"WK{semana_actual}{len(booking_data_map)}"  # Ejemplo: WK162
         
+        # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVE
+        pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
+        if primer_pos and primer_pos.ETA:
+            semana_eta = primer_pos.ETA.isocalendar()[1]
+            anio_eta = primer_pos.ETA.year
+            
+            # Contar naves distintas en la misma semana que llegaron antes o igual
+            naves_previas = (
+                db.query(Posicionamiento.NAVE)
+                .filter(
+                    func.extract('week', Posicionamiento.ETA) == semana_eta,
+                    func.extract('year', Posicionamiento.ETA) == anio_eta,
+                    Posicionamiento.ETA <= primer_pos.ETA
+                )
+                .distinct()
+                .all()
+            )
+            correlativo = len(naves_previas) if naves_previas else 1
+            pl_id = f"WK{semana_eta}{correlativo}"
+
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
         safe_write(ws, "C4", pl_id)
         safe_write(ws, "C5", ahora.strftime("%d/%m/%Y"))
@@ -406,7 +438,7 @@ async def generate_packing_list_ogl(
         safe_write(ws, "C8", nave_final)
 
         if primer_pedido:
-            safe_write(ws, "C11", primer_pedido.consignatario or "")
+            safe_write(ws, "C11", primer_pedido.recibidor or "")
             safe_write(ws, "C12", primer_pedido.port_id_orig or "")
             safe_write(ws, "C14", primer_pedido.port_id_dest or "")
             safe_write(ws, "C15", primer_pedido.pod or "")
