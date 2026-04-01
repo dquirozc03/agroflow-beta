@@ -337,10 +337,11 @@ async def generate_packing_list_ogl(
 
             col_calibre = find_col(df, ["CALIBRE", "CALIDAD"])
             col_kilos   = find_col(df, ["KILOS", "PESO NETO", "NET"])
-            col_cosecha = find_col(df, ["COSECHA", "HARVEST"])
-            col_proceso = find_col(df, ["PROCESO", "PROCESS"])
-            col_lote    = find_col(df, ["LOTE", "LOT"])
-            col_cajas   = find_col(df, ["CAJAS", "BOXES", "QTY"])
+            col_cosecha = find_col(df, ["COSECHA", "HARVEST", "FECHA COSECHA"])
+            col_proceso = find_col(df, ["PROCESO", "PROCESS", "FECHA PROCESO"])
+            col_lote_ogl = find_col(df, ["LOTE CLIENTE (OGL)", "LOTE OGL", "CLIENT LOT"])
+            col_cajas   = find_col(df, ["TOTAL DE CAJAS", "CAJAS", "BOXES", "QTY"])
+            col_trazabilidad = find_col(df, ["CODIGO TRAZABILIDAD", "TRAZABILIDAD", "TRACEABILITY"])
 
             for _, row in df.iterrows():
                 p_id = str(row.get(col_pallet)).strip() if pd.notna(row.get(col_pallet)) else ""
@@ -357,9 +358,10 @@ async def generate_packing_list_ogl(
                     "calibre": str(row.get(col_calibre, "")).strip() if col_calibre and pd.notna(row.get(col_calibre)) else "",
                     "kilos": row.get(col_kilos) if col_kilos else 0,
                     "cajas": row.get(col_cajas) if col_cajas else 0,
-                    "cosecha": str(row.get(col_cosecha, "")).strip() if col_cosecha else "",
-                    "proceso": str(row.get(col_proceso, "")).strip() if col_proceso else "",
-                    "lote": str(row.get(col_lote, "")).strip() if col_lote else "",
+                    "cosecha": str(row.get(col_cosecha, "")).strip() if col_cosecha and pd.notna(row.get(col_cosecha)) else "",
+                    "proceso": str(row.get(col_proceso, "")).strip() if col_proceso and pd.notna(row.get(col_proceso)) else "",
+                    "lote_ogl": str(row.get(col_lote_ogl, "")).strip() if col_lote_ogl and pd.notna(row.get(col_lote_ogl)) else "",
+                    "trazabilidad": str(row.get(col_trazabilidad, "")).strip() if col_trazabilidad and pd.notna(row.get(col_trazabilidad)) else "",
                 })
 
         # 3. Ordenar y escribir
@@ -382,37 +384,14 @@ async def generate_packing_list_ogl(
         peru_tz = dt_mod.timezone(dt_mod.timedelta(hours=-5))
         ahora = ahora_utc.astimezone(peru_tz)
         
-        # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVE (Solo naves con OGL)
+        # Lógica C4: WK + SEMANA ETA + CANTIDAD DE ÓRDENES OGL EN ESTA NAVE
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
         if primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
-            anio_eta = primer_pos.ETA.year
-            
-            # 1. Obtener todas las naves distintas de la semana que llegaron antes o igual
-            naves_semana = db.query(Posicionamiento.NAVE).filter(
-                func.extract('week', Posicionamiento.ETA) == semana_eta,
-                func.extract('year', Posicionamiento.ETA) == anio_eta,
-                Posicionamiento.ETA <= primer_pos.ETA
-            ).distinct().all()
-            
-            # 2. Filtrar solo aquellas que tienen al menos un pedido OGL
-            naves_con_ogl = []
-            for (n_name,) in naves_semana:
-                if not n_name: continue
-                # Ver si esta nave tiene algun booking de OGL
-                tiene_ogl = db.query(Posicionamiento).join(
-                    PedidoComercial, 
-                    func.replace(func.replace(Posicionamiento.ORDEN_BETA, 'BG', ''), 'CO', '') == PedidoComercial.orden_beta
-                ).filter(
-                    Posicionamiento.NAVE == n_name,
-                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                ).first()
-                
-                if tiene_ogl:
-                    naves_con_ogl.append(n_name)
-
-            correlativo = len(naves_con_ogl) if naves_con_ogl else 1
-            pl_id = f"WK{semana_eta}{correlativo}"
+            # Contamos cuántos bookings únicos estamos enviando en este archivo consolidado
+            # (que ya sabemos que son todos de OGL porque vienen filtrados)
+            cantidad_ordenes = len(bookings_set)
+            pl_id = f"WK{semana_eta}{cantidad_ordenes}"
 
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
         safe_write(ws, "C4", pl_id)
@@ -448,16 +427,50 @@ async def generate_packing_list_ogl(
         # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
             pedido = booking_data_map[bk_id]["pedido"]
+            fecha_prog = booking_data_map[bk_id]["fecha_prog"]
+            
+            # Necesitamos la planta de este booking específico
+            pos_bk = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == bk_id).first()
+            planta_llenado_raw = pos_bk.PLANTA_LLENADO.strip() if pos_bk and pos_bk.PLANTA_LLENADO else ""
+            planta_llenado_up = planta_llenado_raw.upper()
+
             for item in agrupado_por_booking.get(bk_id, []):
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
-                # A, B y E vacías
+                # Columnas iniciales
                 ws.cell(row=fila_e, column=3).value = item["pallet"]  # C: Pallet
                 ws.cell(row=fila_e, column=4).value = booking_data_map[bk_id]["contenedor"] # D: Contenedor
-                ws.cell(row=fila_e, column=6).value = pedido.product if pedido else "" # F: Producto
-                ws.cell(row=fila_e, column=7).value = pedido.variedad if pedido else "" # G: Variedad
-                ws.cell(row=fila_e, column=8).value = item["calibre"]  # H: Calibre
-                ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
-                ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
+                
+                # F-H: Producto, Variedad, Calibre
+                ws.cell(row=fila_e, column=6).value = pedido.product.strip() if pedido and pedido.product else ""
+                ws.cell(row=fila_e, column=7).value = pedido.variedad.strip() if pedido and pedido.variedad else ""
+                ws.cell(row=fila_e, column=8).value = item["calibre"]
+                
+                # I: Peso por caja
+                if pedido and pedido.peso_por_caja:
+                    ws.cell(row=fila_e, column=9).value = f"{pedido.peso_por_caja} KG"
+                
+                # N: Gross Weight (Cajas * 4.2)
+                cajas_num = safe_float(item["cajas"])
+                ws.cell(row=fila_e, column=14).value = round(cajas_num * 4.2, 2)
+                
+                # P-Q: Fechas
+                ws.cell(row=fila_e, column=16).value = item["cosecha"]
+                ws.cell(row=fila_e, column=17).value = item["proceso"]
+
+                # R-T: Lote OGL, Merchants, Planta Code
+                ws.cell(row=fila_e, column=18).value = item["lote_ogl"]
+                ws.cell(row=fila_e, column=19).value = "Complejo Agroindustrial"
+                if "ICA" in planta_llenado_up:
+                    ws.cell(row=fila_e, column=20).value = "7751043044355"
+
+                # U-Z: Cajas/Pallet, Total cajas, Beta S.A., Code 405, Planta Name, Trazabilidad
+                ws.cell(row=fila_e, column=21).value = pedido.caja_por_pallet if pedido else "" # U
+                ws.cell(row=fila_e, column=22).value = item["cajas"] # V
+                ws.cell(row=fila_e, column=23).value = "COMPLEJO AGROINDUSTRIAL BETA S.A." # W
+                ws.cell(row=fila_e, column=24).value = "4050373153151" # X
+                ws.cell(row=fila_e, column=25).value = planta_llenado_raw # Y
+                ws.cell(row=fila_e, column=26).value = item["trazabilidad"] # Z
+
                 fila_secuencial += 1
 
         # Luego los "DESCONOCIDOS" o huérfanos (si los hay)
@@ -470,14 +483,16 @@ async def generate_packing_list_ogl(
                 ws.cell(row=fila_e, column=7).value = primer_pedido.variedad if primer_pedido else ""
                 ws.cell(row=fila_e, column=8).value = item["calibre"]
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
-                ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
+                ws.cell(row=fila_e, column=16).value = item["cosecha"]
+                ws.cell(row=fila_e, column=17).value = item["proceso"]
                 fila_secuencial += 1
 
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
         
-        filename = f"PackingList_OGL_{nave_clean.replace(' ','_')}.xlsx"
+        # Formato: Packing List_OGL_MAESTRO_Nombre de nave_WK161.xlsx
+        filename = f"Packing List_OGL_MAESTRO_{nave_clean.replace(' ','_')}_{pl_id}.xlsx"
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
