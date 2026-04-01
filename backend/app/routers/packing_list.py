@@ -344,13 +344,24 @@ async def generate_packing_list_ogl(
             col_total_kilos = find_col(df, ["TOTAL KILOS", "NET WEIGHT", "PESO NETO TOTAL"])
             col_trazabilidad = find_col(df, ["CODIGO TRAZABILIDAD", "TRAZABILIDAD", "TRACEABILITY"])
 
+            last_valid_bk = None
             for _, row in df.iterrows():
+                # Lógica de Memoria: Forward Fill para el Booking
+                current_bk = str(row.get(col_booking)).strip().upper() if col_booking and pd.notna(row.get(col_booking)) else ""
+                
+                if current_bk and current_bk in booking_data_map:
+                    last_valid_bk = current_bk
+                elif not current_bk and last_valid_bk:
+                    # Si esta celda está vacía, usamos el último booking que vimos
+                    current_bk = last_valid_bk
+                
+                bk_f = current_bk
+                if not bk_f or bk_f not in booking_data_map:
+                    # Fallback de seguridad solo si hay una única orden en total
+                    bk_f = next(iter(booking_data_map)) if len(booking_data_map) == 1 else "DESCONOCIDO"
+
                 p_id = str(row.get(col_pallet)).strip() if pd.notna(row.get(col_pallet)) else ""
                 if not p_id or p_id.lower() == "nan": continue
-
-                bk_f = str(row.get(col_booking)).strip().upper() if col_booking and pd.notna(row.get(col_booking)) else ""
-                if not bk_f or bk_f not in booking_data_map:
-                    bk_f = next(iter(booking_data_map)) if len(booking_data_map) == 1 else "DESCONOCIDO"
 
                 if bk_f not in agrupado_por_booking: agrupado_por_booking[bk_f] = []
 
@@ -359,7 +370,6 @@ async def generate_packing_list_ogl(
                     try:
                         if isinstance(val, (pd.Timestamp, datetime, date)):
                             return val.strftime("%d/%m/%Y")
-                        # Si es string, intentar parsear
                         dt = pd.to_datetime(val)
                         return dt.strftime("%d/%m/%Y")
                     except:
