@@ -386,8 +386,8 @@ export default function PackingListCustomizadosPage() {
                   color="violet" 
                 />
                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col justify-center items-center text-center opacity-60">
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Pallets</p>
-                   <p className="text-2xl font-black text-slate-800">—</p>
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Órdenes</p>
+                   <p className="text-2xl font-black text-slate-800">{selectedNave?.bookings?.length || "—"}</p>
                 </div>
              </div>
 

@@ -98,38 +98,30 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
     2. Posicionamiento.NAVE (Fallback solo si no hay reporte con otra nave)
     """
     # Mapa de verdad: booking -> nave_actual
-    booking_nave_map: dict[str, str] = {}
+    # 1. Obtener todas las naves distintas con carga OGL desde ReporteEmbarques
+    # Usamos nave_arribo que es el dato real del Packing List
+    shipments = db.query(ReporteEmbarques).all()
+    # Usamos nave_arribo que es el dato real del Packing List
+    shipments = db.query(ReporteEmbarques).all()
     
-    # 1. Cargar verdades del reporte
-    reportes = db.query(ReporteEmbarques).filter(ReporteEmbarques.nave_arribo != None).all()
-    for r in reportes:
-        if r.booking:
-            booking_nave_map[r.booking] = r.nave_arribo.strip().upper()
-            
-    # 2. Cargar fallbacks del posicionamiento (solo si el booking no está en el mapa anterior)
-    posicionamientos = db.query(Posicionamiento).filter(Posicionamiento.NAVE != None).all()
-    for p in posicionamientos:
-        if p.BOOKING and p.BOOKING not in booking_nave_map:
-            booking_nave_map[p.BOOKING] = p.NAVE.strip().upper()
-
-    # 3. Agrupar bookings por nave para el listado final
-    nave_stats: dict[str, list] = {}
-    for booking, nave in booking_nave_map.items():
-        # Opcional: Podríamos verificar aquí si el booking es de OGL 
-        # pero para velocidad lo agrupamos todo y filtramos en el siguiente paso
+    # Agrupar bookings por nave de arribo
+    nave_stats = {}
+    for s in shipments:
+        nave = s.nave_arribo if s.nave_arribo else "SIN NAVE"
         if nave not in nave_stats:
             nave_stats[nave] = []
-        if booking not in nave_stats[nave]:
-            nave_stats[nave].append(booking)
+        if s.booking and s.booking not in nave_stats[nave]:
+            nave_stats[nave].append(s.booking)
 
     # 4. Construir resultado final filtrando solo naves que tengan algun pedido OGL
     result = []
     for nave, bookings in sorted(nave_stats.items()):
         bookings_ogl_reales = []
         for b in bookings:
+            # Primero buscamos en Posicionamiento para sacar la orden
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == b).first()
             if pos and pos.ORDEN_BETA:
-                # OGL orders must have BG or CO prefix to be safely cross-referenced
+                # La orden debe tener prefijo BG o CO para OGL
                 upper_beta = pos.ORDEN_BETA.strip().upper()
                 if "BG" in upper_beta or "CO" in upper_beta:
                     orden_num = strip_orden_beta(pos.ORDEN_BETA)
