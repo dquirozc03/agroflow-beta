@@ -10,6 +10,7 @@ import re
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
+from app.utils.formatters import normalize_client_name
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, Planta
@@ -67,16 +68,12 @@ class InstructionPDFService:
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
             ).first()
 
-        # 🎯 Match Inteligente (Westfalia Style 💎) v2.0.9
+        # 🎯 Match Inteligente (Westfalia Match 💎 v2.2)
         if not cliente_maestro:
-            # A. Normalización de ruido común
-            noise = ['LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'LLC']
-            clean_name = cliente_nombre.upper()
-            for n in noise:
-                clean_name = f" {clean_name} ".replace(f" {n} ", " ").strip()
+            clean_name = normalize_client_name(cliente_nombre)
 
             from sqlalchemy import func
-            # B. Estrategia por Nombre Limpio (Contenido) + Pais
+            # B. Estrategia por Nombre Limpio (Contenido) + Pais (Primero con Pais por seguridad)
             cliente_maestro = db.query(ClienteIE).filter(
                 (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
                 (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
@@ -84,7 +81,7 @@ class InstructionPDFService:
                 ClienteIE.estado == "ACTIVO"
             ).first()
 
-            # C. Fallback: Solo Nombre Limpio
+            # C. Fallback: Solo Nombre Limpio (Sin Pais, Westfalia Style)
             if not cliente_maestro:
                 cliente_maestro = db.query(ClienteIE).filter(
                     (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 

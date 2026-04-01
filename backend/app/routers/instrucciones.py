@@ -9,6 +9,7 @@ from app.services.pdf_service import instruction_pdf_service
 from pydantic import BaseModel
 from sqlalchemy import func
 from app.utils.logging import logger
+from app.utils.formatters import normalize_client_name
 import traceback
 import re
 import io
@@ -96,20 +97,22 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     # Maneja discrepancias como: "BETA BEST HOLLAND" -> "BETA BEST" 
     # o "WESTFALIA FRUIT (HAUSLADEN)" -> "WESTFALIA FRUIT GMBH"
     if not cliente_maestro:
-        # A. Normalización de ruido común
-        noise = ['LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'LLC']
-        clean_excel_name = pedido.cliente.upper()
-        for n in noise:
-            # Reemplazo con espacios para no pegar palabras accidentalmente
-            clean_excel_name = f" {clean_excel_name} ".replace(f" {n} ", " ").strip()
+        # A. Normalización profunda (v2.2 💎)
+        clean_excel_name = normalize_client_name(pedido.cliente)
         
-        # B. Estrategia por Nombre Limpio (Contenido)
-        # Si el nombre del maestro está contenido en el nombre limpio del Excel o viceversa
+        # B. Estrategia por Nombre Normalizado (Contenido)
+        # Probamos si el nombre limpio del excel o del DB (normalizado) coinciden
         cliente_maestro = db.query(ClienteIE).filter(
             (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_excel_name}%")) | 
             (func.upper(clean_excel_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
             ClienteIE.estado == "ACTIVO"
         ).first()
+
+        if not cliente_maestro:
+             # Si no hay match directo, intentamos un matching de palabras clave
+             # con el nombre normalizado (Ignoramos paréntesis del DB también si es posible)
+             # Pero por ahora confiamos en substring de clean_excel_name.
+             pass
 
         # C. Estrategia por Palabras Clave (Fuzzy Directo)
         if not cliente_maestro:
