@@ -113,8 +113,7 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
     # 4. Construir resultado final filtrando solo naves que tengan algun pedido OGL
     result = []
     for nave, bookings in sorted(nave_stats.items()):
-        # Verificar si al menos un booking de esta nave es OGL
-        tiene_ogl = False
+        bookings_ogl_reales = []
         for b in bookings:
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == b).first()
             if pos and pos.ORDEN_BETA:
@@ -125,14 +124,14 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                         PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
                     ).first()
                     if pedido_ogl:
-                        tiene_ogl = True
-                        break
+                        if b not in bookings_ogl_reales:
+                            bookings_ogl_reales.append(b)
         
-        if tiene_ogl:
+        if bookings_ogl_reales:
             result.append(NaveInfo(
                 nave=nave,
                 fuente="consolidada",
-                bookings=bookings
+                bookings=bookings_ogl_reales
             ))
 
     return result
