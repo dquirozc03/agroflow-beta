@@ -388,20 +388,30 @@ async def generate_packing_list_ogl(
             semana_eta = primer_pos.ETA.isocalendar()[1]
             anio_eta = primer_pos.ETA.year
             
-            # Subconsulta: Solo naves que tienen al menos un pedido OGL
-            naves_con_ogl_ids = (
-                db.query(Posicionamiento.NAVE)
-                .join(PedidoComercial, strip_orden_beta(Posicionamiento.ORDEN_BETA) == PedidoComercial.orden_beta)
-                .filter(
-                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%"),
-                    func.extract('week', Posicionamiento.ETA) == semana_eta,
-                    func.extract('year', Posicionamiento.ETA) == anio_eta,
-                    Posicionamiento.ETA <= primer_pos.ETA
-                )
-                .distinct()
-                .all()
-            )
-            correlativo = len(naves_con_ogl_ids) if naves_con_ogl_ids else 1
+            # 1. Obtener todas las naves distintas de la semana que llegaron antes o igual
+            naves_semana = db.query(Posicionamiento.NAVE).filter(
+                func.extract('week', Posicionamiento.ETA) == semana_eta,
+                func.extract('year', Posicionamiento.ETA) == anio_eta,
+                Posicionamiento.ETA <= primer_pos.ETA
+            ).distinct().all()
+            
+            # 2. Filtrar solo aquellas que tienen al menos un pedido OGL
+            naves_con_ogl = []
+            for (n_name,) in naves_semana:
+                if not n_name: continue
+                # Ver si esta nave tiene algun booking de OGL
+                tiene_ogl = db.query(Posicionamiento).join(
+                    PedidoComercial, 
+                    func.replace(func.replace(Posicionamiento.ORDEN_BETA, 'BG', ''), 'CO', '') == PedidoComercial.orden_beta
+                ).filter(
+                    Posicionamiento.NAVE == n_name,
+                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                ).first()
+                
+                if tiene_ogl:
+                    naves_con_ogl.append(n_name)
+
+            correlativo = len(naves_con_ogl) if naves_con_ogl else 1
             pl_id = f"WK{semana_eta}{correlativo}"
 
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
