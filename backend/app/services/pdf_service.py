@@ -123,7 +123,7 @@ class InstructionPDFService:
              header_row = []
              if logo_obj: header_row.append(logo_obj)
              # Construir Título Personalizado (CLIENTE - POD - PAIS - CULTIVO)
-             cliente_txt = cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre
+             cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
              puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
              pais_txt = cliente_maestro.pais if cliente_maestro else ''
              
@@ -193,7 +193,7 @@ class InstructionPDFService:
             [b_p("UBIGEO PLANTA"), n_p(planta_maestro.ubigeo if planta_maestro else "110111")],
             [b_p("FECHA Y HORA DEL LLENADO"), b_pc(fecha_llenado)],
             
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.nombre_legal if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
             
             [b_p("DATOS REFERENCIALES"), format_desc(

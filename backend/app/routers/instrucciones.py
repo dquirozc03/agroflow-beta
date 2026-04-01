@@ -126,7 +126,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         "booking": booking,
         "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
         "cultivo": pos.CULTIVO or "PENDIENTE",
-        "cliente_nombre": pedido.cliente,
+        "cliente_nombre": (cliente_maestro.consignatario_bl or pedido.cliente) if (cliente_maestro and cliente_maestro.consignatario_bl) else pedido.cliente,
         "warning": None,
         "maestro": None
     }
