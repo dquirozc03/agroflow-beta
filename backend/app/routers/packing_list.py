@@ -330,7 +330,8 @@ async def generate_packing_list_ogl(
                 return None
 
             col_pallet  = find_col(df, ["PALLET", "HU", "ID PALLET"])
-            col_booking = find_col(df, ["BOOKING", "DESPACHO", "ORDEN"])
+            col_booking = find_col(df, ["BOOKING", "DESPACHO"])
+            col_orden_beta = find_col(df, ["ORDEN BETA", "ORDEN"])
             
             if not col_pallet:
                 raise Exception(f"El archivo {conf_file.filename} no tiene columna de Pallets.")
@@ -344,15 +345,40 @@ async def generate_packing_list_ogl(
             col_total_kilos = find_col(df, ["TOTAL KILOS", "NET WEIGHT", "PESO NETO TOTAL"])
             col_trazabilidad = find_col(df, ["CODIGO TRAZABILIDAD", "TRAZABILIDAD", "TRACEABILITY"])
 
+            # Mapa inverso: número de orden limpio ("4") -> ID del Booking ("EBKG...")
+            orden_to_bk = {}
+            for bk, data in booking_data_map.items():
+                num_obj = strip_orden_beta(data["pos"].ORDEN_BETA)
+                if num_obj:
+                    try:
+                        n_str = str(int(num_obj))
+                        orden_to_bk[n_str] = bk
+                    except: pass
+
             last_valid_bk = None
             for _, row in df.iterrows():
-                # Lógica de Memoria: Forward Fill para el Booking
-                current_bk = str(row.get(col_booking)).strip().upper() if col_booking and pd.notna(row.get(col_booking)) else ""
+                current_bk = ""
                 
-                if current_bk and current_bk in booking_data_map:
+                # 1. Intentar por Booking Directo (EBKG...)
+                if col_booking and pd.notna(row.get(col_booking)):
+                    c_val = str(row.get(col_booking)).strip().upper()
+                    if c_val in booking_data_map:
+                        current_bk = c_val
+                
+                # 2. Intentar por el número de ORDEN BETA (BG-004 -> 4)
+                if not current_bk and col_orden_beta and pd.notna(row.get(col_orden_beta)):
+                    o_val = strip_orden_beta(str(row.get(col_orden_beta)))
+                    if o_val:
+                        try:
+                            n_val = str(int(o_val))
+                            if n_val in orden_to_bk:
+                                current_bk = orden_to_bk[n_val]
+                        except: pass
+
+                # 3. Lógica de Memoria (Heredar hacia abajo)
+                if current_bk:
                     last_valid_bk = current_bk
                 elif not current_bk and last_valid_bk:
-                    # Si esta celda está vacía, usamos el último booking que vimos
                     current_bk = last_valid_bk
                 
                 bk_f = current_bk
@@ -469,9 +495,10 @@ async def generate_packing_list_ogl(
                 ws.cell(row=fila_e, column=7).value = pedido.variedad.strip() if pedido and pedido.variedad else ""
                 ws.cell(row=fila_e, column=8).value = item["calibre"]
                 
-                # I: Peso por caja
-                if pedido and pedido.peso_por_caja:
-                    ws.cell(row=fila_e, column=9).value = f"{pedido.peso_por_caja} KG"
+                # I: Peso por caja (Corregido para que no se salte valores)
+                peso_val = pedido.peso_por_caja if pedido else ""
+                if peso_val is not None and str(peso_val).strip() != "":
+                    ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
                 
                 # N: Gross Weight (Cajas * 4.2)
                 cajas_num = safe_float(item["cajas"])
@@ -502,6 +529,9 @@ async def generate_packing_list_ogl(
 
         # Luego los "DESCONOCIDOS" o huérfanos (si los hay)
         if agrupado_por_booking.get("DESCONOCIDO"):
+            planta_llenado_raw = primer_pos.PLANTA_LLENADO.strip() if primer_pos and primer_pos.PLANTA_LLENADO else ""
+            planta_llenado_up = planta_llenado_raw.upper()
+            
             for item in agrupado_por_booking["DESCONOCIDO"]:
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
                 ws.cell(row=fila_e, column=3).value = item["pallet"]
@@ -509,9 +539,31 @@ async def generate_packing_list_ogl(
                 ws.cell(row=fila_e, column=6).value = primer_pedido.product if primer_pedido else ""
                 ws.cell(row=fila_e, column=7).value = primer_pedido.variedad if primer_pedido else ""
                 ws.cell(row=fila_e, column=8).value = item["calibre"]
+                
+                # I: Peso por caja
+                peso_val = primer_pedido.peso_por_caja if primer_pedido else ""
+                if peso_val is not None and str(peso_val).strip() != "":
+                    ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
+                    
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
+                ws.cell(row=fila_e, column=15).value = item["total_kilos"] # O
                 ws.cell(row=fila_e, column=16).value = item["cosecha"]
                 ws.cell(row=fila_e, column=17).value = item["proceso"]
+                
+                # R-T: Lote OGL, Merchants, Planta Code
+                ws.cell(row=fila_e, column=18).value = item["lote_ogl"]
+                ws.cell(row=fila_e, column=19).value = "Complejo Agroindustrial"
+                if "ICA" in planta_llenado_up:
+                    ws.cell(row=fila_e, column=20).value = "7751043044355"
+
+                # U-Z
+                ws.cell(row=fila_e, column=21).value = primer_pedido.caja_por_pallet if primer_pedido else ""
+                ws.cell(row=fila_e, column=22).value = item["cajas"]
+                ws.cell(row=fila_e, column=23).value = "COMPLEJO AGROINDUSTRIAL BETA S.A."
+                ws.cell(row=fila_e, column=24).value = "4050373153151"
+                ws.cell(row=fila_e, column=25).value = planta_llenado_raw
+                ws.cell(row=fila_e, column=26).value = item["trazabilidad"]
+                
                 fila_secuencial += 1
 
         output = io.BytesIO()
