@@ -447,13 +447,15 @@ async def generate_packing_list_ogl(
         
         # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
+            pedido = booking_data_map[bk_id]["pedido"]
             for item in agrupado_por_booking.get(bk_id, []):
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
-                # ws.cell(row=fila_e, column=1).value = ""  # Orde reference vacía
-                ws.cell(row=fila_e, column=2).value = item["pallet"]
-                ws.cell(row=fila_e, column=3).value = booking_data_map[bk_id]["contenedor"]
-                ws.cell(row=fila_e, column=4).value = item.get("variedad", "")
-                ws.cell(row=fila_e, column=7).value = item["calibre"]
+                # A, B y E vacías
+                ws.cell(row=fila_e, column=3).value = item["pallet"]  # C: Pallet
+                ws.cell(row=fila_e, column=4).value = booking_data_map[bk_id]["contenedor"] # D: Contenedor
+                ws.cell(row=fila_e, column=6).value = pedido.product if pedido else "" # F: Producto
+                ws.cell(row=fila_e, column=7).value = pedido.variedad if pedido else "" # G: Variedad
+                ws.cell(row=fila_e, column=8).value = item["calibre"]  # H: Calibre
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
                 ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
                 fila_secuencial += 1
@@ -462,9 +464,11 @@ async def generate_packing_list_ogl(
         if agrupado_por_booking.get("DESCONOCIDO"):
             for item in agrupado_por_booking["DESCONOCIDO"]:
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
-                ws.cell(row=fila_e, column=2).value = item["pallet"]
-                ws.cell(row=fila_e, column=3).value = contenedor_default
-                ws.cell(row=fila_e, column=7).value = item["calibre"]
+                ws.cell(row=fila_e, column=3).value = item["pallet"]
+                ws.cell(row=fila_e, column=4).value = contenedor_default
+                ws.cell(row=fila_e, column=6).value = primer_pedido.product if primer_pedido else ""
+                ws.cell(row=fila_e, column=7).value = primer_pedido.variedad if primer_pedido else ""
+                ws.cell(row=fila_e, column=8).value = item["calibre"]
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
                 ws.cell(row=fila_e, column=15).value = safe_float(item["kilos"])
                 fila_secuencial += 1
