@@ -59,7 +59,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     activo: true,
     permisos: {
       lc_registro: true, lc_bandeja: true,
-      op_instrucciones: true,
+      op_instrucciones: true, op_packing_list: true,
       m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
       sys_usuarios: false, sys_roles: false
     }
@@ -75,7 +75,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         activo: editingData.activo ?? true,
         permisos: editingData.permisos || {
           lc_registro: true, lc_bandeja: true,
-          op_instrucciones: true,
+          op_instrucciones: true, op_packing_list: true,
           m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
           sys_usuarios: false, sys_roles: false
         }
@@ -89,7 +89,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         activo: true,
         permisos: {
           lc_registro: true, lc_bandeja: true,
-          op_instrucciones: true,
+          op_instrucciones: true, op_packing_list: true,
           m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
           sys_usuarios: false, sys_roles: false
         }
@@ -391,15 +391,22 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
                {/* OPERACIONES */}
                <div className="space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 ml-1">Gestión Operativa</p>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                     <div className="flex items-center gap-3">
-                        <FileBarChart className="h-4 w-4 text-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-700 uppercase">Instrucciones de Embarque</span>
-                     </div>
-                     <Switch 
-                        checked={(formData.permisos as any).op_instrucciones} 
-                        onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, op_instrucciones: v}})} 
-                     />
+                  <div className="grid grid-cols-1 gap-2">
+                     {[
+                        { id: "op_instrucciones", label: "Instrucciones de Embarque", icon: FileBarChart },
+                        { id: "op_packing_list", label: "Packing List Customizados", icon: Package }
+                     ].map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <item.icon className="h-4 w-4 text-emerald-500" />
+                              <span className="text-[11px] font-bold text-slate-700 uppercase">{item.label}</span>
+                           </div>
+                           <Switch 
+                              checked={!!(formData.permisos as any)[item.id]} 
+                              onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, [item.id]: v}})} 
+                           />
+                        </div>
+                     ))}
                   </div>
                </div>
 

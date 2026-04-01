@@ -54,7 +54,7 @@ export default function RolesPage() {
     descripcion: "",
     permisos_plantilla: {
       lc_registro: true, lc_bandeja: true,
-      op_instrucciones: true,
+      op_instrucciones: true, op_packing_list: true,
       m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
       sys_usuarios: false, sys_roles: false
     }
@@ -102,7 +102,7 @@ export default function RolesPage() {
       descripcion: "",
       permisos_plantilla: {
         lc_registro: true, lc_bandeja: true,
-        op_instrucciones: true,
+        op_instrucciones: true, op_packing_list: true,
         m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
         sys_usuarios: false, sys_roles: false
       }
@@ -210,18 +210,25 @@ export default function RolesPage() {
                   {/* OPERACIONES */}
                   <div className="space-y-2">
                      <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">Operaciones</p>
-                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="flex items-center gap-3">
-                           <FileBarChart className="h-4 w-4 text-indigo-600" />
-                           <span className="text-[10px] font-bold text-slate-700 uppercase">Instrucciones de Embarque</span>
-                        </div>
-                        <Switch 
-                           checked={(formData.permisos_plantilla as any).op_instrucciones}
-                           onCheckedChange={v => setFormData({
-                              ...formData, 
-                              permisos_plantilla: { ...formData.permisos_plantilla, op_instrucciones: v }
-                           })}
-                        />
+                     <div className="grid grid-cols-1 gap-2">
+                        {[
+                           { id: "op_instrucciones", label: "Instrucciones de Embarque", icon: FileBarChart },
+                           { id: "op_packing_list", label: "Packing List Customizados", icon: Package }
+                        ].map(mod => (
+                           <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
+                              </div>
+                              <Switch 
+                                 checked={!!(formData.permisos_plantilla as any)[mod.id]}
+                                 onCheckedChange={v => setFormData({
+                                    ...formData, 
+                                    permisos_plantilla: { ...formData.permisos_plantilla, [mod.id]: v }
+                                 })}
+                              />
+                           </div>
+                        ))}
                      </div>
                   </div>
 

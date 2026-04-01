@@ -43,10 +43,22 @@ OGL_KEYWORD = "OGL"
 # La función extrae solo los dígitos para hacer el match correcto.
 # ---------------------------------------------------------------------------
 def strip_orden_beta(orden_beta: Optional[str]) -> Optional[str]:
-    """Extrae solo los dígitos de una cadena tipo 'BG0080' → '0080'."""
+    """Extrae la orden numérica pero evadiendo cruces con clientes que usan otros prefijos (ej. PE004)."""
     if not orden_beta:
         return None
-    numeric = re.sub(r'[^0-9]', '', orden_beta)
+    
+    val_upper = orden_beta.strip().upper()
+    
+    # Si tiene letras, nos aseguramos de que sea solo BG o CO (los típicos de OGL/Beta)
+    has_letters = any(c.isalpha() for c in val_upper)
+    if has_letters:
+        if not ("BG" in val_upper or "CO" in val_upper):
+            # Si tiene letras y no es BG ni CO, devolvemos el valor original crudo.
+            # Al devolver "PE004", NO hará match con la orden "4" de PedidoComercial, evitando el bug de POLAR CHILE.
+            return val_upper
+            
+    # Si es puramente numérico o tiene BG/CO, le quitamos las letras
+    numeric = re.sub(r'[^0-9]', '', val_upper)
     return numeric if numeric else None
 
 TEMPLATE_PATH = os.path.join(
