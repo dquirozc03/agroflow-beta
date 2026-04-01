@@ -129,15 +129,18 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         for b in bookings:
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == b).first()
             if pos and pos.ORDEN_BETA:
-                orden_num = strip_orden_beta(pos.ORDEN_BETA)
-                if orden_num:
-                    pedido_ogl = db.query(PedidoComercial).filter(
-                        PedidoComercial.orden_beta == orden_num,
-                        PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                    ).first()
-                    if pedido_ogl:
-                        if b not in bookings_ogl_reales:
-                            bookings_ogl_reales.append(b)
+                # OGL orders must have BG or CO prefix to be safely cross-referenced
+                upper_beta = pos.ORDEN_BETA.strip().upper()
+                if "BG" in upper_beta or "CO" in upper_beta:
+                    orden_num = strip_orden_beta(pos.ORDEN_BETA)
+                    if orden_num:
+                        pedido_ogl = db.query(PedidoComercial).filter(
+                            PedidoComercial.orden_beta == orden_num,
+                            PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                        ).first()
+                        if pedido_ogl:
+                            if b not in bookings_ogl_reales:
+                                bookings_ogl_reales.append(b)
         
         if bookings_ogl_reales:
             result.append(NaveInfo(
