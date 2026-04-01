@@ -376,18 +376,24 @@ async def generate_packing_list_ogl(
             except: pass
 
         # Header consolidado - REGLAS INGE DANIEL
-        ahora = datetime.now()
+        # Ajuste Zona Horaria Perú (UTC-5)
+        import datetime as dt_mod
+        ahora_utc = datetime.now(dt_mod.timezone.utc)
+        peru_tz = dt_mod.timezone(dt_mod.timedelta(hours=-5))
+        ahora = ahora_utc.astimezone(peru_tz)
         
-        # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVE
+        # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVE (Solo naves con OGL)
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
         if primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
             anio_eta = primer_pos.ETA.year
             
-            # Contar naves distintas en la misma semana que llegaron antes o igual
-            naves_previas = (
+            # Subconsulta: Solo naves que tienen al menos un pedido OGL
+            naves_con_ogl_ids = (
                 db.query(Posicionamiento.NAVE)
+                .join(PedidoComercial, strip_orden_beta(Posicionamiento.ORDEN_BETA) == PedidoComercial.orden_beta)
                 .filter(
+                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%"),
                     func.extract('week', Posicionamiento.ETA) == semana_eta,
                     func.extract('year', Posicionamiento.ETA) == anio_eta,
                     Posicionamiento.ETA <= primer_pos.ETA
@@ -395,7 +401,7 @@ async def generate_packing_list_ogl(
                 .distinct()
                 .all()
             )
-            correlativo = len(naves_previas) if naves_previas else 1
+            correlativo = len(naves_con_ogl_ids) if naves_con_ogl_ids else 1
             pl_id = f"WK{semana_eta}{correlativo}"
 
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
@@ -426,14 +432,14 @@ async def generate_packing_list_ogl(
             try: return float(val) if pd.notna(val) else 0.0
             except: return 0.0
 
-        GRID_START_ROW = 20
+        GRID_START_ROW = 21  # Empezamos en la 21 para no pisar cabecera en la 20
         fila_secuencial = 1
         
         # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
             for item in agrupado_por_booking.get(bk_id, []):
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
-                ws.cell(row=fila_e, column=1).value = fila_secuencial
+                # ws.cell(row=fila_e, column=1).value = ""  # Orde reference vacía
                 ws.cell(row=fila_e, column=2).value = item["pallet"]
                 ws.cell(row=fila_e, column=3).value = booking_data_map[bk_id]["contenedor"]
                 ws.cell(row=fila_e, column=4).value = item.get("variedad", "")
@@ -446,7 +452,6 @@ async def generate_packing_list_ogl(
         if agrupado_por_booking.get("DESCONOCIDO"):
             for item in agrupado_por_booking["DESCONOCIDO"]:
                 fila_e = GRID_START_ROW + (fila_secuencial - 1)
-                ws.cell(row=fila_e, column=1).value = fila_secuencial
                 ws.cell(row=fila_e, column=2).value = item["pallet"]
                 ws.cell(row=fila_e, column=3).value = contenedor_default
                 ws.cell(row=fila_e, column=7).value = item["calibre"]
