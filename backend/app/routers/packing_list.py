@@ -394,12 +394,19 @@ async def generate_packing_list_ogl(
                 def format_date_ogl(val):
                     if pd.isna(val) or str(val).strip() == "": return ""
                     try:
-                        if isinstance(val, (pd.Timestamp, datetime, date)):
-                            return val.strftime("%d/%m/%Y")
-                        dt = pd.to_datetime(val)
+                        # Convert to string first to handle raw excel objects, then parse
+                        dt = pd.to_datetime(str(val).strip())
                         return dt.strftime("%d/%m/%Y")
-                    except:
-                        return str(val).strip()
+                    except Exception as e:
+                        # Fallback simple para quitar " 00:00:00" si to_datetime falla raramente
+                        raw_str = str(val).strip()
+                        if " " in raw_str:
+                            raw_str = raw_str.split(" ")[0]
+                        # Si era YYYY-MM-DD
+                        if "-" in raw_str and len(raw_str.split("-")[0]) == 4:
+                            parts = raw_str.split("-")
+                            if len(parts) == 3: return f"{parts[2]}/{parts[1]}/{parts[0]}"
+                        return raw_str
 
                 agrupado_por_booking[bk_f].append({
                     "pallet": p_id,
@@ -433,15 +440,47 @@ async def generate_packing_list_ogl(
         peru_tz = dt_mod.timezone(dt_mod.timedelta(hours=-5))
         ahora = ahora_utc.astimezone(peru_tz)
         
-        # Lógica C4: WK + SEMANA ETA + CANTIDAD DE ÓRDENES OGL EN ESTA NAVE
+        # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVES OGL DE LA SEMANA
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
         if primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
-            # Solo contamos bookings que realmente traen datos (agrupado_por_booking)
-            # Esto evita que bookings registrados en el reporte pero sin confirmación inflen el número
-            ordenes_reales = [b for b in bookings_set if b in agrupado_por_booking]
-            cantidad_ordenes = len(ordenes_reales) if ordenes_reales else 1
-            pl_id = f"WK{semana_eta}{cantidad_ordenes}"
+            anio_eta = primer_pos.ETA.year
+            
+            # Buscar todos los posicionamientos de esa misma semana
+            pos_semana = db.query(Posicionamiento).filter(
+                func.extract('week', Posicionamiento.ETA) == semana_eta,
+                func.extract('year', Posicionamiento.ETA) == anio_eta
+            ).all()
+
+            # Mapear naves con carga OGL a su fecha mínima de ETA cronológica
+            nave_etas = {}
+            for p in pos_semana:
+                if not p.NAVE or not p.ETA or not p.ORDEN_BETA: continue
+                
+                num_ord = strip_orden_beta(p.ORDEN_BETA)
+                if not num_ord: continue
+                
+                # Validar si este posicionamiento es para OGL
+                pedido_ogl = db.query(PedidoComercial).filter(
+                    PedidoComercial.orden_beta == num_ord,
+                    PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                ).first()
+                
+                if pedido_ogl:
+                    n_up = p.NAVE.strip().upper()
+                    if n_up not in nave_etas or p.ETA < nave_etas[n_up]:
+                        nave_etas[n_up] = p.ETA
+
+            # El usuario requiere que el correlativo sea el TOTAL de naves en la semana
+            # Ej: Si hay 3 naves en toda la semana, el sufijo es 3 (WK183)
+            naves_unicas = list(nave_etas.keys())
+            
+            if nave_clean not in naves_unicas:
+                naves_unicas.append(nave_clean)
+                
+            correlativo = len(naves_unicas) if naves_unicas else 1
+                
+            pl_id = f"WK{semana_eta}{correlativo}"
 
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
         safe_write(ws, "C4", pl_id)
