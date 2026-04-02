@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     DATABASE_URL: str
     SYNC_TOKEN: str
+    GOOGLE_API_KEY: str = ""
 
     # Entorno: "development" | "production". En production se exige JWT_SECRET seguro.
     ENVIRONMENT: str = "development"

@@ -293,16 +293,13 @@ async def ocr_transportista(
         contents = await file.read()
         is_pdf = file.filename.lower().endswith('.pdf')
         
-        # Extraer texto crudo
-        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
-        
-        # Parsear datos específicos
-        parsed_data = ocr_service.parse_transportista_data(raw_text)
+        # Invocación directa a la Inteligencia Artificial (Gemini Vision) especializada en MTC
+        parsed_data = ocr_service.parse_transportista_data(contents, is_pdf=is_pdf)
         
         return {
             "status": "success",
             "data": parsed_data,
-            "raw_text": raw_text # Para depuración
+            "raw_text": "Análisis IA MTC completado exitosamente."
         }
 
     except Exception as e:
@@ -357,12 +354,18 @@ async def ocr_licencia(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         is_pdf = file.filename.lower().endswith('.pdf')
-        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
-        parsed_data = ocr_service.parse_licencia_data(raw_text)
-        return {"status": "success", "data": parsed_data, "raw_text": raw_text}
+        
+        # Invocación directa a la Inteligencia Artificial (Gemini Vision)
+        parsed_data = ocr_service.parse_licencia_data(contents, is_pdf=is_pdf)
+        
+        return {
+            "status": "success", 
+            "data": parsed_data, 
+            "raw_text": "Extraído mediante IA Gemini Vision 1.5 Flash"
+        }
     except Exception as e:
-        logger.error(f"Error en OCR Licencia: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error crítico en OCR Licencia (Gemini): {e}")
+        raise HTTPException(status_code=500, detail="Error al procesar identidad con IA.")
 @router.post("/ocr/embarque")
 async def ocr_embarque(file: UploadFile = File(...)):
     """
@@ -372,28 +375,18 @@ async def ocr_embarque(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         is_pdf = file.filename.lower().endswith('.pdf')
-        raw_text = ocr_service.extract_text(contents, is_pdf=is_pdf)
         
-        # Lógica selectiva para DAM
-        # Ejemplo: 127-2026-10-015810 (Pattern SUNAT)
-        dam_pattern = r'\d{3}-\d{4}-\d{2}-\d{6}'
-        dam_match = re.search(dam_pattern, raw_text)
-        
-        # Lógica selectiva para Contenedor (MSCU1234567)
-        container_pattern = r'[A-Z]{4}\d{7}'
-        container_match = re.search(container_pattern, raw_text.replace(" ", ""))
+        # Invocación directa a Gemini para análisis de documento logístico
+        parsed_data = ocr_service.parse_embarque_data(contents, is_pdf=is_pdf)
         
         return {
             "status": "success",
-            "data": {
-                "dam": dam_match.group(0) if dam_match else None,
-                "contenedor": container_match.group(0) if container_match else None
-            },
-            "raw_text": raw_text
+            "data": parsed_data, # Contiene 'dam' y 'contenedor' detectados por IA
+            "raw_text": "Análisis logístico IA completado."
         }
     except Exception as e:
-        logger.error(f"Error en OCR Embarque: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error en OCR Embarque (Gemini): {e}")
+        raise HTTPException(status_code=500, detail="Fallo en análisis IA de embarque.")
 @router.get("/embarques", response_model=List[EmbarqueResponse])
 def list_embarques(db: Session = Depends(get_db)):
     return db.query(ControlEmbarque).order_by(ControlEmbarque.fecha_creacion.desc()).all()
