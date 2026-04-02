@@ -9,7 +9,8 @@ import re
 from app.database import get_db
 from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer
 from app.models.embarque import ControlEmbarque, clean_container_code
-from app.utils.formatters import logger, clean_booking
+from app.utils.logging import logger
+from app.utils.formatters import clean_booking
 from app.services.ocr import ocr_service
 from pydantic import BaseModel
 
