@@ -36,6 +36,7 @@ export default function ChoferesPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingChofer, setEditingChofer] = useState<any>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchChoferes();
@@ -69,6 +70,8 @@ export default function ChoferesPage() {
   };
 
   const toggleEstado = async (id: number, currentEstado: string) => {
+    if (updatingId) return; // Evitar clics concurrentes
+    setUpdatingId(id);
     const nuevoEstado = currentEstado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/maestros/choferes/${id}/estado?estado=${nuevoEstado}`, {
@@ -82,6 +85,8 @@ export default function ChoferesPage() {
       }
     } catch (error) {
       toast.error("Error al actualizar estado");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -212,14 +217,22 @@ export default function ChoferesPage() {
                         </button>
                         <button 
                           onClick={() => toggleEstado(c.id, c.estado)}
+                          disabled={updatingId === c.id}
                           className={cn(
                             "h-9 w-9 border border-slate-100 rounded-lg flex items-center justify-center transition-all duration-300 bg-white shadow-sm active:scale-95",
+                            updatingId === c.id ? "opacity-50 cursor-not-allowed" : 
                             c.estado === "ACTIVO" 
                               ? "hover:bg-rose-500 hover:text-white hover:border-rose-500 text-slate-400" 
                               : "hover:bg-emerald-500 hover:text-white hover:border-emerald-500 text-slate-400"
                           )}
                         >
-                          {c.estado === "ACTIVO" ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                          {updatingId === c.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                          ) : c.estado === "ACTIVO" ? (
+                            <XCircle className="h-4 w-4" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                     </td>

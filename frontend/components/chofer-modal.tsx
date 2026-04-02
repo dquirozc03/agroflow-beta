@@ -142,6 +142,15 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
     }
   };
 
+  // Cálculo del Alias Operativo en tiempo real
+  const getAlias = () => {
+    if (!formData.nombres || !formData.apellido_paterno) return "ESPERANDO DATOS...";
+    const primerNombre = formData.nombres.trim().split(" ")[0].toUpperCase();
+    const apePat = formData.apellido_paterno.trim().toUpperCase();
+    const apeMatInic = formData.apellido_materno ? `${formData.apellido_materno.trim()[0].toUpperCase()}.` : "";
+    return `${primerNombre} ${apePat} ${apeMatInic}`.trim();
+  };
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <Dialog.Portal>
@@ -279,12 +288,30 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                </div>
             </div>
 
+            {/* Alias Operativo Preview */}
+            <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-2 duration-500">
+               <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center shadow-sm">
+                     <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-tight">Alias Operativo</p>
+                     <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-tighter">Nombre en Reportes</p>
+                  </div>
+               </div>
+               <div className="text-right">
+                  <p className="text-sm font-black text-[#022c22] tracking-tighter uppercase tabular-nums">
+                     {getAlias()}
+                  </p>
+               </div>
+            </div>
+
             <button
                type="submit"
                disabled={isSubmitting}
                className="w-full h-14 bg-[#022c22] text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95 disabled:opacity-50 mt-4 outline-none"
             >
-              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : editingData ? "Actualizar Perfil" : "Registrar Chofer"}
+               {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : editingData ? "Actualizar Perfil" : "Registrar Chofer"}
             </button>
 
           </form>
