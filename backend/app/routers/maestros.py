@@ -407,12 +407,25 @@ def create_embarque(data: EmbarqueCreate, db: Session = Depends(get_db)):
         if existing:
             raise HTTPException(status_code=400, detail=f"La DAM {data.dam} ya está registrada")
     
-    new_e = ControlEmbarque(**data.model_dump())
-    new_e.booking = clean_booking(new_e.booking)
-    db.add(new_e)
-    db.commit()
-    db.refresh(new_e)
-    return new_e
+    # Normalización de DAM: Si es vacío o marcador, guardar como None para evitar colisiones únicas
+    clean_dam = data.dam.strip().upper() if data.dam else None
+    if not clean_dam or clean_dam in ignore_values:
+        clean_dam = None
+        
+    try:
+        new_data = data.model_dump()
+        new_data['dam'] = clean_dam
+        new_data['booking'] = clean_booking(data.booking)
+        
+        new_e = ControlEmbarque(**new_data)
+        db.add(new_e)
+        db.commit()
+        db.refresh(new_e)
+        return new_e
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error crítico guardando maestro: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno al guardar en Base de Datos. Verifique unicidad de datos.")
 
 @router.put("/embarques/{id}", response_model=EmbarqueResponse)
 def update_embarque(id: int, data: EmbarqueCreate, db: Session = Depends(get_db)):
