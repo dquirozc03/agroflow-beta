@@ -9,7 +9,7 @@ import re
 from app.database import get_db
 from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer
 from app.models.embarque import ControlEmbarque, clean_container_code
-from app.utils.logging import logger
+from app.utils.formatters import logger, clean_booking
 from app.services.ocr import ocr_service
 from pydantic import BaseModel
 
@@ -180,14 +180,14 @@ async def bulk_upload_transportistas(
                     
                     if not embarque:
                         new_emb = ControlEmbarque(
-                            booking=booking_raw or "SIN BOOKING",
+                            booking=clean_booking(booking_raw) or "SIN BOOKING",
                             dam=dam_raw,
                             contenedor=contenedor_raw or "SIN CONTENEDOR"
                         )
                         db.add(new_emb)
                     else:
                         # Actualizar datos si la DAM ya existe
-                        if booking_raw: embarque.booking = booking_raw
+                        if booking_raw: embarque.booking = clean_booking(booking_raw)
                         if contenedor_raw: embarque.contenedor = clean_container_code(contenedor_raw)
 
                 # 4. Procesar Placas (Tracto/Carreta)
@@ -405,6 +405,7 @@ def create_embarque(data: EmbarqueCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"La DAM {data.dam} ya está registrada")
     
     new_e = ControlEmbarque(**data.model_dump())
+    new_e.booking = clean_booking(new_e.booking)
     db.add(new_e)
     db.commit()
     db.refresh(new_e)
@@ -419,6 +420,7 @@ def update_embarque(id: int, data: EmbarqueCreate, db: Session = Depends(get_db)
     # Aplicar limpieza al contenedor explícitamente si se actualiza
     v_data = data.model_dump()
     v_data['contenedor'] = clean_container_code(v_data['contenedor'])
+    v_data['booking'] = clean_booking(v_data['booking'])
     
     for key, value in v_data.items():
         setattr(e, key, value)

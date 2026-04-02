@@ -130,9 +130,10 @@ interface FormFieldProps {
   onBlur?: () => void;
   helperText?: string;
   highlightError?: boolean;
+  autoFocus?: boolean;
 }
 
-function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText, highlightError }: FormFieldProps) {
+function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, success, loading, error, errorMsg, onBlur, helperText, highlightError, autoFocus }: FormFieldProps) {
   return (
     <div className="space-y-3 group/field">
       <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-emerald-500 transition-colors">
@@ -148,6 +149,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
         <input
           value={value}
           readOnly={readOnly}
+          autoFocus={autoFocus}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           placeholder={placeholder}
@@ -166,8 +168,8 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
         {error && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 group/tooltip inline-block">
              <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse cursor-help" />
-             {/* Tooltip Alert Style */}
-             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[100] origin-bottom">
+             {/* Tooltip Alert Style (Superior a Venom) */}
+             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-rose-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all scale-75 group-hover/tooltip:scale-100 pointer-events-none whitespace-nowrap z-[210] origin-bottom">
                 {errorMsg}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-rose-950" />
              </div>
@@ -240,8 +242,8 @@ export default function LogiCaptureV2Page() {
     return () => mainElement.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Calcular posición dinámica (se mueve entre 30% y 70% de la pantalla)
-  const dynamicY = Math.min(70, 30 + (scrollY / 10));
+  // Calcular posición dinámica (Inge Daniel Edition: Rango controlado 25%-45%)
+  const dynamicY = Math.min(45, 25 + (scrollY / 20));
 
   // Estado del Formulario
   const [formData, setFormData] = useState({
@@ -829,6 +831,7 @@ export default function LogiCaptureV2Page() {
                      <FormField 
                         label="Booking / Reserva" 
                         placeholder="BK-XXXXXXXX" 
+                        autoFocus
                         icon={BookOpen} 
                         value={formData.booking} 
                         onChange={(v) => updateField("booking", v)} 
@@ -952,7 +955,6 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => validateSeal("precintoAduana", v)}
                         icon={ShieldCheck}
                         duplicatedValues={duplicatedCodes}
-                        autoFocus
                      />
                      <MultiInput 
                         label="Precinto Operador" 
@@ -1056,7 +1058,7 @@ export default function LogiCaptureV2Page() {
       <div 
         style={{ top: `${dynamicY}%` }}
         className={cn(
-          "fixed right-12 z-[100] transition-all duration-1000 ease-out pointer-events-none",
+          "fixed right-12 z-[100] transition-all duration-700 ease-out pointer-events-none group/venom-container hover:-translate-x-4",
           showFloatingButton ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-64"
         )}
       >

@@ -268,7 +268,7 @@ def search_bookings(q: str, db: Session = Depends(get_db)):
     for b in results:
         # Intentar jalar Orden Beta desde Posicionamiento
         pos = db.query(Posicionamiento).filter(
-            Posicionamiento.BOOKING_REAL == b.booking
+            Posicionamiento.BOOKING == b.booking
         ).first()
         
         output.append({
@@ -286,12 +286,16 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
     """Guarda registro final de LogiCapture con validaciones de unicidad."""
     
     # 1. Validar Unicidad de Cabecera (DAM / Contenedor) - Solo registros activos
-    existing_dam = db.query(LogiCaptureRegistro).filter(
-        LogiCaptureRegistro.dam == req.dam,
-        LogiCaptureRegistro.status != "ANULADO"
-    ).first()
-    if existing_dam:
-        raise HTTPException(status_code=400, detail=f"La DAM {req.dam} ya cuenta con un registro de salida.")
+    # Carlos Style 💎: No validamos duplicidad para valores que indican "vacío" o "no aplica"
+    ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", "", None]
+    
+    if req.dam and req.dam.strip().upper() not in ignore_values:
+        existing_dam = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.dam == req.dam,
+            LogiCaptureRegistro.status != "ANULADO"
+        ).first()
+        if existing_dam:
+            raise HTTPException(status_code=400, detail=f"La DAM {req.dam} ya cuenta con un registro de salida.")
         
     existing_cnt = db.query(LogiCaptureRegistro).filter(
         LogiCaptureRegistro.contenedor == req.contenedor,

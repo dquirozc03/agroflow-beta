@@ -24,7 +24,7 @@ class ControlEmbarque(Base):
     booking = Column(String(50), index=True, nullable=False)
     
     # dam: Identificador único del despacho aduanero
-    dam = Column(String(50), unique=True, index=True, nullable=False)
+    dam = Column(String(50), unique=True, index=True, nullable=True)
     
     # contenedor: Identificadr físico del equipo
     contenedor = Column(String(20), index=True, nullable=False)
