@@ -49,7 +49,7 @@ class ChoferResponse(ChoferCreate):
 
 class EmbarqueCreate(BaseModel):
     booking: str
-    dam: str
+    dam: Optional[str] = None
     contenedor: str
 
 class EmbarqueResponse(EmbarqueCreate):
@@ -400,10 +400,12 @@ def list_embarques(db: Session = Depends(get_db)):
 
 @router.post("/embarques", response_model=EmbarqueResponse)
 def create_embarque(data: EmbarqueCreate, db: Session = Depends(get_db)):
-    # Validar DAM único
-    existing = db.query(ControlEmbarque).filter(ControlEmbarque.dam == data.dam).first()
-    if existing:
-        raise HTTPException(status_code=400, detail=f"La DAM {data.dam} ya está registrada")
+    # Validar DAM único (Solo si viene una DAM real)
+    ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", "", None]
+    if data.dam and data.dam.strip().upper() not in ignore_values:
+        existing = db.query(ControlEmbarque).filter(ControlEmbarque.dam == data.dam).first()
+        if existing:
+            raise HTTPException(status_code=400, detail=f"La DAM {data.dam} ya está registrada")
     
     new_e = ControlEmbarque(**data.model_dump())
     new_e.booking = clean_booking(new_e.booking)
