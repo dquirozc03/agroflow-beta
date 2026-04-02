@@ -361,6 +361,16 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
     db.commit() # Commit inicial para obtener id
     db.refresh(new_reg)
 
+    # 3.5 Sincronización Inversa (Retro-alimentación al Maestro)
+    if req.dam and req.dam.strip().upper() not in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]:
+        emb = db.query(ControlEmbarque).filter(
+            ControlEmbarque.booking == req.booking,
+            ControlEmbarque.contenedor == req.contenedor
+        ).first()
+        if emb and (not emb.dam or emb.dam in ["PENDIENTE", "S/P", "-"]):
+            emb.dam = req.dam
+            db.commit()
+
     # 4. Guardar Detalles de Unicidad
     # Por cada categoría guardamos en la tabla de blindaje
     details = []
@@ -564,6 +574,17 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
             db.add_all(nuevos_detalles)
 
     db.commit()
+
+    # 5. Sincronización Inversa (Retro-alimentación al Maestro)
+    if reg.dam and reg.dam.strip().upper() not in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]:
+        emb = db.query(ControlEmbarque).filter(
+            ControlEmbarque.booking == reg.booking,
+            ControlEmbarque.contenedor == reg.contenedor
+        ).first()
+        if emb and (not emb.dam or emb.dam in ["PENDIENTE", "S/P", "-"]):
+            emb.dam = reg.dam
+            db.commit()
+
     return {"status": "success", "message": "Datos de auditoría actualizados correctamente 💎"}
 
 @router.patch("/registros/{id}/status")

@@ -212,7 +212,7 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
                      <div className="relative group">
                         <FileText className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                         <input 
-                          required
+                          autoComplete="off"
                           value={formData.dam}
                           onChange={e => setFormData({...formData, dam: e.target.value})}
                           placeholder="127-202X-..."
@@ -226,6 +226,7 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
                         <Boxes className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                         <input 
                           required
+                          autoComplete="off"
                           value={formData.contenedor}
                           onChange={e => setFormData({...formData, contenedor: cleanContainer(e.target.value)})}
                           placeholder="MSCU1234567"
