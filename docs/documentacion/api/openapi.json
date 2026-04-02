@@ -1,0 +1,5179 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AgroFlow V2 - Dev",
+    "description": "Reinicio de AgroFlow con estándares profesionales. Rama DEV.",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "description": "Login con Diagnóstico de Errores.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/cambiar-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Cambiar Password",
+        "description": "Permite al usuario cambiar su propia contraseña.",
+        "operationId": "cambiar_password_api_v1_auth_cambiar_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarPasswordPropiaBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/usuarios": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Listar Usuarios",
+        "description": "Lista todos los usuarios (Solo Admin).",
+        "operationId": "listar_usuarios_api_v1_auth_usuarios_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Usuarios Api V1 Auth Usuarios Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Crear Usuario",
+        "description": "Crea un nuevo usuario (Solo Admin).",
+        "operationId": "crear_usuario_api_v1_auth_usuarios_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/usuarios/{id}": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Actualizar Usuario",
+        "description": "Actualiza datos de un usuario (Solo Admin).",
+        "operationId": "actualizar_usuario_api_v1_auth_usuarios__id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/usuarios/{id}/reset-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset Password",
+        "description": "Resetea la contraseña de un usuario a 123456 (Solo Admin).",
+        "operationId": "reset_password_api_v1_auth_usuarios__id__reset_password_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestablecerPasswordBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/usuarios/{id}/desbloquear": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Desbloquear Usuario",
+        "description": "Desbloquea a un usuario (Solo Admin).",
+        "operationId": "desbloquear_usuario_api_v1_auth_usuarios__id__desbloquear_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/roles": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Listar Roles",
+        "description": "Lista todos los roles maestros.",
+        "operationId": "listar_roles_api_v1_auth_roles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RolResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Roles Api V1 Auth Roles Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Crear Rol",
+        "description": "Crea un nuevo rol maestro.",
+        "operationId": "crear_rol_api_v1_auth_roles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/roles/{id}": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Actualizar Rol",
+        "description": "Actualiza un rol maestro.",
+        "operationId": "actualizar_rol_api_v1_auth_roles__id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/posicionamiento/raw": {
+      "post": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "Sync Posicionamiento Raw",
+        "description": "Endpoint de nivel profesional para sincronización masiva desde Excel.",
+        "operationId": "sync_posicionamiento_raw_api_v1_sync_posicionamiento_raw_post",
+        "parameters": [
+          {
+            "name": "X-Sync-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "X-Sync-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/pedidos/raw": {
+      "post": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "Sync Pedidos Raw",
+        "description": "Endpoint para sincronización de Pedidos Comerciales.\nEstrategia: RECARGA TOTAL (Delete & Insert).\nConvierte todo el texto a MAYÚSCULAS.",
+        "operationId": "sync_pedidos_raw_api_v1_sync_pedidos_raw_post",
+        "parameters": [
+          {
+            "name": "X-Sync-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "X-Sync-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/posicionamiento/list": {
+      "get": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "List Posicionamiento",
+        "description": "Retorna listado completo del Plan Maestro para el módulo de Instrucciones.",
+        "operationId": "list_posicionamiento_api_v1_sync_posicionamiento_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/pedidos/list": {
+      "get": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "List Pedidos",
+        "description": "Retorna listado completo de Pedidos Comerciales para auditoría.",
+        "operationId": "list_pedidos_api_v1_sync_pedidos_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/reportes/embarques/raw": {
+      "post": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "Sync Reportes Embarques Raw",
+        "description": "Endpoint ultra-flexible para sincronización de Reporte Embarques.\nUsa el objeto Request directamente para evitar errores 422 de validación automática.",
+        "operationId": "sync_reportes_embarques_raw_api_v1_sync_reportes_embarques_raw_post",
+        "parameters": [
+          {
+            "name": "X-Sync-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "X-Sync-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/reportes/embarques/list": {
+      "get": {
+        "tags": [
+          "sincronizacion"
+        ],
+        "summary": "List Reportes Embarques",
+        "description": "Lista auditoría de modelo 01",
+        "operationId": "list_reportes_embarques_api_v1_sync_reportes_embarques_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/bulk-upload": {
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Bulk Upload Transportistas",
+        "description": "Carga masiva de transportistas y vehículos desde el Excel 'ASIGNACION DE UNIDADES'.\nMapeo:\n- Columna B (Indice 1): Booking\n- Columna C (Indice 2): DAM (Única)\n- Columna D (Indice 3): Contenedor\n- Columna E (Indice 4): Empresa de Transporte\n- Columna F (Indice 5): RUC\n- Columna G (Indice 6): Licencia\n- Columna H (Indice 7): Conductor\n- Columna I (Indice 8): Placas (Tracto/Carreta)",
+        "operationId": "bulk_upload_transportistas_api_v1_maestros_bulk_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_bulk_upload_transportistas_api_v1_maestros_bulk_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/transportistas": {
+      "get": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "List Transportistas",
+        "operationId": "list_transportistas_api_v1_maestros_transportistas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TransportistaResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Transportistas Api V1 Maestros Transportistas Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Create Transportista",
+        "operationId": "create_transportista_api_v1_maestros_transportistas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransportistaCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/transportistas/{id}/estado": {
+      "patch": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Patch Estado Transportista",
+        "operationId": "patch_estado_transportista_api_v1_maestros_transportistas__id__estado_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/transportistas/{id}": {
+      "put": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Update Transportista",
+        "operationId": "update_transportista_api_v1_maestros_transportistas__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransportistaCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/ocr/transportista": {
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Ocr Transportista",
+        "description": "Escaneo OCR de una Tarjeta de Circulación del MTC.",
+        "operationId": "ocr_transportista_api_v1_maestros_ocr_transportista_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_transportista_api_v1_maestros_ocr_transportista_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/choferes": {
+      "get": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "List Choferes",
+        "operationId": "list_choferes_api_v1_maestros_choferes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChoferResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Choferes Api V1 Maestros Choferes Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Create Chofer",
+        "operationId": "create_chofer_api_v1_maestros_choferes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChoferCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/choferes/{id}": {
+      "put": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Update Chofer",
+        "operationId": "update_chofer_api_v1_maestros_choferes__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChoferCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/choferes/{id}/estado": {
+      "patch": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Patch Estado Chofer",
+        "operationId": "patch_estado_chofer_api_v1_maestros_choferes__id__estado_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/ocr/licencia": {
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Ocr Licencia",
+        "description": "Scanner de Licencias de Conducir (Brevete).",
+        "operationId": "ocr_licencia_api_v1_maestros_ocr_licencia_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_licencia_api_v1_maestros_ocr_licencia_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/ocr/embarque": {
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Ocr Embarque",
+        "description": "Scanner de Control de Embarque:\nBusca patrones de DAM (18-20 chars) y Contenedor ISO (4 letras + 7 números).",
+        "operationId": "ocr_embarque_api_v1_maestros_ocr_embarque_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_embarque_api_v1_maestros_ocr_embarque_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/embarques": {
+      "get": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "List Embarques",
+        "operationId": "list_embarques_api_v1_maestros_embarques_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EmbarqueResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Embarques Api V1 Maestros Embarques Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Create Embarque",
+        "operationId": "create_embarque_api_v1_maestros_embarques_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmbarqueCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbarqueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/embarques/{id}": {
+      "put": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Update Embarque",
+        "operationId": "update_embarque_api_v1_maestros_embarques__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmbarqueCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbarqueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Maestros"
+        ],
+        "summary": "Delete Embarque",
+        "operationId": "delete_embarque_api_v1_maestros_embarques__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/vehiculos/tractos": {
+      "get": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "List Tractos",
+        "operationId": "list_tractos_api_v1_maestros_vehiculos_tractos_get",
+        "parameters": [
+          {
+            "name": "placa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Placa"
+            }
+          },
+          {
+            "name": "transportista_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Transportista Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TractoResponse"
+                  },
+                  "title": "Response List Tractos Api V1 Maestros Vehiculos Tractos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "Create Tracto",
+        "operationId": "create_tracto_api_v1_maestros_vehiculos_tractos_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TractoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TractoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/vehiculos/carretas": {
+      "get": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "List Carretas",
+        "operationId": "list_carretas_api_v1_maestros_vehiculos_carretas_get",
+        "parameters": [
+          {
+            "name": "placa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Placa"
+            }
+          },
+          {
+            "name": "transportista_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Transportista Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarretaResponse"
+                  },
+                  "title": "Response List Carretas Api V1 Maestros Vehiculos Carretas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "Create Carreta",
+        "operationId": "create_carreta_api_v1_maestros_vehiculos_carretas_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarretaCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarretaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/vehiculos/{tipo}/{id}/estado": {
+      "patch": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "Patch Estado Vehiculo",
+        "operationId": "patch_estado_vehiculo_api_v1_maestros_vehiculos__tipo___id__estado_patch",
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/vehiculos/ocr/tiv": {
+      "post": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "Ocr Tiv",
+        "description": "Scanner de Tarjeta de Identificación Vehicular (TIV).",
+        "operationId": "ocr_tiv_api_v1_maestros_vehiculos_ocr_tiv_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_tiv_api_v1_maestros_vehiculos_ocr_tiv_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/vehiculos/{tipo}/{id}": {
+      "put": {
+        "tags": [
+          "Vehiculos"
+        ],
+        "summary": "Update Vehiculo",
+        "description": "Edición genérica de ficha técnica.",
+        "operationId": "update_vehiculo_api_v1_maestros_vehiculos__tipo___id__put",
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/lookup/{booking}": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Lookup Booking Data",
+        "description": "Motor de resolución de datos de embarque:\nCruza la información de Posicionamientos (Plan Maestro) con el \nControl de Embarque (Registro Operativo) para autocompletar el formulario.",
+        "operationId": "lookup_booking_data_api_v1_logicapture_lookup__booking__get",
+        "parameters": [
+          {
+            "name": "booking",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Booking"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/driver/{dni}": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Get Driver Data",
+        "description": "Busca chofer en maestros por DNI.",
+        "operationId": "get_driver_data_api_v1_logicapture_driver__dni__get",
+        "parameters": [
+          {
+            "name": "dni",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dni"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/vehicle/{placa}": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Get Vehicle Data",
+        "description": "Busca vehículo y su transportista por placa.",
+        "operationId": "get_vehicle_data_api_v1_logicapture_vehicle__placa__get",
+        "parameters": [
+          {
+            "name": "placa",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Placa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/check_unique": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Check Data Unique",
+        "description": "Verifica si un dato ya existe en la tabla de registros operativos.",
+        "operationId": "check_data_unique_api_v1_logicapture_check_unique_get",
+        "parameters": [
+          {
+            "name": "field",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Field"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Value"
+            }
+          },
+          {
+            "name": "treatment_buque",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Treatment Buque"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/trailer/{placa}": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Get Trailer Data",
+        "description": "Busca carreta en maestros por placa.",
+        "operationId": "get_trailer_data_api_v1_logicapture_trailer__placa__get",
+        "parameters": [
+          {
+            "name": "placa",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Placa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/drivers/search": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Search Drivers",
+        "description": "Busca choferes por coincidencia de nombre o DNI.",
+        "operationId": "search_drivers_api_v1_logicapture_drivers_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/vehicles/tracto/search": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Search Tractos",
+        "description": "Busca tractos por placa.",
+        "operationId": "search_tractos_api_v1_logicapture_vehicles_tracto_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/vehicles/carreta/search": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Search Carretas",
+        "description": "Busca carretas por placa.",
+        "operationId": "search_carretas_api_v1_logicapture_vehicles_carreta_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/bookings/search": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Search Bookings",
+        "description": "Busca bookings en maestros y cruza con posicionamiento.",
+        "operationId": "search_bookings_api_v1_logicapture_bookings_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/register": {
+      "post": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Register Logicapture Data",
+        "description": "Guarda registro final de LogiCapture con validaciones de unicidad.",
+        "operationId": "register_logicapture_data_api_v1_logicapture_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogiCaptureSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/bulk_sync": {
+      "post": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Bulk Sync Masters",
+        "description": "Sincronización masiva interna para optimizar rendimiento y evitar CORS 💎.",
+        "operationId": "bulk_sync_masters_api_v1_logicapture_bulk_sync_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/registros": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "List Registros",
+        "description": "Listado paginado de registros con filtros operativos.",
+        "operationId": "list_registros_api_v1_logicapture_registros_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "planta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Planta"
+            }
+          },
+          {
+            "name": "cultivo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cultivo"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/registros/{id}": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Get Registro",
+        "description": "Obtención de un registro específico para auditoría/edición.",
+        "operationId": "get_registro_api_v1_logicapture_registros__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Update Registro",
+        "description": "Edición técnica de registros (Auditoría Dirigida) 💎.",
+        "operationId": "update_registro_api_v1_logicapture_registros__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogiCaptureUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/registros/{id}/status": {
+      "patch": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Change Registro Status",
+        "description": "Cambio de estado administrativo (Cerrar/Anular) con trazabilidad de motivo.",
+        "operationId": "change_registro_status_api_v1_logicapture_registros__id__status_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "motivo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Motivo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/logicapture/export/excel": {
+      "get": {
+        "tags": [
+          "LogiCapture Core"
+        ],
+        "summary": "Export To Excel",
+        "description": "Generación de reporte Excel Premium con formateo de tabla y auto-ajuste.",
+        "operationId": "export_to_excel_api_v1_logicapture_export_excel_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/clientes-ie/": {
+      "get": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "List Clientes Ie",
+        "description": "Listado completo de maestros de Clientes para Instrucciones de Embarque.",
+        "operationId": "list_clientes_ie_api_v1_maestros_clientes_ie__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteIESchema"
+                  },
+                  "type": "array",
+                  "title": "Response List Clientes Ie Api V1 Maestros Clientes Ie  Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "Create Cliente Ie",
+        "description": "Registro de nuevo cliente IE y gestión inteligente de Fitos.",
+        "operationId": "create_cliente_ie_api_v1_maestros_clientes_ie__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteIESchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/clientes-ie/{id}": {
+      "put": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "Update Cliente Ie",
+        "description": "Actualización integral de datos BL y Fitosanitarios.",
+        "operationId": "update_cliente_ie_api_v1_maestros_clientes_ie__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteIESchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "Delete Cliente Ie",
+        "description": "Eliminación lógica o física del maestro.",
+        "operationId": "delete_cliente_ie_api_v1_maestros_clientes_ie__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/clientes-ie/{id}/toggle-status": {
+      "patch": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "Toggle Cliente Ie Status",
+        "description": "Cambia el estado del cliente entre ACTIVO e INACTIVO.",
+        "operationId": "toggle_cliente_ie_status_api_v1_maestros_clientes_ie__id__toggle_status_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/clientes-ie/maestro-fitos": {
+      "get": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "List Maestro Fitos",
+        "description": "Listado de Fitos para selección en el catálogo.",
+        "operationId": "list_maestro_fitos_api_v1_maestros_clientes_ie_maestro_fitos_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MaestroFitoSchema"
+                  },
+                  "title": "Response List Maestro Fitos Api V1 Maestros Clientes Ie Maestro Fitos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maestros/clientes-ie/{id}/duplicate": {
+      "post": {
+        "tags": [
+          "Maestros - Clientes IE"
+        ],
+        "summary": "Duplicate Cliente Ie",
+        "description": "Clonación de maestros para facilitar la creación por nuevas rutas 💎.",
+        "operationId": "duplicate_cliente_ie_api_v1_maestros_clientes_ie__id__duplicate_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instrucciones/lookup/{booking}": {
+      "get": {
+        "tags": [
+          "instrucciones-ie"
+        ],
+        "summary": "Lookup Booking Data",
+        "description": "Lógica de Match inteligente:\n1. Busca Booking en Posicionamiento -> Obtiene Orden y Cultivo.\n2. Busca en Cuadro de Pedidos (usando orden normalizada y cultivo) -> Obtiene Cliente.\n3. Busca en Maestros Cliente IE -> Obtiene detalles fitosanitarios.",
+        "operationId": "lookup_booking_data_api_v1_instrucciones_lookup__booking__get",
+        "parameters": [
+          {
+            "name": "booking",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Booking"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instrucciones/generate-pdf": {
+      "post": {
+        "tags": [
+          "instrucciones-ie"
+        ],
+        "summary": "Generate Pdf Ie",
+        "description": "Genera y retorna el PDF de la Instrucción de Embarque consolidada.",
+        "operationId": "generate_pdf_ie_api_v1_instrucciones_generate_pdf_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePDFRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packing-list/naves": {
+      "get": {
+        "tags": [
+          "Packing List OGL"
+        ],
+        "summary": "Listar Naves Ogl",
+        "description": "Retorna naves únicas basándose en la VERDAD ABSOLUTA:\n1. ReporteEmbarques.nave_arribo (Prioridad 1)\n2. Posicionamiento.NAVE (Fallback solo si no hay reporte con otra nave)",
+        "operationId": "listar_naves_ogl_api_v1_packing_list_naves_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NaveInfo"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Naves Ogl Api V1 Packing List Naves Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packing-list/bookings": {
+      "get": {
+        "tags": [
+          "Packing List OGL"
+        ],
+        "summary": "Listar Bookings Ogl",
+        "description": "Lista todos los bookings cuya nave ACTUAL es la solicitada.\nPrioridad: ReporteEmbarques > Posicionamiento.",
+        "operationId": "listar_bookings_ogl_api_v1_packing_list_bookings_get",
+        "parameters": [
+          {
+            "name": "nave",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Nave"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/packing-list/generate/ogl": {
+      "post": {
+        "tags": [
+          "Packing List OGL"
+        ],
+        "summary": "Generate Packing List Ogl",
+        "description": "Motor de generación del Packing List OGL CONSOLIDADO por NAVE.\nOrdena los bookings cronológicamente por Fecha Programada (FECHA_PO).",
+        "operationId": "generate_packing_list_ogl_api_v1_packing_list_generate_ogl_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_generate_packing_list_ogl_api_v1_packing_list_generate_ogl_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_bulk_upload_transportistas_api_v1_maestros_bulk_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_bulk_upload_transportistas_api_v1_maestros_bulk_upload_post"
+      },
+      "Body_generate_packing_list_ogl_api_v1_packing_list_generate_ogl_post": {
+        "properties": {
+          "nave": {
+            "type": "string",
+            "title": "Nave"
+          },
+          "confirmaciones": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Confirmaciones"
+          },
+          "termografos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termografos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nave",
+          "confirmaciones"
+        ],
+        "title": "Body_generate_packing_list_ogl_api_v1_packing_list_generate_ogl_post"
+      },
+      "Body_ocr_embarque_api_v1_maestros_ocr_embarque_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_embarque_api_v1_maestros_ocr_embarque_post"
+      },
+      "Body_ocr_licencia_api_v1_maestros_ocr_licencia_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_licencia_api_v1_maestros_ocr_licencia_post"
+      },
+      "Body_ocr_tiv_api_v1_maestros_vehiculos_ocr_tiv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_tiv_api_v1_maestros_vehiculos_ocr_tiv_post"
+      },
+      "Body_ocr_transportista_api_v1_maestros_ocr_transportista_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_transportista_api_v1_maestros_ocr_transportista_post"
+      },
+      "CambiarPasswordPropiaBody": {
+        "properties": {
+          "password_actual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password Actual"
+          },
+          "nueva_password": {
+            "type": "string",
+            "title": "Nueva Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nueva_password"
+        ],
+        "title": "CambiarPasswordPropiaBody",
+        "description": "Body del endpoint POST /api/v1/auth/cambiar-password-propia.\nPermite al usuario autenticado cambiar su propia contraseña.\n\nLógica de 'password_actual':\n  - Si 'requiere_cambio_password=True' (primer login o reset reciente),\n    NO se exige 'password_actual' porque el usuario no tiene una real.\n  - En cualquier otro caso, sí se exige para confirmar que quien cambia\n    la contraseña es efectivamente el dueño de la cuenta."
+      },
+      "CarretaCreate": {
+        "properties": {
+          "transportista_id": {
+            "type": "integer",
+            "title": "Transportista Id"
+          },
+          "numero_ejes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Ejes"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "placa_carreta": {
+            "type": "string",
+            "title": "Placa Carreta"
+          },
+          "peso_neto_carreta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso Neto Carreta"
+          },
+          "certificado_vehicular_carreta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificado Vehicular Carreta"
+          },
+          "largo_carreta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largo Carreta"
+          },
+          "ancho_carreta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ancho Carreta"
+          },
+          "alto_carreta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alto Carreta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transportista_id",
+          "placa_carreta"
+        ],
+        "title": "CarretaCreate"
+      },
+      "CarretaResponse": {
+        "properties": {
+          "transportista_id": {
+            "type": "integer",
+            "title": "Transportista Id"
+          },
+          "numero_ejes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Ejes"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "placa_carreta": {
+            "type": "string",
+            "title": "Placa Carreta"
+          },
+          "peso_neto_carreta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso Neto Carreta"
+          },
+          "certificado_vehicular_carreta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificado Vehicular Carreta"
+          },
+          "largo_carreta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largo Carreta"
+          },
+          "ancho_carreta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ancho Carreta"
+          },
+          "alto_carreta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alto Carreta"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "transportista": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransportistaMinimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "transportista_id",
+          "placa_carreta",
+          "id"
+        ],
+        "title": "CarretaResponse"
+      },
+      "ChoferCreate": {
+        "properties": {
+          "dni": {
+            "type": "string",
+            "title": "Dni"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "apellido_paterno": {
+            "type": "string",
+            "title": "Apellido Paterno"
+          },
+          "apellido_materno": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellido Materno"
+          },
+          "licencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licencia"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dni",
+          "nombres",
+          "apellido_paterno"
+        ],
+        "title": "ChoferCreate"
+      },
+      "ChoferResponse": {
+        "properties": {
+          "dni": {
+            "type": "string",
+            "title": "Dni"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "apellido_paterno": {
+            "type": "string",
+            "title": "Apellido Paterno"
+          },
+          "apellido_materno": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellido Materno"
+          },
+          "licencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licencia"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre_operativo": {
+            "type": "string",
+            "title": "Nombre Operativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dni",
+          "nombres",
+          "apellido_paterno",
+          "id",
+          "nombre_operativo"
+        ],
+        "title": "ChoferResponse"
+      },
+      "ClienteIESchema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "nombre_legal": {
+            "type": "string",
+            "title": "Nombre Legal"
+          },
+          "cultivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cultivo"
+          },
+          "pais": {
+            "type": "string",
+            "title": "Pais"
+          },
+          "destino": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destino"
+          },
+          "consignatario_bl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consignatario Bl"
+          },
+          "direccion_consignatario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion Consignatario"
+          },
+          "notify_bl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Bl"
+          },
+          "direccion_notify": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion Notify"
+          },
+          "eori_consignatario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eori Consignatario"
+          },
+          "eori_notify": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eori Notify"
+          },
+          "emision_bl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emision Bl"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "fito_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fito Id"
+          },
+          "fitosanitario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaestroFitoSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre_legal",
+          "pais"
+        ],
+        "title": "ClienteIESchema"
+      },
+      "EmbarqueCreate": {
+        "properties": {
+          "booking": {
+            "type": "string",
+            "title": "Booking"
+          },
+          "dam": {
+            "type": "string",
+            "title": "Dam"
+          },
+          "contenedor": {
+            "type": "string",
+            "title": "Contenedor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking",
+          "dam",
+          "contenedor"
+        ],
+        "title": "EmbarqueCreate"
+      },
+      "EmbarqueResponse": {
+        "properties": {
+          "booking": {
+            "type": "string",
+            "title": "Booking"
+          },
+          "dam": {
+            "type": "string",
+            "title": "Dam"
+          },
+          "contenedor": {
+            "type": "string",
+            "title": "Contenedor"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking",
+          "dam",
+          "contenedor",
+          "id"
+        ],
+        "title": "EmbarqueResponse"
+      },
+      "GeneratePDFRequest": {
+        "properties": {
+          "booking": {
+            "type": "string",
+            "title": "Booking"
+          },
+          "observaciones": {
+            "type": "string",
+            "title": "Observaciones",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking"
+        ],
+        "title": "GeneratePDFRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LogiCaptureSaveRequest": {
+        "properties": {
+          "booking": {
+            "type": "string",
+            "title": "Booking"
+          },
+          "ordenBeta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordenbeta"
+          },
+          "contenedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contenedor"
+          },
+          "dam": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dam"
+          },
+          "dni": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dni"
+          },
+          "placaTracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placatracto"
+          },
+          "placaCarreta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placacarreta"
+          },
+          "empresa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa"
+          },
+          "precintoAduana": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Precintoaduana",
+            "default": []
+          },
+          "precintoOperador": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Precintooperador",
+            "default": []
+          },
+          "precintoSenasa": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Precintosenasa",
+            "default": []
+          },
+          "precintoLinea": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Precintolinea",
+            "default": []
+          },
+          "precintosBeta": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Precintosbeta",
+            "default": []
+          },
+          "termografos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Termografos",
+            "default": []
+          },
+          "tratamientoBuque": {
+            "type": "boolean",
+            "title": "Tratamientobuque",
+            "default": false
+          },
+          "planta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planta"
+          },
+          "cultivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cultivo"
+          },
+          "codigoSap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigosap"
+          },
+          "ruc_transportista": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruc Transportista"
+          },
+          "marca_tracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca Tracto"
+          },
+          "cert_tracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cert Tracto"
+          },
+          "cert_carreta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cert Carreta"
+          },
+          "fecha_embarque": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Embarque"
+          },
+          "nombreChofer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombrechofer"
+          },
+          "licenciaChofer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licenciachofer"
+          },
+          "partidaRegistral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partidaregistral"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking"
+        ],
+        "title": "LogiCaptureSaveRequest"
+      },
+      "LogiCaptureUpdateRequest": {
+        "properties": {
+          "precintoAduana": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precintoaduana"
+          },
+          "precintoOperador": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precintooperador"
+          },
+          "precintoSenasa": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precintosenasa"
+          },
+          "precintoLinea": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precintolinea"
+          },
+          "precintosBeta": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precintosbeta"
+          },
+          "termografos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termografos"
+          },
+          "fecha_embarque": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Embarque"
+          },
+          "nombreChofer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombrechofer"
+          },
+          "dni": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dni"
+          },
+          "licenciaChofer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licenciachofer"
+          },
+          "placaTracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placatracto"
+          },
+          "placaCarreta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placacarreta"
+          },
+          "empresa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa"
+          },
+          "partidaRegistral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partidaregistral"
+          },
+          "booking": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking"
+          },
+          "ordenBeta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordenbeta"
+          },
+          "dam": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dam"
+          },
+          "contenedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contenedor"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "codigoSAP": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigosap"
+          }
+        },
+        "type": "object",
+        "title": "LogiCaptureUpdateRequest"
+      },
+      "LoginRequest": {
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "description": "Datos que el cliente envía al endpoint POST /api/v1/auth/login.\nAmbos campos son obligatorios. El router los valida con Pydantic\nantes de ejecutar cualquier lógica de negocio."
+      },
+      "LoginResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "rol": {
+            "type": "string",
+            "title": "Rol"
+          },
+          "requiere_cambio_password": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiere Cambio Password",
+            "default": false
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "usuario",
+          "nombre",
+          "rol"
+        ],
+        "title": "LoginResponse",
+        "description": "Respuesta exitosa del endpoint de login.\nContiene el token JWT y los datos básicos del usuario para que\nel frontend pueda mostrar el nombre y ajustar la UI según el rol,\nsin necesidad de hacer una segunda llamada a /me.\n\nNota sobre 'requiere_cambio_password':\n  Si es True, el frontend debe redirigir al usuario a la pantalla\n  de cambio de contraseña antes de permitirle acceder al sistema."
+      },
+      "LookupResponse": {
+        "properties": {
+          "booking": {
+            "type": "string",
+            "title": "Booking"
+          },
+          "orden_beta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orden Beta"
+          },
+          "dam": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dam"
+          },
+          "contenedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contenedor"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "planta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planta"
+          },
+          "cultivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cultivo"
+          },
+          "codigo_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Sap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking",
+          "status"
+        ],
+        "title": "LookupResponse"
+      },
+      "MaestroFitoSchema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "consignatario_fito": {
+            "type": "string",
+            "title": "Consignatario Fito"
+          },
+          "direccion_fito": {
+            "type": "string",
+            "title": "Direccion Fito"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consignatario_fito",
+          "direccion_fito"
+        ],
+        "title": "MaestroFitoSchema"
+      },
+      "MeResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "rol": {
+            "type": "string",
+            "title": "Rol"
+          },
+          "requiere_cambio_password": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiere Cambio Password",
+            "default": false
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "nombre",
+          "rol"
+        ],
+        "title": "MeResponse",
+        "description": "Respuesta del endpoint GET /api/v1/auth/me.\nRetorna los datos del usuario autenticado según el token JWT.\nEste endpoint es el que el frontend debe usar para obtener el rol\ndel usuario — NUNCA leer el rol desde variables de entorno del cliente.\n\n'from_attributes = True' permite convertir directamente el modelo\nORM (SQLAlchemy) a este schema Pydantic sin mapeo manual."
+      },
+      "NaveInfo": {
+        "properties": {
+          "nave": {
+            "type": "string",
+            "title": "Nave"
+          },
+          "fuente": {
+            "type": "string",
+            "title": "Fuente"
+          },
+          "bookings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bookings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nave",
+          "fuente",
+          "bookings"
+        ],
+        "title": "NaveInfo"
+      },
+      "RestablecerPasswordBody": {
+        "properties": {
+          "nueva_password": {
+            "type": "string",
+            "title": "Nueva Password",
+            "default": "123456"
+          }
+        },
+        "type": "object",
+        "title": "RestablecerPasswordBody",
+        "description": "Body del endpoint PATCH /api/v1/auth/usuarios/{id}/password-reset.\nSolo el administrador puede usar este endpoint para resetear la\ncontraseña de cualquier usuario.\n\nTras el reset, el sistema marca 'requiere_cambio_password=True' en el\nusuario, forzándolo a elegir una nueva contraseña en su próximo login."
+      },
+      "RolCreate": {
+        "properties": {
+          "nombre_rol": {
+            "type": "string",
+            "title": "Nombre Rol"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "permisos_plantilla": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Permisos Plantilla",
+            "default": {
+              "logicapture": true,
+              "maestros": true,
+              "operaciones": true,
+              "sistema": false
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre_rol"
+        ],
+        "title": "RolCreate"
+      },
+      "RolResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre_rol": {
+            "type": "string",
+            "title": "Nombre Rol"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "permisos_plantilla": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Permisos Plantilla"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre_rol",
+          "permisos_plantilla"
+        ],
+        "title": "RolResponse"
+      },
+      "RolUpdate": {
+        "properties": {
+          "nombre_rol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Rol"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "permisos_plantilla": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos Plantilla"
+          }
+        },
+        "type": "object",
+        "title": "RolUpdate"
+      },
+      "TractoCreate": {
+        "properties": {
+          "transportista_id": {
+            "type": "integer",
+            "title": "Transportista Id"
+          },
+          "numero_ejes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Ejes"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "placa_tracto": {
+            "type": "string",
+            "title": "Placa Tracto"
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "peso_neto_tracto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso Neto Tracto"
+          },
+          "certificado_vehicular_tracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificado Vehicular Tracto"
+          },
+          "largo_tracto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largo Tracto"
+          },
+          "ancho_tracto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ancho Tracto"
+          },
+          "alto_tracto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alto Tracto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transportista_id",
+          "placa_tracto"
+        ],
+        "title": "TractoCreate"
+      },
+      "TractoResponse": {
+        "properties": {
+          "transportista_id": {
+            "type": "integer",
+            "title": "Transportista Id"
+          },
+          "numero_ejes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Ejes"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          },
+          "placa_tracto": {
+            "type": "string",
+            "title": "Placa Tracto"
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "peso_neto_tracto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peso Neto Tracto"
+          },
+          "certificado_vehicular_tracto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificado Vehicular Tracto"
+          },
+          "largo_tracto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largo Tracto"
+          },
+          "ancho_tracto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ancho Tracto"
+          },
+          "alto_tracto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alto Tracto"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "transportista": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransportistaMinimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "transportista_id",
+          "placa_tracto",
+          "id"
+        ],
+        "title": "TractoResponse"
+      },
+      "TransportistaCreate": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "nombre_transportista": {
+            "type": "string",
+            "title": "Nombre Transportista"
+          },
+          "partida_registral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partida Registral"
+          },
+          "codigo_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Sap"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado",
+            "default": "ACTIVO"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "nombre_transportista"
+        ],
+        "title": "TransportistaCreate"
+      },
+      "TransportistaMinimal": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "nombre_transportista": {
+            "type": "string",
+            "title": "Nombre Transportista"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ruc",
+          "nombre_transportista"
+        ],
+        "title": "TransportistaMinimal"
+      },
+      "TransportistaResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "nombre_transportista": {
+            "type": "string",
+            "title": "Nombre Transportista"
+          },
+          "partida_registral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partida Registral"
+          },
+          "codigo_sap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Sap"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ruc",
+          "nombre_transportista",
+          "estado"
+        ],
+        "title": "TransportistaResponse"
+      },
+      "UsuarioCreate": {
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "default": "123456"
+          },
+          "rol": {
+            "type": "string",
+            "title": "Rol"
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos",
+            "default": {
+              "logicapture": true,
+              "maestros": true,
+              "operaciones": true,
+              "sistema": false
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "nombre",
+          "rol"
+        ],
+        "title": "UsuarioCreate",
+        "description": "Datos para crear un nuevo usuario. Solo el administrador puede usar\nel endpoint que recibe este schema (POST /api/v1/auth/usuarios).\n\n'password' tiene valor por defecto '123456' porque tras la creación\nel sistema asigna 'requiere_cambio_password=True', obligando al nuevo\nusuario a cambiar su contraseña en el primer inicio de sesión."
+      },
+      "UsuarioResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "rol": {
+            "type": "string",
+            "title": "Rol"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "requiere_cambio_password": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiere Cambio Password",
+            "default": false
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos"
+          },
+          "bloqueado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bloqueado",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario",
+          "nombre",
+          "rol",
+          "activo"
+        ],
+        "title": "UsuarioResponse",
+        "description": "Representación pública de un usuario. Nunca incluye password_hash\nni otros campos sensibles. Usada en todas las respuestas que\ndevuelven datos de usuario al cliente."
+      },
+      "UsuarioUpdate": {
+        "properties": {
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre"
+          },
+          "rol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rol"
+          },
+          "usuario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usuario"
+          },
+          "permisos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permisos"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "UsuarioUpdate",
+        "description": "Datos para actualizar un usuario existente (PATCH /api/v1/auth/usuarios/{id}).\nTodos los campos son opcionales: solo se actualizan los que se envíen.\nEsto implementa el patrón \"partial update\" — más seguro que reemplazar\ntodo el objeto porque evita borrar campos no enviados por accidente."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

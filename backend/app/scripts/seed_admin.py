@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from app.database import SessionLocal
 from app.models.auth import Usuario
 from app.utils.password import hash_password
+from app.utils.logging import logger
 
 
 def main():
@@ -28,7 +29,7 @@ def main():
     try:
         existing = db.query(Usuario).filter(Usuario.usuario == usuario).first()
         if existing:
-            print(f"Ya existe el usuario '{usuario}'. No se crea nada.")
+            logger.info(f"Ya existe el usuario '{usuario}'. No se crea nada.")
             return
         password_hash = hash_password(password)
         user = Usuario(
@@ -40,9 +41,9 @@ def main():
         )
         db.add(user)
         db.commit()
-        print(f"Usuario '{usuario}' creado correctamente. Rol: administrador.")
+        logger.info(f"Usuario '{usuario}' creado correctamente. Rol: administrador.")
         if usuario == "admin" and password == "admin":
-            print("  ⚠ En producción cambie la contraseña de admin (no dejar 'admin').")
+            logger.warning("  ⚠ En producción cambie la contraseña de admin (no dejar 'admin').")
     finally:
         db.close()
 

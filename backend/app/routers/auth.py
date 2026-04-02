@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 import traceback # Para ver el error real
 
 from app.database import get_db
+from app.utils.logging import logger
 from app.dependencies.auth import create_access_token, CurrentUser
 from app.core.exceptions import PermisoInsuficienteError
 from app.schemas.auth import (
@@ -52,7 +53,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
     except Exception as e:
         # ERROR 500: ¡Lo capturamos para ver qué es!
         error_msg = f"ERROR CRITICO EN BACKEND: {str(e)} --- {traceback.format_exc()}"
-        print(error_msg) # Se verá en los logs de Render
+        logger.error(error_msg) # Se verá en los logs de Render
         raise HTTPException(
             status_code=500, 
             detail=f"Causa del Error 500: {str(e)}" # Se verá en tu navegador

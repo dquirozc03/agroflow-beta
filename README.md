@@ -35,6 +35,7 @@ pip install -r requirements.txt
 
 alembic upgrade head
 python -m app.scripts.seed_all_roles   # Usuarios iniciales (admin/admin)
+python scripts/ops/export_openapi.py      # Generar docs/documentacion/api/openapi.json
 uvicorn app.main:app --reload
 ```
 
@@ -68,9 +69,8 @@ El frontend queda en **http://localhost:3000**. Login: `admin` / `admin`.
 
 ## 📑 Documentación Clave
 
-- **[docs/MANUAL_TECNICO.md](docs/MANUAL_TECNICO.md)** – Funcionamiento interno y lógica de negocio.
-- **[docs/SEGURIDAD.md](docs/SEGURIDAD.md)** – Checklist de producción y seguridad JWT.
-- **[docs/BACKUPS.md](docs/BACKUPS.md)** – Procedimientos de respaldo de base de datos.
+- **[docs/documentacion/api/openapi.json](docs/documentacion/api/openapi.json)** – Esquema técnico del API (Swagger/OpenAPI).
+- **[docs/documentacion/arquitectura/](docs/documentacion/arquitectura/)** – Diagramas y flujos de datos.
 
 ---
 

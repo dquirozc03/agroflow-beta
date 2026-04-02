@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from typing import Optional, List
 from app.database import get_db
+from app.utils.logging import logger
 from app.models.pedido import PedidoComercial
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque, ReporteEmbarques
@@ -326,7 +327,7 @@ async def generate_packing_list_ogl(
                 df = pd.read_excel(io.BytesIO(content), engine="openpyxl", header=header_index)
                 df.columns = df.columns.str.strip().str.upper()
             except Exception as e:
-                print(f"Error al procesar archivo {conf_file.filename}: {e}")
+                logger.error(f"Error al procesar archivo {conf_file.filename}: {e}")
                 continue
 
             def find_col(df, kws):

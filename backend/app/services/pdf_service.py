@@ -16,10 +16,74 @@ from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, Planta
 
 class InstructionPDFService:
+    # --- Constantes de Diseño (Westfalia V2 Style) ---
+    COLOR_BETA_GREEN = colors.HexColor("#7CC546")
+    COLOR_BETA_ORANGE = colors.HexColor("#F5A623")
+    COLOR_BG_GRAY = colors.HexColor("#F3F4F6")
+    
+    FONT_NORMAL = 'Helvetica'
+    FONT_BOLD = 'Helvetica-Bold'
+    SIZE_HEADER = 9
+    SIZE_BODY = 7
+    SIZE_FITO = 8
+
     def _normalize_orden(self, raw_orden: str) -> str:
         if not raw_orden: return ""
         match = re.search(r'\d+', raw_orden)
         return match.group(0) if match else raw_orden
+
+    def _match_cliente_maestro(self, db: Session, cliente_nombre: str, pais: str, pod: str) -> Optional[ClienteIE]:
+        """
+        Lógica de Match Inteligente (Westfalia Match 💎 v2.2)
+        Encapsulada para reutilización y limpieza.
+        """
+        from sqlalchemy import func
+        
+        pais_val = pais.strip() if pais else ""
+        pod_val = pod.strip() if pod else ""
+        cliente_clean_val = cliente_nombre.strip()
+
+        # 1. Match Exacto (Nombre + Pais + POD)
+        cliente = db.query(ClienteIE).filter(
+            func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
+            func.trim(ClienteIE.pais).ilike(pais_val),
+            func.trim(ClienteIE.destino).ilike(pod_val)
+        ).first()
+
+        # 2. Match Semiexacto (Nombre + Pais)
+        if not cliente:
+            cliente = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
+                func.trim(ClienteIE.pais).ilike(pais_val)
+            ).first()
+
+        # 3. Match solo por Nombre Legal
+        if not cliente:
+            cliente = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
+            ).first()
+
+        # 4. Smart Match (Fuzzy / Normalizado)
+        if not cliente:
+            clean_name = normalize_client_name(cliente_nombre)
+            
+            # 4.1. Contenido + Pais
+            cliente = db.query(ClienteIE).filter(
+                (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
+                (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
+                func.trim(ClienteIE.pais).ilike(pais_val),
+                ClienteIE.estado == "ACTIVO"
+            ).first()
+
+            # 4.2. Fallback: Solo Contenido (Sin Pais)
+            if not cliente:
+                cliente = db.query(ClienteIE).filter(
+                    (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
+                    (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
+                    ClienteIE.estado == "ACTIVO"
+                ).first()
+        
+        return cliente
 
     def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = ""):
         # 1. Obtencion de datos
@@ -45,61 +109,30 @@ class InstructionPDFService:
         peso_neto = float(total_cajas) * float(peso_kg)
         peso_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
 
-        from sqlalchemy import func
-        # 2. Búsqueda de Maestro con Triple Validación (Sincronizado con Lookup)
-        pais_val = pedidos[0].pais.strip() if pedidos and pedidos[0].pais else ""
-        pod_val = pedidos[0].pod.strip() if pedidos and pedidos[0].pod else ""
-        cliente_clean_val = cliente_nombre.strip()
-
-        cliente_maestro = db.query(ClienteIE).filter(
-            func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
-            func.trim(ClienteIE.pais).ilike(pais_val),
-            func.trim(ClienteIE.destino).ilike(pod_val)
-        ).first()
-
-        if not cliente_maestro:
-            cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
-                func.trim(ClienteIE.pais).ilike(pais_val)
-            ).first()
-
-        if not cliente_maestro:
-            cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
-            ).first()
-
-        # 🎯 Match Inteligente (Westfalia Match 💎 v2.2)
-        if not cliente_maestro:
-            clean_name = normalize_client_name(cliente_nombre)
-
-            from sqlalchemy import func
-            # B. Estrategia por Nombre Limpio (Contenido) + Pais (Primero con Pais por seguridad)
-            cliente_maestro = db.query(ClienteIE).filter(
-                (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
-                (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
-                func.trim(ClienteIE.pais).ilike(pais_val),
-                ClienteIE.estado == "ACTIVO"
-            ).first()
-
-            # C. Fallback: Solo Nombre Limpio (Sin Pais, Westfalia Style)
-            if not cliente_maestro:
-                cliente_maestro = db.query(ClienteIE).filter(
-                    (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
-                    (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
-                    ClienteIE.estado == "ACTIVO"
-                ).first()
+        # 2. Búsqueda de Maestro (Refactorizada)
+        pais_val = pedidos[0].pais if pedidos else ""
+        pod_val = pedidos[0].pod if pedidos else ""
+        cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
 
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
 
-        # 2. Construcción PDF (ReportLab - No requiere dependencias del sistema)
+        # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         elements = []
         styles = getSampleStyleSheet()
 
+        # Estilos compartidos
+        normal_style = ParagraphStyle('N', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1)
+        bold_style = ParagraphStyle('B', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_BOLD)
+
+        def b_p(text): return Paragraph(f"<b>{text}</b>", bold_style)
+        def b_pc(text): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1))
+        def n_p(text): return Paragraph(str(text), normal_style)
+        def format_desc(t1, t2): return Paragraph(f"{t1}<br/>{t2}", normal_style)
+
         # Header con Logo Local
         try:
-             # Validación Estricta de Imágenes en Memoria
              from PIL import Image as PILImage
              current_dir = os.path.dirname(os.path.abspath(__file__))
              assets_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "assets"))
@@ -108,18 +141,15 @@ class InstructionPDFService:
                  try:
                      if not os.path.exists(path): return None
                      with open(path, "rb") as f: data = f.read()
-                     # Validamos si es una imagen real para no crashear en doc.build()
                      PILImage.open(io.BytesIO(data)).verify()
                      return Image(io.BytesIO(data), width=w, height=h)
-                 except Exception:
-                     return None
+                 except Exception: return None
 
              logo_obj = get_safe_image(os.path.join(assets_dir, "logo_beta.png"), 120, 45)
              
-             # Verificar si es granada y adjuntar imagen local
              header_row = []
              if logo_obj: header_row.append(logo_obj)
-             # Construir Título Personalizado (CLIENTE - POD - PAIS - CULTIVO)
+             
              cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
              puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
              pais_txt = cliente_maestro.pais if cliente_maestro else ''
@@ -128,36 +158,28 @@ class InstructionPDFService:
              subtitle_txt = " - ".join(subtitle_parts)
              
              titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos.CULTIVO or ''}"
-             header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=9, leading=10, alignment=1, fontName='Helvetica-Bold')))
+             header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=10, alignment=1, fontName=self.FONT_BOLD)))
 
              if "GRANADA" in (pos.CULTIVO or "").upper():
                  granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
                  if granada_obj: header_row.append(granada_obj)
              
-             # Si no hay logo para anclar el título, poner fecha.
              if len(header_row) < 3:
                  header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
                  
              header_table = Table([header_row])
-             header_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,0), (-1,-1), 1, colors.HexColor("#7CC546"))]))
+             header_table.setStyle(TableStyle([
+                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                 ('LINEBELOW', (0,0), (-1,-1), 1, self.COLOR_BETA_GREEN)
+             ]))
              elements.append(header_table)
-        except Exception as e:
+        except Exception:
              elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</b>", styles["Title"]))
 
         elements.append(Spacer(1, 12))
 
-        # --- MASTER TABLE (Diseño Corporativo Consolidado) ---
-        normal_font = ParagraphStyle('N', fontSize=7, leading=8)
-        bold_font = ParagraphStyle('B', fontSize=7, leading=8, fontName='Helvetica-Bold')
-
-        bg_orange = colors.HexColor("#F5A623") # Naranja Corporativo suave
-        bg_gray = colors.HexColor("#F3F4F6")
-
-        def b_p(text): return Paragraph(f"<b>{text}</b>", bold_font)
-        def b_pc(text): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=7, leading=8, fontName='Helvetica-Bold', alignment=1))
-        def n_p(text): return Paragraph(str(text), normal_font)
-        def format_desc(t1, t2): return Paragraph(f"{t1}<br/>{t2}", normal_font)
-
+        # --- MASTER TABLE ---
         fito = cliente_maestro.fitosanitario if hasattr(cliente_maestro, 'fitosanitario') and cliente_maestro.fitosanitario else None
         
         cult_en = "POMEGRANATES" if "GRANADA" in (pos.CULTIVO or "").upper() else pos.CULTIVO
@@ -172,10 +194,7 @@ class InstructionPDFService:
         h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
         f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
         h_str = h_prog.strftime('%H:%M') if h_prog else ""
-        if f_str and h_str:
-            fecha_llenado = f"{f_str} - {h_str}"
-        else:
-            fecha_llenado = f"{f_str} {h_str}".strip()
+        fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else f"{f_str} {h_str}".strip()
 
         eta_dt = getattr(pos, 'ETA', None)
         eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
@@ -189,15 +208,12 @@ class InstructionPDFService:
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_maestro.planta}</b>", planta_maestro.direccion) if planta_maestro else n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
             [b_p("UBIGEO PLANTA"), n_p(planta_maestro.ubigeo if planta_maestro else "110111")],
             [b_p("FECHA Y HORA DEL LLENADO"), b_pc(fecha_llenado)],
-            
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
-            
             [b_p("DATOS REFERENCIALES"), format_desc(
                 f"EORI CONSIGNE: {cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else '----'}",
                 f"EORI NOTIFY: {cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else '----'}"
             )],
-            
             [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
             [b_p("AGENCIA NAVIERA"), n_p(pos.NAVIERA or "")],
             [b_p("MOTONAVE"), n_p(pos.NAVE or "")],
@@ -223,7 +239,7 @@ class InstructionPDFService:
         ]
 
         t2_data = [
-            [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=8, leading=9, alignment=1, fontName='Helvetica-Bold')), ""],
+            [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD)), ""],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
             [b_p("PAIS DE DESTINO"), b_p(pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else ""))],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
@@ -234,28 +250,26 @@ class InstructionPDFService:
             [b_p("OBSERVACIONES"), n_p(observaciones or "SIN OBSERVACIONES ADICIONALES.")]
         ]
 
-        # Estilo Tabla 1
+        # Estilo Tablas
         t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
         t1.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0,0), (0,-1), bg_gray),
-            ('BACKGROUND', (0,3), (-1,3), bg_orange),
-            ('BACKGROUND', (0,6), (-1,6), bg_orange),
+            ('BACKGROUND', (0,0), (0,-1), self.COLOR_BG_GRAY),
+            ('BACKGROUND', (0,3), (-1,3), self.COLOR_BETA_ORANGE),
+            ('BACKGROUND', (0,6), (-1,6), self.COLOR_BETA_ORANGE),
             ('ALIGN', (1,6), (1,6), 'CENTER'),
-            ('BACKGROUND', (0,28), (-1,29), bg_orange),
+            ('BACKGROUND', (0,28), (-1,29), self.COLOR_BETA_ORANGE),
         ]))
         elements.append(t1)
-
         elements.append(Spacer(1, 12))
 
-        # Estilo Tabla 2
         t2 = Table(t2_data, colWidths=[6.5*cm, 12.5*cm])
         t2.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0,0), (0,-1), bg_gray),
-            ('BACKGROUND', (0,0), (-1,0), bg_orange),
+            ('BACKGROUND', (0,0), (0,-1), self.COLOR_BG_GRAY),
+            ('BACKGROUND', (0,0), (-1,0), self.COLOR_BETA_ORANGE),
             ('SPAN', (0,0), (1,0)),
             ('ALIGN', (0,0), (1,0), 'CENTER'),
         ]))
@@ -266,9 +280,6 @@ class InstructionPDFService:
         pdf_bytes = buffer.getvalue()
         buffer.close()
 
-        return {
-            "pdf_bytes": pdf_bytes,
-            "orden_beta": pos.ORDEN_BETA
-        }
+        return {"pdf_bytes": pdf_bytes, "orden_beta": pos.ORDEN_BETA}
 
 instruction_pdf_service = InstructionPDFService()

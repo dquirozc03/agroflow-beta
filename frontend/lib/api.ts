@@ -51,7 +51,7 @@ async function parseBody(res: Response) {
   try { return await res.text(); } catch { return null; }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = cleanPath.startsWith("/api/v1") ? cleanPath : `/api/v1${cleanPath}`;
   const token = getStoredToken();
@@ -81,6 +81,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 // === ENDPOINTS DE AUTENTICACION ===
+// (Se usa apiRequest internamente)
 
 export interface LoginResponse {
   access_token: string;
@@ -94,7 +95,7 @@ export interface LoginResponse {
 
 /** Inicia sesión en el backend */
 export async function apiLogin(usuario: string, password: string): Promise<LoginResponse> {
-  return request<LoginResponse>("/auth/login", {
+  return apiRequest<LoginResponse>("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario, password }),
@@ -113,12 +114,12 @@ export async function checkApiHealth(): Promise<boolean> {
 
 /** Obtiene datos del usuario actual mediante el token */
 export async function apiMe(): Promise<any> {
-  return request<any>("/auth/me");
+  return apiRequest<any>("/auth/me");
 }
 
 /** Permite al usuario cambiar su propia contraseña */
 export async function apiUpdateOwnPassword(payload: any): Promise<void> {
-  return request<void>("/auth/cambiar-password", {
+  return apiRequest<void>("/auth/cambiar-password", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

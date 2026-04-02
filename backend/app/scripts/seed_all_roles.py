@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from app.database import SessionLocal
 from app.models.auth import Usuario
 from app.utils.password import hash_password
+from app.utils.logging import logger
 
 USERS = [
     ("admin", "Administrador", "administrador"),
@@ -31,13 +32,13 @@ def main():
         for usuario, nombre, rol in USERS:
             existing = db.query(Usuario).filter(Usuario.usuario == usuario).first()
             if existing:
-                print(f"  Ya existe: {usuario}")
+                logger.info(f"  Ya existe: {usuario}")
                 continue
             password_hash = hash_password(usuario)
             db.add(Usuario(usuario=usuario, password_hash=password_hash, nombre=nombre, rol=rol, activo=True))
-            print(f"  Creado: {usuario} ({rol})")
+            logger.info(f"  Creado: {usuario} ({rol})")
         db.commit()
-        print("\n  ⚠ En producción cambie las contraseñas de estos usuarios (ahora = nombre de usuario).")
+        logger.warning("  ⚠ En producción cambie las contraseñas de estos usuarios (ahora = nombre de usuario).")
     finally:
         db.close()
 
