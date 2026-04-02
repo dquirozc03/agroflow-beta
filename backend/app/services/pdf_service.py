@@ -10,6 +10,7 @@ import re
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.utils.formatters import normalize_client_name
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
