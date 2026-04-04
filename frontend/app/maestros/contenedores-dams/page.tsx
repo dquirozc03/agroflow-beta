@@ -177,6 +177,7 @@ export default function ContenedoresDamsPage() {
              <p className="text-xs font-black uppercase tracking-[0.2em]">Sincronizando Base de Datos...</p>
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto overflow-y-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -237,6 +238,7 @@ export default function ContenedoresDamsPage() {
                 )}
               </tbody>
             </table>
+          </div>
           <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
              <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
@@ -267,6 +269,7 @@ export default function ContenedoresDamsPage() {
                 </button>
              </div>
           </div>
+          </>
         )}
       </div>
     </div>
