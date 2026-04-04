@@ -283,6 +283,7 @@ export default function LogiCaptureV2Page() {
 
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
+  const [isChoferInhabilitado, setIsChoferInhabilitado] = useState(false);
   const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
   const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -401,6 +402,7 @@ export default function LogiCaptureV2Page() {
         delete next.dni_info;
         return next;
       });
+      setIsChoferInhabilitado(false);
     }
 
     // Limpiar error específico al editar
@@ -448,18 +450,27 @@ export default function LogiCaptureV2Page() {
     if (!dni) return;
 
     setIsLoadingChofer(true);
+    setIsChoferInhabilitado(false);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
       const data = await response.json();
       if (!data) throw new Error("Datos de chofer no encontrados");
       
+      const inhabilitado = data.estado !== "ACTIVO";
+      setIsChoferInhabilitado(inhabilitado);
+
       setFormData(prev => ({
         ...prev,
         nombreChofer: data.nombre_operativo || `${data.nombres || ""} ${data.apellido_paterno || ""}`.trim(),
         licenciaChofer: data.licencia
       }));
-      setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo || data.nombres}` }));
+
+      if (inhabilitado) {
+        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CHOFER INHABILITADO: ${data.nombre_operativo || data.nombres}` }));
+      } else {
+        setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo || data.nombres}` }));
+      }
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, dni: error.message || "Chofer no registrado en maestros" }));
     } finally {
@@ -571,6 +582,11 @@ export default function LogiCaptureV2Page() {
   }, []);
 
   const handleSave = async () => {
+    if (isChoferInhabilitado) {
+       toast.error("ERROR CRÍTICO: No se puede registrar un despacho con un conductor INHABILITADO.");
+       setServerError("BLOQUEO DE SEGURIDAD: El conductor seleccionado se encuentra inhabilitado en los registros maestros.");
+       return;
+    }
     setServerError(null);
 
     // Sanitización de campos opcionales por defecto (**)
@@ -893,8 +909,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("dni", v)} 
                         onBlur={handleChoferBlur}
                         loading={isLoadingChofer}
-                        error={!!fieldErrors.dni}
-                        errorMsg={fieldErrors.dni}
+                        error={!!fieldErrors.dni || isChoferInhabilitado}
+                        errorMsg={isChoferInhabilitado ? "Conductores Inhabilitados NO pueden realizar despachos" : fieldErrors.dni}
                         helperText={fieldErrors.dni_info}
                      />
                      <FormField 
@@ -1034,7 +1050,7 @@ export default function LogiCaptureV2Page() {
                         </button>
                         <button 
                            onClick={handleSave}
-                           disabled={isSearching}
+                           disabled={isSearching || isChoferInhabilitado}
                            className={cn(
                               "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
                               isSearching 
@@ -1042,8 +1058,8 @@ export default function LogiCaptureV2Page() {
                                  : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
                            )}
                         >
-                           {isSearching ? "Sincronizando..." : "Guardar Registro"}
-                           {!isSearching && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                           {isSearching ? "Sincronizando..." : isChoferInhabilitado ? "Bloqueado" : "Guardar Registro"}
+                           {!isSearching && !isChoferInhabilitado && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
                         </button>
                      </div>
                   </div>

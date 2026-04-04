@@ -133,7 +133,8 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
         "apellido_paterno": driver.apellido_paterno,
         "apellido_materno": driver.apellido_materno,
         "licencia": driver.licencia,
-        "nombre_operativo": driver.nombre_operativo
+        "nombre_operativo": driver.nombre_operativo,
+        "estado": driver.estado
     }
 
 @router.get("/vehicle/{placa}")
