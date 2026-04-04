@@ -33,6 +33,7 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
   
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDropping, setIsDropping] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -98,6 +99,19 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
       if (blob) processOCR(blob);
     }
   }, [isOpen, isProcessingOCR]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDropping(false);
+    if (isProcessingOCR) return;
+
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type.includes("image") || file.type.includes("pdf"))) {
+      processOCR(file);
+    } else {
+      toast.error("Por favor, arrastra una imagen o PDF válido");
+    }
+  }, [isProcessingOCR]);
 
   useEffect(() => {
     window.addEventListener("paste", handlePaste);
@@ -167,11 +181,20 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
 
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* OCR Scan Area */}
-            <div className={cn(
-              "p-5 border-2 border-dashed rounded-[2rem] transition-all relative group",
-              isProcessingOCR ? "border-emerald-500 bg-emerald-50/20" : "border-slate-100 hover:border-emerald-200"
-            )}>
+            {/* OCR Scan Area con Drag & Drop */}
+            <div 
+              onDragOver={(e) => {
+                 e.preventDefault();
+                 setIsDropping(true);
+              }}
+              onDragLeave={() => setIsDropping(false)}
+              onDrop={handleDrop}
+              className={cn(
+                "p-5 border-2 border-dashed rounded-[2rem] transition-all relative group",
+                isDropping ? "border-emerald-500 bg-emerald-50/50 scale-[1.02]" : 
+                isProcessingOCR ? "border-emerald-500 bg-emerald-50/20" : "border-slate-100 hover:border-emerald-200"
+              )}
+            >
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                      <div className={cn(

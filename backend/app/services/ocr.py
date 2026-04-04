@@ -116,9 +116,9 @@ class OCRService:
         # Limpieza básica
         text_clean = text.replace('\n', ' ').strip()
         
-        # 1. Regex Contenedor (4 letras + 7 números)
-        # Soporta espacios intermedios que a veces el OCR mete (ej: MSCU 1234567)
-        container_match = re.search(r'([A-Z]{4}\s*\d{7})', text_clean)
+        # 1. Regex Contenedor (3 letras + "U" obligatoria + 7 números)
+        # Esto evita capturar el "SEAL" (Precinto) que suele tener 4 letras + números pero no termina en U.
+        container_match = re.search(r'([A-Z]{3}U\s*\d{7})', text_clean)
         contenedor = ""
         if container_match:
             # Quitamos cualquier espacio que el OCR haya detectado en medio del ID
