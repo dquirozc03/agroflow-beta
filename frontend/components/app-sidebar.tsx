@@ -85,7 +85,7 @@ export function AppSidebar({ className }: { className?: string }) {
           { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams", visible: isAdmin || !!p.m_contenedores },
           { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas", visible: isAdmin || !!p.m_transportistas },
           { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos", visible: isAdmin || !!p.m_vehiculos },
-          { name: "Choferes", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes", visible: isAdmin || !!p.m_choferes },
+          { name: "Conductores", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes", visible: isAdmin || !!p.m_choferes },
           { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie", visible: isAdmin || !!p.m_clientes_ie },
         ].filter(i => i.visible)
       },

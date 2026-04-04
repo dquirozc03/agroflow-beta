@@ -178,7 +178,7 @@ export default function BulkUploadPage() {
               </div>
               <div className="flex gap-4">
                 <div className="h-8 w-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs shrink-0">4</div>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">Los <strong>Choferes</strong> se extraen de las columnas <strong>G (Licencia)</strong> y <strong>H (Nombre)</strong>.</p>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">Los <strong>Conductores</strong> se extraen de las columnas <strong>G (Licencia)</strong> y <strong>H (Nombre)</strong>.</p>
               </div>
             </div>
 

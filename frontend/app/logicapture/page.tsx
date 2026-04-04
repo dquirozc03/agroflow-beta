@@ -467,12 +467,12 @@ export default function LogiCaptureV2Page() {
       }));
 
       if (inhabilitado) {
-        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CHOFER INHABILITADO: ${data.nombre_operativo || data.nombres}` }));
+        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CONDUCTOR INHABILITADO: ${data.nombre_operativo || data.nombres}` }));
       } else {
-        setFieldErrors(prev => ({ ...prev, dni_info: `CHOFER: ${data.nombre_operativo || data.nombres}` }));
+        setFieldErrors(prev => ({ ...prev, dni_info: `CONDUCTOR: ${data.nombre_operativo || data.nombres}` }));
       }
     } catch (error: any) {
-      setFieldErrors(prev => ({ ...prev, dni: error.message || "Chofer no registrado en maestros" }));
+      setFieldErrors(prev => ({ ...prev, dni: error.message || "Conductor no registrado en maestros" }));
     } finally {
       setIsLoadingChofer(false);
     }
@@ -902,7 +902,7 @@ export default function LogiCaptureV2Page() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
-                        label="DNI del Chofer" 
+                        label="DNI del Conductor" 
                         placeholder="XXXXXXXX" 
                         icon={User} 
                         value={formData.dni} 

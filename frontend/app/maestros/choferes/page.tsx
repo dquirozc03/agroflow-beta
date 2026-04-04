@@ -97,7 +97,7 @@ export default function ChoferesPage() {
         setChoferes(choferes.map(c => 
           c.id === id ? { ...c, estado: nuevoEstado } : c
         ));
-        toast.success(`Chofer ${nuevoEstado === "ACTIVO" ? "habilitado" : "inhabilitado"}`);
+        toast.success(`Conductor ${nuevoEstado === "ACTIVO" ? "habilitado" : "inhabilitado"}`);
       }
     } catch (error) {
       toast.error("Error al actualizar estado");
@@ -118,7 +118,7 @@ export default function ChoferesPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22]">Choferes</h1>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22]">Conductores</h1>
           <p className="text-sm text-slate-500 font-medium tracking-tight">Gestión de conductores y operadores de flota.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export default function ChoferesPage() {
              onClick={handleCreateNew}
              className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
               <Plus className="h-5 w-5" />
-              Nuevo Chofer
+              Nuevo Conductor
            </button>
         </div>
       </div>
@@ -266,7 +266,7 @@ export default function ChoferesPage() {
                 {choferes.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-20 text-center">
-                       <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron choferes registrados.</p>
+                       <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron conductores registrados.</p>
                     </td>
                   </tr>
                 )}

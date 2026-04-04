@@ -180,7 +180,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
               </div>
               <div>
                 <Dialog.Title className="text-2xl font-extrabold tracking-tighter text-[#022c22]">
-                  {editingData ? "Editar Operador" : "Nuevo Operador"}
+                  {editingData ? "Editar Conductor" : "Nuevo Conductor"}
                 </Dialog.Title>
                 <p className="text-[10px] text-[#10B981] font-black uppercase tracking-[0.2em]">Identidad Operativa Agroflow</p>
               </div>
@@ -327,7 +327,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
               >
                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                    <>
-                     <span className="relative z-10">{editingData ? "Actualizar Perfil" : "Registrar Chofer"}</span>
+                     <span className="relative z-10">{editingData ? "Actualizar Perfil" : "Registrar Conductor"}</span>
                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                    </>
                  )}

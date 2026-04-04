@@ -419,7 +419,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
                         { id: "m_contenedores", label: "Contenedores y Dam's", icon: Package },
                         { id: "m_transportistas", label: "Transportistas", icon: Truck },
                         { id: "m_vehiculos", label: "Vehículos", icon: Tractor },
-                        { id: "m_choferes", label: "Choferes", icon: Users },
+                        { id: "m_choferes", label: "Conductores", icon: Users },
                         { id: "m_clientes_ie", label: "Clientes IE", icon: Map }
                      ].map(item => (
                         <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
