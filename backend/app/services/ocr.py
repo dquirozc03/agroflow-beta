@@ -8,73 +8,70 @@ from app.configuracion import settings
 class OCRService:
     def __init__(self):
         self.api_key = settings.GOOGLE_API_KEY.strip() if settings.GOOGLE_API_KEY else None
-        # Usamos V1 (Estable) por defecto para evitar exigencias de facturación de la Beta
-        self.api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+        # Lista de modelos por prioridad de precisión
+        self.models = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-pro-vision"
+        ]
 
     def parse_licencia_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
-        """Versión REST V7.1: Simplificada para máxima compatibilidad y gratuidad."""
+        """Versión Auto-Recuperable (V7.2): Prueba modelos hasta que uno responda (Bypass 404)."""
         if not self.api_key:
             return {"error": "API Key no configurada."}
 
         prompt = (
-            "Analiza esta Licencia de Conducir Peruana y extrae en formato JSON: "
-            "dni, nombres, apellido_paterno, apellido_materno, licencia. "
-            "Responde solo el objeto JSON plano, sin markdown."
+            "Eres el motor de identidad de Agroflow. Analiza esta Licencia de Conducir Peruana. "
+            "Extrae en JSON plano: dni, nombres, apellido_paterno, apellido_materno, licencia. "
+            "Responde solo el objeto JSON, nada más."
         )
 
-        try:
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt},
-                            {
-                                "inline_data": {
-                                    "mime_type": "application/pdf" if is_pdf else (content_type or "image/jpeg"),
-                                    "data": base64.b64encode(image_bytes).decode('utf-8')
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "generationConfig": {
-                    "temperature": 0.1,
-                    "maxOutputTokens": 800
-                    # Eliminado responseMimeType para evitar el error 400
+        # Codificar imagen una sola vez
+        img_b64 = base64.b64encode(image_bytes).decode('utf-8')
+        mime = "application/pdf" if is_pdf else (content_type or "image/jpeg")
+
+        errors = []
+        # Ciclo de intentos automáticos (Bypass de error regional o de cuenta)
+        for model in self.models:
+            try:
+                # Probamos con v1beta que suele tener más modelos habilitados
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+                
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": img_b64}}]}],
+                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 800}
                 }
-            }
 
-            url = f"{self.api_url}?key={self.api_key}"
-            response = requests.post(url, json=payload, timeout=30)
-            
-            if response.status_code != 200:
-                return {"error": f"Google Error ({response.status_code}): {response.text[:200]}"}
+                logger.info(f"Intentando con modelo: {model}...")
+                response = requests.post(url, json=payload, timeout=20)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'candidates' in data and len(data['candidates']) > 0:
+                        text = data['candidates'][0]['content']['parts'][0]['text']
+                        logger.info(f"Éxito con {model}!")
+                        return self._clean_json(text)
+                
+                errors.append(f"{model}: {response.status_code} ({response.text[:100]})")
 
-            data = response.json()
-            if 'candidates' in data and len(data['candidates']) > 0:
-                text = data['candidates'][0]['content']['parts'][0]['text']
-                logger.info(f"IA Respuesta: {text[:100]}...")
-                return self._clean_json(text)
-            
-            return {"error": "No se obtuvo respuesta de la IA."}
+            except Exception as e:
+                errors.append(f"{model}: {str(e)}")
 
-        except Exception as e:
-            logger.error(f"Error OCR REST V7.1: {str(e)}")
-            return {"error": f"Fallo de sistema: {str(e)}"}
+        # Si llegamos aquí, nada funcionó
+        logger.error(f"Falla total tras probar modelos: {errors}")
+        return {"error": "IA de Google en mantenimiento o API no habilitada.", "detalles": errors}
 
     def parse_embarque_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
         return self.parse_licencia_data(image_bytes, is_pdf, content_type)
 
     def extract_text(self, image_bytes, is_pdf=False):
-        return "Servicio V7.1 activo."
+        return "Srv V7.2 Activo"
 
     def _clean_json(self, text):
         try:
-            # Limpieza robusta de la respuesta de texto a JSON
             clean_text = text.replace('```json', '').replace('```', '').strip()
             match = re.search(r'(\{.*\})', clean_text.replace('\n', ' '), re.DOTALL)
             json_str = match.group(1) if match else clean_text
-            
             data = json.loads(json_str)
             return {
                 "dni": str(data.get("dni", "")).strip(),
