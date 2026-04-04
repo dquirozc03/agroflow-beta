@@ -294,7 +294,11 @@ async def ocr_transportista(
         is_pdf = file.filename.lower().endswith('.pdf')
         
         # Invocación directa a la Inteligencia Artificial (Gemini Vision) especializada en MTC
-        parsed_data = ocr_service.parse_transportista_data(contents, is_pdf=is_pdf)
+        parsed_data = ocr_service.parse_transportista_data(
+            contents, 
+            is_pdf=is_pdf, 
+            content_type=file.content_type
+        )
         
         return {
             "status": "success",
@@ -356,7 +360,11 @@ async def ocr_licencia(file: UploadFile = File(...)):
         is_pdf = file.filename.lower().endswith('.pdf')
         
         # Invocación directa a la Inteligencia Artificial (Gemini Vision)
-        parsed_data = ocr_service.parse_licencia_data(contents, is_pdf=is_pdf)
+        parsed_data = ocr_service.parse_licencia_data(
+            contents, 
+            is_pdf=is_pdf, 
+            content_type=file.content_type
+        )
         
         return {
             "status": "success", 
@@ -377,7 +385,11 @@ async def ocr_embarque(file: UploadFile = File(...)):
         is_pdf = file.filename.lower().endswith('.pdf')
         
         # Invocación directa a Gemini para análisis de documento logístico
-        parsed_data = ocr_service.parse_embarque_data(contents, is_pdf=is_pdf)
+        parsed_data = ocr_service.parse_embarque_data(
+            contents, 
+            is_pdf=is_pdf, 
+            content_type=file.content_type
+        )
         
         return {
             "status": "success",

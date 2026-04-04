@@ -7,90 +7,78 @@ from app.configuracion import settings
 class OCRService:
     def __init__(self):
         self.api_key = settings.GOOGLE_API_KEY
+        self.model_name = 'models/gemini-1.5-flash' # Prefijo models/ para evitar 404
+        self.model = None
         self._setup()
 
     def _setup(self):
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-            logger.info("Motor IA Gemini (V4-Indestructible) inicializado.")
-        else:
+        if not self.api_key:
+            return
+
+        try:
+            genai.configure(api_key=self.api_key.strip())
+            
+            # Auto-detección de modelos disponibles para evitar errores 404
+            try:
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                logger.info(f"Modelos disponibles: {available_models}")
+                
+                # Probar nombres conocidos
+                for candidate in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro']:
+                    if candidate in available_models:
+                        self.model_name = candidate
+                        break
+            except Exception as e:
+                logger.warning(f"Error listando modelos: {e}")
+
+            self.model = genai.GenerativeModel(self.model_name)
+            logger.info(f"IA configurada con: {self.model_name}")
+        except Exception as e:
+            logger.error(f"Error setup IA: {e}")
             self.model = None
 
-    def parse_licencia_data(self, image_bytes, is_pdf=False, mime_type="image/jpeg"):
-        """Extracción directa enviando datos crudos a Google."""
-        if not self.api_key:
-             return {"error": "API Key no configurada"}
-            
-        # Re-check de configuración por si cambió en caliente
-        if not hasattr(self, 'model') or not self.model:
-            self._setup()
+    def parse_licencia_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
+        if not self.model: self._setup()
+        if not self.model: return {"error": "IA no disponible"}
 
-        prompt = (
-            "Eres el motor de identidad de Agroflow. Analiza esta imagen de Licencia MTC Peruana. "
-            "Extrae: nombres, apellido_paterno, apellido_materno, dni, licencia. "
-            "Responde ÚNICAMENTE un objeto JSON plano. "
-            "No uses markdown, no digas nada más. "
-            'Estructura: {"dni": "...", "nombres": "...", "paterno": "...", "materno": "...", "licencia": "..."}'
-        )
-
+        prompt = "Extrae de este brevete Peruano: nombres, apellido_paterno, apellido_materno, dni, licencia. JSON plano."
         try:
-            # Enviamos como diccionario de bytes directamente (Más robusto que Pillow en Render)
-            image_data = {
-                "mime_type": "application/pdf" if is_pdf else mime_type,
-                "data": image_bytes
-            }
-            
-            response = self.model.generate_content([prompt, image_data])
-            
-            if not response or not response.text:
-                logger.error("IA devolvió respuesta vacía o bloqueada.")
-                return {}
-
-            raw_text = response.text.strip()
-            logger.info(f"IA Respuesta Raw (V4): {raw_text}")
-            return self._clean_json(raw_text)
-
+            mime = "application/pdf" if is_pdf else (content_type or "image/jpeg")
+            response = self.model.generate_content([prompt, {"mime_type": mime, "data": image_bytes}])
+            return self._clean_json(response.text)
         except Exception as e:
-            logger.error(f"Fallo crítico en OCR Gemini V4: {str(e)}")
+            if "404" in str(e): self.model = None
             return {"error": str(e)}
 
-    def parse_embarque_data(self, image_bytes, is_pdf=False):
-        """Especializado para DAM y Contenedor."""
-        image_data = {"mime_type": "application/pdf" if is_pdf else "image/jpeg", "data": image_bytes}
-        prompt = 'Extrae DAM (formato 000-0000-00-000000) y Contenedor (4 letras 7 números). JSON: {"dam": "...", "contenedor": "..."}'
+    def parse_embarque_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
+        if not self.model: self._setup()
         try:
-            response = self.model.generate_content([prompt, image_data])
+            mime = "application/pdf" if is_pdf else (content_type or "image/jpeg")
+            prompt = 'Extrae DAM y Contenedor. JSON: {"dam": "...", "contenedor": "..."}'
+            response = self.model.generate_content([prompt, {"mime_type": mime, "data": image_bytes}])
             return self._clean_json(response.text)
-        except: return {}
+        except Exception as e: return {"error": str(e)}
 
     def extract_text(self, image_bytes, is_pdf=False):
-        image_data = {"mime_type": "application/pdf" if is_pdf else "image/jpeg", "data": image_bytes}
+        if not self.model: self._setup()
         try:
-            response = self.model.generate_content(["Extrae texto", image_data])
+            mime = "application/pdf" if is_pdf else "image/jpeg"
+            response = self.model.generate_content(["Texto íntegro", {"mime_type": mime, "data": image_bytes}])
             return response.text
         except: return ""
 
     def _clean_json(self, text):
-        if not text: return {}
         try:
-            # Extraer solo lo que está entre llaves
-            match = re.search(r'(\{.*\})', text.replace('\n', ''), re.DOTALL)
+            match = re.search(r'(\{.*\})', text.replace('\n', ' '), re.DOTALL)
             if not match: return {}
-            
             data = json.loads(match.group(1))
-            
-            # Normalización estándar para Agroflow
-            normalized = {
-                "dni": str(data.get("dni", "")).strip(),
-                "nombres": str(data.get("nombres", "")).strip().upper(),
-                "apellido_paterno": str(data.get("paterno", data.get("apellido_paterno", ""))).strip().upper(),
-                "apellido_materno": str(data.get("materno", data.get("apellido_materno", ""))).strip().upper(),
+            return {
+                "dni": str(data.get("dni", "") or "").strip(),
+                "nombres": str(data.get("nombres", "") or "").strip().upper(),
+                "apellido_paterno": str(data.get("apellido_paterno", data.get("paterno", ""))).strip().upper(),
+                "apellido_materno": str(data.get("apellido_materno", data.get("materno", ""))).strip().upper(),
                 "licencia": str(data.get("licencia", data.get("brevete", ""))).strip().upper()
             }
-            return normalized
-        except Exception as e:
-            logger.warning(f"Error parseando JSON IA: {e}")
-            return {}
+        except: return {}
 
 ocr_service = OCRService()
