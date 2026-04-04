@@ -9,84 +9,98 @@ from pdf2image import convert_from_bytes
 
 class OCRService:
     def __init__(self):
-        # Configurar Gemini 1.5 Flash (Optimizado para Velocidad y Visión)
+        # Configurar Gemini 1.5 Flash
         self.api_key = settings.GOOGLE_API_KEY
         if self.api_key:
             genai.configure(api_key=self.api_key)
             self.model = genai.GenerativeModel('gemini-1.5-flash')
-            logger.info("Cerebro IA Gemini 1.5 Flash configurado exitosamente.")
+            logger.info("IA Gemini 1.5 Flash (V2-Refined) lista.")
         else:
-            logger.error("CRÍTICO: No se detectó GOOGLE_API_KEY. El motor de IA fallará.")
+            logger.error("No se encontró GOOGLE_API_KEY.")
             self.model = None
 
     def _get_image_from_bytes(self, image_bytes, is_pdf=False):
-        """Convierte bytes (Imagen o PDF) a una imagen de Pillow para Gemini."""
         try:
             if is_pdf:
-                # Si es PDF, tomamos la primera página para el OCR
                 images = convert_from_bytes(image_bytes)
                 return images[0] if images else None
             else:
                 return Image.open(io.BytesIO(image_bytes))
         except Exception as e:
-            logger.error(f"Error al procesar imagen/pdf: {e}")
+            logger.error(f"Error procesando imagen: {e}")
             return None
 
     def _call_gemini(self, image, prompt):
-        """Llamada base al modelo de visión."""
-        if not self.model or not image:
-            return None
-        
+        if not self.model or not image: return None
         try:
             response = self.model.generate_content([prompt, image])
             return response.text.strip()
         except Exception as e:
-            logger.error(f"Fallo en llamada a Gemini API: {e}")
+            logger.error(f"Error Gemini API: {e}")
             return None
 
-    def extract_text(self, image_bytes, is_pdf=False):
-        """Fallback para obtener texto plano de cualquier documento."""
-        image = self._get_image_from_bytes(image_bytes, is_pdf)
-        prompt = "Actúa como un OCR de alta precisión. Extrae todo el texto legible de esta imagen. No añadas comentarios, solo el texto extraído."
-        return self._call_gemini(image, prompt) or ""
-
     def parse_licencia_data(self, image_bytes, is_pdf=False):
-        """Especializado para Licencias de Conducir (Brevete) MTC."""
+        """Versión Refinada para extraer nombres y apellidos con máxima prioridad."""
         image = self._get_image_from_bytes(image_bytes, is_pdf)
         prompt = (
-            "Actúa como experto en logística de Agroflow. De esta Licencia de Conducir (Brevete/LICENCIA MTC), "
-            "extrae EXACTAMENTE: nombres, apellido_paterno, apellido_materno, dni y numero_licencia. "
-            "Responde ÚNICAMENTE en JSON plano. Si no detectas un campo, ponlo como null. "
-            'Estructura: {"dni": "...", "nombres": "...", "apellido_paterno": "...", "apellido_materno": "...", "licencia": "..."}'
+            "Eres el motor de identidad de Agroflow. De esta Licencia de Conducir Peruana (MTC), extrae: "
+            "1. nombres (todos), 2. apellido_paterno, 3. apellido_materno, 4. dni (8 dígitos), 5. licencia. "
+            "IMPORTANTE: El apellido paterno y materno suelen estar juntos bajo la etiqueta 'APELLIDOS'. "
+            "SEPÁRALOS CORRECTAMENTE. "
+            "Responde ÚNICAMENTE un objeto JSON plano. "
+            'Estructura obligatoria: {"dni": "...", "nombres": "...", "apellido_paterno": "...", "apellido_materno": "...", "licencia": "..."}'
         )
         raw_response = self._call_gemini(image, prompt)
+        logger.info(f"IA Respuesta Raw: {raw_response}") # Log para auditoría
         return self._clean_json(raw_response)
 
     def parse_embarque_data(self, image_bytes, is_pdf=False):
-        """Especializado para Control de Embarque (DAM y Contenedor)."""
         image = self._get_image_from_bytes(image_bytes, is_pdf)
         prompt = (
-            "Identifica en este documento logístico el número de DAM (Declaración Aduanera de Mercancías) "
-            "y el NÚMERO DE CONTENEDOR (4 letras + 7 números). Responde solo JSON plano. "
+            "Identifica DAM y Número de Contenedor. Responde solo JSON. "
             'Estructura: {"dam": "...", "contenedor": "..."}'
         )
         raw_response = self._call_gemini(image, prompt)
         return self._clean_json(raw_response)
 
+    def extract_text(self, image_bytes, is_pdf=False):
+        image = self._get_image_from_bytes(image_bytes, is_pdf)
+        prompt = "Extrae todo el texto de la imagen."
+        return self._call_gemini(image, prompt) or ""
+
     def _clean_json(self, text):
-        """Limpia el markdown y extrae el objeto JSON de la respuesta de la IA."""
         if not text: return {}
         try:
-            # Eliminar bloques markdown ```json ... ```
-            clean_text = re.sub(r'```json\s*|\s*```', '', text).strip()
-            return json.loads(clean_text)
+            # Eliminar basura de markdown
+            clean_text = text.replace('```json', '').replace('```', '').strip()
+            # Buscar el primer { y el último } por si la IA agregó texto extra
+            start = clean_text.find('{')
+            end = clean_text.rfind('}') + 1
+            if start != -1 and end != 0:
+                clean_text = clean_text[start:end]
+            
+            data = json.loads(clean_text)
+            
+            # Normalización de llaves (por si Gemini usa sinónimos)
+            normalized = {}
+            mapping = {
+                "dni": "dni", "documento": "dni",
+                "nombres": "nombres", "nombre": "nombres",
+                "apellido_paterno": "apellido_paterno", "paterno": "apellido_paterno",
+                "apellido_materno": "apellido_materno", "materno": "apellido_materno",
+                "licencia": "licencia", "brevete": "licencia"
+            }
+            
+            for k, v in data.items():
+                key = k.lower().replace(" ", "_")
+                if key in mapping:
+                    normalized[mapping[key]] = str(v).upper() if v else None
+                else:
+                    normalized[key] = str(v).upper() if v else None
+            
+            return normalized
         except Exception as e:
-            logger.warning(f"Error parseando JSON de Gemini: {e}. Texto crudo: {text}")
-            # Intentar extracción por regex de último recurso
-            match = re.search(r'(\{.*\})', text, re.DOTALL)
-            if match:
-                try: return json.loads(match.group(1))
-                except: pass
+            logger.warning(f"Falla parseo JSON: {e}")
             return {}
 
 ocr_service = OCRService()

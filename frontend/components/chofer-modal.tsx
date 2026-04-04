@@ -78,18 +78,28 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
       loading: "Escaneando Licencia de Conducir...",
       success: (result: any) => {
         if (result.data) {
-          const { dni, nombres, apellido_paterno, apellido_materno, licencia } = result.data;
+          const { 
+            dni, 
+            nombres, 
+            apellido_paterno, 
+            apellido_materno, 
+            licencia,
+            numero_licencia // Backup key
+          } = result.data;
+
+          console.log("OCR DATA RECEIVED:", result.data);
+
           setFormData(prev => ({
             ...prev,
             dni: dni || prev.dni,
             nombres: nombres || prev.nombres,
             apellido_paterno: apellido_paterno || prev.apellido_paterno,
             apellido_materno: apellido_materno || prev.apellido_materno,
-            licencia: licencia || prev.licencia,
+            licencia: licencia || numero_licencia || prev.licencia,
           }));
-          return "Datos de licencia extraídos con éxito";
+          return "Datos de identidad extraídos con éxito";
         }
-        return "No se detectaron datos legibles";
+        return "Respuesta vacía del servidor OCR";
       },
       error: "Error al procesar Brevete",
       finally: () => setIsProcessingOCR(false)
