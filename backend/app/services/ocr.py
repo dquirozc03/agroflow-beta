@@ -36,7 +36,35 @@ class OCRService:
             return {"error": str(e)}
 
     def parse_embarque_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
-        return self.parse_licencia_data(image_bytes, is_pdf, content_type)
+        """Motor V13: Extracción Dual de DAM y EIR para logística de exportación."""
+        try:
+            ext = "jpg"
+            if content_type:
+                if "png" in content_type.lower(): ext = "png"
+                elif "pdf" in content_type.lower(): ext = "pdf"
+            
+            files = {'file': (f"doc.{ext}", image_bytes, content_type or 'image/jpeg')}
+            payload = {'apikey': self.api_key, 'language': 'spa', 'isOverlayRequired': False, 'OCREngine': 2}
+
+            logger.info("Procesando con Motor V13 (Extracción Logística DAM/EIR)...")
+            response = requests.post(self.api_url, data=payload, files=files, timeout=30)
+            
+            if response.status_code != 200:
+                return {"error": "Error de servidor IA"}
+
+            result = response.json()
+            # Asegurarse de que hay resultados
+            if not result.get('ParsedResults'):
+                return {"dam": "", "contenedor": ""}
+
+            full_text = result['ParsedResults'][0]['ParsedText'].upper()
+            logger.info(f"Texto bruto (Embarque): {full_text[:300]}")
+            
+            return self._extract_shipment_fields(full_text)
+
+        except Exception as e:
+            logger.error(f"Falla en OCR Embarque: {str(e)}")
+            return {"error": str(e)}
 
     def extract_text(self, image_bytes, is_pdf=False):
         return "V13 Activo"
@@ -81,6 +109,42 @@ class OCRService:
             "apellido_paterno": ap_paterno if ap_paterno else "EXTRAIDO",
             "apellido_materno": ap_materno if ap_materno else "",
             "licencia": lic.group(1) if lic else ""
+        }
+
+    def _extract_shipment_fields(self, text):
+        """Lógica de Regex para detectar contenedores ISO y DAMs (DUAs)."""
+        # Limpieza básica
+        text_clean = text.replace('\n', ' ').strip()
+        
+        # 1. Regex Contenedor (4 letras + 7 números)
+        # Soporta espacios intermedios que a veces el OCR mete (ej: MSCU 1234567)
+        container_match = re.search(r'([A-Z]{4}\s*\d{7})', text_clean)
+        contenedor = ""
+        if container_match:
+            # Quitamos cualquier espacio que el OCR haya detectado en medio del ID
+            contenedor = container_match.group(1).replace(" ", "").upper()
+
+        # 2. Regex DAM / DUA
+        # Formato estándar: XXX-202X-XX-XXXXXX (18-20 dígitos totales)
+        # Buscamos el patrón con guiones o una secuencia larga de números
+        dam_match = re.search(r'(\d{3}-\d{4}-\d{2}-\d{6})', text_clean)
+        dam = ""
+        if dam_match:
+            dam = dam_match.group(1)
+        else:
+            # Fallback por si el OCR no capturó los guiones (secuencia de 18 números)
+            dam_fallback = re.search(r'(\d{18,20})', text_clean)
+            if dam_fallback:
+                val = dam_fallback.group(1)
+                # Formateamos con guiones para uniformidad si es de 18 dígitos
+                if len(val) == 18:
+                    dam = f"{val[:3]}-{val[3:7]}-{val[7:9]}-{val[9:]}"
+                else:
+                    dam = val
+
+        return {
+            "dam": dam,
+            "contenedor": contenedor
         }
 
 ocr_service = OCRService()

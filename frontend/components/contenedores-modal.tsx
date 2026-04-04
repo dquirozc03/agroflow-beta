@@ -70,12 +70,18 @@ export function ContenedoresModal({ isOpen, onClose, onSuccess, editingData }: C
       success: (result: any) => {
         if (result.data) {
           const { dam, contenedor } = result.data;
+          
+          if (!dam && !contenedor) {
+            return "No se detectaron patrones de DAM o Contenedor";
+          }
+
           setFormData(prev => ({
             ...prev,
             dam: dam || prev.dam,
             contenedor: contenedor || prev.contenedor,
           }));
-          return "Patrones de embarque extraídos con éxito";
+          
+          return "Smart Scan: Datos de embarque extraídos";
         }
         return "No se detectaron datos legibles";
       },

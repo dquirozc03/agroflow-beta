@@ -417,10 +417,10 @@ async def ocr_licencia(file: UploadFile = File(...)):
         return {
             "status": "success", 
             "data": parsed_data, 
-            "raw_text": "Extraído mediante IA Gemini Vision 1.5 Flash"
+            "raw_text": "Extraído mediante Motor OCR Space V13 (Motor Agroflow)"
         }
     except Exception as e:
-        logger.error(f"Error crítico en OCR Licencia (Gemini): {e}")
+        logger.error(f"Error crítico en OCR Licencia (Agroflow): {e}")
         raise HTTPException(status_code=500, detail="Error al procesar identidad con IA.")
 @router.post("/ocr/embarque")
 async def ocr_embarque(file: UploadFile = File(...)):
@@ -432,7 +432,7 @@ async def ocr_embarque(file: UploadFile = File(...)):
         contents = await file.read()
         is_pdf = file.filename.lower().endswith('.pdf')
         
-        # Invocación directa a Gemini para análisis de documento logístico
+        # Invocación directa al análisis de documento logístico V13
         parsed_data = ocr_service.parse_embarque_data(
             contents, 
             is_pdf=is_pdf, 
@@ -441,11 +441,11 @@ async def ocr_embarque(file: UploadFile = File(...)):
         
         return {
             "status": "success",
-            "data": parsed_data, # Contiene 'dam' y 'contenedor' detectados por IA
-            "raw_text": "Análisis logístico IA completado."
+            "data": parsed_data, # Contiene 'dam' y 'contenedor' detectados por V13
+            "raw_text": "Análisis logístico Motor V13 completado."
         }
     except Exception as e:
-        logger.error(f"Error en OCR Embarque (Gemini): {e}")
+        logger.error(f"Error en OCR Embarque (V13): {e}")
         raise HTTPException(status_code=500, detail="Fallo en análisis IA de embarque.")
 @router.get("/embarques", response_model=PaginatedEmbarqueResponse)
 def list_embarques(
