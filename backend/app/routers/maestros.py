@@ -47,6 +47,12 @@ class ChoferResponse(ChoferCreate):
     class Config:
         from_attributes = True
 
+class PaginatedChoferResponse(BaseModel):
+    items: List[ChoferResponse]
+    total: int
+    page: int
+    size: int
+
 class EmbarqueCreate(BaseModel):
     booking: str
     dam: Optional[str] = None
@@ -312,9 +318,41 @@ async def ocr_transportista(
 
 # --- ENDPOINTS CHOFERES ---
 
-@router.get("/choferes", response_model=List[ChoferResponse])
-def list_choferes(db: Session = Depends(get_db)):
-    return db.query(Chofer).all()
+@router.get("/choferes", response_model=PaginatedChoferResponse)
+def list_choferes(
+    page: int = 1, 
+    size: int = 10, 
+    q: Optional[str] = None, 
+    order: str = "asc",
+    db: Session = Depends(get_db)
+):
+    """Listado paginado con búsqueda y orden A-Z / Z-A."""
+    query = db.query(Chofer)
+    
+    if q:
+        search = f"%{q.strip().upper()}%"
+        query = query.filter(
+            (Chofer.nombres.ilike(search)) |
+            (Chofer.apellido_paterno.ilike(search)) |
+            (Chofer.apellido_materno.ilike(search)) |
+            (Chofer.dni.ilike(search))
+        )
+    
+    # Ordenamiento alfabético por nombres (Inge Daniel Special)
+    if order.lower() == "desc":
+        query = query.order_by(Chofer.nombres.desc())
+    else:
+        query = query.order_by(Chofer.nombres.asc())
+        
+    total = query.count()
+    items = query.offset((page - 1) * size).limit(size).all()
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size
+    }
 
 @router.post("/choferes", response_model=ChoferResponse)
 def create_chofer(data: ChoferCreate, db: Session = Depends(get_db)):

@@ -11,7 +11,11 @@ import {
   RefreshCw,
   Loader2,
   Contact,
-  CreditCard
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  SortAsc,
+  SortDesc
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -31,6 +35,11 @@ interface Chofer {
 
 export default function ChoferesPage() {
   const [choferes, setChoferes] = useState<Chofer[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const size = 10;
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   
@@ -40,17 +49,24 @@ export default function ChoferesPage() {
 
   useEffect(() => {
     fetchChoferes();
-  }, []);
+  }, [page, searchTerm, sortOrder]);
 
   const fetchChoferes = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/choferes`);
+      const url = new URL(`${API_BASE_URL}/api/v1/maestros/choferes`);
+      url.searchParams.append("page", page.toString());
+      url.searchParams.append("size", size.toString());
+      url.searchParams.append("order", sortOrder);
+      if (searchTerm) url.searchParams.append("q", searchTerm);
+
+      const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
       const data = await response.json();
-      setChoferes(data);
+      setChoferes(data.items);
+      setTotal(data.total);
     } catch (error) {
       console.error("Error al cargar choferes:", error);
       toast.error("Error al cargar choferes");
@@ -90,12 +106,6 @@ export default function ChoferesPage() {
     }
   };
 
-  const filtered = choferes.filter(c => 
-    c.nombre_operativo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.dni.includes(searchTerm) ||
-    c.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -128,19 +138,34 @@ export default function ChoferesPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         <div className="lg:col-span-3 relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Buscar por Nombre, DNI o Apellidos..."
-              className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+         <div className="lg:col-span-3 flex gap-3">
+            <div className="relative flex-1 group">
+               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+               <input 
+                 type="text" 
+                 placeholder="Buscar por Nombre, DNI o Apellidos..."
+                 className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
+                 value={searchTerm}
+                 onChange={(e) => {
+                   setSearchTerm(e.target.value);
+                   setPage(1);
+                 }}
+               />
+            </div>
+            <button 
+              onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}
+              className={cn(
+                "h-14 w-14 bg-white border border-slate-100 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-95 group shrink-0",
+                sortOrder === "asc" ? "text-emerald-600 border-emerald-100" : "text-slate-400"
+              )}
+              title={sortOrder === "asc" ? "Orden: A-Z" : "Orden: Z-A"}
+            >
+               {sortOrder === "asc" ? <SortAsc className="h-6 w-6" /> : <SortDesc className="h-6 w-6" />}
+            </button>
          </div>
          <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total de Conductores</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
+            <p className="text-2xl font-extrabold text-[#022c22]">{total}</p>
          </div>
       </div>
 
@@ -162,7 +187,7 @@ export default function ChoferesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
-                {filtered.map((c) => (
+                {choferes.map((c: Chofer) => (
                   <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-7 border-r border-slate-200/80">
                       <div className="flex items-center gap-4">
@@ -238,7 +263,7 @@ export default function ChoferesPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {choferes.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-20 text-center">
                        <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron choferes registrados.</p>
@@ -247,6 +272,34 @@ export default function ChoferesPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Footer con Paginación */}
+        {!isLoading && total > size && (
+          <div className="border-t border-slate-50 bg-slate-50/20 px-8 py-6 flex items-center justify-between">
+            <div className="text-[10px] uppercase font-black tracking-widest text-slate-400">
+               Mostrando {((page - 1) * size) + 1} - {Math.min(page * size, total)} de {total} Conductores
+            </div>
+            <div className="flex items-center gap-2">
+               <button 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  className="h-10 w-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm disabled:opacity-30 active:scale-95"
+               >
+                  <ChevronLeft className="h-5 w-5" />
+               </button>
+               <div className="h-10 px-4 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-bold text-sm border border-emerald-100">
+                  {page}
+               </div>
+               <button 
+                  disabled={page * size >= total}
+                  onClick={() => setPage(p => p + 1)}
+                  className="h-10 w-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm disabled:opacity-30 active:scale-95"
+               >
+                  <ChevronRight className="h-5 w-5" />
+               </button>
+            </div>
           </div>
         )}
       </div>
