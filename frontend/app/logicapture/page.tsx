@@ -441,6 +441,7 @@ export default function LogiCaptureV2Page() {
         ruc_transportista: data.ruc_transportista
       }));
       setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista}` }));
+      setValidatedFields(prev => [...new Set([...prev, "placaTracto"])]);
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: error.message || "Placa no registrada en maestros" }));
       updateField("empresa", "");
@@ -472,8 +473,10 @@ export default function LogiCaptureV2Page() {
 
       if (inhabilitado) {
         setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CONDUCTOR INHABILITADO: ${data.nombre_operativo || data.nombres}` }));
+        setValidatedFields(prev => prev.filter(f => f !== "dni"));
       } else {
         setFieldErrors(prev => ({ ...prev, dni_info: `CONDUCTOR: ${data.nombre_operativo || data.nombres}` }));
+        setValidatedFields(prev => [...new Set([...prev, "dni"])]);
       }
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, dni: error.message || "Conductor no registrado en maestros" }));
@@ -566,6 +569,7 @@ export default function LogiCaptureV2Page() {
         ...prev,
         cert_carreta: data.configuracion_vehicular
       }));
+      setValidatedFields(prev => [...new Set([...prev, "placaCarreta"])]);
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaCarreta: error.message || "Carreta no registrada en maestros" }));
     } finally {
@@ -939,6 +943,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("dni", v)} 
                         onBlur={handleChoferBlur}
                         loading={isLoadingChofer}
+                        success={validatedFields.includes("dni") && !isChoferInhabilitado}
                         error={!!fieldErrors.dni || isChoferInhabilitado}
                         errorMsg={isChoferInhabilitado ? "Conductores Inhabilitados NO pueden realizar despachos" : fieldErrors.dni}
                         helperText={fieldErrors.dni_info}
@@ -951,6 +956,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("placaTracto", v)} 
                         onBlur={handleVehiculoBlur}
                         loading={isLoadingVehiculo}
+                        success={validatedFields.includes("placaTracto")}
                         error={!!fieldErrors.placaTracto}
                         errorMsg={fieldErrors.placaTracto}
                      />
@@ -962,6 +968,7 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("placaCarreta", v)} 
                         onBlur={handleCarretaBlur}
                         loading={isLoadingCarreta}
+                        success={validatedFields.includes("placaCarreta")}
                         error={!!fieldErrors.placaCarreta}
                         errorMsg={fieldErrors.placaCarreta}
                      />
