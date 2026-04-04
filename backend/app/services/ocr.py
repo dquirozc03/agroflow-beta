@@ -8,64 +8,61 @@ from app.configuracion import settings
 class OCRService:
     def __init__(self):
         self.api_key = settings.GOOGLE_API_KEY.strip() if settings.GOOGLE_API_KEY else None
-        # Lista de modelos por prioridad de precisión
+        # Lista exhaustiva de variantes para vencer al 404
         self.models = [
-            "gemini-1.5-flash",
             "gemini-1.5-flash-latest",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-001",
             "gemini-pro-vision"
         ]
 
     def parse_licencia_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
-        """Versión Auto-Recuperable (V7.2): Prueba modelos hasta que uno responda (Bypass 404)."""
+        """Versión Universal (V7.3): Intenta v1 y v1beta con todas las variantes de modelo."""
         if not self.api_key:
             return {"error": "API Key no configurada."}
 
         prompt = (
-            "Eres el motor de identidad de Agroflow. Analiza esta Licencia de Conducir Peruana. "
-            "Extrae en JSON plano: dni, nombres, apellido_paterno, apellido_materno, licencia. "
-            "Responde solo el objeto JSON, nada más."
+            "Extracción de datos de Licencia MTC Perú. Responde ÚNICAMENTE en JSON: "
+            "dni, nombres, apellido_paterno, apellido_materno, licencia."
         )
 
-        # Codificar imagen una sola vez
         img_b64 = base64.b64encode(image_bytes).decode('utf-8')
         mime = "application/pdf" if is_pdf else (content_type or "image/jpeg")
 
         errors = []
-        # Ciclo de intentos automáticos (Bypass de error regional o de cuenta)
-        for model in self.models:
-            try:
-                # Probamos con v1beta que suele tener más modelos habilitados
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
-                
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": img_b64}}]}],
-                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 800}
-                }
+        # Probamos primero con v1 (más estable para facturación activa)
+        # y luego con v1beta
+        for version in ["v1", "v1beta"]:
+            for model in self.models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
+                    
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": img_b64}}]}],
+                        "generationConfig": {"temperature": 0.1}
+                    }
 
-                logger.info(f"Intentando con modelo: {model}...")
-                response = requests.post(url, json=payload, timeout=20)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'candidates' in data and len(data['candidates']) > 0:
-                        text = data['candidates'][0]['content']['parts'][0]['text']
-                        logger.info(f"Éxito con {model}!")
-                        return self._clean_json(text)
-                
-                errors.append(f"{model}: {response.status_code} ({response.text[:100]})")
+                    response = requests.post(url, json=payload, timeout=15)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'candidates' in data and len(data['candidates']) > 0:
+                            text = data['candidates'][0]['content']['parts'][0]['text']
+                            logger.info(f"Éxito con {version}/{model}!")
+                            return self._clean_json(text)
+                    
+                    errors.append(f"{version}/{model}: {response.status_code}")
 
-            except Exception as e:
-                errors.append(f"{model}: {str(e)}")
+                except Exception as e:
+                    errors.append(f"Falla {version}/{model}: {str(e)}")
 
-        # Si llegamos aquí, nada funcionó
-        logger.error(f"Falla total tras probar modelos: {errors}")
-        return {"error": "IA de Google en mantenimiento o API no habilitada.", "detalles": errors}
+        return {"error": "Google no encontró modelos disponibles en su cuenta.", "detalles": errors}
 
     def parse_embarque_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
         return self.parse_licencia_data(image_bytes, is_pdf, content_type)
 
     def extract_text(self, image_bytes, is_pdf=False):
-        return "Srv V7.2 Activo"
+        return "Srv V7.3 Activo"
 
     def _clean_json(self, text):
         try:
