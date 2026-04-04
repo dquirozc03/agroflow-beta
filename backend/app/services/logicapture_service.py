@@ -19,14 +19,14 @@ class LogiCaptureService:
         regs = db.query(LogiCaptureRegistro).all()
         data = []
         for r in regs:
-            placas = f"{r.placa_tracto} / {r.placa_carreta}" if r.placa_tracto else "-"
+            placas = f"{r.placa_tracto}/{r.placa_carreta}" if r.placa_tracto else "-"
             tuc_t = r.cert_tracto if r.cert_tracto else "**"
             tuc_c = r.cert_carreta if r.cert_carreta else "**"
-            tuc = f"{tuc_t} / {tuc_c}"
+            tuc = f"{tuc_t}/{tuc_c}"
             
             senasa_codes = ", ".join(r.precinto_senasa) if r.precinto_senasa else "**"
             linea_codes = ", ".join(r.precinto_linea) if r.precinto_linea else "**"
-            senasa_linea = f"{senasa_codes} / PS.LIN: {linea_codes}"
+            senasa_linea = f"{senasa_codes}/PS.LIN:{linea_codes}"
             
             data.append({
                 "FECHA EMBARQUE": r.fecha_registro.strftime("%Y-%m-%d") if r.fecha_registro else "-",
@@ -38,13 +38,13 @@ class LogiCaptureService:
                 "CHOFER": r.nombre_chofer,
                 "DNI": r.dni_chofer,
                 "LICENCIA": r.licencia_chofer,
-                "TERMOGRAFOS": " / ".join(r.termografos) if r.termografos else "-",
+                "TERMOGRAFOS": "/".join(r.termografos) if r.termografos else "-",
                 "CODIGO SAP": r.codigo_sap,
                 "TRANSPORTISTA": r.empresa_transporte,
                 "NUMERO DE DAM": r.dam,
-                "PRECINTOS BETA": " / ".join(r.precintos_beta) if r.precintos_beta else "-",
-                "PRECINTO ADUANA": " / ".join(r.precinto_aduana) if r.precinto_aduana else "-",
-                "PRECINTO OPERADOR": " / ".join(r.precinto_operador) if r.precinto_operador else "-",
+                "PRECINTOS BETA": "/".join(r.precintos_beta) if r.precintos_beta else "-",
+                "PRECINTO ADUANA": "/".join(r.precinto_aduana) if r.precinto_aduana else "-",
+                "PRECINTO OPERADOR": "/".join(r.precinto_operador) if r.precinto_operador else "-",
                 "SENASA/PS LÍNEA": senasa_linea,
                 "PARTIDA REGISTRAL": r.partida_registral,
                 "TUC (CERTIFICADOS)": tuc,

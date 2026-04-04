@@ -299,10 +299,7 @@ export default function BandejaLogiCapture() {
     navigator.clipboard.writeText(text);
     setCopiedField(key);
     
-    toast.success(`${label} copiado`, {
-      description: "Listo para pegar en SAP",
-      duration: 1500
-    });
+    // Eliminado toast redundante por petición de usuario (feedback mediante icono check activo)
 
     setTimeout(() => setCopiedField(null), 2000);
   };
@@ -778,26 +775,26 @@ export default function BandejaLogiCapture() {
                          { label: "BOOKING", value: selectedReg.booking, key: "booking" },
                          { label: "CONTENEDOR", value: formatContainerId(selectedReg.contenedor), key: "cnt" },
                          { label: "MARCA", value: selectedReg.marca_tracto, key: "marca" },
-                         { label: "PLACAS", value: `${selectedReg.placa_tracto} / ${selectedReg.placa_carreta}`, key: "placas" },
+                         { label: "PLACAS", value: `${selectedReg.placa_tracto}/${selectedReg.placa_carreta}`, key: "placas" },
                          { label: "CHOFER", value: selectedReg.nombre_chofer, key: "chofer_n" },
                          { label: "DNI", value: selectedReg.dni_chofer, key: "dni" },
                          { label: "LICENCIA", value: selectedReg.licencia_chofer, key: "lic" },
-                         { label: "TERMOGRAFOS", value: selectedReg.termografos?.join(" / "), key: "term" },
+                         { label: "TERMOGRAFOS", value: selectedReg.termografos?.join("/"), key: "term" },
                          { label: "CODIGO SAP", value: selectedReg.codigo_sap, key: "sap" },
                          { label: "TRANSPORTISTA", value: selectedReg.empresa_transporte, key: "trans" },
                          { label: "NUMERO DE DAM", value: selectedReg.dam, key: "dam" },
-                         { label: "PRECINTOS BETA", value: selectedReg.precintos_beta?.join(" / "), key: "beta" },
-                         { label: "PRECINTO ADUANA", value: selectedReg.precinto_aduana?.join(" / "), key: "aduana" },
-                         { label: "PRECINTO OPERADOR", value: selectedReg.precinto_operador?.join(" / "), key: "ope" },
+                         { label: "PRECINTOS BETA", value: selectedReg.precintos_beta?.join("/"), key: "beta" },
+                         { label: "PRECINTO ADUANA", value: selectedReg.precinto_aduana?.join("/"), key: "aduana" },
+                         { label: "PRECINTO OPERADOR", value: selectedReg.precinto_operador?.join("/"), key: "ope" },
                          { 
                             label: "SENASA/PS LÍNEA", 
-                            value: `${selectedReg.precinto_senasa?.join(" / ") || "**"} / PS.LIN: ${selectedReg.precinto_linea?.join(" / ") || "**"}`, 
+                            value: `${selectedReg.precinto_senasa?.join("/") || "**"}/PS.LIN:${selectedReg.precinto_linea?.join("/") || "**"}`, 
                             key: "senasa_linea" 
                          },
                          { label: "PARTIDA REGISTRAL", value: selectedReg.partida_registral, key: "partida" },
                          { 
                             label: "TARJETA UNICA DE CIRCULACION", 
-                            value: `${selectedReg.cert_tracto || "**"} / ${selectedReg.cert_carreta || "**"}`, 
+                            value: `${selectedReg.cert_tracto || "**"}/${selectedReg.cert_carreta || "**"}`, 
                             key: "tuc" 
                          },
                        ].map((item) => (
