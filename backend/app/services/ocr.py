@@ -112,32 +112,36 @@ class OCRService:
         }
 
     def _extract_shipment_fields(self, text):
-        """Lógica de Regex para detectar contenedores ISO y DAMs (DUAs)."""
+        """Lógica de Regex avanzada para detectar contenedores ISO y DAMs (DUAs)."""
         # Limpieza básica
         text_clean = text.replace('\n', ' ').strip()
         
         # 1. Regex Contenedor (3 letras + "U" obligatoria + 7 números)
-        # Esto evita capturar el "SEAL" (Precinto) que suele tener 4 letras + números pero no termina en U.
         container_match = re.search(r'([A-Z]{3}U\s*\d{7})', text_clean)
         contenedor = ""
+        
         if container_match:
-            # Quitamos cualquier espacio que el OCR haya detectado en medio del ID
             contenedor = container_match.group(1).replace(" ", "").upper()
+        else:
+            # Fallback de Tabla: Buscar Prefijo y Número por separado
+            prefix_match = re.search(r'([A-Z]{3}U)', text_clean)
+            digit_match = re.search(r'(\d{7})', text_clean)
+            if prefix_match and digit_match:
+                contenedor = f"{prefix_match.group(1)}{digit_match.group(1)}"
 
-        # 2. Regex DAM / DUA
-        # Formato estándar: XXX-202X-XX-XXXXXX (18-20 dígitos totales)
-        # Buscamos el patrón con guiones o una secuencia larga de números
-        dam_match = re.search(r'(\d{3}-\d{4}-\d{2}-\d{6})', text_clean)
+        # 2. Regex DAM / DUA (Soporta rango dinámico de 12 a 20 dígitos)
+        # Permitimos guiones, puntos o espacios como separadores (con bloques finales variables)
+        dam_match = re.search(r'(\d{3}[-\s\.]+\d{4}[-\s\.]+\d{2}[-\s\.]+\d{6,10})', text_clean)
         dam = ""
         if dam_match:
-            dam = dam_match.group(1)
+            dam = dam_match.group(1).replace(" ", "").replace(".", "-") # Normalizamos
         else:
-            # Fallback por si el OCR no capturó los guiones (secuencia de 18 números)
-            dam_fallback = re.search(r'(\d{18,20})', text_clean)
+            # Fallback Universal: secuencia de 12 a 20 números
+            dam_fallback = re.search(r'(\d{12,20})', text_clean)
             if dam_fallback:
                 val = dam_fallback.group(1)
-                # Formateamos con guiones para uniformidad si es de 18 dígitos
-                if len(val) == 18:
+                # Formateamos con guiones estándar SOLO si tiene 15 dígitos (estándar Agroflow Beta)
+                if len(val) == 15:
                     dam = f"{val[:3]}-{val[3:7]}-{val[7:9]}-{val[9:]}"
                 else:
                     dam = val
