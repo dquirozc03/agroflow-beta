@@ -1,123 +1,96 @@
 import google.generativeai as genai
-from PIL import Image
-import io
 import json
 import re
 from app.utils.logging import logger
 from app.configuracion import settings
-from pdf2image import convert_from_bytes
 
 class OCRService:
     def __init__(self):
-        # Configurar Gemini 1.5 Flash
         self.api_key = settings.GOOGLE_API_KEY
+        self._setup()
+
+    def _setup(self):
         if self.api_key:
             genai.configure(api_key=self.api_key)
             self.model = genai.GenerativeModel('gemini-1.5-flash')
-            # Configuración de seguridad: Permitir todo para documentos operativos
-            self.safety_settings = [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-            ]
-            logger.info("IA Gemini 1.5 Flash (V3-Secure-Bypass) lista.")
+            logger.info("Motor IA Gemini (V4-Indestructible) inicializado.")
         else:
-            logger.error("No se detectó GOOGLE_API_KEY en la configuración.")
             self.model = None
 
-    def _get_image_from_bytes(self, image_bytes, is_pdf=False):
-        try:
-            if is_pdf:
-                images = convert_from_bytes(image_bytes)
-                return images[0] if images else None
-            else:
-                img = Image.open(io.BytesIO(image_bytes))
-                logger.info(f"Imagen preparada para IA: {img.size} px")
-                return img
-        except Exception as e:
-            logger.error(f"Error procesando imagen: {e}")
-            return None
-
-    def _call_gemini(self, image, prompt):
-        if not self.model or not image: 
-            logger.error("Modelo o imagen no disponibles para la llamada.")
-            return None
-        try:
-            # Llamada con settings de seguridad relajados para documentos
-            response = self.model.generate_content(
-                [prompt, image],
-                safety_settings=self.safety_settings
-            )
+    def parse_licencia_data(self, image_bytes, is_pdf=False, mime_type="image/jpeg"):
+        """Extracción directa enviando datos crudos a Google."""
+        if not self.api_key:
+             return {"error": "API Key no configurada"}
             
-            if not response or not response.candidates:
-                logger.warning("Gemini no devolvió candidatos (posible bloqueo de seguridad).")
-                return None
-                
-            return response.text.strip()
-        except Exception as e:
-            logger.error(f"Error crítico en Gemini API: {str(e)}")
-            return f"ERROR_IA: {str(e)}"
+        # Re-check de configuración por si cambió en caliente
+        if not hasattr(self, 'model') or not self.model:
+            self._setup()
 
-    def parse_licencia_data(self, image_bytes, is_pdf=False):
-        image = self._get_image_from_bytes(image_bytes, is_pdf)
         prompt = (
-            "Eres el motor de identidad de Agroflow. De esta Licencia de Conducir Peruana (MTC), extrae: "
-            "1. nombres, 2. apellido_paterno, 3. apellido_materno, 4. dni, 5. licencia. "
+            "Eres el motor de identidad de Agroflow. Analiza esta imagen de Licencia MTC Peruana. "
+            "Extrae: nombres, apellido_paterno, apellido_materno, dni, licencia. "
             "Responde ÚNICAMENTE un objeto JSON plano. "
-            'Estructura: {"dni": "...", "nombres": "...", "apellido_paterno": "...", "apellido_materno": "...", "licencia": "..."}'
+            "No uses markdown, no digas nada más. "
+            'Estructura: {"dni": "...", "nombres": "...", "paterno": "...", "materno": "...", "licencia": "..."}'
         )
-        raw_response = self._call_gemini(image, prompt)
-        
-        if not raw_response or "ERROR_IA" in raw_response:
-             logger.error(f"IA no pudo responder: {raw_response}")
-             return {}
-             
-        logger.info(f"IA Respuesta Raw (V3): {raw_response}")
-        return self._clean_json(raw_response)
+
+        try:
+            # Enviamos como diccionario de bytes directamente (Más robusto que Pillow en Render)
+            image_data = {
+                "mime_type": "application/pdf" if is_pdf else mime_type,
+                "data": image_bytes
+            }
+            
+            response = self.model.generate_content([prompt, image_data])
+            
+            if not response or not response.text:
+                logger.error("IA devolvió respuesta vacía o bloqueada.")
+                return {}
+
+            raw_text = response.text.strip()
+            logger.info(f"IA Respuesta Raw (V4): {raw_text}")
+            return self._clean_json(raw_text)
+
+        except Exception as e:
+            logger.error(f"Fallo crítico en OCR Gemini V4: {str(e)}")
+            return {"error": str(e)}
 
     def parse_embarque_data(self, image_bytes, is_pdf=False):
-        image = self._get_image_from_bytes(image_bytes, is_pdf)
-        prompt = (
-            "Extrae DAM y Número de Contenedor. Responde solo JSON. "
-            'Estructura: {"dam": "...", "contenedor": "..."}'
-        )
-        raw_response = self._call_gemini(image, prompt)
-        return self._clean_json(raw_response)
+        """Especializado para DAM y Contenedor."""
+        image_data = {"mime_type": "application/pdf" if is_pdf else "image/jpeg", "data": image_bytes}
+        prompt = 'Extrae DAM (formato 000-0000-00-000000) y Contenedor (4 letras 7 números). JSON: {"dam": "...", "contenedor": "..."}'
+        try:
+            response = self.model.generate_content([prompt, image_data])
+            return self._clean_json(response.text)
+        except: return {}
 
     def extract_text(self, image_bytes, is_pdf=False):
-        image = self._get_image_from_bytes(image_bytes, is_pdf)
-        prompt = "Extract text from image."
-        return self._call_gemini(image, prompt) or ""
+        image_data = {"mime_type": "application/pdf" if is_pdf else "image/jpeg", "data": image_bytes}
+        try:
+            response = self.model.generate_content(["Extrae texto", image_data])
+            return response.text
+        except: return ""
 
     def _clean_json(self, text):
         if not text: return {}
         try:
-            # Limpieza agresiva de bloques de código
-            clean_text = re.sub(r'```[a-z]*\s*', '', text).replace('```', '').strip()
+            # Extraer solo lo que está entre llaves
+            match = re.search(r'(\{.*\})', text.replace('\n', ''), re.DOTALL)
+            if not match: return {}
             
-            start = clean_text.find('{')
-            end = clean_text.rfind('}') + 1
-            if start != -1 and end != 0:
-                clean_text = clean_text[start:end]
+            data = json.loads(match.group(1))
             
-            data = json.loads(clean_text)
-            
-            # Normalización
-            normalized = {}
-            for k, v in data.items():
-                key = k.lower().replace(" ", "_")
-                normalized[key] = str(v).upper() if v else None
-            
-            # Asegurar mapeo de apellidos si Gemini los unió
-            if "apellidos" in normalized and not normalized.get("apellido_paterno"):
-                aps = str(normalized["apellidos"]).split()
-                if len(aps) >= 1: normalized["apellido_paterno"] = aps[0]
-                if len(aps) >= 2: normalized["apellido_materno"] = aps[1]
-
+            # Normalización estándar para Agroflow
+            normalized = {
+                "dni": str(data.get("dni", "")).strip(),
+                "nombres": str(data.get("nombres", "")).strip().upper(),
+                "apellido_paterno": str(data.get("paterno", data.get("apellido_paterno", ""))).strip().upper(),
+                "apellido_materno": str(data.get("materno", data.get("apellido_materno", ""))).strip().upper(),
+                "licencia": str(data.get("licencia", data.get("brevete", ""))).strip().upper()
+            }
             return normalized
         except Exception as e:
-            logger.warning(f"Falla parseo JSON V3: {e}. Texto: {text}")
+            logger.warning(f"Error parseando JSON IA: {e}")
             return {}
 
 ocr_service = OCRService()
