@@ -55,10 +55,26 @@ class CarretaResponse(CarretaCreate):
     class Config:
         from_attributes = True
 
+class PaginatedTractoResponse(BaseModel):
+    items: List[TractoResponse]
+    total: int
+    page: int
+    size: int
+    total_pages: int
+
+class PaginatedCarretaResponse(BaseModel):
+    items: List[CarretaResponse]
+    total: int
+    page: int
+    size: int
+    total_pages: int
+
 # --- ENDPOINTS TRACTOS ---
 
-@router.get("/tractos", response_model=List[TractoResponse])
+@router.get("/tractos", response_model=PaginatedTractoResponse)
 def list_tractos(
+    page: int = 1,
+    size: int = 10,
     placa: Optional[str] = None,
     transportista_id: Optional[int] = None,
     db: Session = Depends(get_db)
@@ -68,7 +84,18 @@ def list_tractos(
         query = query.filter(VehiculoTracto.placa_tracto.ilike(f"%{placa}%"))
     if transportista_id:
         query = query.filter(VehiculoTracto.transportista_id == transportista_id)
-    return query.all()
+        
+    total = query.count()
+    items = query.order_by(VehiculoTracto.placa_tracto.asc()).offset((page - 1) * size).limit(size).all()
+    total_pages = (total + size - 1) // size if size > 0 else 1
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 @router.post("/tractos", response_model=TractoResponse)
 def create_tracto(data: TractoCreate, db: Session = Depends(get_db)):
@@ -91,8 +118,10 @@ def create_tracto(data: TractoCreate, db: Session = Depends(get_db)):
 
 # --- ENDPOINTS CARRETAS ---
 
-@router.get("/carretas", response_model=List[CarretaResponse])
+@router.get("/carretas", response_model=PaginatedCarretaResponse)
 def list_carretas(
+    page: int = 1,
+    size: int = 10,
     placa: Optional[str] = None,
     transportista_id: Optional[int] = None,
     db: Session = Depends(get_db)
@@ -102,7 +131,18 @@ def list_carretas(
         query = query.filter(VehiculoCarreta.placa_carreta.ilike(f"%{placa}%"))
     if transportista_id:
         query = query.filter(VehiculoCarreta.transportista_id == transportista_id)
-    return query.all()
+        
+    total = query.count()
+    items = query.order_by(VehiculoCarreta.placa_carreta.asc()).offset((page - 1) * size).limit(size).all()
+    total_pages = (total + size - 1) // size if size > 0 else 1
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 @router.post("/carretas", response_model=CarretaResponse)
 def create_carreta(data: CarretaCreate, db: Session = Depends(get_db)):

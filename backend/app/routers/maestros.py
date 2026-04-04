@@ -29,8 +29,12 @@ class TransportistaResponse(BaseModel):
     codigo_sap: Optional[str] = None
     estado: str
     
-    class Config:
-        from_attributes = True
+class PaginatedTransportistaResponse(BaseModel):
+    items: List[TransportistaResponse]
+    total: int
+    page: int
+    size: int
+    total_pages: int
 
 class ChoferCreate(BaseModel):
     dni: str
@@ -252,9 +256,34 @@ async def bulk_upload_transportistas(
         logger.error(f"Error crítico en carga masiva: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error procesando el archivo: {str(e)}")
 
-@router.get("/transportistas", response_model=List[TransportistaResponse])
-def list_transportistas(db: Session = Depends(get_db)):
-    return db.query(Transportista).all()
+@router.get("/transportistas", response_model=PaginatedTransportistaResponse)
+def list_transportistas(
+    page: int = 1, 
+    size: int = 10, 
+    q: Optional[str] = None, 
+    db: Session = Depends(get_db)
+):
+    query = db.query(Transportista)
+    
+    if q:
+        search = f"%{q.strip().upper()}%"
+        query = query.filter(
+            (Transportista.nombre_transportista.ilike(search)) |
+            (Transportista.ruc.ilike(search))
+        )
+        
+    total = query.count()
+    items = query.order_by(Transportista.nombre_transportista.asc()).offset((page - 1) * size).limit(size).all()
+    
+    total_pages = (total + size - 1) // size if size > 0 else 1
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 @router.patch("/transportistas/{id}/estado")
 def patch_estado_transportista(id: int, estado: str, db: Session = Depends(get_db)):

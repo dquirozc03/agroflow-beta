@@ -451,6 +451,7 @@ def bulk_sync_masters(db: Session = Depends(get_db)):
 @router.get("/registros")
 def list_registros(
     page: int = 1, 
+    size: int = 10,
     planta: Optional[str] = None, 
     cultivo: Optional[str] = None,
     status: Optional[str] = None,
@@ -464,12 +465,15 @@ def list_registros(
     if status: query = query.filter(LogiCaptureRegistro.status == status)
     
     total = query.count()
-    registros = query.order_by(LogiCaptureRegistro.fecha_registro.desc()).offset((page - 1) * 10).limit(10).all()
+    items = query.order_by(LogiCaptureRegistro.fecha_registro.desc()).offset((page - 1) * size).limit(size).all()
+    
+    total_pages = (total + size - 1) // size if size > 0 else 1
     
     return {
         "total": total,
         "page": page,
-        "items": registros
+        "total_pages": total_pages,
+        "items": items
     }
 
 @router.get("/registros/{id}")

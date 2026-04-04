@@ -31,19 +31,25 @@ export default function TransportistasPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransportista, setEditingTransportista] = useState<any>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
   useEffect(() => {
     fetchTransportistas();
-  }, []);
+  }, [page, searchTerm]);
 
   const fetchTransportistas = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas?page=${page}&q=${searchTerm}`);
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
       const data = await response.json();
-      setTransportistas(data);
+      setTransportistas(data.items);
+      setTotalPages(data.total_pages);
+      setTotalRecords(data.total);
     } catch (error) {
       console.error("Detalle del error al cargar transportistas:", error);
       toast.error("Error al cargar transportistas");
@@ -126,8 +132,8 @@ export default function TransportistasPage() {
             />
          </div>
          <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Transportistas</p>
+            <p className="text-2xl font-extrabold text-[#022c22]">{totalRecords}</p>
          </div>
       </div>
 
@@ -148,7 +154,7 @@ export default function TransportistasPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
-                {filtered.map((t) => (
+                {transportistas.map((t) => (
                   <tr key={t.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-6 border-r border-slate-200/70">
                       <div className="flex items-center gap-4">
@@ -192,7 +198,7 @@ export default function TransportistasPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {transportistas.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-8 py-20 text-center">
                        <p className="text-sm font-bold text-slate-400">No se encontraron transportistas.</p>
@@ -202,6 +208,38 @@ export default function TransportistasPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Paginación Profesional AgroFlow */}
+        {!isLoading && totalPages > 1 && (
+           <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                 <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                   Mostrando {transportistas.length} de {totalRecords} transportistas
+                 </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                 <button 
+                   onClick={() => setPage(p => Math.max(1, p - 1))}
+                   disabled={page === 1}
+                   className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Anterior
+                 </button>
+                 <button 
+                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                   disabled={page === totalPages}
+                   className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Siguiente
+                 </button>
+              </div>
+           </div>
         )}
       </div>
     </div>

@@ -41,18 +41,25 @@ export default function VehiculosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehiculo, setEditingVehiculo] = useState<any>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
   useEffect(() => {
+    setPage(1); // Reset page on mode change
     fetchData();
-  }, [mode]);
+  }, [mode, page, searchTerm]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const endpoint = mode === "tractos" ? "tractos" : "carretas";
-      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/vehiculos/${endpoint}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/vehiculos/${endpoint}?page=${page}&placa=${searchTerm}`);
       if (!response.ok) throw new Error("Error cargando vehiculos");
       const result = await response.json();
-      setData(result);
+      setData(result.items);
+      setTotalPages(result.total_pages);
+      setTotalRecords(result.total);
     } catch (error) {
       toast.error(`Error al cargar ${mode}`);
     } finally {
@@ -148,10 +155,10 @@ export default function VehiculosPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
-         <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
+          <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total {mode}</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
-         </div>
+            <p className="text-2xl font-extrabold text-[#022c22]">{totalRecords}</p>
+          </div>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
@@ -234,6 +241,38 @@ export default function VehiculosPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Paginación Profesional AgroFlow */}
+        {!isLoading && totalPages > 1 && (
+           <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                 <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                   Mostrando {data.length} de {totalRecords} {mode}
+                 </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                 <button 
+                   onClick={() => setPage(p => Math.max(1, p - 1))}
+                   disabled={page === 1}
+                   className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Anterior
+                 </button>
+                 <button 
+                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                   disabled={page === totalPages}
+                   className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Siguiente
+                 </button>
+              </div>
+           </div>
         )}
       </div>
     </div>

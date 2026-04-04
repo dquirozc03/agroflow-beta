@@ -217,6 +217,10 @@ export default function BandejaLogiCapture() {
      partidaRegistral: ""
   });
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRegistros, setTotalRegistros] = useState(0);
+
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // --- Auto-búsqueda de Chofer por DNI Inteligente 💎 ---
@@ -228,7 +232,6 @@ export default function BandejaLogiCapture() {
              const resp = await fetch(`${API_BASE_URL}/api/v1/logicapture/drivers/search?q=${dni}`);
              if (resp.ok) {
                 const data = await resp.json();
-                // Buscar coincidencia exacta por DNI (puede ser 8 u 9 dígitos)
                 const match = data.find((d: any) => d.dni === dni);
                 if (match) {
                    setEditData((prev: any) => ({
@@ -293,14 +296,11 @@ export default function BandejaLogiCapture() {
     }
   };
 
-   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const copyToClipboard = (text: string, label: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(key);
-    
-    // Eliminado toast redundante por petición de usuario (feedback mediante icono check activo)
-
     setTimeout(() => setCopiedField(null), 2000);
   };
 
@@ -371,7 +371,7 @@ export default function BandejaLogiCapture() {
        dam: reg.dam,
        contenedor: reg.contenedor
     });
-    setEditSector(""); // Reiniciar selección
+    setEditSector(""); 
     setIsEditOpen(true);
   };
 
@@ -388,7 +388,6 @@ export default function BandejaLogiCapture() {
              precintosBeta: editData.precintos_beta,
              termografos: editData.termografos,
              fecha_embarque: editData.fecha_embarque,
-             // Campos maestros si se editaron
              nombreChofer: editData.nombre_chofer,
              dni: editData.dni_chofer,
              licenciaChofer: editData.licencia_chofer,
@@ -421,14 +420,18 @@ export default function BandejaLogiCapture() {
     try {
       const params = new URLSearchParams();
       params.append("status", activeTab);
+      params.append("page", page.toString());
       if (filterPlanta !== "all") params.append("planta", filterPlanta);
       if (filterCultivo !== "all") params.append("cultivo", filterCultivo);
+      if (searchTerm) params.append("q", searchTerm);
       
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros?${params.toString()}`);
       if (!response.ok) throw new Error("Error al obtener registros");
       
       const data = await response.json();
       setRegistros(data.items || []);
+      setTotalPages(data.total_pages || 1);
+      setTotalRegistros(data.total || 0);
     } catch (error) {
       setErrorMessage("No se pudo sincronizar la bandeja con el sistema central.");
       setIsErrorOpen(true);
@@ -608,7 +611,7 @@ export default function BandejaLogiCapture() {
                      )}
                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-6 py-2.5 rounded-2xl border border-slate-100 flex items-center gap-3">
                         <CircleDot className="h-3 w-3 text-emerald-500 animate-pulse" />
-                        {registros.length} Registros encontrados
+                        {totalRegistros} total de registros
                      </div>
                   </div>
               </div>
@@ -642,10 +645,7 @@ export default function BandejaLogiCapture() {
                               </div>
                            </TableCell>
                         </TableRow>
-                      ) : registros.filter(r => 
-                         r.booking.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         r.contenedor.toLowerCase().includes(searchTerm.toLowerCase())
-                      ).map((reg) => (
+                      ) : registros.map((reg) => (
                         <TableRow 
                           key={reg.id} 
                           className="group hover:bg-emerald-50/10 transition-colors border-none px-6 cursor-pointer [&_td]:border-none"
@@ -736,6 +736,39 @@ export default function BandejaLogiCapture() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Paginación AgroFlow Premium 💎 */}
+                {!isLoading && totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-8 font-['Outfit']">
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                       <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
+                          <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                       </div>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
+                          Mostrando {registros.length} de {totalRegistros} registros operativos
+                       </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                       <Button
+                          variant="outline"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                          className="rounded-2xl h-12 px-6 font-bold text-xs border-slate-100 bg-white hover:bg-emerald-50 hover:text-emerald-700 transition-all disabled:opacity-30 shadow-sm"
+                       >
+                          Anterior
+                       </Button>
+                       <Button
+                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                          disabled={page === totalPages}
+                          className="rounded-2xl h-12 px-8 font-bold text-xs bg-emerald-950 text-white hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 border-none"
+                       >
+                          Siguiente
+                       </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
 
