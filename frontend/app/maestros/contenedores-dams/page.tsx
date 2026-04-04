@@ -11,7 +11,9 @@ import {
   Trash2,
   Barcode,
   Boxes,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -28,6 +30,11 @@ interface Embarque {
 
 export default function ContenedoresDamsPage() {
   const [embarques, setEmbarques] = useState<Embarque[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const size = 10;
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   
@@ -41,17 +48,24 @@ export default function ContenedoresDamsPage() {
 
   useEffect(() => {
     fetchEmbarques();
-  }, []);
+  }, [page, searchTerm]);
 
   const fetchEmbarques = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/maestros/embarques`);
+      const url = new URL(`${API_BASE_URL}/api/v1/maestros/embarques`);
+      url.searchParams.append("page", page.toString());
+      url.searchParams.append("size", size.toString());
+      if (searchTerm) url.searchParams.append("q", searchTerm);
+
+      const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
       const data = await response.json();
-      setEmbarques(data);
+      setEmbarques(data.items);
+      setTotal(data.total_records);
+      setTotalPages(data.total_pages);
     } catch (error) {
       console.error("Error al cargar embarques:", error);
       toast.error("Error al cargar datos de embarque");
@@ -96,11 +110,6 @@ export default function ContenedoresDamsPage() {
     }
   };
 
-  const filtered = embarques.filter(e => 
-    e.booking.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.dam.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.contenedor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -149,12 +158,15 @@ export default function ContenedoresDamsPage() {
               placeholder="Buscar por Booking, DAM o Contenedor..."
               className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
             />
          </div>
          <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Despachos</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{filtered.length}</p>
+            <p className="text-2xl font-extrabold text-[#022c22]">{total}</p>
          </div>
       </div>
 
@@ -176,7 +188,7 @@ export default function ContenedoresDamsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
-                {filtered.map((e) => (
+                {embarques.map((e) => (
                   <tr key={e.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-7 border-r border-slate-200/80 text-center">
                        <div className="flex items-center justify-center gap-3">
@@ -216,7 +228,7 @@ export default function ContenedoresDamsPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {embarques.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-20 text-center">
                        <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron registros de embarque.</p>
@@ -225,6 +237,35 @@ export default function ContenedoresDamsPage() {
                 )}
               </tbody>
             </table>
+          <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
+             <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                   Mostrando {embarques.length} de {total} Despachos
+                </span>
+             </div>
+             
+             <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1 || isLoading}
+                  className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
+                >
+                   <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                   Anterior
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages || isLoading}
+                  className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed group"
+                >
+                   Siguiente
+                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </button>
+             </div>
           </div>
         )}
       </div>

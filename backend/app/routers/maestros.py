@@ -64,6 +64,12 @@ class EmbarqueResponse(EmbarqueCreate):
     class Config:
         from_attributes = True
 
+class PaginatedEmbarqueResponse(BaseModel):
+    items: List[EmbarqueResponse]
+    total_records: int
+    page: int
+    total_pages: int
+
 router = APIRouter(
     prefix="/api/v1/maestros",
     tags=["Maestros"]
@@ -437,9 +443,35 @@ async def ocr_embarque(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error en OCR Embarque (Gemini): {e}")
         raise HTTPException(status_code=500, detail="Fallo en análisis IA de embarque.")
-@router.get("/embarques", response_model=List[EmbarqueResponse])
-def list_embarques(db: Session = Depends(get_db)):
-    return db.query(ControlEmbarque).order_by(ControlEmbarque.fecha_creacion.desc()).all()
+@router.get("/embarques", response_model=PaginatedEmbarqueResponse)
+def list_embarques(
+    page: int = 1, 
+    size: int = 10, 
+    q: Optional[str] = None, 
+    db: Session = Depends(get_db)
+):
+    """Listado paginado de contenedores y DAMs ordenados cronológicamente."""
+    query = db.query(ControlEmbarque)
+    
+    if q:
+        search = f"%{q.strip().upper()}%"
+        query = query.filter(
+            (ControlEmbarque.booking.ilike(search)) |
+            (ControlEmbarque.dam.ilike(search)) |
+            (ControlEmbarque.contenedor.ilike(search))
+        )
+        
+    total_records = query.count()
+    total_pages = (total_records + size - 1) // size
+    
+    items = query.order_by(ControlEmbarque.fecha_creacion.desc()).offset((page - 1) * size).limit(size).all()
+    
+    return {
+        "items": items,
+        "total_records": total_records,
+        "page": page,
+        "total_pages": total_pages
+    }
 
 @router.post("/embarques", response_model=EmbarqueResponse)
 def create_embarque(data: EmbarqueCreate, db: Session = Depends(get_db)):
