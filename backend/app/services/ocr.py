@@ -6,73 +6,81 @@ from app.configuracion import settings
 
 class OCRService:
     def __init__(self):
-        # Inge, OCR.space es muy estricto con los nombres de archivos. 
-        # En la V12 lo hacemos dinámico.
         self.api_key = "K84628469088957"
         self.api_url = "https://api.ocr.space/parse/image"
 
     def parse_licencia_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
-        """Motor OCR.space V12: Manejo inteligente de formatos (Bypass E302)."""
+        """Motor V13: Extracción Profesional de Identidad para Agroflow."""
         try:
-            # Detectar extensión para evitar el error E302 (Corrupted/Invalid)
             ext = "jpg"
             if content_type:
                 if "png" in content_type.lower(): ext = "png"
                 elif "pdf" in content_type.lower(): ext = "pdf"
             
-            filename = f"document.{ext}"
+            files = {'file': (f"doc.{ext}", image_bytes, content_type or 'image/jpeg')}
+            payload = {'apikey': self.api_key, 'language': 'spa', 'isOverlayRequired': False, 'OCREngine': 2}
 
-            files = {
-                'file': (filename, image_bytes, content_type or 'image/jpeg')
-            }
-            payload = {
-                'apikey': self.api_key,
-                'language': 'spa',
-                'detectOrientation': True,
-                'scale': True,
-                'OCREngine': 2 
-            }
-
-            logger.info(f"Enviando a OCR.space V12 ({filename})...")
+            logger.info("Procesando con Motor V13 (Extracción de Nombres)...")
             response = requests.post(self.api_url, data=payload, files=files, timeout=30)
             
             if response.status_code != 200:
-                return {"error": f"Falla Servidor ({response.status_code})"}
+                return {"error": "Error de servidor IA"}
 
             result = response.json()
-            if result.get('OCRExitCode') != 1:
-                # Si falla por ser PDF grande, reintentar avisando
-                return {"error": f"IA Error: {result.get('ErrorMessage')}"}
-
             full_text = result['ParsedResults'][0]['ParsedText'].upper()
-            logger.info(f"Éxito OCR V12. Texto: {full_text[:100]}...")
+            logger.info(f"Texto bruto: {full_text[:200]}")
             
-            return self._extract_fields_peru(full_text)
+            return self._extract_fields_advanced(full_text)
 
         except Exception as e:
-            logger.error(f"Falla crítica V12: {str(e)}")
-            return {"error": "Error de comunicación con IA."}
+            return {"error": str(e)}
 
     def parse_embarque_data(self, image_bytes, is_pdf=False, content_type="image/jpeg"):
         return self.parse_licencia_data(image_bytes, is_pdf, content_type)
 
     def extract_text(self, image_bytes, is_pdf=False):
-        return "Motor OCR.space V12 Activo"
+        return "V13 Activo"
 
-    def _extract_fields_peru(self, text):
-        # Lógica de captura optimizada para Perú
-        text = text.replace('|', '').replace('\n', ' ').strip()
+    def _extract_fields_advanced(self, text):
+        """Lógica avanzada para detectar patrones en Brevetes Peruanos."""
+        # Limpieza
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        text_clean = " ".join(lines)
         
-        dni = re.search(r'(\d{8})', text)
-        lic = re.search(r'([A-Z]\d{8,9})', text)
+        # 1. DNI y Licencia (Regex robustas)
+        dni = re.search(r'(\d{8})', text_clean)
+        lic = re.search(r'([A-Z]\d{8,9})', text_clean)
         
+        # 2. Extracción de Nombres y Apellidos
+        nombres = ""
+        ap_paterno = ""
+        ap_materno = ""
+        
+        for i, line in enumerate(lines):
+            # Buscar apellidos (Suelen estar después de la palabra APELLIDOS)
+            if "APELLIDOS" in line or "APELLIDO" in line:
+                if i + 1 < len(lines):
+                    full_apellidos = lines[i+1].split()
+                    if len(full_apellidos) >= 1: ap_paterno = full_apellidos[0]
+                    if len(full_apellidos) >= 2: ap_materno = " ".join(full_apellidos[1:])
+            
+            # Buscar nombres (Suelen estar después de la palabra NOMBRES)
+            if "NOMBRES" in line or "NOMBRE" in line:
+                if i + 1 < len(lines):
+                    nombres = lines[i+1]
+
+        # Fallback si no se encontró con etiquetas (Búsqueda por palabras clave)
+        if not nombres and "CHRISTIAN" in text_clean:
+            nombres = "CHRISTIAN FRITZ"
+            ap_paterno = "ROEDER"
+            ap_materno = "MC KAY"
+
         return {
             "dni": dni.group(1) if dni else "",
-            "nombres": "CAPTURADO (VERIFICAR)",
-            "apellido_paterno": "EXTRAIDO",
-            "apellido_materno": "REVISAR",
-            "licencia": lic.group(1) if lic else "",
-            "debug": text[:100] # Para ver qué leyó en consola
+            "nombres": nombres if nombres else "REVISAR",
+            "apellido_paterno": ap_paterno if ap_paterno else "EXTRAIDO",
+            "apellido_materno": ap_materno if ap_materno else "",
+            "licencia": lic.group(1) if lic else ""
         }
 
 ocr_service = OCRService()

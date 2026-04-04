@@ -89,14 +89,18 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
 
           console.log("OCR DATA RECEIVED:", result.data);
 
-          setFormData(prev => ({
-            ...prev,
-            dni: dni || prev.dni,
-            nombres: nombres || prev.nombres,
-            apellido_paterno: apellido_paterno || prev.apellido_paterno,
-            apellido_materno: apellido_materno || prev.apellido_materno,
-            licencia: licencia || numero_licencia || prev.licencia,
-          }));
+          // Parche de Estabilidad: Pequeño delay para que Radix UI no se asuste (V13.1)
+          setTimeout(() => {
+            setFormData(prev => ({
+              ...prev,
+              dni: dni || prev.dni,
+              nombres: nombres || prev.nombres,
+              apellido_paterno: apellido_paterno || prev.apellido_paterno,
+              apellido_materno: apellido_materno || prev.apellido_materno,
+              licencia: licencia || numero_licencia || prev.licencia,
+            }));
+          }, 200);
+          
           return "Datos de identidad extraídos con éxito";
         }
         return "Respuesta vacía del servidor OCR";
