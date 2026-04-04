@@ -165,7 +165,7 @@ export default function ContenedoresDamsPage() {
             />
          </div>
          <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Despachos</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total de registros</p>
             <p className="text-2xl font-extrabold text-[#022c22]">{total}</p>
          </div>
       </div>
@@ -246,7 +246,7 @@ export default function ContenedoresDamsPage() {
                    <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
-                   Mostrando {embarques.length} de {total} Despachos
+                   Mostrando {embarques.length} de {total} Registros
                 </span>
              </div>
              
