@@ -52,6 +52,7 @@ class PaginatedChoferResponse(BaseModel):
     total: int
     page: int
     size: int
+    total_pages: int
 
 class EmbarqueCreate(BaseModel):
     booking: str
@@ -353,11 +354,14 @@ def list_choferes(
     total = query.count()
     items = query.offset((page - 1) * size).limit(size).all()
     
+    total_pages = (total + size - 1) // size
+    
     return {
         "items": items,
         "total": total,
         "page": page,
-        "size": size
+        "size": size,
+        "total_pages": total_pages
     }
 
 @router.post("/choferes", response_model=ChoferResponse)

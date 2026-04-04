@@ -37,6 +37,7 @@ export default function ChoferesPage() {
   const [choferes, setChoferes] = useState<Chofer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const size = 10;
   
@@ -67,6 +68,7 @@ export default function ChoferesPage() {
       const data = await response.json();
       setChoferes(data.items);
       setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (error) {
       console.error("Error al cargar choferes:", error);
       toast.error("Error al cargar choferes");
@@ -275,33 +277,37 @@ export default function ChoferesPage() {
           </div>
         )}
 
-        {/* Footer con Paginación */}
-        {!isLoading && total > size && (
-          <div className="border-t border-slate-50 bg-slate-50/20 px-8 py-6 flex items-center justify-between">
-            <div className="text-[10px] uppercase font-black tracking-widest text-slate-400">
-               Mostrando {((page - 1) * size) + 1} - {Math.min(page * size, total)} de {total} Conductores
-            </div>
-            <div className="flex items-center gap-2">
-               <button 
-                  disabled={page === 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  className="h-10 w-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm disabled:opacity-30 active:scale-95"
-               >
-                  <ChevronLeft className="h-5 w-5" />
-               </button>
-               <div className="h-10 px-4 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-bold text-sm border border-emerald-100">
-                  {page}
-               </div>
-               <button 
-                  disabled={page * size >= total}
-                  onClick={() => setPage(p => p + 1)}
-                  className="h-10 w-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm disabled:opacity-30 active:scale-95"
-               >
-                  <ChevronRight className="h-5 w-5" />
-               </button>
-            </div>
-          </div>
-        )}
+        {/* Footer de Paginación Unificado Premium */}
+        <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
+           <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+              <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                 <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                 Mostrando {choferes.length} de {total} Conductores
+              </span>
+           </div>
+           
+           <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1 || isLoading}
+                className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
+              >
+                 <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                 Anterior
+              </button>
+              <button 
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages || isLoading}
+                className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed group"
+              >
+                 Siguiente
+                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+           </div>
+        </div>
       </div>
     </div>
   );
