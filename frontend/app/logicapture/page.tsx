@@ -289,6 +289,7 @@ export default function LogiCaptureV2Page() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successTitle, setSuccessTitle] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isBookingBlocked, setIsBookingBlocked] = useState(false);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -367,7 +368,10 @@ export default function LogiCaptureV2Page() {
   };
 
   const updateField = (field: string, value: any) => {
-    if (field === "booking") setBookingError(false);
+    if (field === "booking") {
+      setBookingError(false);
+      setIsBookingBlocked(false);
+    }
     
     // Al editar un campo, deja de estar validado hasta el siguiente blur/lookup
     setValidatedFields(prev => prev.filter(f => f !== field));
@@ -495,9 +499,19 @@ export default function LogiCaptureV2Page() {
             ...prev, 
             [field]: `Dato Duplicado: Ya existe en registro #${data.id}` 
          }));
+         // Si el campo es el booking, activamos el bloqueo visual persistente (Blindaje Rojo)
+         if (field === "booking") {
+            setIsBookingBlocked(true);
+            toast.error(`BLOQUEO: El Booking ${cleanVal} ya ha sido procesado.`, {
+               description: "Verifique el registro anterior y corrija para continuar.",
+               duration: 6000
+            });
+         }
          // Quitamos de validados si es duplicado
          setValidatedFields(prev => prev.filter(f => f !== field));
       } else {
+         // Si era el booking y ya no existe (o se cambió), quitamos el bloqueo
+         if (field === "booking") setIsBookingBlocked(false);
          // Si existía un error previo de duplicado para este campo, lo borramos
          setFieldErrors(prev => {
             const next = { ...prev };
@@ -582,6 +596,14 @@ export default function LogiCaptureV2Page() {
   }, []);
 
   const handleSave = async () => {
+    if (isBookingBlocked) {
+       toast.error("NO SE PUEDE GUARDAR: El Booking está duplicado y bloqueado.", {
+          description: "Por favor, ingrese un Booking que no haya sido procesado previamente.",
+          style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }
+       });
+       return;
+    }
+
     if (isChoferInhabilitado) {
        toast.error("ERROR CRÍTICO: No se puede registrar un despacho con un conductor INHABILITADO.");
        setServerError("BLOQUEO DE SEGURIDAD: El conductor seleccionado se encuentra inhabilitado en los registros maestros.");
@@ -652,6 +674,7 @@ export default function LogiCaptureV2Page() {
     setValidatedFields([]);
     setFieldErrors({});
     setBookingError(false);
+    setIsBookingBlocked(false);
     setServerError(null);
     localStorage.removeItem("logicapture_draft");
     toast.info("Pantalla Limpia", { description: "Datos y borrador eliminados" });
@@ -808,10 +831,17 @@ export default function LogiCaptureV2Page() {
                    <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-4">
                          <div className="flex items-center gap-3">
-                            <BadgeCheck className="h-5 w-5 text-emerald-600" />
-                            <h3 className="text-xs font-black text-emerald-950 uppercase tracking-[0.2em]">01. Datos de Embarque</h3>
+                            <BadgeCheck className={cn("h-5 w-5", isBookingBlocked ? "text-rose-500" : "text-emerald-600")} />
+                            <h3 className={cn("text-xs font-black uppercase tracking-[0.2em]", isBookingBlocked ? "text-rose-950" : "text-emerald-950")}>01. Datos de Embarque</h3>
                          </div>
                          
+                         {isBookingBlocked && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 text-white rounded-xl shadow-lg shadow-rose-900/20 animate-in slide-in-from-top-4 duration-500">
+                               <AlertCircle className="h-4 w-4 animate-pulse" />
+                               <span className="text-[10px] font-black uppercase tracking-widest">Documento Duplicado - Prohibido Guardar</span>
+                            </div>
+                         )}
+
                          {/* Toggle Tratamiento en Buque (Compacto en Cabecera) */}
                          {transportMode === "maritimo" && (
                            <button 
@@ -854,7 +884,7 @@ export default function LogiCaptureV2Page() {
                         onBlur={() => handleFieldBlur("booking", formData.booking)}
                         error={bookingError}
                         errorMsg="Booking no registrado en posicionamiento"
-                        highlightError={!!fieldErrors.booking}
+                        highlightError={!!fieldErrors.booking || isBookingBlocked}
                      />
                      <FormField 
                         label="Orden Beta" 
@@ -864,8 +894,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("ordenBeta", v)} 
                         onBlur={() => handleFieldBlur("ordenBeta", formData.ordenBeta)}
                         readOnly
-                        success={validatedFields.includes("ordenBeta")}
-                        highlightError={!!fieldErrors.ordenBeta}
+                        success={validatedFields.includes("ordenBeta") && !isBookingBlocked}
+                        highlightError={!!fieldErrors.ordenBeta || isBookingBlocked}
                      />
                      <FormField 
                         label="Número Contenedor" 
@@ -875,8 +905,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("contenedor", v)} 
                         onBlur={() => handleFieldBlur("contenedor", formData.contenedor)}
                         readOnly
-                        success={validatedFields.includes("contenedor")}
-                        highlightError={!!fieldErrors.contenedor}
+                        success={validatedFields.includes("contenedor") && !isBookingBlocked}
+                        highlightError={!!fieldErrors.contenedor || isBookingBlocked}
                      />
                      <FormField 
                         label="Número DAM" 
@@ -886,8 +916,8 @@ export default function LogiCaptureV2Page() {
                         onChange={(v) => updateField("dam", v)} 
                         onBlur={() => handleFieldBlur("dam", formData.dam)}
                         readOnly
-                        success={validatedFields.includes("dam")}
-                        highlightError={!!fieldErrors.dam}
+                        success={validatedFields.includes("dam") && !isBookingBlocked}
+                        highlightError={!!fieldErrors.dam || isBookingBlocked}
                      />
                   </div>
                </div>
@@ -1050,16 +1080,18 @@ export default function LogiCaptureV2Page() {
                         </button>
                         <button 
                            onClick={handleSave}
-                           disabled={isSearching || isChoferInhabilitado}
+                           disabled={isSearching || isChoferInhabilitado || isBookingBlocked}
                            className={cn(
                               "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
                               isSearching 
                                  ? "bg-slate-100 text-slate-400 cursor-wait" 
-                                 : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
+                                 : isBookingBlocked
+                                    ? "bg-rose-950 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed"
+                                    : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
                            )}
                         >
-                           {isSearching ? "Sincronizando..." : isChoferInhabilitado ? "Bloqueado" : "Guardar Registro"}
-                           {!isSearching && !isChoferInhabilitado && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                           {isSearching ? "Sincronizando..." : isChoferInhabilitado ? "Bloqueado" : isBookingBlocked ? "Booking Duplicado" : "Guardar Registro"}
+                           {!isSearching && !isChoferInhabilitado && !isBookingBlocked && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
                         </button>
                      </div>
                   </div>
