@@ -94,9 +94,15 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
 
   const fetchTransportistas = async () => {
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas`);
-      if (resp.ok) setTransportistas(await resp.json());
-    } catch (e) { console.error(e); }
+      const resp = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas?size=100`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setTransportistas(data.items || []);
+      }
+    } catch (e) { 
+      console.error("Error en fetchTransportistas (Modal):", e); 
+      setTransportistas([]); 
+    }
   };
 
   const processOCR = async (file: File) => {
@@ -219,6 +225,9 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                 <Dialog.Title className="text-2xl font-extrabold tracking-tighter text-[#022c22]">
                   {editingData ? `Editar ${type}` : `Nuevo ${type}`}
                 </Dialog.Title>
+                <Dialog.Description className="sr-only">
+                  Formulario para la gestión de unidades operativas (Tractos y Carretas) del sistema LogiCapture.
+                </Dialog.Description>
                 <p className="text-xs text-emerald-500 font-black uppercase tracking-widest">Gestión de Unidades Operativas</p>
               </div>
             </div>
