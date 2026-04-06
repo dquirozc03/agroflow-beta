@@ -304,14 +304,15 @@ export default function BandejaLogiCapture() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
+  const handleStatusChange = async (reg: any, newStatus: string) => {
     if (newStatus === "ANULADO") {
+       setSelectedReg(reg);
        setIsAnularOpen(true);
        return;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${id}/status?status=${newStatus}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}/status?status=${newStatus}`, {
         method: 'PATCH'
       });
       if (!response.ok) throw new Error();
@@ -343,6 +344,11 @@ export default function BandejaLogiCapture() {
     }
 
     try {
+       if (!selectedReg?.id) {
+         toast.error("Error crítico: Referencia de registro perdida 🛠️");
+         return;
+       }
+
        const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}/status?status=ANULADO&motivo=${encodeURIComponent(finalReason)}`, {
          method: 'PATCH'
        });
@@ -712,7 +718,7 @@ export default function BandejaLogiCapture() {
                                         <Edit3 className="h-4 w-4" /> Editar
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg.id, 'ANULADO')}>
+                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg, 'ANULADO')}>
                                         <Trash2 className="h-4 w-4" /> Anular Registro
                                       </DropdownMenuItem>
                                    </>
@@ -722,7 +728,7 @@ export default function BandejaLogiCapture() {
                                    <>
                                       <DropdownMenuItem 
                                         className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
-                                        onClick={() => handleStatusChange(reg.id, 'PROCESADO')}
+                                        onClick={() => handleStatusChange(reg, 'PROCESADO')}
                                       >
                                          <Zap className="h-4 w-4" /> Procesar Registro
                                       </DropdownMenuItem>
