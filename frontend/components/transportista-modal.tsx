@@ -185,7 +185,7 @@ export function TransportistaModal({ isOpen, onClose, onSuccess, editingData }: 
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Módulo de Datos Maestros</p>
               </div>
             </div>
-            <Dialog.Close className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all">
+            <Dialog.Close className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all hover:rotate-90">
                <X className="h-5 w-5" />
             </Dialog.Close>
           </div>

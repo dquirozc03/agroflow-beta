@@ -214,7 +214,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white rounded-[2.5rem] p-8 shadow-2xl z-[110] animate-in zoom-in-95 focus:outline-none max-h-[90vh] overflow-y-auto">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white rounded-[2.5rem] p-8 shadow-2xl z-[110] animate-in zoom-in-95 focus:outline-none max-h-[90vh] overflow-y-auto lc-scroll">
            
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
@@ -231,7 +231,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                 <p className="text-xs text-emerald-500 font-black uppercase tracking-widest">Gestión de Unidades Operativas</p>
               </div>
             </div>
-            <Dialog.Close className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all">
+            <Dialog.Close className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all hover:rotate-90">
                <X className="h-5 w-5" />
             </Dialog.Close>
           </div>

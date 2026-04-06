@@ -234,7 +234,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         message="¿Estás seguro de resetear la contraseña del usuario a '123456'? Se obligará al usuario a cambiarla al ingresar."
         confirmText="Sí, Resetear"
       />
-      <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2rem] overflow-hidden p-0">
+      <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2rem] overflow-hidden p-0 lc-scroll">
         <div className="h-2 bg-emerald-500" />
         
         <DialogHeader className="px-8 pt-8 pb-4">
@@ -364,7 +364,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
             </TabsContent>
 
             {/* TAB: PERMISOS ATÓMICOS */}
-            <TabsContent value="permisos" className="space-y-6 animate-in fade-in slide-in-from-top-2 pt-2 h-[450px] overflow-y-auto pr-2 custom-scroll">
+            <TabsContent value="permisos" className="space-y-6 animate-in fade-in slide-in-from-top-2 pt-2 h-[450px] overflow-y-auto pr-2 lc-scroll">
                
                {/* LOGICAPTURE */}
                <div className="space-y-3">

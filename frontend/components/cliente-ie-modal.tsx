@@ -228,7 +228,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                 <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[0.2em]">Configuración de Instrucciones de Embarque</p>
               </div>
             </div>
-            <Dialog.Close className="h-12 w-12 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all">
+            <Dialog.Close className="h-12 w-12 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all hover:rotate-90">
               <X className="h-6 w-6" />
             </Dialog.Close>
           </div>

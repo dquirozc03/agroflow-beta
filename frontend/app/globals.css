@@ -106,71 +106,64 @@
   }
 }
 
-/* Scrollbar “pro” dentro de contenedores */
-.lc-scroll {
-  scrollbar-gutter: stable both-edges;
+/* --- AgroFlow Premium Scroll Engine 💎 --- */
+:root {
+  scrollbar-gutter: stable;
+}
+
+/* Aplicación Global "Carlos Style" para evitar barras feas de Windows */
+* {
   scrollbar-width: thin;
   scrollbar-color: rgba(16, 185, 129, 0.15) transparent;
 }
 
-/* Chrome/Edge */
-.lc-scroll::-webkit-scrollbar {
-  height: 6px;
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
-.lc-scroll::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 999px;
-  margin: 4px;
 }
 
-.lc-scroll::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.15); /* Esmeralda Suave */
+*::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.15); /* Esmeralda Minimalista Base */
   border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
 }
 
-.lc-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.4);
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4); /* Esmeralda Operativo en Hover */
 }
 
-/* Modo oscuro: scrollbar clara sobre fondo oscuro */
-.dark .lc-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
+/* Estilo específico para contenedores con clase lc-scroll (por si acaso) */
+.lc-scroll {
+  scrollbar-gutter: stable both-edges;
 }
 
-.dark .lc-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.06);
+/* Modo oscuro: adaptabilidad industrial */
+.dark *::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.dark .lc-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.32);
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Scrollbar minimalista para el Sidebar */
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Scrollbar extra-delgado para el Sidebar (Diseño Ultra-Limpiado) */
 .sidebar-scroll::-webkit-scrollbar {
-  width: 5px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  width: 4px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.2);
-  border-radius: 20px;
-  transition: all 0.3s;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.5);
-}
-
-/* Firefox */
-.sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.2) transparent;
+  background: rgba(16, 185, 129, 0.1);
 }
 
 

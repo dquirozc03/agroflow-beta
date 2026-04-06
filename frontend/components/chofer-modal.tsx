@@ -191,7 +191,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
           </div>
 
           {/* Contenido Scrolleable con Scrollbar Elegante */}
-          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent hover:scrollbar-thumb-emerald-100 transition-all">
+          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 lc-scroll transition-all">
             <form onSubmit={handleSubmit} className="space-y-6 pb-4">
               
               {/* OCR Brevete Area */}
