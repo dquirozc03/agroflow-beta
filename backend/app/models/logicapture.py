@@ -52,6 +52,7 @@ class LogiCaptureRegistro(Base):
     partida_registral = Column(String(100), nullable=True)
 
     # Datos de Pesos y Medidas (Anexo 1)
+    num_guia = Column(String(50), nullable=True) # Correlativo persistente 📋
     peso_bruto = Column(Numeric(10, 2), nullable=True)
     peso_tara_contenedor = Column(Numeric(10, 2), nullable=True)
     peso_neto_carga = Column(Numeric(10, 2), nullable=True)

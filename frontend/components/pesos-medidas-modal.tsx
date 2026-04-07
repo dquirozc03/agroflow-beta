@@ -74,6 +74,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       
       setTaraContenedor(Number(reg.peso_tara_contenedor) || 0);
       setPesoBrutoProducto(Number(reg.peso_neto_carga) || 0);
+      setGuiaRemision(reg.num_guia || ""); // Carga automática del correlativo guardado 📋✨
 
       // 2. Obtener Taras Técnicas y Ejes Reales 🚛📊
       const [tractoRes, carretaRes] = await Promise.all([

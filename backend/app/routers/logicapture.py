@@ -651,10 +651,11 @@ def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
         if not reg:
             raise HTTPException(status_code=404, detail="Registro no encontrado")
             
-        # 1. Persistir pesos en la base de datos
+        # 1. Persistir pesos y guía en la base de datos 💾
         reg.peso_bruto = req.peso_bruto
         reg.peso_tara_contenedor = req.peso_tara_contenedor
         reg.peso_neto_carga = req.peso_neto_carga
+        reg.num_guia = req.guia_remision # Persistencia del correlativo 📋
         db.commit()
         
         # 2. Generar PDF usando el motor ReportLab
