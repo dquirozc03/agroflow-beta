@@ -702,8 +702,8 @@ export default function BandejaLogiCapture() {
                           <TableCell className="text-right p-6" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-white hover:shadow-sm">
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                                  <MoreHorizontal className="h-4 w-4 text-slate-500" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
@@ -722,8 +722,8 @@ export default function BandejaLogiCapture() {
                                 >
                                   <Scale className="h-4 w-4 text-emerald-600" />
                                   <div className="flex flex-col">
-                                     <span className="text-[11px] uppercase tracking-tighter">Anexo 1 (Pesos)</span>
-                                     <span className="text-[9px] text-emerald-500/70 font-medium">Balanza MTC</span>
+                                     <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
+                                     <span className="text-[9px] text-emerald-500/70 font-medium">MTC OFICIAL</span>
                                   </div>
                                 </DropdownMenuItem>
 

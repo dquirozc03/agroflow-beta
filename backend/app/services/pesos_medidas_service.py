@@ -51,8 +51,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     """
     Constancia de Verificación de Pesos y Medidas (MTC oficial).
     """
+    from app.models.auth import Usuario
+    
     reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == registro_id).first()
     if not reg: return None
+
+    # Obtener Nombre Real del Usuario de Registro 🕵️‍♂️🔍
+    usuario_real = db.query(Usuario).filter(Usuario.usuario == reg.usuario_registro).first()
+    nombre_operador = usuario_real.nombre if usuario_real else reg.usuario_registro
 
     tracto = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == reg.placa_tracto).first()
     carreta = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == reg.placa_carreta).first()
@@ -230,12 +236,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh.wrapOn(c, width, height)
     t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
 
-    # Notas al pie de la tabla IV (Imagen 2) 📜
+    # Notas al pie de la tabla IV (Imagen 2) - DIVIDIDAS PARA QUE NO SE SALGAN 📜
     c.setFont("Helvetica", 5.5)
     notas_iv = [
         "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003",
-        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LAS SUMATORIA DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
-        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA Y NEUMAT EXTRA ANCHOS"
+        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LAS SUMATORIA",
+        "    DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
+        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA",
+        "    Y NEUMAT EXTRA ANCHOS"
     ]
     curr_nota_y = height - 13.8*cm
     for nota in notas_iv:
@@ -289,7 +297,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
             return f"{p[0]} {p[-2]} {p[-1][0]}.".upper()
         return full_name.upper()
 
-    user_formatted = format_name(reg.usuario_registro or "OPERADOR LOGICAPTURE")
+    user_formatted = format_name(nombre_operador or "OPERADOR LOGICAPTURE")
     chofer_formatted = format_name(reg.nombre_chofer or "CONDUCTOR")
 
     sign_y = 5.5*cm # Un poco más arriba para dar espacio a los textos inferiores
@@ -313,25 +321,27 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.setFont("Helvetica-Bold", 7.5)
     c.drawCentredString(13.7*cm, sign_y - 0.8*cm, "CONDUCTOR") # Cargo más abajo
 
-    # --- NOTAS FINALES (AL FONDO DE LA PÁGINA) ---
-    c.setFont("Helvetica-Bold", 5)
-    c.drawString(1.5*cm, 2.5*cm, "NOTA:")
-    c.setFont("Helvetica", 5)
+    # --- NOTAS FINALES (DIVIDIDAS E INTERLINEADO MAYOR) ---
+    c.setFont("Helvetica-Bold", 5.5)
+    c.drawString(1.5*cm, 2.8*cm, "NOTA:")
+    c.setFont("Helvetica", 5.5)
+    
+    # Divididas para que no se escapen de la hoja 🗒️
     notas = [
-        "1.- LO CONSIGNADO EN EL PRESENTE FORMATO TIENE CARÁCTER DE DECLARACION JURADA, POR LO QUE ESTARA SUJETO A LO ESTABLECIDO EN EL ART. 32 NUMERAL 32.3 DE LA LEY",
-        "Nº 27444; SIN PERJUICIO DE LA SANCION ADMINISTRATIVA CORRESPONDIENTE, TENIENDO QUE CUMPLIR QUIEN GENERA CARGA EL LLENADO DE LA PRESENTE CONSTANCIA",
-        "2.- Solo para terminales Portuarios, Almacenes Aduaneros y de carga de Hidrocarburos. LA GUIA DE SALIDA, CONSTANCIA DE PESO O TICKET DE PESO DE SALIDA, reemplazará la presente",
-        "constancia, la cual deberá contener lo indicado en el punto I.",
+        "1.- LO CONSIGNADO EN EL PRESENTE FORMATO TIENE CARÁCTER DE DECLARACION JURADA, POR LO QUE ESTARA SUJETO A LO ESTABLECIDO EN EL ART. 32 NUMERAL 32.3",
+        "    DE LA LEY Nº 27444; SIN PERJUICIO DE LA SANCION ADMINISTRATIVA CORRESPONDIENTE, TENIENDO QUE CUMPLIR QUIEN GENERA CARGA EL LLENADO DE LA PRESENTE CONSTANCIA",
+        "2.- Solo para terminales Portuarios, Almacenes Aduaneros y de carga de Hidrocarburos. LA GUIA DE SALIDA, CONSTANCIA DE PESO O TICKET DE PESO DE SALIDA,",
+        "    reemplazará la presente constancia, la cual deberá contener lo indicado en el punto I.",
         "3.- Del punto IV- 'Dimensión total del vehículo y la carga', será llenado cuando excedan las dimensiones permitidas.",
-        "4.- Para el transporte de contenedores vacíos, la presentacion de la EIR (Equipment Interchange Reception) reemplaza al presente formato, Asimismo, los contenedores no están sujetos",
-        "al control de pesos por ejes.",
+        "4.- Para el transporte de contenedores vacíos, la presentacion de la EIR (Equipment Interchange Reception) reemplaza al presente formato,",
+        "    asimismo, los contenedores no están sujetos al control de pesos por ejes.",
         "5.- Para el control en la balanza de las Estaciones de Pesaje 'Peso Bruto Total Transportado', se consideran las tolerancias del 3% vigente en el pesaje dinámico.",
         "6.- De no consignar los datos en el punto V. cuando corresponda, el generador de la carga declara que los pesos por eje están dentro de lo permitido en el RNV"
     ]
-    curr_y = 2.2*cm
+    curr_y = 2.5*cm
     for nota in notas:
         c.drawString(1.5*cm, curr_y, nota)
-        curr_y -= 0.18*cm
+        curr_y -= 0.22*cm # Interlineado aumentado 🍃
 
     c.save()
     return file_path

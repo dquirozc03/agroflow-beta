@@ -147,7 +147,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                 </div>
                 <div>
                    <DialogTitle className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
-                     Balanza Digital MTC
+                     Pesos y Medidas (Anexo 1)
                    </DialogTitle>
                 </div>
             </div>
