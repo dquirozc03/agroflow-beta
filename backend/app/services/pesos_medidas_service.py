@@ -162,16 +162,19 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ["", "LARGO", "ANCHO", "ALTO", "", "", "", "", ""]
     ]
     
-    bruto_f = reg.peso_bruto or 0
+    bruto_f = float(reg.peso_bruto or 0)
+    peso_max_f = float(peso_max)
+    pb_95 = float(peso_max_f * 0.95)
+
     data_v = [
         [f"{reg.placa_tracto} / {reg.placa_carreta}", 
-         f"{tracto.largo_tracto or '-'}", f"{tracto.ancho_tracto or '-'}", f"{tracto.alto_tracto or '-'}", 
-         conf_label, f"{peso_max:,.0f}", f"{bruto_f:,.0f}", f"{peso_max * 0.95:,.0f}", "-"]
+         f"{tracto.largo_tracto if tracto else '-'}", f"{tracto.ancho_tracto if tracto else '-'}", f"{tracto.alto_tracto if tracto else '-'}", 
+         conf_label, f"{peso_max_f:,.0f}", f"{bruto_f:,.0f}", f"{pb_95:,.0f}", "-"]
     ]
     
     full_v = head_v + data_v
-    # Reducción estratégica de anchos para entrar en margen A4 (17.5 cm total) 📐
-    t_vh = Table(full_v, colWidths=[2.2*cm, 0.9*cm, 0.9*cm, 0.9*cm, 2.0*cm, 2.4*cm, 2.6*cm, 2.8*cm, 2.8*cm])
+    # Calibración milimétrica para A4 (Margen de seguridad total) 📐
+    t_vh = Table(full_v, colWidths=[2.2*cm, 1.0*cm, 1.0*cm, 1.0*cm, 2.0*cm, 2.4*cm, 2.5*cm, 2.7*cm, 2.7*cm])
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 5),
