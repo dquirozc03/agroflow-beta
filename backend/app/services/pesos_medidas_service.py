@@ -257,22 +257,22 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
 
     # Notas al pie de la tabla IV
-    c.setFont("Helvetica", 5.5)
-    notas_iv = [
-        "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003",
-        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LA SUMATORIA DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
-        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA Y NEUMAT EXTRA ANCHOS",
-    ]
+    c.setFont("Helvetica", 5.0)
     curr_nota_y = height - 14.2*cm
-    for nota in notas_iv:
-        c.drawString(1.5*cm, curr_nota_y, nota)
-        curr_nota_y -= 0.38*cm
+    c.drawString(1.5*cm, curr_nota_y, "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003")
+    curr_nota_y -= 0.38*cm
+    c.drawString(1.5*cm, curr_nota_y, "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95%")
+    curr_nota_y -= 0.33*cm
+    c.drawString(1.8*cm, curr_nota_y, "DE LA SUMATORIA DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV")
+    curr_nota_y -= 0.38*cm
+    c.drawString(1.5*cm, curr_nota_y, "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA Y NEUMAT EXTRA ANCHOS")
+    curr_nota_y -= 0.38*cm
 
     # --- III) CONTROL POR EJES (FORMATO IMAGEN 2) ---
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 14.8*cm, "II) CONTROL DE PESOS POR EJE O CONJUNTO DE EJES:")
+    c.drawString(1.5*cm, height - 15.9*cm, "II) CONTROL DE PESOS POR EJE O CONJUNTO DE EJES:")
     c.setFont("Helvetica", 6)
-    c.drawString(1.5*cm, height - 15.1*cm, "Para aquellos vehículos que exceden el 95% de la suma de los pesos por ejes")
+    c.drawString(1.5*cm, height - 16.2*cm, "Para aquellos vehículos que exceden el 95% de la suma de los pesos por ejes")
     
     data_ejes = [
         ["", "DISTRIBUCION DE PESOS POR CONJUNTO DE EJES EN KG.", "", "", "", "", ""],
@@ -294,18 +294,18 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t_ej.wrapOn(c, width, height)
-    t_ej.drawOn(c, 1.5*cm, height - 17.5*cm) # Baja para llenar la hoja
+    t_ej.drawOn(c, 1.5*cm, height - 18.6*cm) # Baja para llenar la hoja
 
     # --- TEXTO LEGAL Y OBSERVACIONES ---
     c.setFont("Helvetica-Bold", 6)
-    c.drawString(1.5*cm, height - 18.2*cm, "DECRETO SUPREMO Nº 058-2003-MTC, modificado por D.S. Nº 006-2008-MTC, ANEXO IV: PESOS Y MEDIDAS")
+    c.drawString(1.5*cm, height - 19.3*cm, "DECRETO SUPREMO Nº 058-2003-MTC, modificado por D.S. Nº 006-2008-MTC, ANEXO IV: PESOS Y MEDIDAS")
     c.setFont("Helvetica", 6)
-    c.drawString(1.5*cm, height - 18.5*cm, "Artículo 37º.- Pesos máximos permitidos: (...) están exonerados del control de peso por eje o conjunto de ejes, los vehículos o combinaciones vehiculares que transiten con un")
-    c.drawString(1.5*cm, height - 18.8*cm, "peso bruto vehicular que no exceda del 95% de la sumatoria de pesos por eje o conj")
+    c.drawString(1.5*cm, height - 19.6*cm, "Artículo 37º.- Pesos máximos permitidos: (...) están exonerados del control de peso por eje o conjunto de ejes, los vehículos o combinaciones vehiculares que transiten con un")
+    c.drawString(1.5*cm, height - 19.9*cm, "peso bruto vehicular que no exceda del 95% de la sumatoria de pesos por eje o conj")
     
-    c.drawString(1.5*cm, height - 19.5*cm, "OBSERVACIONES: ..................................................................................................................................................................................................................................")
-    c.drawString(1.5*cm, height - 20*cm, "........................................................................................................................................................................................................................................................................")
-    c.drawString(1.5*cm, height - 20.5*cm, "........................................................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 20.6*cm, "OBSERVACIONES: ..................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 21.1*cm, "........................................................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 21.6*cm, "........................................................................................................................................................................................................................................................................")
 
     # --- FIRMAS (DETALLE PERSONALIZADO SEGÚN IMAGEN) ---
     def format_name(full_name: str):
