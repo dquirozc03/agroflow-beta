@@ -7,7 +7,26 @@ import io
 import re
 
 from app.database import get_db
-from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer
+from app.models.maestros import Transportista, VehiculoTracto, VehiculoCarreta, Chofer, Planta
+# ... (líneas intermedias)
+class PlantaCreate(BaseModel):
+    planta: str
+    centro: Optional[str] = None
+    direccion: str
+    ubigeo: str
+    distrito: Optional[str] = None
+    provincia: Optional[str] = None
+    departamento: Optional[str] = None
+
+class PlantaResponse(PlantaCreate):
+    id: int
+    
+    class Config:
+        from_attributes = True
+
+class PaginatedPlantaResponse(BaseModel):
+    items: List[PlantaResponse]
+    total: int
 from app.models.embarque import ControlEmbarque, clean_container_code
 from app.utils.logging import logger
 from app.utils.formatters import clean_booking
@@ -561,3 +580,21 @@ def delete_embarque(id: int, db: Session = Depends(get_db)):
     db.delete(e)
     db.commit()
     return {"status": "success"}
+
+# --- ENDPOINTS PLANTAS ---
+
+@router.get("/plantas", response_model=List[PlantaResponse])
+def list_plantas(db: Session = Depends(get_db)):
+    """Listado simple de todas las plantas para selectores y trazabilidad."""
+    return db.query(Planta).order_by(Planta.planta.asc()).all()
+
+@router.patch("/plantas/{id}/centro")
+def patch_centro_planta(id: int, centro: str, db: Session = Depends(get_db)):
+    """Actualiza el código de centro para la trazabilidad dinámica."""
+    p = db.query(Planta).filter(Planta.id == id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Planta no encontrada")
+    
+    p.centro = centro.strip().upper()
+    db.commit()
+    return {"status": "success", "nuevo_centro": p.centro}

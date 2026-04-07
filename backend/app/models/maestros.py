@@ -140,6 +140,7 @@ class Planta(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     planta = Column(String(100), unique=True, nullable=False)
+    centro = Column(String(20), nullable=True) # Nuevo para Trazabilidad Dinámica 🛰️
     direccion = Column(String(500), nullable=False)
     distrito = Column(String(100), nullable=True) # Nuevo para Anexo 1
     provincia = Column(String(100), nullable=True) # Nuevo para Anexo 1

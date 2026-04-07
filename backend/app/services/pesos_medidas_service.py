@@ -117,13 +117,17 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.rect(13.8*cm, height - 4.5*cm, 2*cm, 0.45*cm, fill=1)
     c.setFillColor(yellow)
     c.rect(15.8*cm, height - 4.5*cm, 3*cm, 0.45*cm, fill=1, stroke=1)
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 8.5)
-    c.drawCentredString(17.3*cm, height - 4.38*cm, "4102060426")
-
-    # Lookup Maestro de Planta para Datos de Ubicación AUTOMÁTICO 🌍🏗️
+    # Lookup Maestro de Planta para Datos de Ubicación y Trazabilidad 🌍🏗️
     from app.models.maestros import Planta
     planta_db = db.query(Planta).filter(Planta.planta.ilike(reg.planta or "")).first()
+
+    # 1. Código de Trazabilidad Dinámico 🛰️
+    centro_planta = planta_db.centro if (planta_db and planta_db.centro) else "4102"
+    fecha_trazabilidad = datetime.now().strftime('%d%m%y')
+    codigo_completo = f"{centro_planta}{fecha_trazabilidad}"
+
+    c.setFont("Helvetica-Bold", 8.5)
+    c.drawCentredString(17.3*cm, height - 4.38*cm, codigo_completo)
     
     # Datos dinámicos con Fallback a BETA_CONFIG por seguridad 🛡️
     empresa_upper = BETA_CONFIG['empresa'].upper()
