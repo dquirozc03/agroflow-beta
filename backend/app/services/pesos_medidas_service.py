@@ -100,14 +100,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.setFont("Helvetica-Bold", 8)
     c.drawString(1.5*cm, height - 4.4*cm, "I) DATOS DEL GENERADOR DE CARGA")
     
-    # Cuadro de Control (Calibración milimétrica para centrado)
+    # Cuadro de Control (Posición final ajustada)
     c.setFillColor(HexColor("#cccccc"))
     c.rect(13.8*cm, height - 4.5*cm, 2*cm, 0.45*cm, fill=1)
     c.setFillColor(yellow)
     c.rect(15.8*cm, height - 4.5*cm, 3*cm, 0.45*cm, fill=1, stroke=1)
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 8.5)
-    c.drawCentredString(17.3*cm, height - 4.28*cm, "4102060426") # Centrado vertical corregido ⚖️
+    c.drawCentredString(17.3*cm, height - 4.38*cm, "4102060426") # Bajado un poco más según pedido 🎯
 
     # Tabla remitente - TODO MAYÚSCULAS Y CENTRADO
     empresa_upper = BETA_CONFIG['empresa'].upper()
@@ -121,7 +121,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ["DIRECCION", direccion_upper, "", "", "", ""],
         ["DISTRITO", distrito_upper, "PROVINCIA", provincia_upper, "DEPARTAMENTO", depto_upper]
     ]
-    t1 = Table(data_remitente, colWidths=[2.5*cm, 5.0*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.8*cm, 0.6*cm, 0.6*cm])
+    t1 = Table(data_remitente, colWidths=[2.5*cm, 5.0*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[1.0*cm, 0.6*cm, 0.6*cm]) # Aumentado rowHeight inicial 📐
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 6.5),
@@ -132,12 +132,11 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('ALIGN', (2,2), (2,2), 'CENTER'),
         ('ALIGN', (4,0), (4,0), 'CENTER'),
         ('ALIGN', (4,2), (4,2), 'CENTER'),
-        # VALORES CENTRADOS según pedido 🎯
-        ('ALIGN', (3,0), (3,0), 'CENTER'), # RUC
-        ('ALIGN', (5,0), (5,0), 'CENTER'), # TELEF
-        ('ALIGN', (1,2), (1,2), 'CENTER'), # DISTRITO
-        ('ALIGN', (3,2), (3,2), 'CENTER'), # PROVINCIA
-        ('ALIGN', (5,2), (5,2), 'CENTER'), # DEPARTAMENTO
+        ('ALIGN', (3,0), (3,0), 'CENTER'),
+        ('ALIGN', (5,0), (5,0), 'CENTER'),
+        ('ALIGN', (1,2), (1,2), 'CENTER'),
+        ('ALIGN', (3,2), (3,2), 'CENTER'),
+        ('ALIGN', (5,2), (5,2), 'CENTER'),
         ('BACKGROUND', (0,0), (0,-1), HexColor("#cccccc")),
         ('BACKGROUND', (2,0), (2,0), HexColor("#cccccc")),
         ('BACKGROUND', (2,2), (2,2), HexColor("#cccccc")),
@@ -146,11 +145,11 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (1,1), (5,1)),
         ('LEFTPADDING', (0,0), (-1,-1), 4),
         ('RIGHTPADDING', (0,0), (-1,-1), 4),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 5), # Aumentado globalmente para que respire 🍃
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t1.wrapOn(c, width, height)
-    t1.drawOn(c, 1.5*cm, height - 6.8*cm)
+    t1.drawOn(c, 1.5*cm, height - 7.2*cm) # Ajustado posición Y por nueva altura 📏
 
     # --- II) TIPO DE MERCANCIA TRANSPORTADA ---
     cultivo_text = (reg.cultivo or "PRODUCTO AGRICOLA").upper()
@@ -185,32 +184,36 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.drawString(1.5*cm, height - 9.7*cm, "IV) DATOS DEL VEHICULO")
 
     
-    # Encabezados exactos según Imagen 2 📄
-    label_placas = "PLACAS\n(camion, tracto,\nremolque, semiremolque,\ncarretas)"
-    label_dims_total = "DIMENSION TOTAL DEL VEHICULO\n(incluida la mercancia)"
-    
+    # Títulos con saltos de línea optimizados para el nuevo ancho 📐
+    h_dim = "DIMENSION TOTAL\nDEL VEHICULO (mt)\n(incluida la mercancia)"
+    h_perm = "PESO BRUTO VEHICULAR\nMAX. PERMITIDO (KG.)\n(1)"
+    h_total = "PESO BRUTO TOTAL\nTRANSPORTADO\n(KG)"
+    h_ctr1 = "PBMax. Para no control\nde pesos por ejes (DS\n006-2008-MTC) (Kg) (2)"
+    h_ctr2 = "PBMax. Para no control\nde pesos por ejes (DS\n006-2008-MTC) (Kg) con\nBonif. x Susp. Neu (3)"
+
     head_v = [
-        [label_placas, label_dims_total, "", "", "CONFIGURACION\nVEHICULAR", "PESO BRUTO VEHICULAR\nMAX. PERMITIDO (KG.)\n(1)", "PESO BRUTO TOTAL\nTRANSPORTADO\n(KG)", "PBMax. Para no control\nde pesos por ejes (DS\n006-2008-MTC) (Kg)\n(2)", "PBMax. Para no control de pesos por\nejes (DS 006-2008-MTC) (Kg) con\nBonificaciones x Susp. Neu. y Neumac\nExtraanch (3)"],
-        ["", "LARGO\n(mt)", "ANCHO\n(mt)", "ALTO\n(mt)", "", "", "", "", ""]
+        ["PLACAS\n(camion, tracto,\nremolque, carreta)", h_dim, "", "", "CONFIGURACION\nVEHICULAR", h_perm, h_total, h_ctr1, h_ctr2],
+        ["", "LARGO", "ANCHO", "ALTO", "", "", "", "", ""]
     ]
     
     bruto_f = float(reg.peso_bruto or 0)
     peso_max_f = float(peso_max)
     pb_95 = float(peso_max_f * 0.95)
 
-    # Filas de datos: Fila 1 (Tracto), Fila 2 (Carreta)
     data_v = [
         [reg.placa_tracto or "-", f"{tracto.largo_tracto if tracto else '0.00'}", f"{tracto.ancho_tracto if tracto else '0.00'}", f"{tracto.alto_tracto if tracto else '0.00'}", conf_label, f"{peso_max_f:,.0f}", f"{bruto_f:,.0f}", f"{pb_95:,.0f}", "-"],
         [reg.placa_carreta or "-", f"{carreta.largo_carreta if carreta else '0.00'}", f"{carreta.ancho_carreta if carreta else '0.00'}", f"{carreta.alto_carreta if carreta else '0.00'}", "", "", "", "", ""]
     ]
     
     full_v = head_v + data_v
-    # Alturas para las 4 filas (2 cabecera, 2 datos) con más aire 📐
-    row_h_v = [1.2*cm, 0.7*cm, 0.6*cm, 0.6*cm] 
-    t_vh = Table(full_v, colWidths=[2.2*cm, 1.1*cm, 1.1*cm, 1.1*cm, 2.0*cm, 2.2*cm, 2.3*cm, 2.7*cm, 2.8*cm], rowHeights=row_h_v)
+    # Anchos equilibrados: Más espacio a la derecha, menos a las medidas simples 📏
+    col_w_v = [2.0*cm, 0.9*cm, 0.9*cm, 0.9*cm, 1.8*cm, 2.2*cm, 2.2*cm, 3.55*cm, 3.55*cm] # Total: 18cm (+/-)
+    row_h_v = [1.3*cm, 0.5*cm, 0.65*cm, 0.65*cm] 
+
+    t_vh = Table(full_v, colWidths=col_w_v, rowHeights=row_h_v)
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 4.7), 
+        ('FONTSIZE', (0,0), (-1,-1), 4.5), # Fuente ligeramente más pequeña para seguridad 📑
         ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -219,11 +222,13 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (5,0), (5,1)), ('SPAN', (6,0), (6,1)), ('SPAN', (7,0), (7,1)), ('SPAN', (8,0), (8,1)),
         ('SPAN', (4,2), (4,3)), ('SPAN', (5,2), (5,3)), ('SPAN', (6,2), (6,3)), ('SPAN', (7,2), (7,3)), ('SPAN', (8,2), (8,3)),
         ('BACKGROUND', (6,2), (6,3), yellow),
+        ('LEFTPADDING', (0,0), (-1,-1), 1),
+        ('RIGHTPADDING', (0,0), (-1,-1), 1),
         ('TOPPADDING', (0,0), (-1,-1), 2),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t_vh.wrapOn(c, width, height)
-    t_vh.drawOn(c, 1.5*cm, height - 13.4*cm) # Ajustado Y considerando altura 3.1cm
+    t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
 
     # Notas al pie de la tabla IV (Imagen 2) 📜
     c.setFont("Helvetica", 5.5)
