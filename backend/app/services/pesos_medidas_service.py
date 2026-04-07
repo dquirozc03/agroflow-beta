@@ -229,7 +229,8 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh = Table(full_v, colWidths=col_w_v, rowHeights=row_h_v)
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 7.5), # Fuente aumentada para legibilidad 👁️‍🗨️✨
+        ('FONTSIZE', (0,0), (-1,1), 5.0),    # Encabezados compactos para evitar choques 📏
+        ('FONTSIZE', (0,2), (-1,-1), 8.0),   # Datos GRANDES para lectura fácil 👁️‍🗨️✨
         ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
