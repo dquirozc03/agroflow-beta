@@ -38,18 +38,18 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   
-  // Datos de Configuración Vehicular
+  // Datos de Configuración Vehicular Real (de Maestros) 🏗️
   const [tractoEjes, setTractoEjes] = useState(0);
   const [carretaEjes, setCarretaEjes] = useState(0);
   const [isSe2, setIsSe2] = useState(false); 
 
-  // Pesos Individuales para transparencia 💎
+  // Pesos Individuales
   const [taraTracto, setTaraTracto] = useState(0);
   const [taraCarreta, setTaraCarreta] = useState(0);
   
   // Pesos para cálculo
   const [taraContenedor, setTaraContenedor] = useState(0);
-  const [pesoBrutoProducto, setPesoBrutoProducto] = useState(0); // Renombrado de Neto a Bruto Producto
+  const [pesoBrutoProducto, setPesoBrutoProducto] = useState(0);
   const [pesoBrutoTotal, setPesoBrutoTotal] = useState(0);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       setTaraContenedor(Number(reg.peso_tara_contenedor) || 0);
       setPesoBrutoProducto(Number(reg.peso_neto_carga) || 0);
 
-      // 2. Obtener Taras Técnicas Detalladas 🚛⚖️🏗️
+      // 2. Obtener Taras Técnicas y Ejes Reales 🚛📊
       const [tractoRes, carretaRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${reg.placa_tracto}`),
         fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${reg.placa_carreta}`)
@@ -88,7 +88,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       if (carretaRes.ok) {
         const c = await carretaRes.json();
         setTaraCarreta(Number(c.peso_neto) || 0);
-        setCarretaEjes(c.numero_ejes || 2);
+        setCarretaEjes(c.numero_ejes || 0); // Ejes Reales de Maestros ✨
       }
       
     } catch (error) {
@@ -124,7 +124,6 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       a.click();
       window.URL.revokeObjectURL(url);
       
-      toast.success("Documento descargado y pesos actualizados");
       onClose();
     } catch (error: any) {
       toast.error(error.message);
@@ -148,9 +147,6 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                    <DialogTitle className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
                      Balanza Digital MTC
                    </DialogTitle>
-                   <DialogDescription className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                     Configuración de Pesos y Medidas (Anexo 1)
-                   </DialogDescription>
                 </div>
             </div>
             <button onClick={onClose} className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all hover:rotate-90">
@@ -161,10 +157,12 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
 
         <div className="px-8 pb-8 space-y-6">
             
-            {/* Info Unidades */}
+            {/* Cabecera Info */}
             <div className="grid grid-cols-2 gap-4">
                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center gap-3">
-                  <Truck className="h-4 w-4 text-emerald-500" />
+                  <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm">
+                    <Truck className="h-4 w-4" />
+                  </div>
                   <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ejes Conectados</p>
                     <p className="text-xs font-bold text-slate-700">{tractoEjes}E + {carretaEjes}E</p>
@@ -172,11 +170,11 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                </div>
                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-right">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Orden Beta</p>
-                  <p className="text-xs font-bold text-emerald-600">{data?.orden_beta || "---"}</p>
+                  <p className="text-xs font-bold text-emerald-600 uppercase">{data?.orden_beta || "PENDIENTE"}</p>
                </div>
             </div>
 
-            {/* Selector Especial Se2 */}
+            {/* Switch Se2 Especial */}
             {carretaEjes === 2 && (
                 <div className="bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex items-center justify-between animate-in fade-in zoom-in-95 duration-300">
                     <div className="flex items-center gap-4">
@@ -184,8 +182,8 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             <Zap className="h-5 w-5" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest leading-none mb-1">Especial MTC (Ejes Esparcidos)</p>
-                            <p className="text-[11px] font-bold text-amber-600 leading-none">Activar Configuración Se2</p>
+                            <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest leading-none mb-1">Configuración Se2 (Esparcidos)</p>
+                            <p className="text-[11px] font-bold text-amber-600 leading-none">Activar Límite 47T</p>
                         </div>
                     </div>
                     <Switch checked={isSe2} onCheckedChange={setIsSe2} className="data-[state=checked]:bg-amber-500" />
@@ -193,34 +191,33 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                              Tara Contenedor (KG)
                         </Label>
                         <Input 
                             type="number"
                             value={taraContenedor}
                             onChange={(e) => setTaraContenedor(Number(e.target.value))}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl focus:ring-emerald-500/20 font-bold text-lg"
+                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                            <Package className="h-3 w-3" /> Peso Bruto del Producto (KG) 🚀
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                             Peso Bruto del Producto (KG)
                         </Label>
                         <Input 
                             type="number"
                             value={pesoBrutoProducto}
                             onChange={(e) => setPesoBrutoProducto(Number(e.target.value))}
-                            className="h-14 bg-emerald-50/30 border-emerald-100 rounded-xl focus:ring-emerald-500/20 font-bold text-lg text-emerald-700"
+                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
                         />
                     </div>
                 </div>
 
-                <div className="bg-[#022c22] rounded-[2rem] p-6 text-white flex flex-col justify-between shadow-xl shadow-emerald-950/20">
-                    <div className="space-y-2.5">
+                <div className="bg-[#022c22] rounded-[2rem] p-6 text-white flex flex-col justify-between shadow-xl">
+                    <div className="space-y-3">
                         <div className="flex justify-between items-center opacity-40">
                             <span className="text-[8px] font-black uppercase tracking-widest">Tara Tracto ({data?.placa_tracto})</span>
                             <span className="text-xs font-bold">{taraTracto.toLocaleString()} KG</span>
@@ -233,17 +230,17 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             <span className="text-[8px] font-black uppercase tracking-widest">Tara Contenedor</span>
                             <span className="text-xs font-bold">{taraContenedor.toLocaleString()} KG</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/5 mt-2 border border-white/10">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/5 border border-white/10 mt-1">
                             <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">Configuración MTC</span>
                             <span className="text-[10px] font-black text-emerald-400">
                                 {tractoEjes === 3 && carretaEjes === 2 ? (isSe2 ? "T3/Se2 (47T)" : "T3/S2 (43T)") : 
-                                 tractoEjes === 3 && carretaEjes === 3 ? "T3/S3 (48T)" : "GENÉRICA"}
+                                 tractoEjes === 3 && carretaEjes === 3 ? "T3/S3 (48T)" : "DETECTANDO ejes..."}
                             </span>
                         </div>
                     </div>
                     
-                    <div className="mt-6 pt-4 border-t border-emerald-500/30">
-                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Peso Bruto Total MTC</p>
+                    <div className="mt-8 pt-4 border-t border-emerald-500/30">
+                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Peso Bruto Total</p>
                         <p className="text-4xl font-black text-white tracking-tighter">
                             {pesoBrutoTotal.toLocaleString()} <span className="text-sm opacity-50">KG</span>
                         </p>

@@ -161,7 +161,8 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
         "codigo_sap": vehicle.transportista.codigo_sap,
         "partida_registral": vehicle.transportista.partida_registral,
         "configuracion_vehicular": vehicle.certificado_vehicular_tracto,
-        "peso_neto": vehicle.peso_neto_tracto
+        "peso_neto": vehicle.peso_neto_tracto,
+        "numero_ejes": vehicle.numero_ejes
     }
 @router.get("/check_unique")
 def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
@@ -214,7 +215,8 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     return {
         "placa": trailer.placa_carreta,
         "configuracion_vehicular": trailer.certificado_vehicular_carreta,
-        "peso_neto": trailer.peso_neto_carreta
+        "peso_neto": trailer.peso_neto_carreta,
+        "numero_ejes": trailer.numero_ejes
     }
         
 @router.get("/drivers/search")
