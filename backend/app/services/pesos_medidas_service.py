@@ -56,8 +56,9 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == registro_id).first()
     if not reg: return None
 
-    # Obtener Nombre Real del Usuario de Registro 🕵️‍♂️🔍
-    usuario_real = db.query(Usuario).filter(Usuario.usuario == reg.usuario_registro).first()
+    # Obtener Nombre Real del Usuario de Registro (Normalizado para match) 🕵️‍♂️🔍
+    user_alias = (reg.usuario_registro or "").replace("@", "").strip()
+    usuario_real = db.query(Usuario).filter(Usuario.usuario.ilike(user_alias)).first()
     nombre_operador = usuario_real.nombre if usuario_real else reg.usuario_registro
 
     tracto = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == reg.placa_tracto).first()

@@ -636,6 +636,7 @@ export default function BandejaLogiCapture() {
                         <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Planta / Cultivo</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Transporte (T / C)</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest w-[140px] border-none">Estatus</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Registrador</TableHead>
                         <TableHead className="text-right p-6 font-black text-[10px] uppercase tracking-widest w-[100px] border-none">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -643,12 +644,12 @@ export default function BandejaLogiCapture() {
                       {isLoading ? (
                          Array.from({length: 5}).map((_, i) => (
                            <TableRow key={i} className="animate-pulse">
-                              <TableCell colSpan={6} className="p-10 text-center text-slate-300">Cargando datos del sistema...</TableCell>
+                              <TableCell colSpan={7} className="p-10 text-center text-slate-300">Cargando datos del sistema...</TableCell>
                            </TableRow>
                          ))
                       ) : registros.length === 0 ? (
                         <TableRow>
-                           <TableCell colSpan={6} className="p-20 text-center">
+                           <TableCell colSpan={7} className="p-20 text-center">
                               <div className="flex flex-col items-center gap-4 text-slate-300">
                                  <AlertCircle className="h-12 w-12 opacity-20" />
                                  <p className="font-black uppercase tracking-widest text-xs">No hay registros para este estatus</p>
@@ -698,6 +699,16 @@ export default function BandejaLogiCapture() {
                           </TableCell>
                           <TableCell>
                              {getStatusBadge(reg.status)}
+                          </TableCell>
+                          <TableCell className="p-6">
+                            <div className="flex items-center gap-2">
+                               <div className="h-6 w-6 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                  <User className="h-3.5 w-3.5 text-emerald-600" />
+                               </div>
+                               <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">
+                                  {reg.usuario_registro ? `@${reg.usuario_registro.replace('@', '')}` : '---'}
+                                </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right p-6" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
