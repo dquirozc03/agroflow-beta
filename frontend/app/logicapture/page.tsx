@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { useAuth } from "@/contexts/auth-context";
 
 // --- Componentes UX Premium Carlos Style ---
 
@@ -226,6 +227,7 @@ function SuccessModal({ isOpen, onClose, title }: { isOpen: boolean, onClose: ()
 }
 
 export default function LogiCaptureV2Page() {
+  const { user } = useAuth();
   const [showFloatingButton, setShowFloatingButton] = useState(false);
   const mainRef = React.useRef<HTMLDivElement>(null);
   const [scrollY, setScrollY] = useState(0);
@@ -619,7 +621,8 @@ export default function LogiCaptureV2Page() {
     const payload = {
        ...formData,
        precintoOperador: formData.precintoOperador.length === 0 ? ["**"] : formData.precintoOperador,
-       precintoSenasa: formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa
+       precintoSenasa: formData.precintoSenasa.length === 0 ? ["**"] : formData.precintoSenasa,
+       usuario_registro: user?.usuario || "SISTEMA" // Auditoría automática 🕵️‍♂️✨
     };
 
     setIsSearching(true);

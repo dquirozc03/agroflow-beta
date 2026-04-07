@@ -51,6 +51,7 @@ class LogiCaptureSaveRequest(BaseModel):
     nombreChofer: Optional[str] = None
     licenciaChofer: Optional[str] = None
     partidaRegistral: Optional[str] = None
+    usuario_registro: Optional[str] = None # Auditoría preventiva 🕵️‍♂️
 
 class LogiCaptureUpdateRequest(BaseModel):
     precintoAduana: Optional[list[str]] = None
@@ -368,7 +369,8 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         status="PENDIENTE",
         nombre_chofer=req.nombreChofer,
         licencia_chofer=req.licenciaChofer,
-        partida_registral=req.partidaRegistral
+        partida_registral=req.partidaRegistral,
+        usuario_registro=req.usuario_registro # Enlace de autoría 🕵️‍♂️🖋️
     )
     db.add(new_reg)
     db.commit() # Commit inicial para obtener id
