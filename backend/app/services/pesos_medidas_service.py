@@ -100,14 +100,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.setFont("Helvetica-Bold", 8)
     c.drawString(1.5*cm, height - 4.4*cm, "I) DATOS DEL GENERADOR DE CARGA")
     
-    # Cuadro de Control (Separado del título por margen X)
+    # Cuadro de Control (Calibración milimétrica para centrado)
     c.setFillColor(HexColor("#cccccc"))
     c.rect(13.8*cm, height - 4.5*cm, 2*cm, 0.45*cm, fill=1)
     c.setFillColor(yellow)
     c.rect(15.8*cm, height - 4.5*cm, 3*cm, 0.45*cm, fill=1, stroke=1)
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 8.5)
-    c.drawCentredString(17.3*cm, height - 4.15*cm, "4102060426")
+    c.drawCentredString(17.3*cm, height - 4.28*cm, "4102060426") # Centrado vertical corregido ⚖️
 
     # Tabla remitente - TODO MAYÚSCULAS Y CENTRADO
     empresa_upper = BETA_CONFIG['empresa'].upper()
@@ -121,29 +121,36 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ["DIRECCION", direccion_upper, "", "", "", ""],
         ["DISTRITO", distrito_upper, "PROVINCIA", provincia_upper, "DEPARTAMENTO", depto_upper]
     ]
-    t1 = Table(data_remitente, colWidths=[2.3*cm, 5.2*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.8*cm, 0.6*cm, 0.6*cm])
+    t1 = Table(data_remitente, colWidths=[2.5*cm, 5.0*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.8*cm, 0.6*cm, 0.6*cm])
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 6.5),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,-1), 'CENTER'),
-        ('ALIGN', (2,0), (2,-1), 'CENTER'),
-        ('ALIGN', (4,0), (4,-1), 'CENTER'),
-        ('ALIGN', (1,2), (1,2), 'CENTER'),
-        ('ALIGN', (3,2), (3,2), 'CENTER'),
-        ('ALIGN', (5,2), (5,2), 'CENTER'),
+        ('ALIGN', (2,0), (2,0), 'CENTER'),
+        ('ALIGN', (2,2), (2,2), 'CENTER'),
+        ('ALIGN', (4,0), (4,0), 'CENTER'),
+        ('ALIGN', (4,2), (4,2), 'CENTER'),
+        # VALORES CENTRADOS según pedido 🎯
+        ('ALIGN', (3,0), (3,0), 'CENTER'), # RUC
+        ('ALIGN', (5,0), (5,0), 'CENTER'), # TELEF
+        ('ALIGN', (1,2), (1,2), 'CENTER'), # DISTRITO
+        ('ALIGN', (3,2), (3,2), 'CENTER'), # PROVINCIA
+        ('ALIGN', (5,2), (5,2), 'CENTER'), # DEPARTAMENTO
         ('BACKGROUND', (0,0), (0,-1), HexColor("#cccccc")),
         ('BACKGROUND', (2,0), (2,0), HexColor("#cccccc")),
         ('BACKGROUND', (2,2), (2,2), HexColor("#cccccc")),
         ('BACKGROUND', (4,0), (4,0), HexColor("#cccccc")),
         ('BACKGROUND', (4,2), (4,2), HexColor("#cccccc")),
         ('SPAN', (1,1), (5,1)),
+        ('LEFTPADDING', (0,0), (-1,-1), 4),
+        ('RIGHTPADDING', (0,0), (-1,-1), 4),
         ('TOPPADDING', (0,0), (-1,-1), 2),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t1.wrapOn(c, width, height)
-    t1.drawOn(c, 1.5*cm, height - 6.8*cm) # Baja 0.6cm respecto al anterior
+    t1.drawOn(c, 1.5*cm, height - 6.8*cm)
 
     # --- II) TIPO DE MERCANCIA TRANSPORTADA ---
     cultivo_text = (reg.cultivo or "PRODUCTO AGRICOLA").upper()
