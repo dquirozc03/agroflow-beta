@@ -256,19 +256,17 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh.wrapOn(c, width, height)
     t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
 
-    # Notas al pie de la tabla IV - INTERLINEADO AUMENTADO 📐🍃
+    # Notas al pie de la tabla IV
     c.setFont("Helvetica", 5.5)
     notas_iv = [
         "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003",
-        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LAS SUMATORIA",
-        "    DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
-        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA",
-        "    Y NEUMAT EXTRA ANCHOS"
+        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LA SUMATORIA DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
+        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA Y NEUMAT EXTRA ANCHOS",
     ]
-    curr_nota_y = height - 13.9*cm # Bajado un poco para dar aire
+    curr_nota_y = height - 14.2*cm
     for nota in notas_iv:
         c.drawString(1.5*cm, curr_nota_y, nota)
-        curr_nota_y -= 0.28*cm # Aumentado de 0.18 a 0.28 🍃
+        curr_nota_y -= 0.38*cm
 
     # --- III) CONTROL POR EJES (FORMATO IMAGEN 2) ---
     c.setFont("Helvetica-Bold", 8)
