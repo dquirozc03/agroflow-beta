@@ -141,6 +141,9 @@ class Planta(Base):
     id = Column(Integer, primary_key=True, index=True)
     planta = Column(String(100), unique=True, nullable=False)
     direccion = Column(String(500), nullable=False)
+    distrito = Column(String(100), nullable=True) # Nuevo para Anexo 1
+    provincia = Column(String(100), nullable=True) # Nuevo para Anexo 1
+    departamento = Column(String(100), nullable=True) # Nuevo para Anexo 1
     ubigeo = Column(String(50), nullable=False)
     
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())

@@ -113,21 +113,25 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.rect(15.8*cm, height - 4.5*cm, 3*cm, 0.45*cm, fill=1, stroke=1)
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 8.5)
-    c.drawCentredString(17.3*cm, height - 4.38*cm, "4102060426") # Bajado un poco más según pedido 🎯
+    c.drawCentredString(17.3*cm, height - 4.38*cm, "4102060426")
 
-    # Tabla remitente - TODO MAYÚSCULAS Y CENTRADO
+    # Lookup Maestro de Planta para Datos de Ubicación AUTOMÁTICO 🌍🏗️
+    from app.models.maestros import Planta
+    planta_db = db.query(Planta).filter(Planta.planta.ilike(reg.planta or "")).first()
+    
+    # Datos dinámicos con Fallback a BETA_CONFIG por seguridad 🛡️
     empresa_upper = BETA_CONFIG['empresa'].upper()
-    distrito_upper = BETA_CONFIG['distrito'].upper()
-    provincia_upper = BETA_CONFIG['provincia'].upper()
-    depto_upper = BETA_CONFIG['departamento'].upper()
-    direccion_upper = BETA_CONFIG['direccion'].upper()
+    direccion_upper = (planta_db.direccion if planta_db and planta_db.direccion else BETA_CONFIG['direccion']).upper()
+    distrito_upper = (planta_db.distrito if planta_db and planta_db.distrito else BETA_CONFIG['distrito']).upper()
+    provincia_upper = (planta_db.provincia if planta_db and planta_db.provincia else BETA_CONFIG['provincia']).upper()
+    depto_upper = (planta_db.departamento if planta_db and planta_db.departamento else BETA_CONFIG['departamento']).upper()
 
     data_remitente = [
         ["NOMBRE DE\nLA EMPRESA", empresa_upper, "Nº RUC", BETA_CONFIG['ruc'], "TELEF.", BETA_CONFIG['telefono']],
         ["DIRECCION", direccion_upper, "", "", "", ""],
         ["DISTRITO", distrito_upper, "PROVINCIA", provincia_upper, "DEPARTAMENTO", depto_upper]
     ]
-    t1 = Table(data_remitente, colWidths=[2.5*cm, 5.0*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[1.0*cm, 0.6*cm, 0.6*cm]) # Aumentado rowHeight inicial 📐
+    t1 = Table(data_remitente, colWidths=[2.5*cm, 5.0*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[1.0*cm, 0.6*cm, 0.6*cm])
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 6.5),
@@ -151,7 +155,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (1,1), (5,1)),
         ('LEFTPADDING', (0,0), (-1,-1), 4),
         ('RIGHTPADDING', (0,0), (-1,-1), 4),
-        ('TOPPADDING', (0,0), (-1,-1), 5), # Aumentado globalmente para que respire 🍃
+        ('TOPPADDING', (0,0), (-1,-1), 5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t1.wrapOn(c, width, height)
