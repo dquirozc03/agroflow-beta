@@ -36,11 +36,12 @@ def get_mtc_config(tracto_ejes: int, carreta_ejes: int, cert_carreta: str = "", 
     return f"T{t_ejes}S{c_ejes}", 48000
 
 def find_asset(asset_name):
-    """Buscador inteligente de assets para dev y prod."""
+    """Buscador ultrasónico de assets para dev y prod (Render)."""
     paths = [
         os.path.join(os.getcwd(), "assets", asset_name),
         os.path.join(os.getcwd(), "backend", "assets", asset_name),
-        os.path.join(os.path.dirname(__file__), "..", "assets", asset_name)
+        # Corregido: ir dos niveles atrás desde services/ para llegar a backend/assets 🎯
+        os.path.join(os.path.dirname(__file__), "..", "..", "assets", asset_name)
     ]
     for p in paths:
         if os.path.exists(p): return p
