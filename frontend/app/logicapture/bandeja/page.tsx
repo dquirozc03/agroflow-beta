@@ -28,8 +28,10 @@ import {
   Zap,
   Thermometer,
   Info,
-  Inbox
+  Inbox,
+  Scale
 } from "lucide-react";
+import { PesosMedidasModal } from "@/components/pesos-medidas-modal";
 import { 
   Sheet, 
   SheetContent, 
@@ -176,6 +178,8 @@ function MultiInput({ label, placeholder, values, onChange, icon: Icon, duplicat
 export default function BandejaLogiCapture() {
   const [registros, setRegistros] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPesosModalOpen, setIsPesosModalOpen] = useState(false);
+  const [selectedRegForPesos, setSelectedRegForPesos] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("PENDIENTE");
   const [filterPlanta, setFilterPlanta] = useState("all");
   const [filterCultivo, setFilterCultivo] = useState("all");
@@ -710,6 +714,17 @@ export default function BandejaLogiCapture() {
                                   onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
                                 >
                                   <Eye className="h-4 w-4" /> Ver Detalle (SAP)
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem 
+                                  className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
+                                  onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
+                                >
+                                  <Scale className="h-4 w-4 text-emerald-600" />
+                                  <div className="flex flex-col">
+                                     <span className="text-[11px] uppercase tracking-tighter">Anexo 1 (Pesos)</span>
+                                     <span className="text-[9px] text-emerald-500/70 font-medium">Balanza MTC</span>
+                                  </div>
                                 </DropdownMenuItem>
 
                                 {activeTab === "PROCESADO" && (
@@ -1375,6 +1390,13 @@ export default function BandejaLogiCapture() {
              </div>
           </DialogContent>
        </Dialog>
+
+       {/* MODAL PESOS Y MEDIDAS (ANEXO 1) ⚖️ */}
+       <PesosMedidasModal 
+         isOpen={isPesosModalOpen}
+         onClose={() => setIsPesosModalOpen(false)}
+         registroId={selectedRegForPesos}
+       />
     </div>
   );
 }

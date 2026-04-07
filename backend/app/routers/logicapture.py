@@ -13,6 +13,7 @@ from app.models.embarque import ControlEmbarque
 from app.models.maestros import Chofer, VehiculoTracto, VehiculoCarreta, Transportista
 from app.models.logicapture import LogiCaptureRegistro, LogiCaptureDetalle
 from pydantic import BaseModel
+import os
 
 router = APIRouter(
     prefix="/api/v1/logicapture",
@@ -74,6 +75,11 @@ class LogiCaptureUpdateRequest(BaseModel):
     status: Optional[str] = None
     codigoSAP: Optional[str] = None
     partidaRegistral: Optional[str] = None
+
+class Anexo1Request(BaseModel):
+    peso_bruto: float
+    peso_tara_contenedor: float
+    peso_neto_carga: float
 
 class LookupResponse(BaseModel):
     booking: str
@@ -153,7 +159,8 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
         "ruc_transportista": vehicle.transportista.ruc,
         "codigo_sap": vehicle.transportista.codigo_sap,
         "partida_registral": vehicle.transportista.partida_registral,
-        "configuracion_vehicular": vehicle.certificado_vehicular_tracto
+        "configuracion_vehicular": vehicle.certificado_vehicular_tracto,
+        "peso_neto": vehicle.peso_neto_tracto
     }
 @router.get("/check_unique")
 def check_data_unique(field: str, value: str, treatment_buque: bool = False, db: Session = Depends(get_db)):
@@ -205,7 +212,8 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
         
     return {
         "placa": trailer.placa_carreta,
-        "configuracion_vehicular": trailer.certificado_vehicular_carreta
+        "configuracion_vehicular": trailer.certificado_vehicular_carreta,
+        "peso_neto": trailer.peso_neto_carreta
     }
         
 @router.get("/drivers/search")
@@ -623,4 +631,46 @@ def export_to_excel(db: Session = Depends(get_db)):
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename=LogiCapture_Auditoria_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+    )
+
+@router.post("/registros/{id}/anexo1")
+def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
+    """
+    Endpoint de Pesaje y Generación de Anexo 1.
+    Sincroniza pesos reales y genera el documento legal MTC.
+    """
+    from app.services.pesos_medidas_service import generate_anexo_1_pdf
+    
+    reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+        
+    # 1. Persistir pesos en la base de datos
+    reg.peso_bruto = req.peso_bruto
+    reg.peso_tara_contenedor = req.peso_tara_contenedor
+    reg.peso_neto_carga = req.peso_neto_carga
+    db.commit()
+    
+    # 2. Generar PDF usando el motor ReportLab
+    file_path = generate_anexo_1_pdf(db, id)
+    if not file_path or not os.path.exists(file_path):
+         raise HTTPException(status_code=500, detail="Error crítico al generar el Anexo 1 PDF")
+
+    def iterfile():
+        try:
+            with open(file_path, mode="rb") as file_like:
+                yield from file_like
+        finally:
+            # Limpieza de archivo temporal
+            if os.path.exists(file_path):
+                try: os.remove(file_path)
+                except: pass
+
+    return StreamingResponse(
+        iterfile(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=PesosYMedidas_{reg.orden_beta or 'SIN_ORDEN'}.pdf",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )

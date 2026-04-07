@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, Boolean, Numeric
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -50,6 +50,11 @@ class LogiCaptureRegistro(Base):
     nombre_chofer = Column(String(200), nullable=True)
     licencia_chofer = Column(String(100), nullable=True)
     partida_registral = Column(String(100), nullable=True)
+
+    # Datos de Pesos y Medidas (Anexo 1)
+    peso_bruto = Column(Numeric(10, 2), nullable=True)
+    peso_tara_contenedor = Column(Numeric(10, 2), nullable=True)
+    peso_neto_carga = Column(Numeric(10, 2), nullable=True)
 
     # Metadatos de Sistema
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
