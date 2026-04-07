@@ -71,7 +71,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     width, height = A4
     
     # --- CABECERA OFICIAL ---
-    logo_file = find_asset("logo.png")
+    logo_file = find_asset("logo_beta.png") # Sincronizado con el archivo real de la empresa 🏛️
     if logo_file:
         try:
             c.drawImage(logo_file, 1.5*cm, height - 2.5*cm, width=3.5*cm, preserveAspectRatio=True)
@@ -102,20 +102,20 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     
     # Celda amarilla de control interno
     c.setFillColor(yellow)
-    c.rect(14.5*cm, height - 4.5*cm, 4*cm, 0.4*cm, fill=1)
+    c.rect(14.5*cm, height - 4.6*cm, 4*cm, 0.4*cm, fill=1)
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(16.5*cm, height - 4.25*cm, reg.orden_beta or "4102060426")
+    c.drawCentredString(16.5*cm, height - 4.4*cm, reg.orden_beta or "4102060426")
 
     data_remitente = [
         ["NOMBRE DE\nLA EMPRESA", BETA_CONFIG['empresa'], "Nº RUC", BETA_CONFIG['ruc'], "TELEF.", BETA_CONFIG['telefono']],
         ["DIRECCION", BETA_CONFIG['direccion'], "", "", "", ""],
         ["DISTRITO", BETA_CONFIG['distrito'], "PROVINCIA", BETA_CONFIG['provincia'], "DEPARTAMENTO", BETA_CONFIG['departamento']]
     ]
-    t1 = Table(data_remitente, colWidths=[2.5*cm, 6.5*cm, 1.5*cm, 3*cm, 1.5*cm, 3*cm], rowHeights=[0.8*cm, 0.5*cm, 0.5*cm])
+    t1 = Table(data_remitente, colWidths=[2.3*cm, 6.2*cm, 1.5*cm, 3*cm, 1.5*cm, 3*cm], rowHeights=[0.8*cm, 0.5*cm, 0.5*cm])
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 7),
+        ('FONTSIZE', (0,0), (-1,-1), 6.5),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,-1), 'CENTER'),
@@ -138,7 +138,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     data_checks = [
         ["BALANZA", "", "SOFTWARE", "", "CUBICACION", "", "OTROS", "X"]
     ]
-    t_chk = Table(data_checks, colWidths=[2.5*cm, 1.5*cm, 2.5*cm, 3*cm, 2.5*cm, 3*cm, 1.5*cm, 1.5*cm])
+    t_chk = Table(data_checks, colWidths=[2*cm, 1.5*cm, 2.5*cm, 3*cm, 2.5*cm, 3*cm, 1.5*cm, 1.5*cm])
     t_chk.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 7),
@@ -152,14 +152,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_chk.wrapOn(c, width, height)
     t_chk.drawOn(c, 1.5*cm, height - 8.5*cm)
 
-    # --- IV) DATOS DEL VEHICULO (TABLA CRÍTICA) ---
+    # --- IV) DATOS DEL VEHICULO (TABLA OPTIMIZADA) ---
     c.setFont("Helvetica-Bold", 8)
     c.drawString(1.5*cm, height - 9.1*cm, "IV) DATOS DEL VEHICULO")
     
-    label_dims = "DIMENSION TOTAL DEL\nVEHICULO\n(incluida la mercancia)"
+    label_dims = "DIMENSION TOTAL DEL\nVEHICULO (mt)"
     head_v = [
-        ["PLACAS\n(carreta, tracto,\nremolque, semiremolque,\ncarretas)", label_dims, "", "", "CONFIGURACION\nVEHICULAR", "PESO BRUTO VEHICULAR\nMAX. PERMITIDO (KG.)\n(1)", "PESO BRUTO TOTAL\nTRANSPORTADO\n(KG.)", "PBMax. Para no control\nde pesos por ejes (DS\n006-2008-MTC) (Kg)\n(2)", "PBMax. Para no control de\nejes (DS 006-2008-MTC) (Kg) con\nBonificaciones a Susp. Neu. y Neumac\nExtraanch (3)"],
-        ["", "LARGO\n(mt)", "ANCHO\n(mt)", "ALTO\n(mt)", "", "", "", "", ""]
+        ["PLACAS\n(Tractor / Carreta)", label_dims, "", "", "CONFIG.\nVEHICULAR", "PESO BRUTO MAX\nPERMITIDO (KG.)", "PESO BRUTO TOTAL\nTRANSPORTADO (KG.)", "PBMax. Para no control\n95% (DS 006-2008)", "OBSERVACIONES\nEXTRAANCH (3)"],
+        ["", "LARGO", "ANCHO", "ALTO", "", "", "", "", ""]
     ]
     
     bruto_f = reg.peso_bruto or 0
@@ -170,7 +170,8 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     ]
     
     full_v = head_v + data_v
-    t_vh = Table(full_v, colWidths=[2.5*cm, 1.2*cm, 1.2*cm, 1.2*cm, 2.3*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.8*cm])
+    # Reducción estratégica de anchos para entrar en margen A4 (17.5 cm total) 📐
+    t_vh = Table(full_v, colWidths=[2.2*cm, 0.9*cm, 0.9*cm, 0.9*cm, 2.0*cm, 2.4*cm, 2.6*cm, 2.8*cm, 2.8*cm])
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 5),
@@ -181,7 +182,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (0,0), (0,1)), ('SPAN', (4,0), (4,1)), ('SPAN', (5,0), (5,1)), 
         ('SPAN', (6,0), (6,1)), ('SPAN', (7,0), (7,1)), ('SPAN', (8,0), (8,1)),
         ('SPAN', (1,0), (3,0)),
-        ('BACKGROUND', (6,2), (6,2), yellow), # CELDA AMARILLA PESO TOTAL 🟡
+        ('BACKGROUND', (6,2), (6,2), yellow), # RESALTE AMARILLO OFICIAL 🟡
     ]))
     t_vh.wrapOn(c, width, height)
     t_vh.drawOn(c, 1.5*cm, height - 11.5*cm)
