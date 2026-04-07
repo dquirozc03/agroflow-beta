@@ -51,6 +51,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
   const [taraContenedor, setTaraContenedor] = useState(0);
   const [pesoBrutoProducto, setPesoBrutoProducto] = useState(0);
   const [pesoBrutoTotal, setPesoBrutoTotal] = useState(0);
+  const [guiaRemision, setGuiaRemision] = useState("");
 
   useEffect(() => {
     if (isOpen && registroId) {
@@ -109,7 +110,8 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
           peso_bruto: pesoBrutoTotal,
           peso_tara_contenedor: taraContenedor,
           peso_neto_carga: pesoBrutoProducto,
-          is_especial: isSe2 
+          is_especial: isSe2,
+          guia_remision: guiaRemision
         })
       });
 
@@ -212,6 +214,18 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             value={pesoBrutoProducto}
                             onChange={(e) => setPesoBrutoProducto(Number(e.target.value))}
                             className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                             Guía de Remisión
+                        </Label>
+                        <Input 
+                            type="text"
+                            placeholder="Ej: 001-00012345"
+                            value={guiaRemision}
+                            onChange={(e) => setGuiaRemision(e.target.value)}
+                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg uppercase"
                         />
                     </div>
                 </div>

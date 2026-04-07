@@ -47,10 +47,9 @@ def find_asset(asset_name):
         if os.path.exists(p): return p
     return None
 
-def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = False):
+def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = False, guia_remision: str = ""):
     """
     Constancia de Verificación de Pesos y Medidas (MTC oficial).
-    Diseño basado en el formato legal de Agroindustrial Beta.
     """
     reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == registro_id).first()
     if not reg: return None
@@ -101,144 +100,216 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.setFont("Helvetica-Bold", 8)
     c.drawString(1.5*cm, height - 4.4*cm, "I) DATOS DEL GENERADOR DE CARGA")
     
-    # Celda amarilla de control (orden beta)
+    # Dos celdas: gris vacía + amarilla con código interno
+    c.setFillColor(HexColor("#cccccc"))
+    c.rect(13.5*cm, height - 4.4*cm, 2*cm, 0.4*cm, fill=1)
     c.setFillColor(yellow)
-    c.rect(14.5*cm, height - 4.4*cm, 4*cm, 0.4*cm, fill=1)
+    c.rect(15.5*cm, height - 4.4*cm, 3*cm, 0.4*cm, fill=1, stroke=1)
     c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(16.5*cm, height - 4.2*cm, reg.orden_beta or "---")
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(17*cm, height - 4.2*cm, "4102060426")
 
-    # Tabla remitente: columnas redistribuidas para que DEPARTAMENTO quepa
+    # Tabla remitente - TODO MAYÚSCULAS Y CENTRADO
+    empresa_upper = BETA_CONFIG['empresa'].upper()
+    distrito_upper = BETA_CONFIG['distrito'].upper()
+    provincia_upper = BETA_CONFIG['provincia'].upper()
+    depto_upper = BETA_CONFIG['departamento'].upper()
+    direccion_upper = BETA_CONFIG['direccion'].upper()
+
     data_remitente = [
-        ["NOMBRE DE\nLA EMPRESA", BETA_CONFIG['empresa'], "Nº RUC", BETA_CONFIG['ruc'], "TELEF.", BETA_CONFIG['telefono']],
-        ["DIRECCION", "", "", "", "", ""],
-        ["DISTRITO", "", "PROVINCIA", "", "DEPARTAMENTO", BETA_CONFIG['departamento']]
+        ["NOMBRE DE\nLA EMPRESA", empresa_upper, "Nº RUC", BETA_CONFIG['ruc'], "TELEF.", BETA_CONFIG['telefono']],
+        ["DIRECCION", direccion_upper, "", "", "", ""],
+        ["DISTRITO", distrito_upper, "PROVINCIA", provincia_upper, "DEPARTAMENTO", depto_upper]
     ]
-    # Anchos: [label, valor, label, valor, label, valor] = 17.5cm total
-    t1 = Table(data_remitente, colWidths=[2.3*cm, 5.2*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.7*cm, 0.45*cm, 0.45*cm])
+    # Anchos equilibrados y alturas con más holgura para evitar choques con bordes 📐
+    t1 = Table(data_remitente, colWidths=[2.3*cm, 5.2*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.8*cm, 0.6*cm, 0.6*cm])
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 6),
+        ('FONTSIZE', (0,0), (-1,-1), 6.5), # Aumentado ligeramente para legibilidad
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('ALIGN', (0,0), (0,-1), 'CENTER'),
+        ('ALIGN', (0,0), (0,-1), 'CENTER'), # Labels centrados
         ('ALIGN', (2,0), (2,-1), 'CENTER'),
         ('ALIGN', (4,0), (4,-1), 'CENTER'),
+        # VALORES CENTRADOS según pedido 🎯
+        ('ALIGN', (1,2), (1,2), 'CENTER'),
+        ('ALIGN', (3,2), (3,2), 'CENTER'),
+        ('ALIGN', (5,2), (5,2), 'CENTER'),
         ('BACKGROUND', (0,0), (0,-1), HexColor("#cccccc")),
         ('BACKGROUND', (2,0), (2,0), HexColor("#cccccc")),
         ('BACKGROUND', (2,2), (2,2), HexColor("#cccccc")),
         ('BACKGROUND', (4,0), (4,0), HexColor("#cccccc")),
         ('BACKGROUND', (4,2), (4,2), HexColor("#cccccc")),
         ('SPAN', (1,1), (5,1)),
+        # PADDING para que el texto no choque con las rayas 🛡️
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t1.wrapOn(c, width, height)
     t1.drawOn(c, 1.5*cm, height - 6.2*cm)
 
-
-    # --- II) TIPO DE MERCANCIA ---
+    # --- II) TIPO DE MERCANCIA TRANSPORTADA ---
+    cultivo_text = (reg.cultivo or "PRODUCTO AGRICOLA").upper()
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 7.3*cm, "II) TIPO DE MERCANCIA TRANSPORTADA:   GRANADA FRESCA")
+    c.drawString(1.5*cm, height - 6.8*cm, f"II) TIPO DE MERCANCIA TRANSPORTADA:   {cultivo_text}")
     c.setFont("Helvetica", 7)
-    c.drawString(1.5*cm, height - 7.7*cm, "según Guia de Remisión que se Adjunta:")
+    guia_text = (guia_remision or "").upper()
+    c.drawString(1.5*cm, height - 7.15*cm, f"SEGUN GUIA DE REMISION QUE SE ADJUNTA:  {guia_text}")
     
     data_checks = [
         ["BALANZA", "", "SOFTWARE", "", "CUBICACION", "", "OTROS", "X"]
     ]
-    t_chk = Table(data_checks, colWidths=[2*cm, 1.5*cm, 2.5*cm, 3*cm, 2.5*cm, 3*cm, 1.5*cm, 1.5*cm])
+    t_chk = Table(data_checks, colWidths=[2*cm, 1.5*cm, 2.5*cm, 3*cm, 2.5*cm, 3*cm, 1.5*cm, 1.5*cm], rowHeights=[0.6*cm])
     t_chk.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 7),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('BACKGROUND', (0,0), (0,0), HexColor("#cccccc")),
         ('BACKGROUND', (2,0), (2,0), HexColor("#cccccc")),
         ('BACKGROUND', (4,0), (4,0), HexColor("#cccccc")),
         ('BACKGROUND', (6,0), (6,0), HexColor("#cccccc")),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t_chk.wrapOn(c, width, height)
-    t_chk.drawOn(c, 1.5*cm, height - 8.5*cm)
+    t_chk.drawOn(c, 1.5*cm, height - 7.8*cm)
 
-    # --- IV) DATOS DEL VEHICULO (TABLA OPTIMIZADA) ---
+    # --- IV) DATOS DEL VEHICULO (REDISEÑO IMAGEN 2) ---
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 9.1*cm, "IV) DATOS DEL VEHICULO")
+    c.drawString(1.5*cm, height - 8.6*cm, "IV) DATOS DEL VEHICULO")
+
     
-    label_dims = "DIMENSION TOTAL DEL\nVEHICULO (mt)"
+    # Encabezados exactos según Imagen 2 📄
+    label_placas = "PLACAS\n(camion, tracto,\nremolque, semiremolque,\ncarretas)"
+    label_dims_total = "DIMENSION TOTAL DEL VEHICULO\n(incluida la mercancia)"
+    
     head_v = [
-        ["PLACAS\n(Tractor / Carreta)", label_dims, "", "", "CONFIG.\nVEHICULAR", "PESO BRUTO MAX\nPERMITIDO (KG.)", "PESO BRUTO TOTAL\nTRANSPORTADO (KG.)", "PBMax. Para no control\n95% (DS 006-2008)", "OBSERVACIONES\nEXTRAANCH (3)"],
-        ["", "LARGO", "ANCHO", "ALTO", "", "", "", "", ""]
+        [label_placas, label_dims_total, "", "", "CONFIGURACION\nVEHICULAR", "PESO BRUTO VEHICULAR\nMAX. PERMITIDO (KG.)\n(1)", "PESO BRUTO TOTAL\nTRANSPORTADO\n(KG)", "PBMax. Para no control\nde pesos por ejes (DS\n006-2008-MTC) (Kg)\n(2)", "PBMax. Para no control de pesos por\nejes (DS 006-2008-MTC) (Kg) con\nBonificaciones x Susp. Neu. y Neumac\nExtraanch (3)"],
+        ["", "LARGO\n(mt)", "ANCHO\n(mt)", "ALTO\n(mt)", "", "", "", "", ""]
     ]
     
     bruto_f = float(reg.peso_bruto or 0)
     peso_max_f = float(peso_max)
     pb_95 = float(peso_max_f * 0.95)
 
+    # Filas de datos: Fila 1 (Tracto), Fila 2 (Carreta)
     data_v = [
-        [f"{reg.placa_tracto} / {reg.placa_carreta}", 
-         f"{tracto.largo_tracto if tracto else '-'}", f"{tracto.ancho_tracto if tracto else '-'}", f"{tracto.alto_tracto if tracto else '-'}", 
-         conf_label, f"{peso_max_f:,.0f}", f"{bruto_f:,.0f}", f"{pb_95:,.0f}", "-"]
+        [reg.placa_tracto or "-", f"{tracto.largo_tracto if tracto else '0.00'}", f"{tracto.ancho_tracto if tracto else '0.00'}", f"{tracto.alto_tracto if tracto else '0.00'}", conf_label, f"{peso_max_f:,.0f}", f"{bruto_f:,.0f}", f"{pb_95:,.0f}", "-"],
+        [reg.placa_carreta or "-", f"{carreta.largo_carreta if carreta else '0.00'}", f"{carreta.ancho_carreta if carreta else '0.00'}", f"{carreta.alto_carreta if carreta else '0.00'}", "", "", "", "", ""]
     ]
     
     full_v = head_v + data_v
-    # Calibración milimétrica para A4 (Margen de seguridad total) 📐
-    t_vh = Table(full_v, colWidths=[2.2*cm, 1.0*cm, 1.0*cm, 1.0*cm, 2.0*cm, 2.4*cm, 2.5*cm, 2.7*cm, 2.7*cm])
+    # Alturas específicas para las 4 filas (2 cabecera, 2 datos)
+    row_h_v = [1.1*cm, 0.6*cm, 0.55*cm, 0.55*cm]
+    t_vh = Table(full_v, colWidths=[2.2*cm, 1.1*cm, 1.1*cm, 1.1*cm, 2.0*cm, 2.2*cm, 2.3*cm, 2.7*cm, 2.8*cm], rowHeights=row_h_v)
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 5),
+        ('FONTSIZE', (0,0), (-1,-1), 4.8), # Fuente condensada para que quepa todo el texto 📑
         ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('BACKGROUND', (0,0), (-1,1), HexColor("#cccccc")),
-        ('SPAN', (0,0), (0,1)), ('SPAN', (4,0), (4,1)), ('SPAN', (5,0), (5,1)), 
-        ('SPAN', (6,0), (6,1)), ('SPAN', (7,0), (7,1)), ('SPAN', (8,0), (8,1)),
-        ('SPAN', (1,0), (3,0)),
-        ('BACKGROUND', (6,2), (6,2), yellow), # RESALTE AMARILLO OFICIAL 🟡
+        # Combinaciones Verticales (Spans)
+        ('SPAN', (0,0), (0,1)), # Placas
+        ('SPAN', (1,0), (3,0)), # Dimension Total
+        ('SPAN', (4,0), (4,1)), # Config
+        ('SPAN', (5,0), (5,1)), # PB Max
+        ('SPAN', (6,0), (6,1)), # PB Total
+        ('SPAN', (7,0), (7,1)), # PB Max Control
+        ('SPAN', (8,0), (8,1)), # PB Max Bonif
+        # Combinar columnas de pesos para ambas filas de datos (Tracto y Carreta)
+        ('SPAN', (4,2), (4,3)), ('SPAN', (5,2), (5,3)), ('SPAN', (6,2), (6,3)), ('SPAN', (7,2), (7,3)), ('SPAN', (8,2), (8,3)),
+        ('BACKGROUND', (6,2), (6,3), yellow),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
     ]))
     t_vh.wrapOn(c, width, height)
-    t_vh.drawOn(c, 1.5*cm, height - 11.5*cm)
+    t_vh.drawOn(c, 1.5*cm, height - 11.2*cm) # Ajustado posición Y
 
-    # --- III) CONTROL POR EJES ---
+    # Notas al pie de la tabla IV (Imagen 2) 📜
+    c.setFont("Helvetica", 5.5)
+    notas_iv = [
+        "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003",
+        "(2) EL GENERADOR DEBERA CONTROLAR QUE EL PESO BRUTO TRANSPORTADO NO SEA MAYOR QUE EL 95% DE LAS SUMATORIA DE LOS PESOS POR EJES O CONJUNTOS DE EJES INDICADOS EN EL ANEXO IV DEL RNV",
+        "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA Y NEUMAT EXTRA ANCHOS"
+    ]
+    curr_nota_y = height - 11.8*cm
+    for nota in notas_iv:
+        c.drawString(1.5*cm, curr_nota_y, nota)
+        curr_nota_y -= 0.18*cm
+
+    # --- III) CONTROL POR EJES (FORMATO IMAGEN 2) ---
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 12.3*cm, "II) CONTROL DE PESOS POR EJE O CONJUNTO DE EJES:")
+    c.drawString(1.5*cm, height - 13.5*cm, "II) CONTROL DE PESOS POR EJE O CONJUNTO DE EJES:")
     c.setFont("Helvetica", 6)
-    c.drawString(1.5*cm, height - 12.6*cm, "Para aquellos vehículos que exceden el 95% de la suma de los pesos por ejes")
+    c.drawString(1.5*cm, height - 13.8*cm, "Para aquellos vehículos que exceden el 95% de la suma de los pesos por ejes")
     
     data_ejes = [
+        ["", "DISTRIBUCION DE PESOS POR CONJUNTO DE EJES EN KG.", "", "", "", "", ""],
         ["PESOS", "1er Cjto", "2do Cjto", "3er Cjto", "4to Cjto", "5to Cjto", "6to Cjto"],
         ["", "-", "-", "-", "-", "-", "-"]
     ]
-    t_ej = Table(data_ejes, colWidths=[2*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm])
+    # Alturas para la tabla de ejes con mayor holgura 📏
+    t_ej = Table(data_ejes, colWidths=[2*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm], rowHeights=[0.5*cm, 0.5*cm, 0.6*cm])
     t_ej.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
         ('FONTSIZE', (0,0), (-1,-1), 7),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('BACKGROUND', (0,0), (-1,0), HexColor("#cccccc")),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (-1,1), HexColor("#cccccc")),
+        ('SPAN', (1,0), (6,0)), # Combinar cabecera de distribución
+        ('SPAN', (0,0), (0,1)), # Combinar celda de label PESOS
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t_ej.wrapOn(c, width, height)
-    t_ej.drawOn(c, 1.5*cm, height - 14*cm)
+    t_ej.drawOn(c, 1.5*cm, height - 15.5*cm) # Espaciado ampliado para llenar la hoja
 
     # --- TEXTO LEGAL Y OBSERVACIONES ---
     c.setFont("Helvetica-Bold", 6)
-    c.drawString(1.5*cm, height - 14.5*cm, "DECRETO SUPREMO Nº 058-2003-MTC, modificado por D.S. Nº 006-2008-MTC, ANEXO IV: PESOS Y MEDIDAS")
+    c.drawString(1.5*cm, height - 16.2*cm, "DECRETO SUPREMO Nº 058-2003-MTC, modificado por D.S. Nº 006-2008-MTC, ANEXO IV: PESOS Y MEDIDAS")
     c.setFont("Helvetica", 6)
-    c.drawString(1.5*cm, height - 14.8*cm, "Artículo 37º.- Pesos máximos permitidos: (...) están exonerados del control de peso por eje o conjunto de ejes, los vehículos o combinaciones vehiculares que transiten con un")
-    c.drawString(1.5*cm, height - 15.1*cm, "peso bruto vehicular que no exceda del 95% de la sumatoria de pesos por eje o conj")
+    c.drawString(1.5*cm, height - 16.5*cm, "Artículo 37º.- Pesos máximos permitidos: (...) están exonerados del control de peso por eje o conjunto de ejes, los vehículos o combinaciones vehiculares que transiten con un")
+    c.drawString(1.5*cm, height - 16.8*cm, "peso bruto vehicular que no exceda del 95% de la sumatoria de pesos por eje o conj")
     
-    c.drawString(1.5*cm, height - 15.6*cm, "OBSERVACIONES: ..................................................................................................................................................................................................................................")
-    c.drawString(1.5*cm, height - 16*cm, "........................................................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 17.5*cm, "OBSERVACIONES: ..................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 18*cm, "........................................................................................................................................................................................................................................................................")
+    c.drawString(1.5*cm, height - 18.5*cm, "........................................................................................................................................................................................................................................................................")
 
-    # --- FIRMAS ---
-    c.line(3*cm, 3.5*cm, 8.5*cm, 3.5*cm)
-    c.drawCentredString(5.7*cm, 3.2*cm, "COMERCIAL")
-    c.drawCentredString(5.7*cm, 2.8*cm, reg.usuario_registro or "---")
+    # --- FIRMAS (DETALLE PERSONALIZADO) ---
+    def format_name(full_name: str):
+        if not full_name or full_name == "---": return "---"
+        p = full_name.strip().split()
+        if len(p) >= 3:
+            # DANIEL QUIROZ CARRASCO -> DANIEL QUIROZ C.
+            # Tomamos primer nombre, primer apellido e inicial del segundo
+            return f"{p[0]} {p[-2]} {p[-1][0]}.".upper()
+        return full_name.upper()
+
+    user_formatted = format_name(reg.usuario_registro or "OPERADOR LOGICAPTURE")
+    chofer_formatted = format_name(reg.nombre_chofer or "CONDUCTOR")
+
+    # Líneas de firma posicionadas para ocupar el espacio inferior 🖋️
+    sign_y = 5*cm
+    c.setLineWidth(0.5)
+    c.line(3*cm, sign_y, 8.5*cm, sign_y)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(5.7*cm, sign_y - 0.4*cm, "COMERCIAL")
+    c.setFont("Helvetica", 7.5)
+    c.drawCentredString(5.7*cm, sign_y + 0.3*cm, user_formatted) # Nombre SOBRE la línea como en la imagen
     
-    c.line(11*cm, 3.5*cm, 16.5*cm, 3.5*cm)
-    c.drawCentredString(13.7*cm, 3.2*cm, "CONDUCTOR")
-    c.drawCentredString(13.7*cm, 2.8*cm, reg.nombre_chofer or "---")
+    c.line(11*cm, sign_y, 16.5*cm, sign_y)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(13.7*cm, sign_y - 0.4*cm, "CONDUCTOR")
+    c.setFont("Helvetica", 7.5)
+    c.drawCentredString(13.7*cm, sign_y + 0.3*cm, chofer_formatted) # Nombre SOBRE la línea
 
-    # --- NOTAS FINALES (TEXTO PEQUEÑO) ---
+    # --- NOTAS FINALES (AL FONDO DE LA PÁGINA) ---
     c.setFont("Helvetica-Bold", 5)
-    c.drawString(1.5*cm, 2.2*cm, "NOTA:")
+    c.drawString(1.5*cm, 3*cm, "NOTA:")
     c.setFont("Helvetica", 5)
     notas = [
         "1.- LO CONSIGNADO EN EL PRESENTE FORMATO TIENE CARÁCTER DE DECLARACION JURADA, POR LO QUE ESTARA SUJETO A LO ESTABLECIDO EN EL ART. 32 NUMERAL 32.3 DE LA LEY",
@@ -251,7 +322,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         "5.- Para el control en la balanza de las Estaciones de Pesaje 'Peso Bruto Total Transportado', se consideran las tolerancias del 3% vigente en el pesaje dinámico.",
         "6.- De no consignar los datos en el punto V. cuando corresponda, el generador de la carga declara que los pesos por eje están dentro de lo permitido en el RNV"
     ]
-    curr_y = 1.9*cm
+    curr_y = 2.7*cm
     for nota in notas:
         c.drawString(1.5*cm, curr_y, nota)
         curr_y -= 0.18*cm

@@ -81,6 +81,7 @@ class Anexo1Request(BaseModel):
     peso_tara_contenedor: float
     peso_neto_carga: float
     is_especial: bool = False
+    guia_remision: str = ""
 
 class LookupResponse(BaseModel):
     booking: str
@@ -657,7 +658,7 @@ def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
         db.commit()
         
         # 2. Generar PDF usando el motor ReportLab
-        file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial)
+        file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial, guia_remision=req.guia_remision)
         if not file_path or not os.path.exists(file_path):
              raise HTTPException(status_code=500, detail="Error crítico al generar el Anexo 1 PDF")
 
