@@ -81,6 +81,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     
     c = canvas.Canvas(file_path, pagesize=A4)
     width, height = A4
+    c.setFillColor(black) # Forzamos color negro desde el primer trazo 🖤✨
     
     # --- CABECERA OFICIAL ---
     logo_file = find_asset("logo_beta.png")
@@ -114,18 +115,19 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     
     # Cuadro de Control (Posición final ajustada)
     c.setFillColor(HexColor("#cccccc"))
-    c.rect(13.8*cm, height - 4.5*cm, 2*cm, 0.45*cm, fill=1)
-    c.setFillColor(yellow)
-    c.rect(15.8*cm, height - 4.5*cm, 3*cm, 0.45*cm, fill=1, stroke=1)
-    # Lookup Maestro de Planta para Datos de Ubicación y Trazabilidad 🌍🏗️
+    # Lookup Maestro de Planta para Datos de Ubicación y Trazabilidad
     from app.models.maestros import Planta
-    planta_db = db.query(Planta).filter(Planta.planta.ilike(reg.planta or "")).first()
+    # Limpiamos el nombre de la planta para la búsqueda
+    nombre_planta_busqueda = (reg.planta or "").strip()
+    planta_db = db.query(Planta).filter(Planta.planta.ilike(f"%{nombre_planta_busqueda}%")).first()
 
-    # 1. Código de Trazabilidad Dinámico 🛰️
+    # 1. Código de Trazabilidad Dinámico
+    # Tomamos el centro de la DB, si no existe usamos 4102 como fallback
     centro_planta = planta_db.centro if (planta_db and planta_db.centro) else "4102"
     fecha_trazabilidad = datetime.now().strftime('%d%m%y')
     codigo_completo = f"{centro_planta}{fecha_trazabilidad}"
 
+    c.setFillColor(black) # Aseguramos color NEGRO para el texto
     c.setFont("Helvetica-Bold", 8.5)
     c.drawCentredString(17.3*cm, height - 4.38*cm, codigo_completo)
     
