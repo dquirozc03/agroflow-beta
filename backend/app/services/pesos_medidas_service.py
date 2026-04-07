@@ -72,54 +72,58 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     width, height = A4
     
     # --- CABECERA OFICIAL ---
-    logo_file = find_asset("logo_beta.png") # Sincronizado con el archivo real de la empresa 🏛️
+    logo_file = find_asset("logo_beta.png")
     if logo_file:
         try:
-            c.drawImage(logo_file, 1.5*cm, height - 2.5*cm, width=3.5*cm, preserveAspectRatio=True)
-        except:
-            pass # Si el logo falla por formato, el PDF continua 🛡️
+            c.drawImage(logo_file, 1.5*cm, height - 3*cm, width=3.5*cm, height=1.5*cm, preserveAspectRatio=True, mask='auto')
+        except Exception as e:
+            print(f"LOGO ERROR: {e}")
     
     c.setFont("Helvetica-Bold", 11)
-    c.drawCentredString(width/2 + 1*cm, height - 2*cm, "CONSTANCIA DE VERIFICACION DE PESOS Y MEDIDAS")
+    c.drawCentredString(width/2 + 1*cm, height - 1.5*cm, "CONSTANCIA DE VERIFICACION DE PESOS Y MEDIDAS")
     
-    c.setFont("Helvetica-Bold", 7)
+    c.setFont("Helvetica-Bold", 6.5)
     header_text_lines = [
         "ALMACENES, TERMINALES DE ALMACENAMIENTO, TERMINALES PORTUARIOS O AEROPORTUARIOS, GENERADORES,",
         "DADORES O REMITENTES DE LA MERCANCIA",
         "DECRETO SUPREMO Nº 058-2003-MTC REGLAMENTO NACIONAL DE VEHICULOS Y SUS NORMAS MODIFICATORIAS"
     ]
-    curr_y = height - 2.5*cm
+    curr_y = height - 2.1*cm
     for line in header_text_lines:
         c.drawCentredString(width/2 + 1*cm, curr_y, line)
-        curr_y -= 0.35*cm
+        curr_y -= 0.32*cm
 
-    # Fecha y Hora
-    c.setFont("Helvetica", 8)
-    c.drawString(1.5*cm, height - 4*cm, f"Fecha :   {datetime.now().strftime('%d / %m / %Y')}")
-
-    # --- I) DATOS DEL GENERADOR (TABLA 1) ---
+    # Fecha
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 4.6*cm, "I) DATOS DEL GENERADOR DE CARGA")
+    c.drawString(1.5*cm, height - 3.8*cm, f"Fecha :   {datetime.now().strftime('%d/%m/%Y')}")
+
+    # --- I) DATOS DEL GENERADOR DE CARGA ---
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(1.5*cm, height - 4.4*cm, "I) DATOS DEL GENERADOR DE CARGA")
     
-    # Celda amarilla de control interno
+    # Celda amarilla de control (orden beta)
     c.setFillColor(yellow)
-    c.rect(14.5*cm, height - 4.6*cm, 4*cm, 0.4*cm, fill=1)
+    c.rect(14.5*cm, height - 4.4*cm, 4*cm, 0.4*cm, fill=1)
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(16.5*cm, height - 4.4*cm, reg.orden_beta or "4102060426")
+    c.drawCentredString(16.5*cm, height - 4.2*cm, reg.orden_beta or "---")
 
+    # Tabla remitente: columnas redistribuidas para que DEPARTAMENTO quepa
     data_remitente = [
         ["NOMBRE DE\nLA EMPRESA", BETA_CONFIG['empresa'], "Nº RUC", BETA_CONFIG['ruc'], "TELEF.", BETA_CONFIG['telefono']],
-        ["DIRECCION", BETA_CONFIG['direccion'], "", "", "", ""],
-        ["DISTRITO", BETA_CONFIG['distrito'], "PROVINCIA", BETA_CONFIG['provincia'], "DEPARTAMENTO", BETA_CONFIG['departamento']]
+        ["DIRECCION", "", "", "", "", ""],
+        ["DISTRITO", "", "PROVINCIA", "", "DEPARTAMENTO", BETA_CONFIG['departamento']]
     ]
-    t1 = Table(data_remitente, colWidths=[2.3*cm, 6.2*cm, 1.5*cm, 3*cm, 1.5*cm, 3*cm], rowHeights=[0.8*cm, 0.5*cm, 0.5*cm])
+    # Anchos: [label, valor, label, valor, label, valor] = 17.5cm total
+    t1 = Table(data_remitente, colWidths=[2.3*cm, 5.2*cm, 1.5*cm, 3*cm, 2.5*cm, 3*cm], rowHeights=[0.7*cm, 0.45*cm, 0.45*cm])
     t1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 6.5),
+        ('FONTSIZE', (0,0), (-1,-1), 6),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,-1), 'CENTER'),
+        ('ALIGN', (2,0), (2,-1), 'CENTER'),
+        ('ALIGN', (4,0), (4,-1), 'CENTER'),
         ('BACKGROUND', (0,0), (0,-1), HexColor("#cccccc")),
         ('BACKGROUND', (2,0), (2,0), HexColor("#cccccc")),
         ('BACKGROUND', (2,2), (2,2), HexColor("#cccccc")),
@@ -128,7 +132,8 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (1,1), (5,1)),
     ]))
     t1.wrapOn(c, width, height)
-    t1.drawOn(c, 1.5*cm, height - 6.5*cm)
+    t1.drawOn(c, 1.5*cm, height - 6.2*cm)
+
 
     # --- II) TIPO DE MERCANCIA ---
     c.setFont("Helvetica-Bold", 8)
