@@ -46,9 +46,12 @@ export default function VehiculosPage() {
   const [totalRecords, setTotalRecords] = useState(0);
 
   useEffect(() => {
-    setPage(1); // Reset page on mode change
     fetchData();
   }, [mode, page, searchTerm]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [mode, searchTerm]);
 
   const fetchData = async () => {
     setIsLoading(true);

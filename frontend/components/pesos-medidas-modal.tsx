@@ -137,26 +137,24 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2.5rem] overflow-hidden p-0 lc-scroll">
-        <div className="h-2 bg-emerald-500" />
+      <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2.5rem] overflow-hidden p-0 max-h-[90vh] flex flex-col">
+        <div className="h-2 bg-emerald-500 shrink-0" />
         
-        <DialogHeader className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <Scale className="h-6 w-6" />
-                </div>
-                <div>
-                   <DialogTitle className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
-                     Pesos y Medidas (Anexo 1)
-                   </DialogTitle>
-                </div>
+        <div className="flex-1 overflow-y-auto lc-scroll">
+          <DialogHeader className="px-8 pt-8 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600">
+                      <Scale className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-black text-[#022c22] tracking-tighter uppercase">
+                      Pesos y Medidas (Anexo 1)
+                    </DialogTitle>
+                  </div>
+              </div>
             </div>
-            <button onClick={onClose} className="h-10 w-10 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-300 transition-all hover:rotate-90">
-                <X className="h-5 w-5" />
-            </button>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
         <div className="px-8 pb-8 space-y-6">
             
@@ -267,6 +265,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                 {loading ? <RefreshCw className="h-6 w-6 animate-spin mr-3" /> : <FileDown className="h-5 w-5 mr-3" />}
                 {loading ? "PROCESANDO..." : "Sincronizar y Descargar PDF"}
             </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

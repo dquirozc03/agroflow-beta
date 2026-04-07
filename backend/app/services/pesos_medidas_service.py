@@ -61,8 +61,13 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     usuario_real = db.query(Usuario).filter(Usuario.usuario.ilike(user_alias)).first()
     nombre_operador = usuario_real.nombre if usuario_real else reg.usuario_registro
 
-    tracto = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == reg.placa_tracto).first()
-    carreta = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == reg.placa_carreta).first()
+    # Limpieza de Placas para Match Robusto 🧼🏎️
+    from app.routers.logicapture import clean_plate
+    placa_tracto_clean = clean_plate(reg.placa_tracto or "")
+    placa_carreta_clean = clean_plate(reg.placa_carreta or "")
+
+    tracto = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == placa_tracto_clean).first()
+    carreta = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == placa_carreta_clean).first()
 
     conf_label, peso_max = get_mtc_config(
         tracto.numero_ejes if tracto else 0, 
@@ -224,7 +229,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh = Table(full_v, colWidths=col_w_v, rowHeights=row_h_v)
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,-1), 4.5), # Fuente ligeramente más pequeña para seguridad 📑
+        ('FONTSIZE', (0,0), (-1,-1), 7.5), # Fuente aumentada para legibilidad 👁️‍🗨️✨
         ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -233,10 +238,10 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('SPAN', (5,0), (5,1)), ('SPAN', (6,0), (6,1)), ('SPAN', (7,0), (7,1)), ('SPAN', (8,0), (8,1)),
         ('SPAN', (4,2), (4,3)), ('SPAN', (5,2), (5,3)), ('SPAN', (6,2), (6,3)), ('SPAN', (7,2), (7,3)), ('SPAN', (8,2), (8,3)),
         ('BACKGROUND', (6,2), (6,3), yellow),
-        ('LEFTPADDING', (0,0), (-1,-1), 1),
-        ('RIGHTPADDING', (0,0), (-1,-1), 1),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('LEFTPADDING', (0,0), (-1,-1), 2),
+        ('RIGHTPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
     ]))
     t_vh.wrapOn(c, width, height)
     t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
