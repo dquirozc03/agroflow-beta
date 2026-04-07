@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { 
   Scale, 
   Truck, 
@@ -20,7 +21,8 @@ import {
   FileDown, 
   AlertCircle,
   RefreshCw,
-  X
+  X,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -36,11 +38,19 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   
+  // Datos de Configuración Vehicular
+  const [tractoEjes, setTractoEjes] = useState(0);
+  const [carretaEjes, setCarretaEjes] = useState(0);
+  const [isSe2, setIsSe2] = useState(false); 
+
+  // Pesos Individuales para transparencia 💎
+  const [taraTracto, setTaraTracto] = useState(0);
+  const [taraCarreta, setTaraCarreta] = useState(0);
+  
   // Pesos para cálculo
-  const [taraVehiculo, setTaraVehiculo] = useState(0);
   const [taraContenedor, setTaraContenedor] = useState(0);
-  const [pesoNeto, setPesoNeto] = useState(0);
-  const [pesoBruto, setPesoBruto] = useState(0);
+  const [pesoBrutoProducto, setPesoBrutoProducto] = useState(0); // Renombrado de Neto a Bruto Producto
+  const [pesoBrutoTotal, setPesoBrutoTotal] = useState(0);
 
   useEffect(() => {
     if (isOpen && registroId) {
@@ -48,42 +58,39 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
     }
   }, [isOpen, registroId]);
 
-  // Recalcular Bruto automáticamente: Bruto = Tara Vehículo + Tara Contenedor + Neto Carga
+  // Recalcular Bruto Total automáticamente
   useEffect(() => {
-    setPesoBruto(taraVehiculo + taraContenedor + pesoNeto);
-  }, [taraVehiculo, taraContenedor, pesoNeto]);
+    setPesoBrutoTotal(taraTracto + taraCarreta + taraContenedor + pesoBrutoProducto);
+  }, [taraTracto, taraCarreta, taraContenedor, pesoBrutoProducto]);
 
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // 1. Obtener datos actuales del registro (por si ya tiene pesos ingresados)
       const res = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${registroId}`);
       if (!res.ok) throw new Error("Error al obtener registro");
       const reg = await res.json();
       setData(reg);
       
-      // Precargar pesos existentes para corrección de digitación 💎
       setTaraContenedor(Number(reg.peso_tara_contenedor) || 0);
-      setPesoNeto(Number(reg.peso_neto_carga) || 0);
+      setPesoBrutoProducto(Number(reg.peso_neto_carga) || 0);
 
-      // 2. Obtener Taras Técnicas de Maestros (Cálculo Automático) 🚛⚖️
+      // 2. Obtener Taras Técnicas Detalladas 🚛⚖️🏗️
       const [tractoRes, carretaRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${reg.placa_tracto}`),
         fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${reg.placa_carreta}`)
       ]);
 
-      let taraFija = 0;
       if (tractoRes.ok) {
         const t = await tractoRes.json();
-        taraFija += (Number(t.peso_neto) || 0);
+        setTaraTracto(Number(t.peso_neto) || 0);
+        setTractoEjes(t.numero_ejes || 3);
       }
       if (carretaRes.ok) {
         const c = await carretaRes.json();
-        taraFija += (Number(c.peso_neto) || 0);
+        setTaraCarreta(Number(c.peso_neto) || 0);
+        setCarretaEjes(c.numero_ejes || 2);
       }
       
-      setTaraVehiculo(taraFija);
-
     } catch (error) {
       console.error(error);
       toast.error("Error al sincronizar datos de balanza");
@@ -99,9 +106,10 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          peso_bruto: pesoBruto,
+          peso_bruto: pesoBrutoTotal,
           peso_tara_contenedor: taraContenedor,
-          peso_neto_carga: pesoNeto
+          peso_neto_carga: pesoBrutoProducto,
+          is_especial: isSe2 
         })
       });
 
@@ -111,7 +119,6 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      // Nombre de archivo personalizado: PesosYMedidas_[Orden Beta].pdf
       a.download = `PesosYMedidas_${data?.orden_beta || 'S-O'}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -154,113 +161,100 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
 
         <div className="px-8 pb-8 space-y-6">
             
-            {/* Info Panel: Vehículo Detectado */}
-            <div className="bg-slate-50 rounded-3xl p-5 border border-slate-100 flex items-center justify-between group hover:border-emerald-200 transition-all">
-                <div className="flex items-center gap-4">
-                   <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-emerald-600">
-                      <Truck className="h-5 w-5" />
-                   </div>
-                   <div>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Unidades en Balanza</p>
-                       <p className="text-sm font-bold text-slate-700">
-                           {data?.placa_tracto || "---"} / {data?.placa_carreta || "---"}
-                       </p>
-                   </div>
-                </div>
-                <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Orden Beta</p>
-                    <p className="text-sm font-bold text-emerald-600">
-                        {data?.orden_beta || "PENDIENTE"}
-                    </p>
-                </div>
+            {/* Info Unidades */}
+            <div className="grid grid-cols-2 gap-4">
+               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center gap-3">
+                  <Truck className="h-4 w-4 text-emerald-500" />
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ejes Conectados</p>
+                    <p className="text-xs font-bold text-slate-700">{tractoEjes}E + {carretaEjes}E</p>
+                  </div>
+               </div>
+               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Orden Beta</p>
+                  <p className="text-xs font-bold text-emerald-600">{data?.orden_beta || "---"}</p>
+               </div>
             </div>
 
-            {/* Formulario de Pesaje */}
+            {/* Selector Especial Se2 */}
+            {carretaEjes === 2 && (
+                <div className="bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex items-center justify-between animate-in fade-in zoom-in-95 duration-300">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm">
+                            <Zap className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest leading-none mb-1">Especial MTC (Ejes Esparcidos)</p>
+                            <p className="text-[11px] font-bold text-amber-600 leading-none">Activar Configuración Se2</p>
+                        </div>
+                    </div>
+                    <Switch checked={isSe2} onCheckedChange={setIsSe2} className="data-[state=checked]:bg-amber-500" />
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* Col Izq: Inputs de Usuario */}
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <Container className="h-3 w-3" /> Tara Contenedor (KG)
+                             Tara Contenedor (KG)
                         </Label>
                         <Input 
                             type="number"
                             value={taraContenedor}
                             onChange={(e) => setTaraContenedor(Number(e.target.value))}
                             className="h-14 bg-slate-50 border-slate-100 rounded-xl focus:ring-emerald-500/20 font-bold text-lg"
-                            placeholder="Ej: 3850.00"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <Package className="h-3 w-3" /> Peso Neto Carga (KG)
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                            <Package className="h-3 w-3" /> Peso Bruto del Producto (KG) 🚀
                         </Label>
                         <Input 
                             type="number"
-                            value={pesoNeto}
-                            onChange={(e) => setPesoNeto(Number(e.target.value))}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl focus:ring-emerald-500/20 font-bold text-lg"
-                            placeholder="Ej: 22450.00"
+                            value={pesoBrutoProducto}
+                            onChange={(e) => setPesoBrutoProducto(Number(e.target.value))}
+                            className="h-14 bg-emerald-50/30 border-emerald-100 rounded-xl focus:ring-emerald-500/20 font-bold text-lg text-emerald-700"
                         />
                     </div>
                 </div>
 
-                {/* Col Der: Cálculo Automático */}
                 <div className="bg-[#022c22] rounded-[2rem] p-6 text-white flex flex-col justify-between shadow-xl shadow-emerald-950/20">
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center opacity-60">
-                            <span className="text-[9px] font-black uppercase tracking-widest">Tara Vehicular Master</span>
-                            <span className="text-xs font-bold">{taraVehiculo.toLocaleString()} KG</span>
+                    <div className="space-y-2.5">
+                        <div className="flex justify-between items-center opacity-40">
+                            <span className="text-[8px] font-black uppercase tracking-widest">Tara Tracto ({data?.placa_tracto})</span>
+                            <span className="text-xs font-bold">{taraTracto.toLocaleString()} KG</span>
                         </div>
-                        <div className="flex justify-between items-center opacity-60">
-                            <span className="text-[9px] font-black uppercase tracking-widest">Input Contenedor</span>
+                        <div className="flex justify-between items-center opacity-40">
+                            <span className="text-[8px] font-black uppercase tracking-widest">Tara Carreta ({data?.placa_carreta})</span>
+                            <span className="text-xs font-bold">{taraCarreta.toLocaleString()} KG</span>
+                        </div>
+                        <div className="flex justify-between items-center opacity-40">
+                            <span className="text-[8px] font-black uppercase tracking-widest">Tara Contenedor</span>
                             <span className="text-xs font-bold">{taraContenedor.toLocaleString()} KG</span>
                         </div>
-                        <div className="flex justify-between items-center opacity-60">
-                            <span className="text-[9px] font-black uppercase tracking-widest">Input Carga Neta</span>
-                            <span className="text-xs font-bold">{pesoNeto.toLocaleString()} KG</span>
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/5 mt-2 border border-white/10">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">Configuración MTC</span>
+                            <span className="text-[10px] font-black text-emerald-400">
+                                {tractoEjes === 3 && carretaEjes === 2 ? (isSe2 ? "T3/Se2 (47T)" : "T3/S2 (43T)") : 
+                                 tractoEjes === 3 && carretaEjes === 3 ? "T3/S3 (48T)" : "GENÉRICA"}
+                            </span>
                         </div>
                     </div>
                     
-                    <div className="mt-8 pt-4 border-t border-emerald-500/30">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Scale className="h-3 w-3 text-emerald-400" />
-                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Peso Bruto Total MTC</p>
-                        </div>
+                    <div className="mt-6 pt-4 border-t border-emerald-500/30">
+                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Peso Bruto Total MTC</p>
                         <p className="text-4xl font-black text-white tracking-tighter">
-                            {pesoBruto.toLocaleString()} <span className="text-sm opacity-50">KG</span>
+                            {pesoBrutoTotal.toLocaleString()} <span className="text-sm opacity-50">KG</span>
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Aviso Legal */}
-            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-4">
-                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shrink-0 border border-emerald-100 text-emerald-600">
-                    <AlertCircle className="h-5 w-5" />
-                </div>
-                <div>
-                   <p className="text-xs font-bold text-emerald-900 uppercase tracking-tight">Corrección de Errores de Digitación</p>
-                   <p className="text-[10px] text-emerald-700 font-medium leading-tight opacity-70">
-                       Si detecta un error en el PDF, simplemente abra este modal nuevamente, corrija los datos y vuelva a descargar. Los pesos se actualizarán automáticamente.
-                   </p>
-                </div>
-            </div>
-
-            <Button 
-                onClick={handleDownload}
-                disabled={loading || !registroId || (pesoBruto <= 0)}
-                className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/20 transition-all active:scale-95 disabled:opacity-50"
-            >
-                {loading ? (
-                    <RefreshCw className="h-6 w-6 animate-spin mr-3" />
-                ) : (
-                    <FileDown className="h-5 w-5 mr-3" />
-                )}
+            <Button onClick={handleDownload} disabled={loading || !registroId} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all">
+                {loading ? <RefreshCw className="h-6 w-6 animate-spin mr-3" /> : <FileDown className="h-5 w-5 mr-3" />}
                 {loading ? "PROCESANDO..." : "Sincronizar y Descargar PDF"}
             </Button>
-
         </div>
       </DialogContent>
     </Dialog>
