@@ -114,21 +114,25 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     c.drawString(1.5*cm, height - 4.4*cm, "I) DATOS DEL GENERADOR DE CARGA")
     
     # Cuadro de Control (Posición final ajustada)
+    c.setLineWidth(0.6)
     c.setFillColor(HexColor("#cccccc"))
+    c.rect(13.8*cm, height - 4.6*cm, 2*cm, 0.5*cm, fill=1, stroke=1)
+    c.setFillColor(yellow)
+    c.rect(15.8*cm, height - 4.6*cm, 3*cm, 0.5*cm, fill=1, stroke=1)
+    
     # Lookup Maestro de Planta para Datos de Ubicación y Trazabilidad
     from app.models.maestros import Planta
-    # Limpiamos el nombre de la planta para la búsqueda
     nombre_planta_busqueda = (reg.planta or "").strip()
     planta_db = db.query(Planta).filter(Planta.planta.ilike(f"%{nombre_planta_busqueda}%")).first()
 
     # 1. Código de Trazabilidad Dinámico
-    # Tomamos el centro de la DB, si no existe usamos 4102 como fallback
     centro_planta = planta_db.centro if (planta_db and planta_db.centro) else "4102"
     fecha_trazabilidad = datetime.now().strftime('%d%m%y')
     codigo_completo = f"{centro_planta}{fecha_trazabilidad}"
 
-    c.setFillColor(black) # Aseguramos color NEGRO para el texto
+    c.setFillColor(black) # Forzamos NEGRO para el texto sobre el amarillo
     c.setFont("Helvetica-Bold", 8.5)
+    # Centrado exacto en el cuadro amarillo (Midpoint vertical y horizontal)
     c.drawCentredString(17.3*cm, height - 4.38*cm, codigo_completo)
     
     # Datos dinámicos con Fallback a BETA_CONFIG por seguridad 🛡️
@@ -171,7 +175,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
     t1.wrapOn(c, width, height)
-    t1.drawOn(c, 1.5*cm, height - 7.2*cm) # Ajustado posición Y por nueva altura 📏
+    t1.drawOn(c, 1.5*cm, height - 7.2*cm)
 
     # --- II) TIPO DE MERCANCIA TRANSPORTADA ---
     cultivo_text = (reg.cultivo or "PRODUCTO AGRICOLA").upper()
@@ -201,12 +205,12 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_chk.wrapOn(c, width, height)
     t_chk.drawOn(c, 1.5*cm, height - 9.0*cm)
 
-    # --- IV) DATOS DEL VEHICULO (REDISEÑO IMAGEN 2) ---
+    # --- IV) DATOS DEL VEHICULO ---
     c.setFont("Helvetica-Bold", 8)
     c.drawString(1.5*cm, height - 9.7*cm, "IV) DATOS DEL VEHICULO")
 
     
-    # Títulos con saltos de línea optimizados para el nuevo ancho 📐
+    # Títulos con saltos de línea optimizados
     h_dim = "DIMENSION TOTAL\nDEL VEHICULO (mt)\n(incluida la mercancia)"
     h_perm = "PESO BRUTO VEHICULAR\nMAX. PERMITIDO (KG.)\n(1)"
     h_total = "PESO BRUTO TOTAL\nTRANSPORTADO\n(KG)"
@@ -228,15 +232,14 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     ]
     
     full_v = head_v + data_v
-    # Anchos equilibrados: Más espacio a la derecha, menos a las medidas simples 📏
-    col_w_v = [2.0*cm, 0.9*cm, 0.9*cm, 0.9*cm, 1.8*cm, 2.2*cm, 2.2*cm, 3.55*cm, 3.55*cm] # Total: 18cm (+/-)
+    col_w_v = [2.0*cm, 0.9*cm, 0.9*cm, 0.9*cm, 1.8*cm, 2.2*cm, 2.2*cm, 3.55*cm, 3.55*cm]
     row_h_v = [1.3*cm, 0.5*cm, 0.65*cm, 0.65*cm] 
 
     t_vh = Table(full_v, colWidths=col_w_v, rowHeights=row_h_v)
     t_vh.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, black),
-        ('FONTSIZE', (0,0), (-1,1), 5.0),    # Encabezados compactos para evitar choques 📏
-        ('FONTSIZE', (0,2), (-1,-1), 8.0),   # Datos GRANDES para lectura fácil 👁️‍🗨️✨
+        ('FONTSIZE', (0,0), (-1,1), 5.0),
+        ('FONTSIZE', (0,2), (-1,-1), 8.0),
         ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -253,7 +256,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     t_vh.wrapOn(c, width, height)
     t_vh.drawOn(c, 1.5*cm, height - 13.5*cm)
 
-    # Notas al pie de la tabla IV (Imagen 2) - DIVIDIDAS PARA QUE NO SE SALGAN 📜
+    # Notas al pie de la tabla IV - INTERLINEADO AUMENTADO 📐🍃
     c.setFont("Helvetica", 5.5)
     notas_iv = [
         "(1) SE OBTIENE DEL ANEXO IV DEL RNV. DS 058-2003",
@@ -262,10 +265,10 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         "(3) PB MAX PARA NO CONTROL PxEJES A VEHICULOS CON BONIFICACIONES PERMITIDAS PARA SUSP. NEUMATICA",
         "    Y NEUMAT EXTRA ANCHOS"
     ]
-    curr_nota_y = height - 13.8*cm
+    curr_nota_y = height - 13.9*cm # Bajado un poco para dar aire
     for nota in notas_iv:
         c.drawString(1.5*cm, curr_nota_y, nota)
-        curr_nota_y -= 0.18*cm
+        curr_nota_y -= 0.28*cm # Aumentado de 0.18 a 0.28 🍃
 
     # --- III) CONTROL POR EJES (FORMATO IMAGEN 2) ---
     c.setFont("Helvetica-Bold", 8)
