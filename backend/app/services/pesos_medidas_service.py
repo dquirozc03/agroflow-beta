@@ -225,7 +225,7 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     # --- FIRMAS ---
     c.line(3*cm, 3.5*cm, 8.5*cm, 3.5*cm)
     c.drawCentredString(5.7*cm, 3.2*cm, "COMERCIAL")
-    c.drawCentredString(5.7*cm, 2.8*cm, reg.usuario_creo or "---")
+    c.drawCentredString(5.7*cm, 2.8*cm, reg.usuario_registro or "---")
     
     c.line(11*cm, 3.5*cm, 16.5*cm, 3.5*cm)
     c.drawCentredString(13.7*cm, 3.2*cm, "CONDUCTOR")

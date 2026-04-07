@@ -642,40 +642,49 @@ def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
     Endpoint de Pesaje y Generación de Anexo 1.
     Sincroniza pesos reales y genera el documento legal MTC.
     """
-    from app.services.pesos_medidas_service import generate_anexo_1_pdf
-    
-    reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    import traceback
+    try:
+        from app.services.pesos_medidas_service import generate_anexo_1_pdf
         
-    # 1. Persistir pesos en la base de datos
-    reg.peso_bruto = req.peso_bruto
-    reg.peso_tara_contenedor = req.peso_tara_contenedor
-    reg.peso_neto_carga = req.peso_neto_carga
-    db.commit()
-    
-    # 2. Generar PDF usando el motor ReportLab
-    file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial)
-    if not file_path or not os.path.exists(file_path):
-         raise HTTPException(status_code=500, detail="Error crítico al generar el Anexo 1 PDF")
+        reg = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == id).first()
+        if not reg:
+            raise HTTPException(status_code=404, detail="Registro no encontrado")
+            
+        # 1. Persistir pesos en la base de datos
+        reg.peso_bruto = req.peso_bruto
+        reg.peso_tara_contenedor = req.peso_tara_contenedor
+        reg.peso_neto_carga = req.peso_neto_carga
+        db.commit()
+        
+        # 2. Generar PDF usando el motor ReportLab
+        file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial)
+        if not file_path or not os.path.exists(file_path):
+             raise HTTPException(status_code=500, detail="Error crítico al generar el Anexo 1 PDF")
 
-    def iterfile():
-        try:
-            with open(file_path, mode="rb") as file_like:
-                yield from file_like
-        finally:
-            # Limpieza de archivo temporal
-            if os.path.exists(file_path):
-                try: os.remove(file_path)
-                except: pass
+        def iterfile():
+            try:
+                with open(file_path, mode="rb") as file_like:
+                    yield from file_like
+            finally:
+                # Limpieza de archivo temporal
+                if os.path.exists(file_path):
+                    try: os.remove(file_path)
+                    except: pass
 
-    return StreamingResponse(
-        iterfile(),
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="PesosYMedidas_{reg.orden_beta or "SIN_ORDEN"}.pdf"',
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
-        }
-    )
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="PesosYMedidas_{reg.orden_beta or "SIN_ORDEN"}.pdf"',
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Content-Disposition",
+                "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Diagnóstico: devuelve el error REAL al frontend
+        error_detail = traceback.format_exc()
+        print(f"ERROR ANEXO1: {error_detail}")
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
