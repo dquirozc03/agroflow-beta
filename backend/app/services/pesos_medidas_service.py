@@ -35,6 +35,17 @@ def get_mtc_config(tracto_ejes: int, carreta_ejes: int, cert_carreta: str = "", 
             return "T3/S3", 48000
     return f"T{t_ejes}S{c_ejes}", 48000
 
+def find_asset(asset_name):
+    """Buscador inteligente de assets para dev y prod."""
+    paths = [
+        os.path.join(os.getcwd(), "assets", asset_name),
+        os.path.join(os.getcwd(), "backend", "assets", asset_name),
+        os.path.join(os.path.dirname(__file__), "..", "assets", asset_name)
+    ]
+    for p in paths:
+        if os.path.exists(p): return p
+    return None
+
 def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = False):
     """
     Constancia de Verificación de Pesos y Medidas (MTC oficial).
@@ -60,9 +71,12 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     width, height = A4
     
     # --- CABECERA OFICIAL ---
-    potential_logo = os.path.join(os.getcwd(), BETA_CONFIG["logo_path"])
-    if os.path.exists(potential_logo):
-        c.drawImage(potential_logo, 1.5*cm, height - 2.5*cm, width=3.5*cm, preserveAspectRatio=True)
+    logo_file = find_asset("logo.png")
+    if logo_file:
+        try:
+            c.drawImage(logo_file, 1.5*cm, height - 2.5*cm, width=3.5*cm, preserveAspectRatio=True)
+        except:
+            pass # Si el logo falla por formato, el PDF continua 🛡️
     
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(width/2 + 1*cm, height - 2*cm, "CONSTANCIA DE VERIFICACION DE PESOS Y MEDIDAS")

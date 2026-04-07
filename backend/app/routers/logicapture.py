@@ -673,7 +673,7 @@ def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
         iterfile(),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=PesosYMedidas_{reg.orden_beta or 'SIN_ORDEN'}.pdf",
+            "Content-Disposition": f'attachment; filename="PesosYMedidas_{reg.orden_beta or "SIN_ORDEN"}.pdf"',
             "Access-Control-Expose-Headers": "Content-Disposition"
         }
     )
