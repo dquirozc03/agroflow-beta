@@ -104,10 +104,17 @@ class InstructionPDFService:
             peso_neto_full = override_data.get("peso_neto", "0.000 KG")
             peso_bruto_full = override_data.get("peso_bruto", "0.000 KG")
             
+            # Embarcador dinámico
+            embarcador_nombre = override_data.get("embarcador", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
+            embarcador_direccion = override_data.get("direccion_embarcador", "CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")
+            
             cliente_nombre = override_data.get("cliente_nombre")
             puerto_destino = override_data.get("puerto_destino")
             eta_str = override_data.get("eta")
             variedad = override_data.get("variedad")
+            
+            # Flete (Freight)
+            flete_val = override_data.get("fob", "PREPAID") # Reutilizamos el campo fob para freight si es necesario o un campo directo
             
             # Descripción BL
             desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
@@ -152,25 +159,26 @@ class InstructionPDFService:
             pais_val = pedidos[0].pais if pedidos else ""
             pod_val = pedidos[0].pod if pedidos else ""
             cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
+            fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
             planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
             planta_nombre = planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")
             planta_direccion = planta_maestro.direccion if planta_maestro else ""
             
             # Datos de Posicionamiento
-            pos_booking = pos.BOOKING
-            pos_orden = pos.ORDEN_BETA
-            pos_cultivo = pos.CULTIVO
-            pos_nave = pos.NAVE
-            pos_naviera = pos.NAVIERA
-            pos_operador = getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.")
+            pos_booking = pos.BOOKING or ""
+            pos_orden = pos.ORDEN_BETA or ""
+            pos_cultivo = pos.CULTIVO or ""
+            pos_nave = pos.NAVE or ""
+            pos_naviera = pos.NAVIERA or ""
+            pos_operador = getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L."
             pos_pol = getattr(pos, 'POL', "CALLAO") or "CALLAO"
             
             f_prog = getattr(pos, 'FECHA_PROGRAMADA', None)
             h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
             f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
-            fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else f"{f_str} {h_str}".strip()
+            fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
 
             eta_dt = getattr(pos, 'ETA', None)
             eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
@@ -182,6 +190,11 @@ class InstructionPDFService:
             
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
+            flete_val = "PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"
+            
+            # Valores fijos default
+            embarcador_nombre = "COMPLEJO AGROINDUSTRIAL BETA S.A."
+            embarcador_direccion = "CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU"
 
         # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
@@ -200,6 +213,7 @@ class InstructionPDFService:
 
         # Header con Logo Local
         try:
+            if override_data:
              from PIL import Image as PILImage
              current_dir = os.path.dirname(os.path.abspath(__file__))
              assets_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "assets"))
@@ -255,8 +269,8 @@ class InstructionPDFService:
         # --- MASTER TABLE ---
         t1_data = [
             [b_p(pos_orden or 'S/N'), b_p("")],
-            [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
-            [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
+            [b_p("EMBARCADOR"), n_p(embarcador_nombre)],
+            [b_p("DIRECCIÓN"), n_p(embarcador_direccion)],
             [b_p("OPERADOR LOGISTICO"), b_p(pos_operador)],
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", planta_direccion)],
             [b_p("UBIGEO PLANTA"), n_p("110111")],
@@ -271,7 +285,7 @@ class InstructionPDFService:
             [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")],
             [b_p("MOTONAVE"), n_p(pos_nave or "")],
             [b_p("BOOKING No."), b_p(pos_booking or "")],
-            [b_p("FREIGHT"), n_p(override_data.get('fob', 'PREPAID') if override_data else ("PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"))],
+            [b_p("FREIGHT"), n_p(flete_val)],
             [b_p("EMISION B/L"), n_p("SWB")],
             [b_p("PUERTO EMBARQUE"), n_p(pos_pol)],
             [b_p("ETA"), n_p(eta_str)],
@@ -333,6 +347,6 @@ class InstructionPDFService:
         pdf_bytes = buffer.getvalue()
         buffer.close()
 
-        return {"pdf_bytes": pdf_bytes, "orden_beta": pos.ORDEN_BETA}
+        return {"pdf_bytes": pdf_bytes, "orden_beta": pos_orden}
 
 instruction_pdf_service = InstructionPDFService()

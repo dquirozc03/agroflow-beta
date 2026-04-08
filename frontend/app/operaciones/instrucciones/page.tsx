@@ -100,7 +100,9 @@ export default function InstruccionesEmbarque() {
     pais_destino: "",
     presentacion: "CAJA 3.8 KG",
     etiquetas: "GENERICA",
-    observaciones: ""
+    observaciones: "",
+    embarcador: "COMPLEJO AGROINDUSTRIAL BETA S.A.",
+    direccion_embarcador: "CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU"
   });
 
   // Carga inicial de bookings desde el Plan Maestro (Posicionamiento)
@@ -476,58 +478,82 @@ export default function InstruccionesEmbarque() {
 
             {/* MODAL EDITOR MAESTRO ADMIN 💎 */}
             <Dialog open={isAdminModeOpen} onOpenChange={setIsAdminModeOpen}>
-              <DialogContent className="max-w-[90vw] w-[1200px] h-[90vh] p-0 overflow-hidden bg-slate-50 border-none rounded-[3rem]">
-                <div className="flex h-full">
+              <DialogContent className="max-w-[95vw] w-[1300px] h-[92vh] p-0 overflow-hidden bg-slate-50 border-none rounded-[3rem] shadow-2xl flex flex-col">
+                <div className="flex h-full overflow-hidden">
                   {/* Sidebar Modal */}
-                  <div className="w-80 bg-emerald-950 p-10 text-white flex flex-col justify-between shrink-0">
-                    <div className="space-y-6">
-                      <div className="h-16 w-16 bg-emerald-500/20 rounded-3xl flex items-center justify-center">
-                        <ShieldCheck className="h-8 w-8 text-emerald-400" />
+                  <div className="w-80 bg-emerald-950 p-12 text-white flex flex-col justify-between shrink-0 relative overflow-hidden">
+                    <div className="absolute top-[-10%] right-[-20%] opacity-20 rotate-12">
+                      <ShieldCheck className="h-64 w-64 text-emerald-500" />
+                    </div>
+                    
+                    <div className="space-y-8 relative z-10">
+                      <div className="h-20 w-20 bg-emerald-500/20 rounded-[2rem] flex items-center justify-center border border-emerald-500/30 backdrop-blur-xl">
+                        <Settings2 className="h-10 w-10 text-emerald-400" />
                       </div>
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-black uppercase tracking-tighter leading-tight font-['Outfit']">
-                          Editor <span className="text-emerald-400">Maestro</span>
+                      <div className="space-y-3">
+                        <h2 className="text-3xl font-black uppercase tracking-tighter leading-none font-['Outfit']">
+                          Editor <br/><span className="text-emerald-400 text-4xl">Maestro</span>
                         </h2>
-                        <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Control Total de Instrucción</p>
+                        <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.3em]">Ambiente de sobreescritura</p>
                       </div>
-                      <div className="pt-10 space-y-4">
-                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-60">
-                          <CircleDot className="h-3 w-3 text-emerald-400" /> Formulario Editable
+                      <div className="pt-12 space-y-5">
+                        <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest opacity-70 group cursor-default">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500" /> Formulario Vivo
                         </div>
-                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-60">
-                          <FileDown className="h-3 w-3 text-emerald-400" /> Generación Directa
+                        <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest opacity-70 group cursor-default">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500/30" /> Inyección de Datos
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
-                      <p className="text-[10px] font-medium text-emerald-100/60 leading-relaxed italic">
+                    <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-sm">
+                      <p className="text-[11px] font-medium text-emerald-100/60 leading-relaxed italic">
                         "Cualquier cambio aquí sobreescribirá la data del Plan Maestro solo para este PDF."
                       </p>
                     </div>
                   </div>
 
-                  {/* Formulario */}
-                  <div className="flex-1 flex flex-col h-full bg-white">
-                    <DialogHeader className="p-10 border-b border-slate-100 flex-row items-center justify-between space-y-0">
+                  {/* Formulario con Scroll Corregido */}
+                  <div className="flex-1 flex flex-col bg-white overflow-hidden">
+                    <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                       <div>
-                        <DialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Configuración Manual de IE</DialogTitle>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ajuste de imprevistos para impresión</p>
+                        <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900 font-['Outfit']">Configuración Manual de IE</DialogTitle>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Ajuste de imprevistos para impresión</p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => setIsAdminModeOpen(false)} className="rounded-full hover:bg-rose-50 hover:text-rose-500">
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </DialogHeader>
+                      {/* Eliminamos el botón manual para dejar solo el del DialogContent que sale en la esquina */}
+                    </div>
 
-                    <ScrollArea className="flex-1 p-12 lc-scroll">
-                      <div className="space-y-12">
-                        {/* SECCION 1: EMBARQUE */}
-                        <div className="space-y-6">
-                          <div className="flex items-center gap-3">
-                            <Truck className="h-5 w-5 text-emerald-500" />
-                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Datos de Embarque</h4>
+                    <ScrollArea className="flex-1 p-12 bg-slate-50/50 overflow-y-auto">
+                      <div className="max-w-5xl mx-auto space-y-16 pb-20">
+                        {/* SECCION 0: EMBARCADOR */}
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
+                              <ShieldCheck className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Datos Legales del Embarcador</h4>
                           </div>
-                          <div className="grid grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 gap-6 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                            <div className="space-y-3">
+                              <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Nombre del Embarcador (Empresa)</label>
+                              <Input className="h-14 rounded-2xl font-bold border-slate-100 bg-slate-50/50 focus:bg-white focus:border-emerald-500 transition-all" value={overrideForm.embarcador} onChange={(e) => setOverrideForm({...overrideForm, embarcador: e.target.value})} />
+                            </div>
+                            <div className="space-y-3">
+                              <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Dirección Legal</label>
+                              <Input className="h-14 rounded-2xl font-bold border-slate-100 bg-slate-50/50 focus:bg-white focus:border-emerald-500 transition-all" value={overrideForm.direccion_embarcador} onChange={(e) => setOverrideForm({...overrideForm, direccion_embarcador: e.target.value})} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SECCION 1: EMBARQUE */}
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                              <Truck className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Logística y Travesía</h4>
+                          </div>
+                          <div className="grid grid-cols-3 gap-6 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
                             <div className="space-y-2">
                               <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Booking</label>
                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.booking} onChange={(e) => setOverrideForm({...overrideForm, booking: e.target.value})} />
@@ -535,6 +561,10 @@ export default function InstruccionesEmbarque() {
                             <div className="space-y-2">
                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Orden Beta</label>
                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.orden_beta} onChange={(e) => setOverrideForm({...overrideForm, orden_beta: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Freight (Flete)</label>
+                              <Input className="h-12 rounded-xl font-bold bg-emerald-50 border-emerald-100 text-emerald-700" value={overrideForm.fob} onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value})} />
                             </div>
                             <div className="space-y-2">
                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cultivo / Variedad</label>
@@ -566,110 +596,122 @@ export default function InstruccionesEmbarque() {
                         </div>
 
                         {/* SECCION 2: CONSIGNATARIO */}
-                        <div className="space-y-6">
-                          <div className="flex items-center gap-3">
-                            <LayoutDashboard className="h-5 w-5 text-emerald-500" />
-                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">DATOS BL (Consignatario / Notify)</h4>
+                        <div className="space-y-8">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                              <LayoutDashboard className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">DATOS BL (Consignatario / Notify)</h4>
                           </div>
-                          <div className="grid grid-cols-2 gap-8">
-                             <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-8 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                             <div className="space-y-6">
                                <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600 ml-1">Nombre Legal / BL</label>
                                  <Input className="h-14 rounded-2xl font-bold border-emerald-100" value={overrideForm.consignatario_bl} onChange={(e) => setOverrideForm({...overrideForm, consignatario_bl: e.target.value})} />
                                </div>
                                <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600 ml-1">Dirección BL</label>
-                                 <Textarea className="rounded-2xl font-medium border-emerald-50 min-h-[100px]" value={overrideForm.direccion_consignatario} onChange={(e) => setOverrideForm({...overrideForm, direccion_consignatario: e.target.value})} />
+                                 <Textarea className="rounded-2xl font-medium border-emerald-50 min-h-[120px] bg-slate-50/30" value={overrideForm.direccion_consignatario} onChange={(e) => setOverrideForm({...overrideForm, direccion_consignatario: e.target.value})} />
                                </div>
                              </div>
-                             <div className="space-y-4">
+                             <div className="space-y-6">
                                <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Notify BL</label>
                                  <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.notify_bl} onChange={(e) => setOverrideForm({...overrideForm, notify_bl: e.target.value})} />
                                </div>
                                <div className="space-y-2">
                                  <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Dirección Notify</label>
-                                 <Textarea className="rounded-2xl font-medium bg-slate-50 border-none min-h-[100px]" value={overrideForm.direccion_notify} onChange={(e) => setOverrideForm({...overrideForm, direccion_notify: e.target.value})} />
+                                 <Textarea className="rounded-2xl font-medium bg-slate-50 border-none min-h-[120px]" value={overrideForm.direccion_notify} onChange={(e) => setOverrideForm({...overrideForm, direccion_notify: e.target.value})} />
                                </div>
                              </div>
                           </div>
                         </div>
 
                         {/* SECCION 3: PESOS Y CONDICIONES */}
-                        <div className="space-y-6">
-                           <div className="flex items-center gap-3">
-                            <Zap className="h-5 w-5 text-emerald-500" />
-                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Carga y Condiciones</h4>
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
+                              <Zap className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Carga y Condiciones</h4>
                           </div>
-                          <div className="grid grid-cols-4 gap-6">
-                            <div className="space-y-2">
-                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cajas</label>
-                               <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.cajas} onChange={(e) => setOverrideForm({...overrideForm, cajas: parseInt(e.target.value)})} />
+                          
+                          <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-10">
+                            <div className="grid grid-cols-4 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cajas</label>
+                                 <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.cajas} onChange={(e) => setOverrideForm({...overrideForm, cajas: parseInt(e.target.value)})} />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Pallets</label>
+                                 <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pallets} onChange={(e) => setOverrideForm({...overrideForm, pallets: parseInt(e.target.value)})} />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Neto</label>
+                                 <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_neto} onChange={(e) => setOverrideForm({...overrideForm, peso_neto: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Bruto</label>
+                                 <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_bruto} onChange={(e) => setOverrideForm({...overrideForm, peso_bruto: e.target.value})} />
+                              </div>
                             </div>
-                            <div className="space-y-2">
-                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Pallets</label>
-                               <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pallets} onChange={(e) => setOverrideForm({...overrideForm, pallets: parseInt(e.target.value)})} />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Neto</label>
-                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_neto} onChange={(e) => setOverrideForm({...overrideForm, peso_neto: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Bruto</label>
-                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_bruto} onChange={(e) => setOverrideForm({...overrideForm, peso_bruto: e.target.value})} />
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-4 gap-4 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-                             {['temperatura', 'ventilacion', 'humedad', 'atm', 'oxigeno', 'co2', 'filtros', 'cold_treatment'].map((field) => (
-                               <div key={field} className="space-y-2">
-                                 <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400 pl-1">{field.replace('_', ' ')}</label>
-                                 <Input className="h-10 rounded-lg font-black text-[10px] bg-white border-slate-100 uppercase" value={overrideForm[field]} onChange={(e) => setOverrideForm({...overrideForm, [field]: e.target.value})} />
-                               </div>
-                             ))}
+                            <div className="grid grid-cols-4 gap-4 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                               {['temperatura', 'ventilacion', 'humedad', 'atm', 'oxigeno', 'co2', 'filtros', 'cold_treatment'].map((field) => (
+                                 <div key={field} className="space-y-2">
+                                   <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400 pl-1">{field.replace('_', ' ')}</label>
+                                   <Input className="h-10 rounded-lg font-black text-[10px] bg-white border-slate-100 uppercase" value={overrideForm[field]} onChange={(e) => setOverrideForm({...overrideForm, [field]: e.target.value})} />
+                                 </div>
+                               ))}
+                            </div>
                           </div>
                         </div>
 
                         {/* SECCION 4: FITOSANITARIO */}
-                        <div className="space-y-6">
-                           <div className="flex items-center gap-3">
-                            <ShieldCheck className="h-5 w-5 text-emerald-500" />
-                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Especializados (Fito / Otros)</h4>
-                          </div>
-                          <div className="grid grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Consignatario Fito</label>
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.consignatario_fito} onChange={(e) => setOverrideForm({...overrideForm, consignatario_fito: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Dirección Fito</label>
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.direccion_fito} onChange={(e) => setOverrideForm({...overrideForm, direccion_fito: e.target.value})} />
-                              </div>
+                        <div className="space-y-8">
+                           <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                              <ShieldCheck className="h-5 w-5" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">País Destino</label>
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pais_destino} onChange={(e) => setOverrideForm({...overrideForm, pais_destino: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Presentación</label>
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.presentacion} onChange={(e) => setOverrideForm({...overrideForm, presentacion: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Etiquetas</label>
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.etiquetas} onChange={(e) => setOverrideForm({...overrideForm, etiquetas: e.target.value})} />
-                              </div>
-                               <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">VALOR FOB</label>
-                                <Input className="h-12 rounded-xl font-bold bg-emerald-50 border-emerald-200 text-emerald-700" value={overrideForm.fob} onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value})} />
-                              </div>
-                            </div>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Especializados (Fito / Otros)</h4>
                           </div>
                           
-                          <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Observaciones Finales</label>
-                            <Textarea className="rounded-[2rem] font-medium bg-slate-50 border-none min-h-[120px]" value={overrideForm.observaciones} onChange={(e) => setOverrideForm({...overrideForm, observaciones: e.target.value})} />
+                          <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-10">
+                            <div className="grid grid-cols-2 gap-8">
+                              <div className="space-y-6">
+                                <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Consignatario Fito</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.consignatario_fito} onChange={(e) => setOverrideForm({...overrideForm, consignatario_fito: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Dirección Fito</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.direccion_fito} onChange={(e) => setOverrideForm({...overrideForm, direccion_fito: e.target.value})} />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">País Destino</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pais_destino} onChange={(e) => setOverrideForm({...overrideForm, pais_destino: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Presentación</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.presentacion} onChange={(e) => setOverrideForm({...overrideForm, presentacion: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Etiquetas</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.etiquetas} onChange={(e) => setOverrideForm({...overrideForm, etiquetas: e.target.value})} />
+                                </div>
+                                 <div className="space-y-2">
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">VALOR FOB</label>
+                                  <Input className="h-12 rounded-xl font-bold bg-emerald-50 border-emerald-200 text-emerald-700" value={overrideForm.fob} onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value})} />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Observaciones Finales</label>
+                              <Textarea className="rounded-[2.5rem] font-medium bg-slate-50 border-none min-h-[140px] p-8" value={overrideForm.observaciones} onChange={(e) => setOverrideForm({...overrideForm, observaciones: e.target.value})} />
+                            </div>
                           </div>
                         </div>
                       </div>
