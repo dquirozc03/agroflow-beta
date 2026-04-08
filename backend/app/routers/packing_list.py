@@ -572,6 +572,8 @@ async def generate_packing_list_ogl(
                 if p_id_match in termografos_map:
                     ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
 
+                # N: Gross Weight (Cajas * 4.2)
+                cajas_num = safe_float(item["cajas"])
                 ws.cell(row=fila_e, column=14).value = round(cajas_num * 4.2, 2)
                 
                 # O: Net Weight (TOTAL KILOS)

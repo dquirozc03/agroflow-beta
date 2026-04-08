@@ -646,7 +646,9 @@ export default function InstruccionesEmbarque() {
                                    <Input placeholder="Nombre Planta" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.planta_llenado} onChange={(e) => setOverrideForm({...overrideForm, planta_llenado: e.target.value})} />
                                    <Input placeholder="Dirección Planta" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-[2]" value={overrideForm.direccion_planta} onChange={(e) => setOverrideForm({...overrideForm, direccion_planta: e.target.value})} />
                                  </div>
-                               </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -680,8 +682,7 @@ export default function InstruccionesEmbarque() {
                                  <Textarea className="rounded-2xl font-medium bg-slate-50 border-none min-h-[120px]" value={overrideForm.direccion_notify} onChange={(e) => setOverrideForm({...overrideForm, direccion_notify: e.target.value})} />
                                </div>
                              </div>
-                            </div>
-                          </div>
+                           </div>
                         </div>
 
                         {/* SECCION 3: PESOS Y CONDICIONES */}

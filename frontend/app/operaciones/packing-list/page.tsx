@@ -181,21 +181,28 @@ function SingleFileDropzone({
         onChange={(e) => onFile(e.target.files?.[0] || null)} />
 
       {file ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="h-10 w-10 bg-violet-50 rounded-xl flex items-center justify-center"><FileCheck2 className="h-5 w-5 text-violet-500" /></div>
-             <div>
-                <p className="text-[11px] font-bold text-slate-800 truncate max-w-[150px]">{file.name}</p>
-                <p className="text-[9px] font-bold text-slate-400 capitalize">Opcional · cargado</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+             <div className="h-10 w-10 bg-violet-100 rounded-xl flex items-center justify-center shrink-0"><FileCheck2 className="h-5 w-5 text-violet-600" /></div>
+             <div className="min-w-0">
+                <p className="text-[11px] font-black text-slate-800 truncate">{file.name}</p>
+                <p className="text-[9px] font-black text-violet-500 uppercase tracking-widest leading-none mt-1">Dato Cargado</p>
              </div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onFile(null); }} className="text-slate-300 hover:text-rose-500"><X className="h-4 w-4" /></button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onFile(null); }} 
+            className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-all shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Icon className="h-5 w-5 text-slate-400" />
-          <p className="text-[11px] font-bold text-slate-600">{label}</p>
-          <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{sublabel}</p>
+        <div className="flex flex-col items-center gap-2 text-center py-1">
+          <FileSpreadsheet className="h-5 w-5 text-violet-400" />
+          <div>
+            <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{label}</p>
+            <p className="text-[9px] font-bold text-violet-500 uppercase tracking-[0.15em] mt-0.5">Archivo Requerido</p>
+          </div>
         </div>
       )}
     </div>
@@ -251,6 +258,10 @@ export default function PackingListCustomizadosPage() {
   const handleGenerate = async () => {
     if (!selectedNave || filesConfirmacion.length === 0) {
       toast.error("Selecciona una Nave y sube al menos una Confirmación");
+      return;
+    }
+    if (!fileTermografos) {
+      toast.error("El archivo de Termógrafos es REQUERIDO para OGL");
       return;
     }
     setGenStatus("loading");
