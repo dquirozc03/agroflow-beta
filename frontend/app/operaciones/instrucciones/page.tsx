@@ -202,25 +202,43 @@ export default function InstruccionesEmbarque() {
     // Pre-poblar el formulario con TODO lo que tenemos disponible en el sistema
     setOverrideForm({
       ...overrideForm,
-      booking: lookupData?.booking || selectedBooking?.BOOKING || selectedBooking?.id || "",
-      orden_beta: lookupData?.orden_beta || selectedBooking?.ORDEN_BETA || "PENDIENTE",
-      cliente_nombre: lookupData?.cliente_nombre || selectedBooking?.CLIENTE || "",
+      booking: lookupData?.booking || "",
+      orden_beta: lookupData?.orden_beta || "PENDIENTE",
+      cliente_nombre: lookupData?.cliente_nombre || "",
       consignatario_bl: lookupData?.maestro?.consignatario_bl || lookupData?.cliente_nombre || "",
       direccion_consignatario: lookupData?.maestro?.direccion_consignatario || "",
       notify_bl: lookupData?.maestro?.notify_bl || "SAME AS CONSIGNEE",
       direccion_notify: lookupData?.maestro?.direccion_notify || "",
       
-      // Datos de Logística Precargados
-      motonave: selectedBooking?.NAVE || selectedBooking?.nave || "",
-      naviera: selectedBooking?.NAVIERA || selectedBooking?.naviera || "",
-      puerto_embarque: selectedBooking?.POL || selectedBooking?.pol || "CALLAO",
-      puerto_destino: lookupData?.maestro?.destino || selectedBooking?.POD || selectedBooking?.pod || "",
-      eta: selectedBooking?.ETA || selectedBooking?.eta || "",
-      operador_logistico: selectedBooking?.OPERADOR_LOGISTICO || "DP WORLD LOGISTICS S.R.L.",
+      // Datos de Logística Repotenciados 🚀
+      motonave: lookupData?.motonave || "",
+      naviera: lookupData?.naviera || "",
+      puerto_embarque: lookupData?.puerto_embarque || "CALLAO",
+      puerto_destino: lookupData?.puerto_destino || "",
+      eta: lookupData?.eta || "",
+      operador_logistico: lookupData?.operador_logistico || "DP WORLD LOGISTICS S.R.L.",
       
-      // Productos
-      cultivo: lookupData?.cultivo || selectedBooking?.CULTIVO || "",
-      variedad: selectedBooking?.VARIEDAD || "WONDERFUL",
+      // Planta
+      planta_llenado: lookupData?.planta_llenado || "PLANTA BETA",
+      direccion_planta: lookupData?.direccion_planta || "",
+      
+      // Productos y Pesos 🍎📊
+      cultivo: lookupData?.cultivo || "",
+      variedad: lookupData?.variedad || "WONDERFUL",
+      cajas: lookupData?.cajas || 0,
+      pallets: lookupData?.pallets || 0,
+      peso_neto: lookupData?.peso_neto || "0.000 KG",
+      peso_bruto: lookupData?.peso_bruto || "0.000 KG",
+
+      // Parámetros Técnicos (Atmósfera) ❄️🌬️
+      temperatura: lookupData?.temperatura || "0.5 °C",
+      ventilacion: lookupData?.ventilacion || "15 CBM",
+      humedad: lookupData?.humedad || "OFF",
+      atm: lookupData?.atm || "NO APLICA",
+      oxigeno: lookupData?.oxigeno || "----",
+      co2: lookupData?.co2 || "----",
+      filtros: lookupData?.filtros || "NO",
+      cold_treatment: lookupData?.cold_treatment || "NO",
       
       // Fito
       consignatario_fito: lookupData?.maestro?.fitosanitario?.consignatario_fito || "",
@@ -617,10 +635,18 @@ export default function InstruccionesEmbarque() {
                                   <Input placeholder="Variedad" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.variedad} onChange={(e) => setOverrideForm({...overrideForm, variedad: e.target.value})} />
                                 </div>
                               </div>
+                             <div className="grid grid-cols-2 gap-8">
                                <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operador Logístico Responsable</label>
-                                <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.operador_logistico} onChange={(e) => setOverrideForm({...overrideForm, operador_logistico: e.target.value})} />
-                              </div>
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operador Logístico Responsable</label>
+                                 <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.operador_logistico} onChange={(e) => setOverrideForm({...overrideForm, operador_logistico: e.target.value})} />
+                               </div>
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Planta de Llenado / Empaque</label>
+                                 <div className="flex gap-3">
+                                   <Input placeholder="Nombre Planta" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.planta_llenado} onChange={(e) => setOverrideForm({...overrideForm, planta_llenado: e.target.value})} />
+                                   <Input placeholder="Dirección Planta" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-[2]" value={overrideForm.direccion_planta} onChange={(e) => setOverrideForm({...overrideForm, direccion_planta: e.target.value})} />
+                                 </div>
+                               </div>
                             </div>
                           </div>
                         </div>

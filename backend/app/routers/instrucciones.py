@@ -167,12 +167,46 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                     ClienteIE.estado == "ACTIVO"
                 ).first()
 
+    # 3. Cálculos de Pesos y Logística (Similar al PDF Service)
+    from app.models.maestros import Planta
+    total_cajas = sum(p.total_cajas or 0 for p in pedidos)
+    total_pallets = sum(p.total_pallets or 0 for p in pedidos)
+    peso_kg = pedidos[0].peso_por_caja if pedidos else 0
+    peso_neto = float(total_cajas) * float(peso_kg)
+    p_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
+    
+    planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos.PLANTA_LLENADO else None
+    
     response = {
         "booking": booking,
         "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
         "cultivo": pos.CULTIVO or "PENDIENTE",
-        "cliente_nombre": (cliente_maestro.consignatario_bl or pedido.cliente) if (cliente_maestro and cliente_maestro.consignatario_bl) else pedido.cliente,
-        "incoterm": pedido.incoterm,
+        "variedad": (pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"),
+        "motonave": pos.NAVE or "",
+        "naviera": pos.NAVIERA or "",
+        "puerto_embarque": pos.POL or "CALLAO",
+        "puerto_destino": pos.POD or (cliente_maestro.destino if cliente_maestro else ""),
+        "eta": pos.ETA.strftime('%d/%m/%Y') if pos.ETA else "",
+        "operador_logistico": getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L.",
+        "planta_llenado": planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "PLANTA BETA"),
+        "direccion_planta": planta_maestro.direccion if planta_maestro else "",
+        "cliente_nombre": (cliente_maestro.consignatario_bl or pedido.cliente) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido.cliente if pedido else "POR DEFINIR"),
+        "incoterm": pedido.incoterm if pedido else "",
+        "cajas": total_cajas,
+        "pallets": total_pallets,
+        "peso_neto": f"{peso_neto:,.3f} KG",
+        "peso_bruto": f"{p_bruto:,.3f} KG",
+        
+        # Parámetros Técnicos (Atmósfera) ❄️🌬️
+        "temperatura": pos.TEMPERATURA or "0.5 °C",
+        "ventilacion": pos.VENTILACION or "15 CBM",
+        "humedad": pos.HUMEDAD or "OFF",
+        "atm": pos.AC or "NO APLICA",
+        "oxigeno": "----",
+        "co2": "----",
+        "filtros": pos.FILTROS or "NO",
+        "cold_treatment": pos.CT or "NO",
+        
         "warning": None,
         "maestro": None
     }
