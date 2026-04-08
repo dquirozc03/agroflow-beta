@@ -651,7 +651,6 @@ export default function InstruccionesEmbarque() {
                               </div>
                             </div>
                           </div>
-                        </div>
 
                         {/* SECCION 2: CONSIGNATARIO */}
                         <div className="space-y-8">
