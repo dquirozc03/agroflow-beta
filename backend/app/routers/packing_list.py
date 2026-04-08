@@ -303,6 +303,27 @@ async def generate_packing_list_ogl(
         if not booking_data_map:
             raise HTTPException(status_code=404, detail="No se encontraron bookings OGL para consolidar")
 
+        # 1.5 Procesar Termógrafos si se adjuntó el archivo 🌡️
+        termografos_map = {}
+        if termografos:
+            try:
+                t_content = await termografos.read()
+                # Leemos el archivo completo sin asunciones de cabecera fija
+                t_df = pd.read_excel(io.BytesIO(t_content), engine="openpyxl", header=None)
+                
+                for _, t_row in t_df.iterrows():
+                    # Según Ticket: Col N (13) es Pallet ID, Col M (12) es Código Termógrafo
+                    if len(t_row) >= 14:
+                        p_id_raw = str(t_row.iloc[13]).strip().upper() if pd.notna(t_row.iloc[13]) else ""
+                        t_code_raw = str(t_row.iloc[12]).strip() if pd.notna(t_row.iloc[12]) else ""
+                        
+                        if p_id_raw and t_code_raw and p_id_raw != "ID PALLET":
+                            termografos_map[p_id_raw] = t_code_raw
+                logger.info(f"Se cargaron {len(termografos_map)} códigos de termógrafos para el cruce.")
+            except Exception as e:
+                logger.error(f"Error procesando archivo de termógrafos: {e}")
+                # Fallback: continuamos sin termógrafos si el archivo está corrupto
+
         # 2. Cargar todos los pallets
         agrupado_por_booking: dict[str, list] = {b: [] for b in booking_data_map.keys()}
         contenedor_default = next(iter(booking_data_map.values()))["contenedor"]
@@ -546,8 +567,11 @@ async def generate_packing_list_ogl(
                 if peso_val is not None and str(peso_val).strip() != "":
                     ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
                 
-                # N: Gross Weight (Cajas * 4.2)
-                cajas_num = safe_float(item["cajas"])
+                # M: Additional info / Notes (Inyectamos Termógrafo si existe) 🌡️
+                p_id_match = str(item["pallet"]).strip().upper()
+                if p_id_match in termografos_map:
+                    ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
+
                 ws.cell(row=fila_e, column=14).value = round(cajas_num * 4.2, 2)
                 
                 # O: Net Weight (TOTAL KILOS)
@@ -591,6 +615,11 @@ async def generate_packing_list_ogl(
                 if peso_val is not None and str(peso_val).strip() != "":
                     ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
                     
+                # M: Additional info / Notes (Fallback para huérfanos) 🌡️
+                p_id_match = str(item["pallet"]).strip().upper()
+                if p_id_match in termografos_map:
+                    ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
+
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
                 ws.cell(row=fila_e, column=15).value = item["total_kilos"] # O
                 ws.cell(row=fila_e, column=16).value = item["cosecha"]
