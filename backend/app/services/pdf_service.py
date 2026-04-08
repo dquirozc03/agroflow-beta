@@ -213,54 +213,53 @@ class InstructionPDFService:
 
         # Header con Logo Local
         try:
+            from PIL import Image as PILImage
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            assets_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "assets"))
+            
+            def get_safe_image(path, w, h):
+                try:
+                    if not os.path.exists(path): return None
+                    with open(path, "rb") as f: data = f.read()
+                    PILImage.open(io.BytesIO(data)).verify()
+                    return Image(io.BytesIO(data), width=w, height=h)
+                except Exception: return None
+
+            logo_obj = get_safe_image(os.path.join(assets_dir, "logo_beta.png"), 120, 45)
+            
+            header_row = []
+            if logo_obj: header_row.append(logo_obj)
+            
+            # Selección de Títulos (Override o Calculado)
             if override_data:
-             from PIL import Image as PILImage
-             current_dir = os.path.dirname(os.path.abspath(__file__))
-             assets_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "assets"))
-             
-             def get_safe_image(path, w, h):
-                 try:
-                     if not os.path.exists(path): return None
-                     with open(path, "rb") as f: data = f.read()
-                     PILImage.open(io.BytesIO(data)).verify()
-                     return Image(io.BytesIO(data), width=w, height=h)
-                 except Exception: return None
+                cliente_txt = override_data.get("consignatario_bl")
+                puerto_txt = override_data.get("puerto_destino")
+                pais_txt = override_data.get("pais_destino")
+            else:
+                cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
+                puerto_txt = puerto_destino
+                pais_txt = cliente_maestro.pais if cliente_maestro else ''
+            
+            subtitle_parts = [p for p in [cliente_txt, puerto_txt, pais_txt] if p]
+            subtitle_txt = " - ".join(subtitle_parts)
+            
+            titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos_cultivo or ''}"
+            header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=10, alignment=1, fontName=self.FONT_BOLD)))
 
-             logo_obj = get_safe_image(os.path.join(assets_dir, "logo_beta.png"), 120, 45)
-             
-             header_row = []
-             if logo_obj: header_row.append(logo_obj)
-             
-             # Selección de Títulos (Override o Calculado)
-             if override_data:
-                 cliente_txt = override_data.get("consignatario_bl")
-                 puerto_txt = override_data.get("puerto_destino")
-                 pais_txt = override_data.get("pais_destino")
-             else:
-                 cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
-                 puerto_txt = puerto_destino
-                 pais_txt = cliente_maestro.pais if cliente_maestro else ''
-             
-             subtitle_parts = [p for p in [cliente_txt, puerto_txt, pais_txt] if p]
-             subtitle_txt = " - ".join(subtitle_parts)
-             
-             titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos_cultivo or ''}"
-             header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=10, alignment=1, fontName=self.FONT_BOLD)))
-
-             if "GRANADA" in (pos_cultivo or "").upper():
-                 granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
-                 if granada_obj: header_row.append(granada_obj)
-             
-             if len(header_row) < 3:
-                 header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
-                 
-             header_table = Table([header_row])
-             header_table.setStyle(TableStyle([
-                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                 ('LINEBELOW', (0,0), (-1,-1), 1, self.COLOR_BETA_GREEN)
-             ]))
-             elements.append(header_table)
+            if "GRANADA" in (pos_cultivo or "").upper():
+                granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
+                if granada_obj: header_row.append(granada_obj)
+            
+            if len(header_row) < 3:
+                header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
+                
+            header_table = Table([header_row])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('LINEBELOW', (0,0), (-1,-1), 1, self.COLOR_BETA_GREEN)
+            ]))
+            elements.append(header_table)
         except Exception:
              elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - BOOKING: {pos_booking} | ORDEN: {pos_orden}</b>", styles["Title"]))
 

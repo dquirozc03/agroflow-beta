@@ -199,24 +199,36 @@ export default function InstruccionesEmbarque() {
   };
 
   const openAdminEditor = () => {
-    // Pre-poblar el formulario con lo que tenemos
+    // Pre-poblar el formulario con TODO lo que tenemos disponible en el sistema
     setOverrideForm({
       ...overrideForm,
-      booking: lookupData?.booking || selectedBooking?.booking || selectedBooking?.id || "",
-      orden_beta: lookupData?.orden_beta || "PENDIENTE",
-      cliente_nombre: lookupData?.cliente_nombre || selectedBooking?.cliente || "",
+      booking: lookupData?.booking || selectedBooking?.BOOKING || selectedBooking?.id || "",
+      orden_beta: lookupData?.orden_beta || selectedBooking?.ORDEN_BETA || "PENDIENTE",
+      cliente_nombre: lookupData?.cliente_nombre || selectedBooking?.CLIENTE || "",
       consignatario_bl: lookupData?.maestro?.consignatario_bl || lookupData?.cliente_nombre || "",
       direccion_consignatario: lookupData?.maestro?.direccion_consignatario || "",
       notify_bl: lookupData?.maestro?.notify_bl || "SAME AS CONSIGNEE",
       direccion_notify: lookupData?.maestro?.direccion_notify || "",
-      motonave: selectedBooking?.NAVE || "",
-      naviera: selectedBooking?.NAVIERA || "",
-      puerto_destino: lookupData?.maestro?.destino || "",
-      eta: selectedBooking?.ETA || "",
+      
+      // Datos de Logística Precargados
+      motonave: selectedBooking?.NAVE || selectedBooking?.nave || "",
+      naviera: selectedBooking?.NAVIERA || selectedBooking?.naviera || "",
+      puerto_embarque: selectedBooking?.POL || selectedBooking?.pol || "CALLAO",
+      puerto_destino: lookupData?.maestro?.destino || selectedBooking?.POD || selectedBooking?.pod || "",
+      eta: selectedBooking?.ETA || selectedBooking?.eta || "",
+      operador_logistico: selectedBooking?.OPERADOR_LOGISTICO || "DP WORLD LOGISTICS S.R.L.",
+      
+      // Productos
       cultivo: lookupData?.cultivo || selectedBooking?.CULTIVO || "",
+      variedad: selectedBooking?.VARIEDAD || "WONDERFUL",
+      
+      // Fito
       consignatario_fito: lookupData?.maestro?.fitosanitario?.consignatario_fito || "",
       direccion_fito: lookupData?.maestro?.fitosanitario?.direccion_fito || "",
       pais_destino: lookupData?.maestro?.pais || "",
+      
+      // Flete y Observaciones
+      fob: lookupData?.incoterm?.includes("CIF") ? "PREPAID" : "COLLECT",
       observaciones: observaciones
     });
     setIsAdminModeOpen(true);
@@ -545,52 +557,70 @@ export default function InstruccionesEmbarque() {
                           </div>
                         </div>
 
-                        {/* SECCION 1: EMBARQUE */}
+                        {/* SECCION 1: EMBARQUE Y LOGISTICA */}
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                               <Truck className="h-5 w-5" />
                             </div>
-                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Logística y Travesía</h4>
+                            <h4 className="text-base font-black uppercase tracking-[0.2em] text-slate-900 font-['Outfit']">Logística y Travesía Real</h4>
                           </div>
-                          <div className="grid grid-cols-3 gap-6 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Booking</label>
-                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.booking} onChange={(e) => setOverrideForm({...overrideForm, booking: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Orden Beta</label>
-                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.orden_beta} onChange={(e) => setOverrideForm({...overrideForm, orden_beta: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Freight (Flete)</label>
-                              <Input className="h-12 rounded-xl font-bold bg-emerald-50 border-emerald-100 text-emerald-700" value={overrideForm.fob} onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cultivo / Variedad</label>
-                              <div className="flex gap-2">
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.cultivo} onChange={(e) => setOverrideForm({...overrideForm, cultivo: e.target.value})} />
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.variedad} onChange={(e) => setOverrideForm({...overrideForm, variedad: e.target.value})} />
+                          
+                          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+                            {/* FILA 1: Identificación y Flete */}
+                            <div className="grid grid-cols-3 gap-8">
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cód. Booking</label>
+                                <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.booking} onChange={(e) => setOverrideForm({...overrideForm, booking: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Orden Beta</label>
+                                <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.orden_beta} onChange={(e) => setOverrideForm({...overrideForm, orden_beta: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600 ml-1">CONDICIÓN DE FLETE (FREIGHT)</label>
+                                <Input 
+                                  placeholder="PREPAID / COLLECT"
+                                  className="h-14 rounded-2xl font-black bg-emerald-50 border-2 border-emerald-100 text-emerald-700 placeholder:text-emerald-200" 
+                                  value={overrideForm.fob} 
+                                  onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value.toUpperCase()})} 
+                                />
+                                <p className="text-[8px] font-bold text-emerald-500/50 uppercase tracking-widest ml-1 mt-1">Escriba PREPAID o COLLECT</p>
                               </div>
                             </div>
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nave / Naviera</label>
-                              <div className="flex gap-2">
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.motonave} onChange={(e) => setOverrideForm({...overrideForm, motonave: e.target.value})} />
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.naviera} onChange={(e) => setOverrideForm({...overrideForm, naviera: e.target.value})} />
+
+                            {/* FILA 2: Travesía */}
+                            <div className="grid grid-cols-4 gap-6">
+                              <div className="col-span-2 space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nave / Embarcación y Naviera</label>
+                                <div className="flex gap-3">
+                                  <Input placeholder="Nave" className="h-12 rounded-xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.motonave} onChange={(e) => setOverrideForm({...overrideForm, motonave: e.target.value})} />
+                                  <Input placeholder="Naviera" className="h-12 rounded-xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.naviera} onChange={(e) => setOverrideForm({...overrideForm, naviera: e.target.value})} />
+                                </div>
+                              </div>
+                              <div className="col-span-2 space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">POL (Origen) / POD (Destino) / ETA</label>
+                                <div className="flex gap-2">
+                                  <Input placeholder="POL" className="h-12 rounded-xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.puerto_embarque} onChange={(e) => setOverrideForm({...overrideForm, puerto_embarque: e.target.value})} />
+                                  <Input placeholder="POD" className="h-12 rounded-xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.puerto_destino} onChange={(e) => setOverrideForm({...overrideForm, puerto_destino: e.target.value})} />
+                                  <Input placeholder="ETA" className="h-12 rounded-xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.eta} onChange={(e) => setOverrideForm({...overrideForm, eta: e.target.value})} />
+                                </div>
                               </div>
                             </div>
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">POL / POD / ETA</label>
-                              <div className="flex gap-2">
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.puerto_embarque} onChange={(e) => setOverrideForm({...overrideForm, puerto_embarque: e.target.value})} />
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.puerto_destino} onChange={(e) => setOverrideForm({...overrideForm, puerto_destino: e.target.value})} />
-                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.eta} onChange={(e) => setOverrideForm({...overrideForm, eta: e.target.value})} />
+
+                            {/* FILA 3: Producto y Operador */}
+                            <div className="grid grid-cols-2 gap-8">
+                               <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cultivo y Variedad del Producto</label>
+                                <div className="flex gap-3">
+                                  <Input placeholder="Cultivo" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.cultivo} onChange={(e) => setOverrideForm({...overrideForm, cultivo: e.target.value})} />
+                                  <Input placeholder="Variedad" className="h-14 rounded-2xl font-bold bg-slate-50 border-none flex-1" value={overrideForm.variedad} onChange={(e) => setOverrideForm({...overrideForm, variedad: e.target.value})} />
+                                </div>
                               </div>
-                            </div>
-                             <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operador Logístico</label>
-                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.operador_logistico} onChange={(e) => setOverrideForm({...overrideForm, operador_logistico: e.target.value})} />
+                               <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operador Logístico Responsable</label>
+                                <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.operador_logistico} onChange={(e) => setOverrideForm({...overrideForm, operador_logistico: e.target.value})} />
+                              </div>
                             </div>
                           </div>
                         </div>
