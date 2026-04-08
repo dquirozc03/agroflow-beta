@@ -20,10 +20,24 @@ import {
   MoreVertical,
   ArrowRight,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Settings2,
+  Lock,
+  Edit3,
+  Save,
+  Truck
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -50,6 +64,44 @@ export default function InstruccionesEmbarque() {
   const [observaciones, setObservaciones] = useState("");
   const [bookingsReal, setBookingsReal] = useState<any[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
+  
+  // Estados para Modo Admin (Override)
+  const [isAdminModeOpen, setIsAdminModeOpen] = useState(false);
+  const [overrideForm, setOverrideForm] = useState<any>({
+    booking: "",
+    orden_beta: "",
+    cliente_nombre: "",
+    consignatario_bl: "",
+    direccion_consignatario: "",
+    notify_bl: "",
+    direccion_notify: "",
+    motonave: "",
+    naviera: "",
+    puerto_embarque: "CALLAO",
+    puerto_destino: "",
+    eta: "",
+    cultivo: "",
+    variedad: "",
+    temperatura: "6.0°C",
+    ventilacion: "15CBM",
+    humedad: "OFF",
+    atm: "NO APLICA",
+    oxigeno: "NO APLICA",
+    co2: "NO APLICA",
+    filtros: "NO",
+    cold_treatment: "NO",
+    cajas: 0,
+    pallets: 0,
+    peso_neto: "0.000 KG",
+    peso_bruto: "0.000 KG",
+    fob: "USD 34,560.00",
+    consignatario_fito: "",
+    direccion_fito: "",
+    pais_destino: "",
+    presentacion: "CAJA 3.8 KG",
+    etiquetas: "GENERICA",
+    observaciones: ""
+  });
 
   // Carga inicial de bookings desde el Plan Maestro (Posicionamiento)
   React.useEffect(() => {
@@ -141,6 +193,57 @@ export default function InstruccionesEmbarque() {
       console.error(e);
     } finally {
       setIsLoadingLookup(false);
+    }
+  };
+
+  const openAdminEditor = () => {
+    // Pre-poblar el formulario con lo que tenemos
+    setOverrideForm({
+      ...overrideForm,
+      booking: lookupData?.booking || selectedBooking?.booking || selectedBooking?.id || "",
+      orden_beta: lookupData?.orden_beta || "PENDIENTE",
+      cliente_nombre: lookupData?.cliente_nombre || selectedBooking?.cliente || "",
+      consignatario_bl: lookupData?.maestro?.consignatario_bl || lookupData?.cliente_nombre || "",
+      direccion_consignatario: lookupData?.maestro?.direccion_consignatario || "",
+      notify_bl: lookupData?.maestro?.notify_bl || "SAME AS CONSIGNEE",
+      direccion_notify: lookupData?.maestro?.direccion_notify || "",
+      motonave: selectedBooking?.NAVE || "",
+      naviera: selectedBooking?.NAVIERA || "",
+      puerto_destino: lookupData?.maestro?.destino || "",
+      eta: selectedBooking?.ETA || "",
+      cultivo: lookupData?.cultivo || selectedBooking?.CULTIVO || "",
+      consignatario_fito: lookupData?.maestro?.fitosanitario?.consignatario_fito || "",
+      direccion_fito: lookupData?.maestro?.fitosanitario?.direccion_fito || "",
+      pais_destino: lookupData?.maestro?.pais || "",
+      observaciones: observaciones
+    });
+    setIsAdminModeOpen(true);
+  };
+
+  const handleGenerateOverridePdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/instrucciones/generate-pdf-override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(overrideForm),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `IE_CUSTOM_${overrideForm.booking}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setIsAdminModeOpen(false);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -356,8 +459,250 @@ export default function InstruccionesEmbarque() {
                   {isGeneratingPdf ? "Generando..." : "Generar IE"}
                   {!isGeneratingPdf && <ArrowRight className="h-4 w-4 ml-4 group-hover:translate-x-1 transition-transform" />}
                 </Button>
+
+                {/* BOTÓN ADMIN EXCLUSIVO 💎 */}
+                <Button 
+                  onClick={openAdminEditor}
+                  disabled={!selectedBooking}
+                  variant="outline"
+                  className="h-16 px-10 rounded-full border-2 border-slate-900 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all flex items-center gap-3"
+                >
+                  <Settings2 className="h-5 w-5 text-emerald-500" />
+                  Modo Admin (Editar Todo)
+                  <Lock className="h-3 w-3 opacity-30" />
+                </Button>
               </div>
             </div>
+
+            {/* MODAL EDITOR MAESTRO ADMIN 💎 */}
+            <Dialog open={isAdminModeOpen} onOpenChange={setIsAdminModeOpen}>
+              <DialogContent className="max-w-[90vw] w-[1200px] h-[90vh] p-0 overflow-hidden bg-slate-50 border-none rounded-[3rem]">
+                <div className="flex h-full">
+                  {/* Sidebar Modal */}
+                  <div className="w-80 bg-emerald-950 p-10 text-white flex flex-col justify-between shrink-0">
+                    <div className="space-y-6">
+                      <div className="h-16 w-16 bg-emerald-500/20 rounded-3xl flex items-center justify-center">
+                        <ShieldCheck className="h-8 w-8 text-emerald-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-black uppercase tracking-tighter leading-tight font-['Outfit']">
+                          Editor <span className="text-emerald-400">Maestro</span>
+                        </h2>
+                        <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Control Total de Instrucción</p>
+                      </div>
+                      <div className="pt-10 space-y-4">
+                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-60">
+                          <CircleDot className="h-3 w-3 text-emerald-400" /> Formulario Editable
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-60">
+                          <FileDown className="h-3 w-3 text-emerald-400" /> Generación Directa
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                      <p className="text-[10px] font-medium text-emerald-100/60 leading-relaxed italic">
+                        "Cualquier cambio aquí sobreescribirá la data del Plan Maestro solo para este PDF."
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Formulario */}
+                  <div className="flex-1 flex flex-col h-full bg-white">
+                    <DialogHeader className="p-10 border-b border-slate-100 flex-row items-center justify-between space-y-0">
+                      <div>
+                        <DialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Configuración Manual de IE</DialogTitle>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ajuste de imprevistos para impresión</p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => setIsAdminModeOpen(false)} className="rounded-full hover:bg-rose-50 hover:text-rose-500">
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </DialogHeader>
+
+                    <ScrollArea className="flex-1 p-12 lc-scroll">
+                      <div className="space-y-12">
+                        {/* SECCION 1: EMBARQUE */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3">
+                            <Truck className="h-5 w-5 text-emerald-500" />
+                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Datos de Embarque</h4>
+                          </div>
+                          <div className="grid grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Booking</label>
+                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.booking} onChange={(e) => setOverrideForm({...overrideForm, booking: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Orden Beta</label>
+                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.orden_beta} onChange={(e) => setOverrideForm({...overrideForm, orden_beta: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cultivo / Variedad</label>
+                              <div className="flex gap-2">
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.cultivo} onChange={(e) => setOverrideForm({...overrideForm, cultivo: e.target.value})} />
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.variedad} onChange={(e) => setOverrideForm({...overrideForm, variedad: e.target.value})} />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nave / Naviera</label>
+                              <div className="flex gap-2">
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.motonave} onChange={(e) => setOverrideForm({...overrideForm, motonave: e.target.value})} />
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none w-1/2" value={overrideForm.naviera} onChange={(e) => setOverrideForm({...overrideForm, naviera: e.target.value})} />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">POL / POD / ETA</label>
+                              <div className="flex gap-2">
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.puerto_embarque} onChange={(e) => setOverrideForm({...overrideForm, puerto_embarque: e.target.value})} />
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.puerto_destino} onChange={(e) => setOverrideForm({...overrideForm, puerto_destino: e.target.value})} />
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.eta} onChange={(e) => setOverrideForm({...overrideForm, eta: e.target.value})} />
+                              </div>
+                            </div>
+                             <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Operador Logístico</label>
+                              <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.operador_logistico} onChange={(e) => setOverrideForm({...overrideForm, operador_logistico: e.target.value})} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SECCION 2: CONSIGNATARIO */}
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3">
+                            <LayoutDashboard className="h-5 w-5 text-emerald-500" />
+                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">DATOS BL (Consignatario / Notify)</h4>
+                          </div>
+                          <div className="grid grid-cols-2 gap-8">
+                             <div className="space-y-4">
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600 ml-1">Nombre Legal / BL</label>
+                                 <Input className="h-14 rounded-2xl font-bold border-emerald-100" value={overrideForm.consignatario_bl} onChange={(e) => setOverrideForm({...overrideForm, consignatario_bl: e.target.value})} />
+                               </div>
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600 ml-1">Dirección BL</label>
+                                 <Textarea className="rounded-2xl font-medium border-emerald-50 min-h-[100px]" value={overrideForm.direccion_consignatario} onChange={(e) => setOverrideForm({...overrideForm, direccion_consignatario: e.target.value})} />
+                               </div>
+                             </div>
+                             <div className="space-y-4">
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Notify BL</label>
+                                 <Input className="h-14 rounded-2xl font-bold bg-slate-50 border-none" value={overrideForm.notify_bl} onChange={(e) => setOverrideForm({...overrideForm, notify_bl: e.target.value})} />
+                               </div>
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase tracking-widest ml-1 text-slate-400">Dirección Notify</label>
+                                 <Textarea className="rounded-2xl font-medium bg-slate-50 border-none min-h-[100px]" value={overrideForm.direccion_notify} onChange={(e) => setOverrideForm({...overrideForm, direccion_notify: e.target.value})} />
+                               </div>
+                             </div>
+                          </div>
+                        </div>
+
+                        {/* SECCION 3: PESOS Y CONDICIONES */}
+                        <div className="space-y-6">
+                           <div className="flex items-center gap-3">
+                            <Zap className="h-5 w-5 text-emerald-500" />
+                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Carga y Condiciones</h4>
+                          </div>
+                          <div className="grid grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cajas</label>
+                               <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.cajas} onChange={(e) => setOverrideForm({...overrideForm, cajas: parseInt(e.target.value)})} />
+                            </div>
+                            <div className="space-y-2">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Pallets</label>
+                               <Input type="number" className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pallets} onChange={(e) => setOverrideForm({...overrideForm, pallets: parseInt(e.target.value)})} />
+                            </div>
+                            <div className="space-y-2">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Neto</label>
+                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_neto} onChange={(e) => setOverrideForm({...overrideForm, peso_neto: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso Bruto</label>
+                               <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.peso_bruto} onChange={(e) => setOverrideForm({...overrideForm, peso_bruto: e.target.value})} />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-4 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                             {['temperatura', 'ventilacion', 'humedad', 'atm', 'oxigeno', 'co2', 'filtros', 'cold_treatment'].map((field) => (
+                               <div key={field} className="space-y-2">
+                                 <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400 pl-1">{field.replace('_', ' ')}</label>
+                                 <Input className="h-10 rounded-lg font-black text-[10px] bg-white border-slate-100 uppercase" value={overrideForm[field]} onChange={(e) => setOverrideForm({...overrideForm, [field]: e.target.value})} />
+                               </div>
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* SECCION 4: FITOSANITARIO */}
+                        <div className="space-y-6">
+                           <div className="flex items-center gap-3">
+                            <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Especializados (Fito / Otros)</h4>
+                          </div>
+                          <div className="grid grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Consignatario Fito</label>
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.consignatario_fito} onChange={(e) => setOverrideForm({...overrideForm, consignatario_fito: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Dirección Fito</label>
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.direccion_fito} onChange={(e) => setOverrideForm({...overrideForm, direccion_fito: e.target.value})} />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">País Destino</label>
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.pais_destino} onChange={(e) => setOverrideForm({...overrideForm, pais_destino: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Presentación</label>
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.presentacion} onChange={(e) => setOverrideForm({...overrideForm, presentacion: e.target.value})} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Etiquetas</label>
+                                <Input className="h-12 rounded-xl font-bold bg-slate-50 border-none" value={overrideForm.etiquetas} onChange={(e) => setOverrideForm({...overrideForm, etiquetas: e.target.value})} />
+                              </div>
+                               <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">VALOR FOB</label>
+                                <Input className="h-12 rounded-xl font-bold bg-emerald-50 border-emerald-200 text-emerald-700" value={overrideForm.fob} onChange={(e) => setOverrideForm({...overrideForm, fob: e.target.value})} />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Observaciones Finales</label>
+                            <Textarea className="rounded-[2rem] font-medium bg-slate-50 border-none min-h-[120px]" value={overrideForm.observaciones} onChange={(e) => setOverrideForm({...overrideForm, observaciones: e.target.value})} />
+                          </div>
+                        </div>
+                      </div>
+                    </ScrollArea>
+
+                    <DialogFooter className="p-10 border-t border-slate-100 flex items-center justify-between sm:justify-between">
+                      <div className="flex items-center gap-3">
+                         <div className="h-10 w-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center">
+                           <AlertTriangle className="h-5 w-5" />
+                         </div>
+                         <div className="space-y-0.5">
+                           <p className="text-[10px] font-black uppercase tracking-tight text-slate-900">Modo de Alta Prioridad</p>
+                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Estos cambios no son permanentes en BD</p>
+                         </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <Button variant="ghost" onClick={() => setIsAdminModeOpen(false)} className="h-14 px-8 rounded-full font-black uppercase text-[10px] tracking-widest">
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleGenerateOverridePdf}
+                          disabled={isGeneratingPdf}
+                          className="h-14 px-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-emerald-500/20"
+                        >
+                          {isGeneratingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                          Generar IE con Cambios
+                        </Button>
+                      </div>
+                    </DialogFooter>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Historial de Emisión */}
             <div className="space-y-6">

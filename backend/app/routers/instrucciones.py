@@ -20,6 +20,45 @@ class GeneratePDFRequest(BaseModel):
     booking: str
     observaciones: str = ""
 
+class AdminOverrideRequest(BaseModel):
+    booking: str
+    orden_beta: str
+    cliente_nombre: str
+    consignatario_bl: str
+    direccion_consignatario: str
+    notify_bl: str
+    direccion_notify: str
+    motonave: str
+    naviera: str
+    puerto_embarque: str
+    puerto_destino: str
+    eta: str
+    cultivo: str
+    variedad: str
+    temperatura: str
+    ventilacion: str
+    humedad: str
+    atm: str
+    oxigeno: str
+    co2: str
+    filtros: str
+    cold_treatment: str
+    cajas: int
+    pallets: int
+    peso_neto: str
+    peso_bruto: str
+    fob: str
+    consignatario_fito: str
+    direccion_fito: str
+    pais_destino: str
+    presentacion: str
+    etiquetas: str
+    observaciones: str
+    operador_logistico: Optional[str] = "DP WORLD LOGISTICS S.R.L."
+    planta_llenado: Optional[str] = None
+    direccion_planta: Optional[str] = None
+    fecha_llenado: Optional[str] = None
+
 @router.get("/lookup/{booking}")
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     """
@@ -185,4 +224,26 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error crítico en generación de PDF: {str(e)}")
         logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-pdf-override")
+def generate_pdf_override(req: AdminOverrideRequest, db: Session = Depends(get_db)):
+    """
+    Endpoint exclusivo para Administradores que permite sobreescribir todos los campos.
+    """
+    try:
+        pdf_data = instruction_pdf_service.generate_instruction_pdf(
+            booking=req.booking,
+            db=db,
+            override_data=req.dict()
+        )
+        
+        filename = f"IE_CUSTOM_{req.booking}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_data["pdf_bytes"]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except Exception as e:
+        logger.error(f"Error en PDF Override: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

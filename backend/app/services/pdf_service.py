@@ -86,36 +86,102 @@ class InstructionPDFService:
         
         return cliente
 
-    def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = ""):
-        # 1. Obtencion de datos
-        pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
-        if not pos: raise Exception(f"Booking {booking} no encontrado")
+    def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = "", override_data: Optional[dict] = None):
+        # 1. Obtencion de datos (Modificado para soportar OVERRIDE de Admin 💎)
+        if override_data:
+            # Si hay override, usamos los datos inyectados manualmente
+            pos_booking = override_data.get("booking")
+            pos_orden = override_data.get("orden_beta")
+            pos_cultivo = override_data.get("cultivo")
+            pos_nave = override_data.get("motonave")
+            pos_naviera = override_data.get("naviera")
+            pos_operador = override_data.get("operador_logistico")
+            pos_pol = override_data.get("puerto_embarque")
+            
+            # Datos de pesos y cantidades
+            total_cajas = override_data.get("cajas", 0)
+            total_pallets = override_data.get("pallets", 0)
+            peso_neto_full = override_data.get("peso_neto", "0.000 KG")
+            peso_bruto_full = override_data.get("peso_bruto", "0.000 KG")
+            
+            cliente_nombre = override_data.get("cliente_nombre")
+            puerto_destino = override_data.get("puerto_destino")
+            eta_str = override_data.get("eta")
+            variedad = override_data.get("variedad")
+            
+            # Descripción BL
+            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
+            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
+            
+            # Planta y Fecha Llenado Manual
+            planta_nombre = override_data.get("planta_llenado", "PLANTA BETA")
+            planta_direccion = override_data.get("direccion_planta", "")
+            fecha_llenado = override_data.get("fecha_llenado", "")
+            
+            # Observaciones
+            observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
+            fob_val = override_data.get("fob", "USD 0.00")
+            
+        else:
+            # Lógica automática original (Booking -> DB)
+            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
+            if not pos: raise Exception(f"Booking {booking} no encontrado")
 
-        normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
-        pedidos = []
-        if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
-            query_pedidos = db.query(PedidoComercial).filter(
-                PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
-            )
-            if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
-                query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
-            pedidos = query_pedidos.all()
+            normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
+            pedidos = []
+            if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
+                query_pedidos = db.query(PedidoComercial).filter(
+                    PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
+                )
+                if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                    query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
+                pedidos = query_pedidos.all()
 
-        total_cajas = sum(p.total_cajas or 0 for p in pedidos)
-        total_pallets = sum(p.total_pallets or 0 for p in pedidos)
-        cliente_nombre = pedidos[0].cliente if pedidos else "POR DEFINIR"
-        peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
-        
-        # Formula de Peso Bruto Real (Neto + Taras): Pallet (30kg) + Caja (0.25kg)
-        peso_neto = float(total_cajas) * float(peso_kg)
-        peso_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
+            total_cajas = sum(p.total_cajas or 0 for p in pedidos)
+            total_pallets = sum(p.total_pallets or 0 for p in pedidos)
+            cliente_nombre = pedidos[0].cliente if pedidos else "POR DEFINIR"
+            peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
+            
+            # Formula de Peso Bruto Real (Neto + Taras): Pallet (30kg) + Caja (0.25kg)
+            peso_neto = float(total_cajas) * float(peso_kg)
+            p_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
+            peso_neto_full = f"{peso_neto:,.3f} KG"
+            peso_bruto_full = f"{p_bruto:,.3f} KG"
 
-        # 2. Búsqueda de Maestro (Refactorizada)
-        pais_val = pedidos[0].pais if pedidos else ""
-        pod_val = pedidos[0].pod if pedidos else ""
-        cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
+            # Búsqueda de Maestro
+            pais_val = pedidos[0].pais if pedidos else ""
+            pod_val = pedidos[0].pod if pedidos else ""
+            cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
 
-        planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
+            planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
+            planta_nombre = planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")
+            planta_direccion = planta_maestro.direccion if planta_maestro else ""
+            
+            # Datos de Posicionamiento
+            pos_booking = pos.BOOKING
+            pos_orden = pos.ORDEN_BETA
+            pos_cultivo = pos.CULTIVO
+            pos_nave = pos.NAVE
+            pos_naviera = pos.NAVIERA
+            pos_operador = getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.")
+            pos_pol = getattr(pos, 'POL', "CALLAO") or "CALLAO"
+            
+            f_prog = getattr(pos, 'FECHA_PROGRAMADA', None)
+            h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
+            f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
+            h_str = h_prog.strftime('%H:%M') if h_prog else ""
+            fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else f"{f_str} {h_str}".strip()
+
+            eta_dt = getattr(pos, 'ETA', None)
+            eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
+            puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
+            
+            variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
+            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
+            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
+            
+            observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
+            fob_val = "USD 34,560.00"
 
         # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
@@ -151,17 +217,23 @@ class InstructionPDFService:
              header_row = []
              if logo_obj: header_row.append(logo_obj)
              
-             cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
-             puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
-             pais_txt = cliente_maestro.pais if cliente_maestro else ''
+             # Selección de Títulos (Override o Calculado)
+             if override_data:
+                 cliente_txt = override_data.get("consignatario_bl")
+                 puerto_txt = override_data.get("puerto_destino")
+                 pais_txt = override_data.get("pais_destino")
+             else:
+                 cliente_txt = (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre
+                 puerto_txt = puerto_destino
+                 pais_txt = cliente_maestro.pais if cliente_maestro else ''
              
-             subtitle_parts = [p for p in [cliente_txt, puerto_destino, pais_txt] if p]
+             subtitle_parts = [p for p in [cliente_txt, puerto_txt, pais_txt] if p]
              subtitle_txt = " - ".join(subtitle_parts)
              
-             titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos.CULTIVO or ''}"
+             titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos_cultivo or ''}"
              header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=10, alignment=1, fontName=self.FONT_BOLD)))
 
-             if "GRANADA" in (pos.CULTIVO or "").upper():
+             if "GRANADA" in (pos_cultivo or "").upper():
                  granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
                  if granada_obj: header_row.append(granada_obj)
              
@@ -176,79 +248,59 @@ class InstructionPDFService:
              ]))
              elements.append(header_table)
         except Exception:
-             elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - BOOKING: {pos.BOOKING} | ORDEN: {pos.ORDEN_BETA}</b>", styles["Title"]))
+             elements.append(Paragraph(f"<b>INSTRUCCIONES DE EMBARQUE - BOOKING: {pos_booking} | ORDEN: {pos_orden}</b>", styles["Title"]))
 
         elements.append(Spacer(1, 12))
 
         # --- MASTER TABLE ---
-        fito = cliente_maestro.fitosanitario if hasattr(cliente_maestro, 'fitosanitario') and cliente_maestro.fitosanitario else None
-        
-        cult_en = "POMEGRANATES" if "GRANADA" in (pos.CULTIVO or "").upper() else pos.CULTIVO
-        cult_es = "GRANADAS" if "GRANADA" in (pos.CULTIVO or "").upper() else pos.CULTIVO
-        variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
-        
-        desc_en = f"{total_cajas} BOXES WITH FRESH {cult_en} {variedad} ON {total_pallets} PALLETS"
-        desc_es = f"{total_cajas} CAJAS CON FRESCA {cult_es} {variedad} EN {total_pallets} PALETAS"
-
-        fecha_llenado = ""
-        f_prog = getattr(pos, 'FECHA_PROGRAMADA', None)
-        h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
-        f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
-        h_str = h_prog.strftime('%H:%M') if h_prog else ""
-        fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else f"{f_str} {h_str}".strip()
-
-        eta_dt = getattr(pos, 'ETA', None)
-        eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
-        puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
-
         t1_data = [
-            [b_p(pos.ORDEN_BETA or 'S/N'), b_p("")],
+            [b_p(pos_orden or 'S/N'), b_p("")],
             [b_p("EMBARCADOR"), n_p("COMPLEJO AGROINDUSTRIAL BETA S.A.")],
             [b_p("DIRECCIÓN"), n_p("CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU")],
-            [b_p("OPERADOR LOGISTICO"), b_p(getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L."))],
-            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_maestro.planta}</b>", planta_maestro.direccion) if planta_maestro else n_p(pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")],
-            [b_p("UBIGEO PLANTA"), n_p(planta_maestro.ubigeo if planta_maestro else "110111")],
+            [b_p("OPERADOR LOGISTICO"), b_p(pos_operador)],
+            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", planta_direccion)],
+            [b_p("UBIGEO PLANTA"), n_p("110111")],
             [b_p("FECHA Y HORA DEL LLENADO"), b_pc(fecha_llenado)],
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre}</b>", cliente_maestro.direccion_consignatario if cliente_maestro else "")],
-            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'}</b>", cliente_maestro.direccion_notify if cliente_maestro else "")],
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else (cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
+            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else (cliente_maestro.direccion_notify if cliente_maestro else ""))],
             [b_p("DATOS REFERENCIALES"), format_desc(
-                f"EORI CONSIGNE: {cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else '----'}",
-                f"EORI NOTIFY: {cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else '----'}"
+                f"EORI CONSIGNE: {override_data.get('eori_consignatario', '----') if override_data else (cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else '----')}",
+                f"EORI NOTIFY: {override_data.get('eori_notify', '----') if override_data else (cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else '----')}"
             )],
             [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
-            [b_p("AGENCIA NAVIERA"), n_p(pos.NAVIERA or "")],
-            [b_p("MOTONAVE"), n_p(pos.NAVE or "")],
-            [b_p("BOOKING No."), b_p(pos.BOOKING or "")],
-            [b_p("FREIGHT"), n_p("PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT")],
+            [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")],
+            [b_p("MOTONAVE"), n_p(pos_nave or "")],
+            [b_p("BOOKING No."), b_p(pos_booking or "")],
+            [b_p("FREIGHT"), n_p(override_data.get('fob', 'PREPAID') if override_data else ("PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"))],
             [b_p("EMISION B/L"), n_p("SWB")],
-            [b_p("PUERTO EMBARQUE"), n_p(getattr(pos, 'POL', "CALLAO") or "CALLAO")],
+            [b_p("PUERTO EMBARQUE"), n_p(pos_pol)],
             [b_p("ETA"), n_p(eta_str)],
             [b_p("PUERTO DESTINO"), n_p(puerto_destino)],
             [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")],
-            [b_p("PRODUCTO"), n_p(pos.CULTIVO or "GRANADAS")],
+            [b_p("PRODUCTO"), n_p(pos_cultivo or "GRANADAS")],
             [b_p("VARIEDAD"), n_p(variedad)],
-            [b_p("TEMPERATURA"), n_p("6.0°C" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("VENTILACION"), n_p("15CBM" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("HUMEDAD"), n_p("OFF" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("ATMOSFERA CONTROLADA"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("OXIGENO"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("CO2"), n_p("NO APLICA" if "GRANADA" in (pos.CULTIVO or "").upper() else "")],
-            [b_p("FILTROS"), b_p("NO")],
-            [b_p("COLD TREAMENT"), b_p("NO")],
+            [b_p("TEMPERATURA"), n_p(override_data.get('temperatura', '6.0°C') if override_data else ("6.0°C" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("VENTILACION"), n_p(override_data.get('ventilacion', '15CBM') if override_data else ("15CBM" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("HUMEDAD"), n_p(override_data.get('humedad', 'OFF') if override_data else ("OFF" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("ATMOSFERA CONTROLADA"), n_p(override_data.get('atm', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("OXIGENO"), n_p(override_data.get('oxigeno', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("CO2"), n_p(override_data.get('co2', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
+            [b_p("FILTROS"), b_p(override_data.get('filtros', 'NO') if override_data else "NO")],
+            [b_p("COLD TREAMENT"), b_p(override_data.get('cold_treatment', 'NO') if override_data else "NO")],
             [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
-            [b_p("VALOR FOB APROXIMADO"), n_p("USD 34,560.00")],
+            [b_p("VALOR FOB APROXIMADO"), n_p(fob_val)],
         ]
 
         t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD)), ""],
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{fito.consignatario_fito if fito else ''}</b>", fito.direccion_fito if fito else "")],
-            [b_p("PAIS DE DESTINO"), b_p(pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else ""))],
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else (fito.direccion_fito if fito else "")))],
+            [b_p("PAIS DE DESTINO"), b_p(override_data.get('pais_destino') if override_data else (pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else "")))],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
-            [b_p("PRESENTACION"), b_p(getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG")],
-            [b_p("ETIQUETAS"), b_p("GENERICA")],
-            [b_p("PESO NETO ESTIMADO"), b_p(f"{total_cajas * float(peso_kg if peso_kg else 3.8):,.3f} KG")],
-            [b_p("PESO BRUTO ESTIMADO"), b_p(f"{peso_bruto:,.3f} KG")],
-            [b_p("OBSERVACIONES"), n_p(observaciones or "SIN OBSERVACIONES ADICIONALES.")]
+            [b_p("PRESENTACION"), b_p(override_data.get('presentacion') if override_data else (getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG"))],
+            [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas', 'GENERICA') if override_data else "GENERICA")],
+            [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)],
+            [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)],
+            [b_p("OBSERVACIONES"), n_p(observaciones_final)]
         ]
 
         # Estilo Tablas
