@@ -680,6 +680,7 @@ export default function InstruccionesEmbarque() {
                                  <Textarea className="rounded-2xl font-medium bg-slate-50 border-none min-h-[120px]" value={overrideForm.direccion_notify} onChange={(e) => setOverrideForm({...overrideForm, direccion_notify: e.target.value})} />
                                </div>
                              </div>
+                            </div>
                           </div>
                         </div>
 
