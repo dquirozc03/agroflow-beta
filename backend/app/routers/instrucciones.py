@@ -13,6 +13,7 @@ from app.utils.formatters import normalize_client_name
 import traceback
 import re
 import io
+from typing import Optional
 
 router = APIRouter(prefix="/api/v1/instrucciones", tags=["instrucciones-ie"])
 
