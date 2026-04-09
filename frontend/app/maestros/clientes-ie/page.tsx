@@ -34,6 +34,7 @@ export default function ClientesIEPage() {
   const [clientes, setClientes] = useState<ClienteIE[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
@@ -121,6 +122,12 @@ export default function ClientesIEPage() {
     return nombre.includes(search) || pais.includes(search) || destino.includes(search);
   });
 
+  const ITEMS_PER_PAGE = 10;
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <ClienteIEModal
@@ -198,7 +205,10 @@ export default function ClientesIEPage() {
             placeholder="Buscar por Cliente, País o Destino..."
             className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
@@ -226,7 +236,7 @@ export default function ClientesIEPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
-                {filtered.map((c) => (
+                {currentItems.map((c) => (
                   <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-7 border-r border-slate-200/80">
                       <div className="flex items-center gap-4">
@@ -326,6 +336,47 @@ export default function ClientesIEPage() {
           </div>
         )}
       </div>
+
+      {/* Paginación */}
+      {!isLoading && filtered.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+          <p className="text-xs text-slate-500 font-medium">
+            Mostrando <span className="font-bold text-slate-800">{indexOfFirstItem + 1}</span> a <span className="font-bold text-slate-800">{Math.min(indexOfLastItem, filtered.length)}</span> de <span className="font-bold text-slate-800">{filtered.length}</span> entradas
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-slate-50 disabled:hover:text-slate-500"
+            >
+              Anterior
+            </button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={cn(
+                    "w-8 h-8 rounded-xl text-xs font-bold transition-all",
+                    currentPage === i + 1
+                      ? "bg-[#022c22] text-white shadow-md shadow-emerald-900/10"
+                      : "text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
+                  )}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-slate-50 disabled:hover:text-slate-500"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

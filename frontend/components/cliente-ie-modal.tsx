@@ -107,6 +107,29 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // --- Fito Search State ---
+  const [isFitoSearchModalOpen, setIsFitoSearchModalOpen] = useState(false);
+  const [fitoSearchTerm, setFitoSearchTerm] = useState("");
+  const [fitoResults, setFitoResults] = useState<any[]>([]);
+  const [isSearchingFito, setIsSearchingFito] = useState(false);
+
+  useEffect(() => {
+    if (isFitoSearchModalOpen && fitoSearchTerm.length > 1) {
+      const timer = setTimeout(async () => {
+        setIsSearchingFito(true);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/maestros/clientes-ie/maestro-fitos?q=${encodeURIComponent(fitoSearchTerm)}`);
+          if (res.ok) setFitoResults(await res.json());
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsSearchingFito(false);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [fitoSearchTerm, isFitoSearchModalOpen]);
+
   useEffect(() => {
     if (isOpen) {
       setErrors({});
@@ -273,9 +296,6 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">País</label>
                     <input 
@@ -392,25 +412,54 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                   </div>
 
                   <div className="space-y-6 relative z-10">
-                      <SearchableField 
-                         label="Buscar o Crear Consignatario (FITO)"
-                         icon={ShieldCheck}
-                         placeholder="BUSCAR EN MAESTRO DE FITOS..."
-                         value={formData.fitosanitario.consignatario_fito}
-                         onChange={(v: string) => setFormData({
-                           ...formData,
-                           fitosanitario: { ...formData.fitosanitario, id: null, consignatario_fito: safeToUpperCase(v) }
-                         })}
-                         onSelect={(res: any) => setFormData({
-                           ...formData,
-                           fitosanitario: { 
-                             id: res.id, 
-                             consignatario_fito: res.consignatario_fito,
-                             direccion_fito: res.direccion_fito 
-                           }
-                         })}
-                         searchUrl={`${API_BASE_URL}/api/v1/maestros/clientes-ie/maestro-fitos`}
-                      />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">
+                          CONSIGNATARIO (FITO)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFitoSearchTerm("");
+                            setFitoResults([]);
+                            setIsFitoSearchModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 hover:text-emerald-700 transition-all"
+                        >
+                          <Search className="h-3.5 w-3.5" /> Buscar Registrado
+                        </button>
+                      </div>
+                      <div className="flex gap-2 relative">
+                        <input
+                           value={formData.fitosanitario.consignatario_fito}
+                           readOnly={!!formData.fitosanitario.id}
+                           onChange={(e) => setFormData({
+                             ...formData,
+                             fitosanitario: { ...formData.fitosanitario, id: null, consignatario_fito: safeToUpperCase(e.target.value) }
+                           })}
+                           placeholder="INTRODUCIR O BUSCAR CONSIGNATARIO..."
+                           className={cn(
+                             "w-full h-14 px-6 border rounded-2xl focus:outline-none transition-all font-bold text-xs shadow-sm",
+                             formData.fitosanitario.id 
+                                ? "bg-emerald-50/30 border-emerald-100 text-emerald-800 cursor-not-allowed" 
+                                : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
+                           )}
+                        />
+                        {formData.fitosanitario.id && (
+                           <button
+                             type="button"
+                             onClick={() => setFormData({
+                               ...formData,
+                               fitosanitario: { id: null, consignatario_fito: "", direccion_fito: "" }
+                             })}
+                             className="h-14 px-4 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-transparent rounded-2xl transition-all font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-sm hover:border-rose-200"
+                             title="Desvincular Maestro"
+                           >
+                              <X className="h-4 w-4 mr-1" /> Desvincular
+                           </button>
+                        )}
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">DIRECCIÓN (FITO)</label>
                       <textarea
@@ -450,6 +499,65 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
             </button>
 
           </form>
+
+          {/* Buscador Integrado Minimalista */}
+          {isFitoSearchModalOpen && (
+            <div className="absolute inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm rounded-[3rem] animate-in fade-in duration-300 flex items-center justify-center p-8">
+               <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[80%] animate-in zoom-in-95">
+                 {/* Header Search */}
+                 <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center gap-4">
+                    <Search className="h-5 w-5 text-emerald-500" />
+                    <input 
+                      autoFocus
+                      type="text"
+                      placeholder="Buscar por nombre..."
+                      className="flex-1 bg-transparent border-none outline-none font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium"
+                      value={fitoSearchTerm}
+                      onChange={e => setFitoSearchTerm(e.target.value)}
+                    />
+                    <button onClick={() => setIsFitoSearchModalOpen(false)} className="p-2 hover:bg-slate-200/50 rounded-full text-slate-400 transition-colors">
+                      <X className="h-5 w-5" />
+                    </button>
+                 </div>
+                 
+                 {/* Listado */}
+                 <div className="flex-1 overflow-y-auto lc-scroll p-4">
+                    {isSearchingFito ? (
+                      <div className="flex items-center justify-center p-10">
+                        <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
+                      </div>
+                    ) : fitoResults.length > 0 ? (
+                      <div className="space-y-2">
+                        {fitoResults.map(fito => (
+                          <div 
+                            key={fito.id}
+                            onClick={() => {
+                               setFormData({
+                                 ...formData,
+                                 fitosanitario: {
+                                   id: fito.id,
+                                   consignatario_fito: fito.consignatario_fito,
+                                   direccion_fito: fito.direccion_fito
+                                 }
+                               });
+                               setIsFitoSearchModalOpen(false);
+                            }}
+                            className="p-4 rounded-2xl hover:bg-emerald-50 border border-transparent hover:border-emerald-100 cursor-pointer transition-all group"
+                          >
+                             <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700">{fito.consignatario_fito}</h4>
+                             <p className="text-xs text-slate-400 line-clamp-1 mt-1">{fito.direccion_fito}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center p-10 text-slate-300 font-medium text-sm">
+                        {fitoSearchTerm.length > 1 ? "No se encontraron coincidencias" : "Escribe para buscar..."}
+                      </div>
+                    )}
+                 </div>
+               </div>
+            </div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
