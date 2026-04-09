@@ -517,6 +517,10 @@ async def generate_packing_list_ogl(
                 
             pl_id = f"WK{semana_eta}{correlativo}"
 
+        # --- CABECERA ESTÁTICA (Inge Daniel Rule) ---
+        ws['C2'].value = "1101613"
+        ws['C2'].alignment = Alignment(horizontal='center', vertical='center')
+
         safe_write(ws, "C3", "COMPLEJO AGROINDUSTRIAL BETA S.A.")
         safe_write(ws, "C4", pl_id)
         safe_write(ws, "C5", ahora.strftime("%d/%m/%Y"))
@@ -553,7 +557,7 @@ async def generate_packing_list_ogl(
             pedido = booking_data_map[bk_id]["pedido"]
             fecha_prog = booking_data_map[bk_id]["fecha_prog"]
             
-            # Necesitamos la planta de este booking específico
+            # 4. Inyectar Pedido Dinámico (Solo del primer booking del set filtrado)
             pos_bk = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == bk_id).first()
             planta_llenado_raw = pos_bk.PLANTA_LLENADO.strip() if pos_bk and pos_bk.PLANTA_LLENADO else ""
             planta_llenado_up = planta_llenado_raw.upper()

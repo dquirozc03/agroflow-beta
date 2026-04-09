@@ -2,6 +2,7 @@ from app.utils.formatters import clean_booking, clean_plate, clean_container, cl
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
+from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from datetime import datetime
 import pandas as pd
@@ -398,20 +399,40 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         "TERMOGRAFO": req.termografos
     }
 
+    codigos_procesados_en_request = set()
     for tipo, codes in category_map.items():
         for code in codes:
-            if not code or code.strip().upper() in ignore_values:
+            if not code:
                 continue
+            code_upper = code.strip().upper()
+            if code_upper in ignore_values:
+                continue
+            
+            if code_upper in codigos_procesados_en_request:
+                db.rollback()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error: El código '{code_upper}' se ha ingresado varias veces en la misma actualización."
+                )
+            codigos_procesados_en_request.add(code_upper)
+
             details.append(LogiCaptureDetalle(
                 registro_id=new_reg.id,
                 categoria="PRECINTO" if tipo != "TERMOGRAFO" else "TERMOGRAFO",
                 tipo=tipo,
-                codigo=code
+                codigo=code_upper
             ))
     
     if details:
         db.add_all(details)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Error de integridad en base de datos. Se enviaron códigos duplicados."
+            )
 
     return {"status": "success", "id": new_reg.id}
 
@@ -568,31 +589,49 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
         
         ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]
         nuevos_detalles = []
+        codigos_procesados_en_request = set()
         for tipo, codigos in mapeo_detalles:
             cat = "TERMOGRAFO" if tipo == "TERMOGRAFO" else "PRECINTO"
             for code in codigos:
-                if not code or code.strip().upper() in ignore_values: continue
+                if not code: continue
+                code_upper = code.strip().upper()
+                if code_upper in ignore_values: continue
                 
+                if code_upper in codigos_procesados_en_request:
+                    db.rollback()
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Error: El código '{code_upper}' se ha ingresado varias veces en la misma actualización."
+                    )
+                codigos_procesados_en_request.add(code_upper)
+
                 # c. Blindaje contra duplicados sistémicos
-                duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code).first()
+                duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code_upper).first()
                 if duplicado:
                     db.rollback()
                     raise HTTPException(
                         status_code=400, 
-                        detail=f"Error: El código '{code}' ya está siendo usado en otro registro activo."
+                        detail=f"Error: El código '{code_upper}' ya está siendo usado en otro registro activo."
                     )
                 
                 nuevos_detalles.append(LogiCaptureDetalle(
                     registro_id=id,
                     categoria=cat,
                     tipo=tipo,
-                    codigo=code
+                    codigo=code_upper
                 ))
         
         if nuevos_detalles:
             db.add_all(nuevos_detalles)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Error de integridad en base de datos. Se enviaron códigos duplicados."
+        )
 
     # 5. Sincronización Inversa (Retro-alimentación al Maestro)
     if reg.dam and reg.dam.strip().upper() not in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]:
