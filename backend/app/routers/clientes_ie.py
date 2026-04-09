@@ -10,6 +10,12 @@ router = APIRouter(
     tags=["Maestros - Clientes IE"]
 )
 
+# --- Utils ---
+def safe_to_upper(val: str) -> str:
+    if not val:
+        return ""
+    return "".join(c if c == 'ß' else c.upper() for c in str(val))
+
 # --- Schemas ---
 class MaestroFitoSchema(BaseModel):
     id: Optional[int] = None
@@ -54,16 +60,16 @@ def create_cliente_ie(req: ClienteIESchema, db: Session = Depends(get_db)):
     if req.fitosanitario:
         # Buscar si ya existe este fito
         existing_fito = db.query(MaestroFito).filter(
-            MaestroFito.consignatario_fito == req.fitosanitario.consignatario_fito.upper(),
-            MaestroFito.direccion_fito == req.fitosanitario.direccion_fito.upper()
+            MaestroFito.consignatario_fito == safe_to_upper(req.fitosanitario.consignatario_fito),
+            MaestroFito.direccion_fito == safe_to_upper(req.fitosanitario.direccion_fito)
         ).first()
         
         if existing_fito:
             fito_id = existing_fito.id
         else:
             new_fito = MaestroFito(
-                consignatario_fito=req.fitosanitario.consignatario_fito.upper(),
-                direccion_fito=req.fitosanitario.direccion_fito.upper()
+                consignatario_fito=safe_to_upper(req.fitosanitario.consignatario_fito),
+                direccion_fito=safe_to_upper(req.fitosanitario.direccion_fito)
             )
             db.add(new_fito)
             db.flush()
@@ -71,17 +77,17 @@ def create_cliente_ie(req: ClienteIESchema, db: Session = Depends(get_db)):
 
     # 2. Crear Cliente
     new_cliente = ClienteIE(
-        nombre_legal=req.nombre_legal.upper(),
-        cultivo=req.cultivo.upper() if req.cultivo else None,
-        pais=req.pais.upper(),
-        destino=req.destino.upper() if req.destino else None,
-        consignatario_bl=req.consignatario_bl.upper() if req.consignatario_bl else None,
-        direccion_consignatario=req.direccion_consignatario.upper() if req.direccion_consignatario else None,
-        notify_bl=req.notify_bl.upper() if req.notify_bl else None,
-        direccion_notify=req.direccion_notify.upper() if req.direccion_notify else None,
-        eori_consignatario=req.eori_consignatario.upper() if req.eori_consignatario else None,
-        eori_notify=req.eori_notify.upper() if req.eori_notify else None,
-        emision_bl=req.emision_bl.upper() if req.emision_bl else None,
+        nombre_legal=safe_to_upper(req.nombre_legal),
+        cultivo=safe_to_upper(req.cultivo) if req.cultivo else None,
+        pais=safe_to_upper(req.pais),
+        destino=safe_to_upper(req.destino) if req.destino else None,
+        consignatario_bl=safe_to_upper(req.consignatario_bl) if req.consignatario_bl else None,
+        direccion_consignatario=safe_to_upper(req.direccion_consignatario) if req.direccion_consignatario else None,
+        notify_bl=safe_to_upper(req.notify_bl) if req.notify_bl else None,
+        direccion_notify=safe_to_upper(req.direccion_notify) if req.direccion_notify else None,
+        eori_consignatario=safe_to_upper(req.eori_consignatario) if req.eori_consignatario else None,
+        eori_notify=safe_to_upper(req.eori_notify) if req.eori_notify else None,
+        emision_bl=safe_to_upper(req.emision_bl) if req.emision_bl else None,
         fito_id=fito_id
     )
     
@@ -105,16 +111,16 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
     fito_id = req.fito_id
     if req.fitosanitario:
         existing_fito = db.query(MaestroFito).filter(
-            MaestroFito.consignatario_fito == req.fitosanitario.consignatario_fito.upper(),
-            MaestroFito.direccion_fito == req.fitosanitario.direccion_fito.upper()
+            MaestroFito.consignatario_fito == safe_to_upper(req.fitosanitario.consignatario_fito),
+            MaestroFito.direccion_fito == safe_to_upper(req.fitosanitario.direccion_fito)
         ).first()
         
         if existing_fito:
             fito_id = existing_fito.id
         else:
             new_fito = MaestroFito(
-                consignatario_fito=req.fitosanitario.consignatario_fito.upper(),
-                direccion_fito=req.fitosanitario.direccion_fito.upper()
+                consignatario_fito=safe_to_upper(req.fitosanitario.consignatario_fito),
+                direccion_fito=safe_to_upper(req.fitosanitario.direccion_fito)
             )
             db.add(new_fito)
             db.flush()
@@ -124,7 +130,7 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
     update_data = req.dict(exclude={'id', 'fitosanitario', 'fito_id'})
     for key, value in update_data.items():
         if value is not None and isinstance(value, str):
-            setattr(cliente, key, value.upper())
+            setattr(cliente, key, safe_to_upper(value))
         else:
             setattr(cliente, key, value)
             
