@@ -19,3 +19,15 @@ export function formatContainerNumber(raw: string): string {
   }
   return raw.toUpperCase();
 }
+
+/**
+ * Convierte un texto a mayúsculas preservando caracteres especiales 
+ * que normalmente se alterarían (ej. la ß alemana no se debe convertir a SS).
+ */
+export function safeToUpperCase(str: string): string {
+  if (!str) return "";
+  return str.split('').map(char => {
+    if (char === 'ß') return 'ß';
+    return char.toUpperCase();
+  }).join('');
+}

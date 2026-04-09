@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { safeToUpperCase } from "@/lib/utils";
 
 interface ClienteIE {
   id: number;
@@ -252,7 +253,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <input 
                       value={formData.nombre_legal}
                       onChange={e => {
-                        setFormData({ ...formData, nombre_legal: e.target.value.toUpperCase() });
+                        setFormData({ ...formData, nombre_legal: safeToUpperCase(e.target.value) });
                         if (errors.nombre_legal) setErrors({ ...errors, nombre_legal: "" });
                       }}
                       placeholder="EJ: BETA BEST"
@@ -267,7 +268,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Cultivo</label>
                     <input 
                       value={formData.cultivo}
-                      onChange={e => setFormData({ ...formData, cultivo: e.target.value.toUpperCase() })}
+                      onChange={e => setFormData({ ...formData, cultivo: safeToUpperCase(e.target.value) })}
                       placeholder="EJ: ARANDANO"
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                     />
@@ -280,7 +281,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <input 
                       value={formData.pais}
                       onChange={e => {
-                        setFormData({ ...formData, pais: e.target.value.toUpperCase() });
+                        setFormData({ ...formData, pais: safeToUpperCase(e.target.value) });
                         if (errors.pais) setErrors({ ...errors, pais: "" });
                       }}
                       placeholder="EJ: ESPAÑA"
@@ -295,7 +296,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-[9px]">P. Destino <span className="text-slate-300 italic opacity-50 ml-1">(Opc)</span></label>
                     <input 
                       value={formData.destino}
-                      onChange={e => setFormData({ ...formData, destino: e.target.value.toUpperCase() })}
+                      onChange={e => setFormData({ ...formData, destino: safeToUpperCase(e.target.value) })}
                       placeholder="EJ: BARCELONA"
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                     />
@@ -309,7 +310,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Consignatario (BL)</label>
                       <input
                         value={formData.consignatario_bl}
-                        onChange={e => setFormData({ ...formData, consignatario_bl: e.target.value.toUpperCase() })}
+                        onChange={e => setFormData({ ...formData, consignatario_bl: safeToUpperCase(e.target.value) })}
                         placeholder="NOMBRE DEL CONSIGNATARIO..."
                         className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                       />
@@ -318,7 +319,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Dirección del Consignatario</label>
                       <textarea
                         value={formData.direccion_consignatario}
-                        onChange={e => setFormData({ ...formData, direccion_consignatario: e.target.value.toUpperCase() })}
+                        onChange={e => setFormData({ ...formData, direccion_consignatario: safeToUpperCase(e.target.value) })}
                         placeholder="DIRECCIÓN COMPLETA..."
                         className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
@@ -331,7 +332,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">Notify (BL)</label>
                       <input
                         value={formData.notify_bl}
-                        onChange={e => setFormData({ ...formData, notify_bl: e.target.value.toUpperCase() })}
+                        onChange={e => setFormData({ ...formData, notify_bl: safeToUpperCase(e.target.value) })}
                         placeholder="NOMBRE DEL NOTIFY PARTY..."
                         className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm"
                       />
@@ -340,7 +341,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Dirección Notify</label>
                       <textarea
                         value={formData.direccion_notify}
-                        onChange={e => setFormData({ ...formData, direccion_notify: e.target.value.toUpperCase() })}
+                        onChange={e => setFormData({ ...formData, direccion_notify: safeToUpperCase(e.target.value) })}
                         placeholder="DIRECCIÓN DEL NOTIFY PARTY..."
                         className="w-full min-h-[120px] p-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-xs lc-scroll"
                       />
@@ -353,7 +354,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Consignatario</label>
                     <input
                       value={formData.eori_consignatario}
-                      onChange={e => setFormData({ ...formData, eori_consignatario: e.target.value.toUpperCase() })}
+                      onChange={e => setFormData({ ...formData, eori_consignatario: safeToUpperCase(e.target.value) })}
                       placeholder="EORI..."
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
                     />
@@ -362,7 +363,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Notify</label>
                     <input
                       value={formData.eori_notify}
-                      onChange={e => setFormData({ ...formData, eori_notify: e.target.value.toUpperCase() })}
+                      onChange={e => setFormData({ ...formData, eori_notify: safeToUpperCase(e.target.value) })}
                       placeholder="EORI..."
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
                     />
@@ -371,7 +372,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Emisión BL</label>
                     <input
                       value={formData.emision_bl}
-                      onChange={e => setFormData({ ...formData, emision_bl: e.target.value.toUpperCase() })}
+                      onChange={e => setFormData({ ...formData, emision_bl: safeToUpperCase(e.target.value) })}
                       placeholder="EJ: SWB"
                       className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs"
                     />
@@ -398,7 +399,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                          value={formData.fitosanitario.consignatario_fito}
                          onChange={(v: string) => setFormData({
                            ...formData,
-                           fitosanitario: { ...formData.fitosanitario, id: null, consignatario_fito: v.toUpperCase() }
+                           fitosanitario: { ...formData.fitosanitario, id: null, consignatario_fito: safeToUpperCase(v) }
                          })}
                          onSelect={(res: any) => setFormData({
                            ...formData,
@@ -417,7 +418,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         readOnly={!!formData.fitosanitario.id}
                         onChange={e => setFormData({
                           ...formData,
-                          fitosanitario: { ...formData.fitosanitario, direccion_fito: e.target.value.toUpperCase() }
+                          fitosanitario: { ...formData.fitosanitario, direccion_fito: safeToUpperCase(e.target.value) }
                         })}
                         placeholder="DIRECCIÓN PARA EL FITO..."
                         className={cn(
