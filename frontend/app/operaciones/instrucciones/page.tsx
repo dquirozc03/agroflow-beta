@@ -291,7 +291,7 @@ export default function InstruccionesEmbarque() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 {[
                   {
                     label: "Booking",
@@ -313,6 +313,11 @@ export default function InstruccionesEmbarque() {
                     label: "Cultivo",
                     val: lookupData?.cultivo || selectedBooking?.cultivo || "PENDIENTE",
                     icon: Zap
+                  },
+                  {
+                    label: "PO No.",
+                    val: lookupData?.po || "NO APLICA",
+                    icon: FileText
                   }
                 ].map((f, i) => (
                   <div key={i} className="space-y-2">

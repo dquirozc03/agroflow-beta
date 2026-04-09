@@ -61,6 +61,7 @@ class AdminOverrideRequest(BaseModel):
     planta_llenado: Optional[str] = None
     direccion_planta: Optional[str] = None
     fecha_llenado: Optional[str] = None
+    po: Optional[str] = ""
 
 @router.get("/lookup/{booking}")
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
@@ -209,6 +210,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 "destino": cliente_maestro.destino,
                 "consignatario_bl": cliente_maestro.consignatario_bl,
                 "direccion_consignatario": cliente_maestro.direccion_consignatario,
+                "po": pedido.po if pedido and getattr(pedido, 'po', None) else "",
                 "notify_bl": cliente_maestro.notify_bl,
                 "direccion_notify": cliente_maestro.direccion_notify,
                 "fitosanitario": fito_data

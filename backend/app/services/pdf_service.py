@@ -139,6 +139,7 @@ class InstructionPDFService:
             # Observaciones
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
             fob_val = override_data.get("fob", "USD 0.00")
+            po_val = override_data.get("po", "")
             
         else:
             # Lógica automática original (Booking -> DB)
@@ -206,6 +207,14 @@ class InstructionPDFService:
             # Valores fijos default
             embarcador_nombre = "COMPLEJO AGROINDUSTRIAL BETA S.A."
             embarcador_direccion = "CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU"
+
+            # Capturar PO del primer pedido disponible (o consolidado)
+            po_val = ""
+            if pedidos:
+                for p in pedidos:
+                    if p.po and p.po.strip():
+                        po_val = p.po.strip()
+                        break
 
         # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
@@ -296,6 +305,13 @@ class InstructionPDFService:
             [b_p("MOTONAVE"), n_p(pos_nave or "")],
             [b_p("BOOKING No."), b_p(pos_booking or "")],
             [b_p("FREIGHT"), n_p(flete_val)],
+        ]
+
+        # Inserción dinámica de PO si existe
+        if po_val and po_val.strip():
+            t1_data.append([b_p("PURCHASE ORDER (PO) No."), b_p(po_val)])
+
+        t1_data.extend([
             [b_p("EMISION B/L"), n_p("SWB")],
             [b_p("PUERTO EMBARQUE"), n_p(pos_pol)],
             [b_p("ETA"), n_p(eta_str)],
@@ -313,7 +329,8 @@ class InstructionPDFService:
             [b_p("COLD TREAMENT"), b_p(override_data.get('cold_treatment', 'NO') if override_data else "NO")],
             [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
             [b_p("VALOR FOB APROXIMADO"), n_p(fob_val)],
-        ]
+        ])
+
 
         t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD)), ""],
@@ -328,16 +345,31 @@ class InstructionPDFService:
         ]
 
         # Estilo Tablas
-        t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
-        t1.setStyle(TableStyle([
+        # Cálculo de índices dinámicos para los fondos naranjas (Filtros y Cold Treatment)
+        # Buscamos las filas que lleven esos textos para pintar el fondo correctamente
+        idx_filters = -1
+        idx_cold = -1
+        for i, row in enumerate(t1_data):
+            # Obtenemos el texto del Paragraph en la primera columna
+            cell_text = row[0].getPlainText().upper()
+            if "FILTROS" in cell_text: idx_filters = i
+            if "COLD TREAMENT" in cell_text: idx_cold = i
+
+        t1_styles = [
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('BACKGROUND', (0,0), (0,-1), self.COLOR_BG_GRAY),
             ('BACKGROUND', (0,3), (-1,3), self.COLOR_BETA_ORANGE),
             ('BACKGROUND', (0,6), (-1,6), self.COLOR_BETA_ORANGE),
             ('ALIGN', (1,6), (1,6), 'CENTER'),
-            ('BACKGROUND', (0,28), (-1,29), self.COLOR_BETA_ORANGE),
-        ]))
+        ]
+
+        if idx_filters != -1 and idx_cold != -1:
+            t1_styles.append(('BACKGROUND', (0, idx_filters), (-1, idx_cold), self.COLOR_BETA_ORANGE))
+
+        t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
+        t1.setStyle(TableStyle(t1_styles))
+
         elements.append(t1)
         elements.append(Spacer(1, 12))
 
