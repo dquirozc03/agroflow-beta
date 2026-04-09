@@ -88,6 +88,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     # El campo en PedidoComercial es 'orden_beta' y 'cultivo'
     # Nota: Usamos ilike o normalize para mayor seguridad
     pedido = None
+    pedidos = []
     if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
         query_pedidos = db.query(PedidoComercial).filter(
             PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
@@ -95,7 +96,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
             query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
         
-        pedido = query_pedidos.first()
+        pedidos = query_pedidos.all()
+        pedido = pedidos[0] if pedidos else None
 
     if not pedido:
         # Retornar lo básico que tenemos de posicionamiento si no hay match comercial
