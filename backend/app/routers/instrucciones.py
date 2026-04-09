@@ -104,7 +104,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 "maestro": None
             }
     
-        pedido_cliente_clean = pedido.cliente.strip()
+        pedido_cliente_raw = pedido.cliente or ""
+        pedido_cliente_clean = pedido_cliente_raw.strip()
         pedido_pais_clean = pedido.pais.strip() if pedido.pais else ""
         pedido_pod_clean = pedido.pod.strip() if pedido.pod else ""
     
@@ -132,8 +133,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             ).first()
     
         # Prioridad 4: Match Inteligente
-        if not cliente_maestro:
-            clean_excel_name = normalize_client_name(pedido.cliente)
+        if not cliente_maestro and pedido_cliente_raw:
+            clean_excel_name = normalize_client_name(pedido_cliente_raw)
             cliente_maestro = db.query(ClienteIE).filter(
                 (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_excel_name}%")) | 
                 (func.upper(clean_excel_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
@@ -141,7 +142,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             ).first()
     
             if not cliente_maestro:
-                words = [w.replace('(', '').replace(')', '').strip() for w in pedido.cliente.split() if len(w) > 2]
+                words = [w.replace('(', '').replace(')', '').strip() for w in pedido_cliente_raw.split() if len(w) > 2]
                 if len(words) >= 2:
                     fuzzy_query = f"%{words[0]}%{words[1]}%"
                     cliente_maestro = db.query(ClienteIE).filter(
@@ -167,12 +168,12 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "motonave": pos.NAVE or "",
             "naviera": pos.NAVIERA or "",
             "puerto_embarque": pos.POL or "CALLAO",
-            "puerto_destino": pos.POD or (cliente_maestro.destino if cliente_maestro else ""),
+            "puerto_destino": getattr(pos, 'POD', None) or (cliente_maestro.destino if cliente_maestro else ""),
             "eta": pos.ETA.strftime('%d/%m/%Y') if pos.ETA else "",
             "operador_logistico": getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L.",
             "planta_llenado": planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "PLANTA BETA"),
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
-            "cliente_nombre": (cliente_maestro.consignatario_bl or pedido.cliente) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido.cliente if pedido else "POR DEFINIR"),
+            "cliente_nombre": (cliente_maestro.consignatario_bl or pedido_cliente_raw) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido_cliente_raw if pedido_cliente_raw else "POR DEFINIR"),
             "incoterm": pedido.incoterm if pedido else "",
             "cajas": total_cajas,
             "pallets": total_pallets,
