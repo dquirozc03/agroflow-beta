@@ -221,6 +221,7 @@ export default function PackingListCustomizadosPage() {
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<ClienteConfig>(CLIENTES_CONFIG[0]);
   const [clienteDropdownOpen, setClienteDropdownOpen] = useState(false);
+  const [selectedRecibidor, setSelectedRecibidor] = useState<string>("");
 
   // Múltiples archivos para Confirmación
   const [filesConfirmacion, setFilesConfirmacion] = useState<File[]>([]);
@@ -242,6 +243,7 @@ export default function PackingListCustomizadosPage() {
   const handleSelectNave = async (nave: NaveInfo) => {
     setSelectedNave(nave);
     setBookings([]);
+    setSelectedRecibidor("");
     setFilesConfirmacion([]);
     setFileTermografos(null);
     setGenStatus("idle");
@@ -268,6 +270,7 @@ export default function PackingListCustomizadosPage() {
     try {
       const formData = new FormData();
       formData.append("nave", selectedNave.nave);
+      if (selectedRecibidor) formData.append("recibidor", selectedRecibidor);
       // Adjuntar TODOS los archivos de confirmación
       filesConfirmacion.forEach((f) => formData.append("confirmaciones", f));
       if (fileTermografos) formData.append("termografos", fileTermografos);
@@ -339,6 +342,8 @@ export default function PackingListCustomizadosPage() {
         <div className="xl:col-span-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col overflow-hidden h-[600px]">
           <div className="p-5 border-b border-slate-50 space-y-4">
              <div className="flex items-center gap-2"><Package className="h-4 w-4 text-violet-500" /><h2 className="text-xs font-black uppercase tracking-widest text-slate-700">Contenido en Nave</h2></div>
+             
+             {/* Selector de Cliente Principal */}
              <div className="relative">
                 <button onClick={() => setClienteDropdownOpen(!clienteDropdownOpen)} className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl">
                    <div className="flex items-center gap-2.5">
@@ -358,11 +363,43 @@ export default function PackingListCustomizadosPage() {
                   </div>
                 )}
              </div>
+
+             {/* FILTRO POR RECIBIDOR (Dinámico) 🕵️‍♂️ */}
+             {bookings.length > 0 && (
+               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Filtrar por Recibidor</label>
+                 <div className="flex flex-wrap gap-2">
+                    <button 
+                      onClick={() => setSelectedRecibidor("")}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2",
+                        selectedRecibidor === "" ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "bg-white border-slate-100 text-slate-400 hover:border-violet-200"
+                      )}
+                    >
+                      TODOS
+                    </button>
+                    {Array.from(new Set(bookings.map(b => b.consignatario || b.cliente).filter(Boolean))).map((rec) => (
+                      <button 
+                        key={rec as string}
+                        onClick={() => setSelectedRecibidor(rec as string)}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 truncate max-w-[200px]",
+                          selectedRecibidor === rec ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "bg-white border-slate-100 text-slate-400 hover:border-violet-200"
+                        )}
+                      >
+                        {(rec as string).toUpperCase()}
+                      </button>
+                    ))}
+                 </div>
+               </div>
+             )}
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2 lc-scroll">
             {bookings.length === 0 ? (
               <div className="py-20 text-center opacity-20"><Ship className="h-10 w-10 mx-auto text-slate-400" /><p className="text-[10px] font-black uppercase mt-2">Selecciona una nave</p></div>
-            ) : bookings.map((bk) => (
+            ) : bookings
+                .filter(bk => !selectedRecibidor || (bk.consignatario || bk.cliente) === selectedRecibidor)
+                .map((bk) => (
               <div key={bk.booking} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-black text-slate-900">{bk.booking}</p>
@@ -371,6 +408,9 @@ export default function PackingListCustomizadosPage() {
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                    <p className="text-[8px] font-black text-slate-400 uppercase">Orden: <span className="text-slate-700">{bk.orden_beta}</span></p>
                    <p className="text-[8px] font-black text-slate-400 uppercase truncate">Variedad: <span className="text-slate-700">{bk.variedad}</span></p>
+                </div>
+                <div className="mt-2 text-[8px] font-bold text-violet-500 uppercase truncate opacity-70">
+                   REC: {bk.consignatario || bk.cliente || "DESCONOCIDO"}
                 </div>
               </div>
             ))}
@@ -398,7 +438,13 @@ export default function PackingListCustomizadosPage() {
                 />
                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col justify-center items-center text-center opacity-60">
                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Órdenes</p>
-                   <p className="text-2xl font-black text-slate-800">{selectedNave?.bookings?.length || "—"}</p>
+                   <p className="text-2xl font-black text-slate-800">
+                      {selectedNave ? (
+                        selectedRecibidor 
+                          ? bookings.filter(b => (b.consignatario || b.cliente) === selectedRecibidor).length
+                          : bookings.length
+                      ) : "—"}
+                    </p>
                 </div>
              </div>
 

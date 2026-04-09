@@ -224,6 +224,7 @@ async def generate_packing_list_ogl(
     nave: str = Form(...),
     confirmaciones: List[UploadFile] = File(...),
     termografos: Optional[UploadFile] = File(None),
+    recibidor: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -284,6 +285,12 @@ async def generate_packing_list_ogl(
                     ).first()
             
             if not pedido: continue
+
+            # --- FILTRO POR RECIBIDOR (Inge Daniel Rule) 🕵️‍♂️ ---
+            if recibidor and recibidor.strip():
+                ped_recibidor = str(getattr(pedido, "recibidor", "") or "").strip().upper()
+                if ped_recibidor != recibidor.strip().upper():
+                    continue
 
             emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking).first()
             contenedor_fmt = format_container_ogl(emb.contenedor if emb else "")
