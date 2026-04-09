@@ -48,6 +48,7 @@ interface BookingOGL {
   presentacion: string | null;
   pod: string | null;
   consignatario: string | null;
+  recibidor: string | null;
   cliente: string | null;
 }
 
@@ -378,7 +379,7 @@ export default function PackingListCustomizadosPage() {
                     >
                       TODOS
                     </button>
-                    {Array.from(new Set(bookings.map(b => b.consignatario || b.cliente).filter(Boolean))).map((rec) => (
+                    {Array.from(new Set(bookings.map(b => b.recibidor).filter(Boolean))).map((rec) => (
                       <button 
                         key={rec as string}
                         onClick={() => setSelectedRecibidor(rec as string)}
@@ -398,7 +399,7 @@ export default function PackingListCustomizadosPage() {
             {bookings.length === 0 ? (
               <div className="py-20 text-center opacity-20"><Ship className="h-10 w-10 mx-auto text-slate-400" /><p className="text-[10px] font-black uppercase mt-2">Selecciona una nave</p></div>
             ) : bookings
-                .filter(bk => !selectedRecibidor || (bk.consignatario || bk.cliente) === selectedRecibidor)
+                .filter(bk => !selectedRecibidor || bk.recibidor === selectedRecibidor)
                 .map((bk) => (
               <div key={bk.booking} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                 <div className="flex items-center justify-between mb-2">
@@ -410,7 +411,7 @@ export default function PackingListCustomizadosPage() {
                    <p className="text-[8px] font-black text-slate-400 uppercase truncate">Variedad: <span className="text-slate-700">{bk.variedad}</span></p>
                 </div>
                 <div className="mt-2 text-[8px] font-bold text-violet-500 uppercase truncate opacity-70">
-                   REC: {bk.consignatario || bk.cliente || "DESCONOCIDO"}
+                   RECIBIDOR: {bk.recibidor || "DESCONOCIDO"}
                 </div>
               </div>
             ))}
@@ -441,7 +442,7 @@ export default function PackingListCustomizadosPage() {
                    <p className="text-2xl font-black text-slate-800">
                       {selectedNave ? (
                         selectedRecibidor 
-                          ? bookings.filter(b => (b.consignatario || b.cliente) === selectedRecibidor).length
+                          ? bookings.filter(b => b.recibidor === selectedRecibidor).length
                           : bookings.length
                       ) : "—"}
                     </p>
