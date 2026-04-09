@@ -335,48 +335,39 @@ export default function ClientesIEPage() {
             </table>
           </div>
         )}
-      </div>
 
-      {/* Paginación */}
-      {!isLoading && filtered.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-          <p className="text-xs text-slate-500 font-medium">
-            Mostrando <span className="font-bold text-slate-800">{indexOfFirstItem + 1}</span> a <span className="font-bold text-slate-800">{Math.min(indexOfLastItem, filtered.length)}</span> de <span className="font-bold text-slate-800">{filtered.length}</span> entradas
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-slate-50 disabled:hover:text-slate-500"
-            >
-              Anterior
-            </button>
-            <div className="flex items-center gap-1">
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={cn(
-                    "w-8 h-8 rounded-xl text-xs font-bold transition-all",
-                    currentPage === i + 1
-                      ? "bg-[#022c22] text-white shadow-md shadow-emerald-900/10"
-                      : "text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
-                  )}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 rounded-xl hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-slate-50 disabled:hover:text-slate-500"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
+        {/* Paginación Profesional AgroFlow */}
+        {!isLoading && totalPages > 1 && (
+           <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                 <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{currentPage} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                   Mostrando {currentItems.length} de {filtered.length} clientes
+                 </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                 <button 
+                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                   disabled={currentPage === 1}
+                   className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Anterior
+                 </button>
+                 <button 
+                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                   disabled={currentPage === totalPages}
+                   className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                   Siguiente
+                 </button>
+              </div>
+           </div>
+        )}
+      </div>
     </div>
   );
 }
