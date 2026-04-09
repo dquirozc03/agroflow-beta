@@ -76,7 +76,8 @@ class LogiCaptureUpdateRequest(BaseModel):
     contenedor: Optional[str] = None
     status: Optional[str] = None
     codigoSAP: Optional[str] = None
-    partidaRegistral: Optional[str] = None
+    planta: Optional[str] = None
+    cultivo: Optional[str] = None
 
 class Anexo1Request(BaseModel):
     peso_bruto: float
