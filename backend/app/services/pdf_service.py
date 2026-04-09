@@ -86,10 +86,21 @@ class InstructionPDFService:
         
         return cliente
 
+    def _format_multiline(self, text: str) -> str:
+        if not text: return ""
+        return text.replace('\n', '<br/>')
+
     def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = "", override_data: Optional[dict] = None):
         # 1. Obtencion de datos (Modificado para soportar OVERRIDE de Admin 💎)
         if override_data:
             # Si hay override, usamos los datos inyectados manualmente
+            override_data['direccion_notify'] = self._format_multiline(override_data.get('direccion_notify', ''))
+            override_data['consignatario_fito'] = self._format_multiline(override_data.get('consignatario_fito', ''))
+            override_data['direccion_fito'] = self._format_multiline(override_data.get('direccion_fito', ''))
+            override_data['observaciones'] = self._format_multiline(override_data.get('observaciones', '...'))
+            override_data['direccion_consignatario'] = self._format_multiline(override_data.get('direccion_consignatario', ''))
+            override_data['notify_bl'] = self._format_multiline(override_data.get('notify_bl', ''))
+            
             pos_booking = override_data.get("booking")
             pos_orden = override_data.get("orden_beta")
             pos_cultivo = override_data.get("cultivo")

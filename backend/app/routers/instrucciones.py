@@ -249,9 +249,14 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
             observaciones=req.observaciones
         )
         
-        filename = f"IE_{req.booking}.pdf"
-        if pdf_data.get("orden_beta"):
-            filename = f"IE_{pdf_data['orden_beta']}.pdf"
+        orden_beta = pdf_data.get("orden_beta")
+        # Asegurarnos de que no esté en blanco, falso, y priorizarlo
+        if orden_beta and str(orden_beta).strip() and str(orden_beta).upper() != "PENDIENTE":
+            filename = f"IE_{orden_beta}.pdf"
+        elif str(orden_beta).strip().upper() == "PENDIENTE":
+            filename = f"IE_PENDIENTE.pdf"
+        else:
+            filename = f"IE_{req.booking}.pdf"
             
         return StreamingResponse(
             io.BytesIO(pdf_data["pdf_bytes"]),
@@ -275,7 +280,7 @@ def generate_pdf_override(req: AdminOverrideRequest, db: Session = Depends(get_d
             override_data=req.dict()
         )
         
-        filename = f"IE_CUSTOM_{req.booking}.pdf"
+        filename = f"IE_{req.orden_beta}.pdf"
         return StreamingResponse(
             io.BytesIO(pdf_data["pdf_bytes"]),
             media_type="application/pdf",

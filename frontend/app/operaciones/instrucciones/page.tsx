@@ -184,10 +184,10 @@ export default function InstruccionesEmbarque() {
       } else {
         // Si no está en el buscador master todavía, al menos mostramos lo del mock
         setLookupData({
-          booking: b.id,
-          cliente_nombre: b.cliente,
-          cultivo: b.cultivo,
-          orden_beta: "PENDIENTE",
+          booking: bookingId,
+          cliente_nombre: b.CLIENTE || b.cliente || "POR DEFINIR",
+          cultivo: b.CULTIVO || b.cultivo || "PENDIENTE",
+          orden_beta: b.ORDEN_BETA || b.orden_beta || "PENDIENTE",
           warning: "BOOKING_NO_ENCONTRADO_EN_SISTEMA"
         });
       }
@@ -266,7 +266,7 @@ export default function InstruccionesEmbarque() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `IE_CUSTOM_${overrideForm.booking}.pdf`;
+        a.download = `IE_${overrideForm.orden_beta}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -437,7 +437,9 @@ export default function InstruccionesEmbarque() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
                       {f.label}
                     </label>
-                    <div className={cn(
+                    <div 
+                      title={f.val}
+                      className={cn(
                       "bg-slate-50/80 border rounded-2xl h-14 px-5 flex items-center gap-3 transition-all overflow-hidden relative group",
                       f.isWarning ? "border-rose-500 bg-rose-50/30 ring-4 ring-rose-500/5" : "border-slate-100 opacity-80"
                     )}>
