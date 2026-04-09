@@ -309,7 +309,7 @@ class InstructionPDFService:
 
         # Inserción dinámica de PO si existe
         if po_val and po_val.strip():
-            t1_data.append([b_p("PURCHASE ORDER (PO) No."), b_p(po_val)])
+            t1_data.append([b_p("PO"), b_p(po_val)])
 
         t1_data.extend([
             [b_p("EMISION B/L"), n_p("SWB")],

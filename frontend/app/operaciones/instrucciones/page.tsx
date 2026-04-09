@@ -315,7 +315,7 @@ export default function InstruccionesEmbarque() {
                     icon: Zap
                   },
                   {
-                    label: "PO No.",
+                    label: "PO",
                     val: lookupData?.po || "NO APLICA",
                     icon: FileText
                   }
