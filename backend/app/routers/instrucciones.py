@@ -253,7 +253,7 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
         # Asegurarnos de que no esté en blanco, falso, y priorizarlo
         if orden_beta and str(orden_beta).strip() and str(orden_beta).upper() != "PENDIENTE":
             filename = f"IE_{orden_beta}.pdf"
-        elif str(orden_beta).strip().upper() == "PENDIENTE":
+        elif not orden_beta or str(orden_beta).strip().upper() == "PENDIENTE":
             filename = f"IE_PENDIENTE.pdf"
         else:
             filename = f"IE_{req.booking}.pdf"
@@ -261,7 +261,10 @@ def generate_pdf_ie(req: GeneratePDFRequest, db: Session = Depends(get_db)):
         return StreamingResponse(
             io.BytesIO(pdf_data["pdf_bytes"]),
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
         )
     except Exception as e:
         logger.error(f"Error crítico en generación de PDF: {str(e)}")
@@ -284,7 +287,10 @@ def generate_pdf_override(req: AdminOverrideRequest, db: Session = Depends(get_d
         return StreamingResponse(
             io.BytesIO(pdf_data["pdf_bytes"]),
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
         )
     except Exception as e:
         logger.error(f"Error en PDF Override: {str(e)}")
