@@ -9,7 +9,7 @@ from app.services.pdf_service import instruction_pdf_service
 from pydantic import BaseModel
 from sqlalchemy import func
 from app.utils.logging import logger
-from app.utils.formatters import normalize_client_name
+from app.utils.formatters import normalize_client_name, normalize_country_name
 import traceback
 import re
 import io
@@ -107,7 +107,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     
         pedido_cliente_raw = pedido.cliente or ""
         pedido_cliente_clean = pedido_cliente_raw.strip()
-        pedido_pais_clean = pedido.pais.strip() if pedido.pais else ""
+        pedido_pais_clean = normalize_country_name(pedido.pais)
         pedido_pod_clean = pedido.pod.strip() if pedido.pod else ""
     
         # Prioridad 1: Match por Nombre + País + Puerto de Destino (POD)

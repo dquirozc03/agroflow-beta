@@ -56,3 +56,35 @@ def normalize_client_name(value: str) -> str:
     # 4. Colapsar espacios
     val = " ".join(val.split())
     return val
+
+def normalize_country_name(value: str) -> str:
+    """Normaliza nombres de países para match inteligente (Westfalia Match 💎)"""
+    if not value: return ""
+    val = value.strip().upper()
+    
+    synonyms = {
+        "USA": "ESTADOS UNIDOS",
+        "U.S.A.": "ESTADOS UNIDOS",
+        "EEUU": "ESTADOS UNIDOS",
+        "EE.UU": "ESTADOS UNIDOS",
+        "EE.UU.": "ESTADOS UNIDOS",
+        "UNITED STATES": "ESTADOS UNIDOS",
+        "UNITED STATES OF AMERICA": "ESTADOS UNIDOS",
+        "UK": "REINO UNIDO",
+        "U.K.": "REINO UNIDO",
+        "UNITED KINGDOM": "REINO UNIDO",
+        "CANADA": "CANADÁ",
+        "CANADÁ": "CANADÁ",
+        "HOLLAND": "PAISES BAJOS",
+        "NETHERLANDS": "PAISES BAJOS",
+        "THE NETHERLANDS": "PAISES BAJOS",
+        "SPAIN": "ESPAÑA",
+        "ESPAA": "ESPAÑA",
+        "TURKEY": "TURQUIA",
+        "TURKIYE": "TURQUIA",
+        "UAE": "EMIRATOS ARABES UNIDOS",
+        "U.A.E.": "EMIRATOS ARABES UNIDOS",
+        "EMIRATOS ARABES": "EMIRATOS ARABES UNIDOS"
+    }
+    
+    return synonyms.get(val, val)

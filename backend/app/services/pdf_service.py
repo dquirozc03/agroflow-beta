@@ -11,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.utils.formatters import normalize_client_name
+from app.utils.formatters import normalize_client_name, normalize_country_name
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, Planta
@@ -40,7 +40,7 @@ class InstructionPDFService:
         """
         from sqlalchemy import func
         
-        pais_val = pais.strip() if pais else ""
+        pais_val = normalize_country_name(pais)
         pod_val = pod.strip() if pod else ""
         cliente_clean_val = cliente_nombre.strip()
 
@@ -84,6 +84,8 @@ class InstructionPDFService:
                     ClienteIE.estado == "ACTIVO"
                 ).first()
         
+        return cliente
+
         return cliente
 
     def _format_multiline(self, text: str) -> str:
