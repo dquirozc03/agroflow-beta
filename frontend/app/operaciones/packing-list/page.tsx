@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -662,8 +662,8 @@ export default function PackingListCustomizadosPage() {
 
        {/* MODAL DE ANULACIÓN */}
        {itemAnular && (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
                 <div className="p-6 bg-rose-50 border-b border-rose-100 flex justify-between items-start">
                    <div className="flex gap-4">
                       <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
@@ -683,7 +683,7 @@ export default function PackingListCustomizadosPage() {
                       </p>
                    </div>
                    
-                   <div className="space-y-2 relative">
+                   <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo de Anulación</label>
                       
                       {/* DROPDOWN CUSTOMIZADO */}
@@ -697,7 +697,7 @@ export default function PackingListCustomizadosPage() {
                         </button>
 
                         {isMotivoDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2 max-h-56 overflow-y-auto rounded-2xl">
                              {MOTIVOS_OPCIONES.map((opt) => (
                                <button 
                                  key={opt}
@@ -734,7 +734,7 @@ export default function PackingListCustomizadosPage() {
                       </div>
                    )}
                 </div>
-                <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50/50">
+                <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50/50 rounded-b-3xl">
                    <button onClick={() => setItemAnular(null)} className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-200/50 transition-all">Cancelar</button>
                    <button 
                       onClick={handleAnular}

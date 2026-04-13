@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -145,10 +145,10 @@ export default function RolesPage() {
       
       {/* MODAL DE EDICIÓN/CREACIÓN */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-         <DialogContent className="max-w-xl bg-white border-0 shadow-2xl rounded-[2.5rem] overflow-hidden p-0">
-            <div className="h-2 bg-indigo-500" />
-            <DialogHeader className="px-10 pt-10 pb-4">
-               <DialogTitle className="text-3xl font-black text-[#022c22] uppercase tracking-tighter">
+         <DialogContent className="max-w-lg bg-white border-0 shadow-2xl rounded-[2.5rem] p-0 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="h-2 bg-emerald-500 shrink-0" />
+            <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
+               <DialogTitle className="text-2xl font-black text-[#022c22] uppercase tracking-tighter">
                   {editingRol ? "Modificar Rol Maestro" : "Nuevo Perfil Operativo"}
                </DialogTitle>
                <DialogDescription className="sr-only">
@@ -156,22 +156,22 @@ export default function RolesPage() {
                </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-6">
-               <div className="space-y-4">
-                  <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5 overflow-y-auto flex-1">
+               <div className="space-y-3">
+                  <div className="space-y-1.5">
                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Identificador del Rol</Label>
                      <Input 
-                        className="h-14 bg-slate-50 border-slate-100 rounded-2xl font-bold uppercase focus:ring-indigo-500/20" 
+                        className="h-12 bg-slate-50 border-slate-100 rounded-2xl font-bold uppercase focus:ring-emerald-500/20 focus:border-emerald-500" 
                         value={formData.nombre_rol}
                         onChange={e => setFormData({...formData, nombre_rol: e.target.value.toUpperCase()})}
-                        placeholder="EJ: SUPERVISOR_PLANTA"
+                        placeholder="EJ: SUPERVISOR_DOCUMENTACION"
                         required
                      />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Descripción Funcional</Label>
                      <Input 
-                        className="h-14 bg-slate-50 border-slate-100 rounded-2xl focus:ring-indigo-500/20" 
+                        className="h-12 bg-slate-50 border-slate-100 rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500" 
                         value={formData.descripcion}
                         onChange={e => setFormData({...formData, descripcion: e.target.value})}
                         placeholder="EJ: Acceso a reportes y validación de campo."
@@ -184,7 +184,7 @@ export default function RolesPage() {
                   
                   {/* LOGICAPTURE */}
                   <div className="space-y-2">
-                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">LogiCapture</p>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50">LogiCapture</p>
                      <div className="grid grid-cols-1 gap-2">
                         {[
                            { id: 'lc_registro', label: 'Formulario Registro', icon: Scan },
@@ -192,7 +192,7 @@ export default function RolesPage() {
                         ].map(mod => (
                            <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                               <div className="flex items-center gap-3">
-                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <mod.icon className="h-4 w-4 text-emerald-600" />
                                  <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
                               </div>
                               <Switch 
@@ -209,7 +209,7 @@ export default function RolesPage() {
 
                   {/* OPERACIONES */}
                   <div className="space-y-2">
-                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">Operaciones</p>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50">Operaciones</p>
                      <div className="grid grid-cols-1 gap-2">
                         {[
                            { id: "op_instrucciones", label: "Instrucciones de Embarque", icon: FileBarChart },
@@ -217,7 +217,7 @@ export default function RolesPage() {
                         ].map(mod => (
                            <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                               <div className="flex items-center gap-3">
-                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <mod.icon className="h-4 w-4 text-emerald-600" />
                                  <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
                               </div>
                               <Switch 
@@ -234,7 +234,7 @@ export default function RolesPage() {
 
                   {/* DATOS MAESTROS */}
                   <div className="space-y-2">
-                     <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500/50">Datos Maestros</p>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50">Datos Maestros</p>
                      <div className="grid grid-cols-1 gap-2">
                         {[
                            { id: 'm_bulk', label: 'Carga Masiva', icon: FileUp },
@@ -246,7 +246,7 @@ export default function RolesPage() {
                         ].map(mod => (
                            <div key={mod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                               <div className="flex items-center gap-3">
-                                 <mod.icon className="h-4 w-4 text-indigo-600" />
+                                 <mod.icon className="h-4 w-4 text-emerald-600" />
                                  <span className="text-[10px] font-bold text-slate-700 uppercase">{mod.label}</span>
                               </div>
                               <Switch 
@@ -287,7 +287,7 @@ export default function RolesPage() {
                   </div>
                </div>
 
-               <Button type="submit" className="w-full h-14 bg-indigo-600 hover:bg-[#022c22] text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-900/20 transition-all">
+               <Button type="submit" className="w-full h-12 bg-[#022c22] hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-900/20 transition-all shrink-0">
                   <Save className="h-5 w-5 mr-3" />
                   {editingRol ? "Guardar Cambios Maestros" : "Crear Rol en el Radar"}
                </Button>
@@ -299,7 +299,7 @@ export default function RolesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-             <ShieldCheck className="h-8 w-8 text-indigo-600" />
+             <ShieldCheck className="h-8 w-8 text-emerald-600" />
              <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22] uppercase">
                 Maestro de Roles
              </h1>
@@ -311,13 +311,13 @@ export default function RolesPage() {
         <div className="flex items-center gap-3">
            <button 
              onClick={fetchRoles}
-             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:border-indigo-100 transition-all shadow-sm group"
+             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm group"
            >
               <RefreshCw className={cn("h-5 w-5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} />
            </button>
            <button 
              onClick={handleCreate}
-             className="h-12 px-8 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-3 hover:bg-[#022c22] transition-all shadow-xl shadow-indigo-500/20 active:scale-95">
+             className="h-12 px-8 bg-[#022c22] text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/20 active:scale-95">
               <Plus className="h-4 w-4" />
               Nuevo Rol
            </button>
@@ -332,12 +332,12 @@ export default function RolesPage() {
           ))
         ) : (
           roles.map(r => (
-            <div key={r.id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-2xl hover:shadow-indigo-900/10 transition-all duration-500 overflow-hidden">
-               <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-50/50 rounded-bl-[4rem] group-hover:bg-indigo-500 transition-all duration-500 -z-0" />
+            <div key={r.id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-500 overflow-hidden">
+               <div className="absolute top-0 right-0 h-24 w-24 bg-emerald-50/50 rounded-bl-[4rem] group-hover:bg-emerald-500 transition-all duration-500 -z-0" />
                
                <div className="relative z-10 space-y-6">
                   <div className="flex justify-between items-start">
-                     <div className="h-14 w-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:bg-white transition-all">
+                     <div className="h-14 w-14 bg-indigo-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-white transition-all">
                         <Settings2 className="h-7 w-7" />
                      </div>
                      <button 
