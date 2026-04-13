@@ -21,7 +21,10 @@ import {
   Inbox,
   Lock,
   ChevronDown,
-  Files
+  Files,
+  History,
+  FileX,
+  FileWarning
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -68,6 +71,16 @@ const CLIENTES_CONFIG: ClienteConfig[] = [
   { id: "CLIENTE_2", label: "Cliente 2", color: "violet", bgColor: "bg-violet-400", endpoint: null, available: false },
   { id: "CLIENTE_3", label: "Cliente 3", color: "blue", bgColor: "bg-blue-400", endpoint: null, available: false },
 ];
+
+interface EmisionHistorial {
+  id: number;
+  fecha: string;
+  nave: string;
+  estado: string;
+  archivo: string;
+  motivo_anulacion: string | null;
+  bookings: string[];
+}
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT: Multi-file Dropzone
@@ -229,6 +242,14 @@ export default function PackingListCustomizadosPage() {
   const [fileTermografos, setFileTermografos] = useState<File | null>(null);
   const [genStatus, setGenStatus] = useState<GenerationStatus>("idle");
 
+  const [activeTab, setActiveTab] = useState<"generar" | "historial">("generar");
+  const [historial, setHistorial] = useState<EmisionHistorial[]>([]);
+  const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
+  const [isAnulando, setIsAnulando] = useState(false);
+  const [itemAnular, setItemAnular] = useState<EmisionHistorial | null>(null);
+  const [motivoAnulacion, setMotivoAnulacion] = useState("Error en datos de Excel");
+  const [otroMotivo, setOtroMotivo] = useState("");
+
   const fetchNaves = async () => {
     setIsLoadingNaves(true);
     try {
@@ -289,12 +310,68 @@ export default function PackingListCustomizadosPage() {
         document.body.appendChild(a); a.click();
         window.URL.revokeObjectURL(url); document.body.removeChild(a);
         setGenStatus("success");
+        // Refrescar naves para actualizar bloqueos
+        fetchNaves();
+        setSelectedNave(null);
+        setBookings([]);
+        setFilesConfirmacion([]);
+        setFileTermografos(null);
       } else {
         const err = await resp.json();
         toast.error(`Error: ${err.detail}`);
         setGenStatus("error");
       }
     } catch { toast.error("Error al generar"); setGenStatus("error"); }
+  };
+
+  const fetchHistorial = async () => {
+    setIsLoadingHistorial(true);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/historial`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setHistorial(data.items);
+      }
+    } catch { toast.error("Error al cargar historial"); }
+    finally { setIsLoadingHistorial(false); }
+  };
+
+  useEffect(() => {
+    if (activeTab === "historial") {
+      fetchHistorial();
+    }
+  }, [activeTab]);
+
+  const handleAnular = async () => {
+    if (!itemAnular) return;
+    const motivoFinal = motivoAnulacion === "Otro" ? otroMotivo : motivoAnulacion;
+    if (!motivoFinal.trim()) {
+      toast.error("Por favor ingresa un motivo");
+      return;
+    }
+
+    setIsAnulando(true);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/${itemAnular.id}/anular`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ motivo: motivoFinal })
+      });
+
+      if (resp.ok) {
+        toast.success("Packing List anulado exitosamente");
+        setItemAnular(null);
+        fetchHistorial();
+        fetchNaves(); // Refresh naves list now that orders are free
+      } else {
+        const err = await resp.json();
+        toast.error(`Error: ${err.detail}`);
+      }
+    } catch {
+      toast.error("Error de conexión al anular");
+    } finally {
+      setIsAnulando(false);
+    }
   };
 
   const filteredNaves = naves.filter((n) => n.nave.toLowerCase().includes(searchNave.toLowerCase()));
@@ -312,13 +389,23 @@ export default function PackingListCustomizadosPage() {
             <p className="text-sm text-emerald-100/40 font-medium max-w-md">Apila múltiples confirmaciones en un solo documento consolidado por nave.</p>
           </div>
           <div className="hidden lg:block text-right">
-             <div className="h-10 w-10 bg-emerald-500/20 rounded-2xl flex items-center justify-center ml-auto mb-2"><Ship className="h-5 w-5 text-emerald-400" /></div>
-             <p className="text-xs font-black text-white/40 uppercase tracking-widest">{selectedNave ? "Nave Seleccionada" : "Esperando selección"}</p>
-             <p className="text-2xl font-black text-white truncate max-w-[200px]">{selectedNave?.nave || "—"}</p>
+             <div className="flex bg-emerald-900/50 rounded-2xl p-1 mb-2">
+                <button onClick={() => setActiveTab("generar")} className={cn("px-4 py-2 rounded-xl text-xs font-black transition-all", activeTab === "generar" ? "bg-emerald-500 text-white shadow-lg" : "text-emerald-300/70 hover:text-white")}>Generar Nuevo</button>
+                <button onClick={() => setActiveTab("historial")} className={cn("px-4 py-2 rounded-xl text-xs font-black transition-all", activeTab === "historial" ? "bg-emerald-500 text-white shadow-lg" : "text-emerald-300/70 hover:text-white")}>Historial de Emisiones</button>
+             </div>
+             {activeTab === "generar" ? (
+               <>
+                 <p className="text-xs font-black text-white/40 uppercase tracking-widest">{selectedNave ? "Nave Seleccionada" : "Esperando selección"}</p>
+                 <p className="text-2xl font-black text-white truncate max-w-[200px] inline-block">{selectedNave?.nave || "—"}</p>
+               </>
+             ) : (
+               <p className="text-2xl font-black text-white truncate max-w-[200px] inline-block mt-4">Auditoría OGL</p>
+             )}
           </div>
         </div>
       </div>
 
+      {activeTab === "generar" ? (
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* ── COL 1: Naves ── */}
         <div className="xl:col-span-3 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col overflow-hidden h-[600px]">
@@ -460,19 +547,156 @@ export default function PackingListCustomizadosPage() {
                 {genStatus === "loading" ? <><Loader2 className="h-5 w-5 animate-spin"/>Procesando...</> : <><Download className="h-5 w-5" />Generar Packing List Consolidado</>}
              </button>
 
-             <div className="space-y-1.5 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <div className="flex items-center gap-2">
-                   {selectedNave ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <div className="h-4 w-4 rounded-full border-2 border-slate-200" />}
-                   <p className={cn("text-[10px] font-black uppercase", selectedNave ? "text-emerald-600" : "text-slate-400")}>Nave: {selectedNave?.nave || "Pendiente"}</p>
+              </div>
+           </div>
+         </div>
+       </div>
+       ) : (
+         /* ── HISTORIAL TAB ── */
+         <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-8 pb-12 animate-in fade-in slide-in-from-bottom-4">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-indigo-50 rounded-2xl flex items-center justify-center"><History className="h-5 w-5 text-indigo-500" /></div>
+                  <div>
+                     <h2 className="text-xl font-black font-['Outfit'] text-slate-800 tracking-tight">Historial de Emisiones</h2>
+                     <p className="text-xs text-slate-500 font-medium">Registro de Packing Lists generados y anulaciones</p>
+                  </div>
+               </div>
+               <button onClick={fetchHistorial} className="h-10 px-4 rounded-xl font-black bg-slate-50 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all text-xs tracking-widest uppercase">
+                  <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingHistorial && "animate-spin")} /> Refrescar
+               </button>
+            </div>
+
+            <div className="overflow-x-auto">
+               <table className="w-full text-left text-sm whitespace-nowrap border-spacing-y-2 border-separate">
+                 <thead>
+                   <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                     <th className="pb-3 px-4"># ID</th>
+                     <th className="pb-3 px-4">Fecha & Hora</th>
+                     <th className="pb-3 px-4">Nave Asignada</th>
+                     <th className="pb-3 px-4">Archivo</th>
+                     <th className="pb-3 px-4 text-center">Órdenes</th>
+                     <th className="pb-3 px-4 text-center">Estado</th>
+                     <th className="pb-3 px-4 text-right">Acción</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {historial.map((h) => (
+                     <tr key={h.id} className={cn("bg-slate-50/50 hover:bg-slate-50 transition-colors group", h.estado === "ANULADO" ? "opacity-60" : "")}>
+                       <td className="p-4 rounded-l-2xl font-black text-slate-800">PL-{String(h.id).padStart(4, '0')}</td>
+                       <td className="p-4 text-slate-600 font-medium">
+                          {new Date(h.fecha).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                       </td>
+                       <td className="p-4 font-black tracking-tight text-slate-700">{h.nave}</td>
+                       <td className="p-4">
+                           <div className="flex items-center gap-2 max-w-[200px]">
+                              <FileSpreadsheet className={cn("h-4 w-4 shrink-0", h.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-400")} />
+                              <p className="font-bold text-xs text-slate-500 truncate">{h.archivo}</p>
+                           </div>
+                       </td>
+                       <td className="p-4 text-center">
+                          <span className="font-black px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 text-xs">{h.bookings.length}</span>
+                       </td>
+                       <td className="p-4 text-center">
+                          {h.estado === "ACTIVO" ? (
+                             <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest">Activo</span>
+                          ) : (
+                             <div className="flex flex-col items-center gap-1">
+                               <span className="px-3 py-1 bg-rose-100 text-rose-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest">Anulado</span>
+                               {h.motivo_anulacion && <span className="text-[9px] font-bold text-slate-400 max-w-[100px] truncate" title={h.motivo_anulacion}>"{h.motivo_anulacion}"</span>}
+                             </div>
+                          )}
+                       </td>
+                       <td className="p-4 rounded-r-2xl text-right">
+                          {h.estado === "ACTIVO" && (
+                             <button
+                               onClick={() => setItemAnular(h)}
+                               className="px-3 py-1.5 bg-white border border-slate-200 hover:border-rose-200 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl font-bold text-xs transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto"
+                             >
+                                <FileX className="h-3 w-3" /> Anular
+                             </button>
+                          )}
+                       </td>
+                     </tr>
+                   ))}
+                   {historial.length === 0 && !isLoadingHistorial && (
+                     <tr>
+                        <td colSpan={7} className="p-16 text-center text-slate-400">
+                           <History className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                           <p className="font-black text-sm">No hay registros de generación en el historial</p>
+                        </td>
+                     </tr>
+                   )}
+                 </tbody>
+               </table>
+            </div>
+         </div>
+       )}
+
+       {/* MODAL DE ANULACIÓN */}
+       {itemAnular && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-6 bg-rose-50 border-b border-rose-100 flex justify-between items-start">
+                   <div className="flex gap-4">
+                      <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                         <FileWarning className="h-6 w-6 text-rose-500" />
+                      </div>
+                      <div>
+                         <h3 className="text-xl font-black text-rose-950 font-['Outfit']">Anular Packing List</h3>
+                         <p className="text-xs font-bold text-rose-600/70 mt-1 uppercase tracking-widest">{itemAnular.nave}</p>
+                      </div>
+                   </div>
+                   <button onClick={() => setItemAnular(null)} className="text-rose-400 hover:text-rose-600"><X className="h-5 w-5" /></button>
                 </div>
-                <div className="flex items-center gap-2">
-                   {filesConfirmacion.length > 0 ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <div className="h-4 w-4 rounded-full border-2 border-slate-200" />}
-                   <p className={cn("text-[10px] font-black uppercase", filesConfirmacion.length > 0 ? "text-emerald-600" : "text-slate-400")}>{filesConfirmacion.length} Archivos de confirmación</p>
+                <div className="p-6 space-y-6">
+                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <p className="text-[11px] font-bold text-slate-600 leading-relaxed">
+                         Al anular este documento, las <span className="font-black text-slate-800">{itemAnular.bookings.length} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
+                      </p>
+                   </div>
+                   
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo de Anulación</label>
+                      <select 
+                         value={motivoAnulacion}
+                         onChange={(e) => setMotivoAnulacion(e.target.value)}
+                         className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all appearance-none"
+                      >
+                         <option value="Error en datos de Excel">Error en datos de Excel de Confirmación</option>
+                         <option value="Cambios directos de Nave (Rolled)">Cambio de Nave por Naviera</option>
+                         <option value="Reproceso interno Beta">Reproceso Interno de Beta</option>
+                         <option value="Falta de Termógrafos correctos">Asignación errónea de termógrafos</option>
+                         <option value="Otro">Otro (Especificar)</option>
+                      </select>
+                   </div>
+
+                   {motivoAnulacion === "Otro" && (
+                      <div className="space-y-2 animate-in slide-in-from-top-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Especificar Motivo</label>
+                         <input 
+                            type="text" 
+                            placeholder="Escribe el motivo..."
+                            value={otroMotivo}
+                            onChange={(e) => setOtroMotivo(e.target.value)}
+                            className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                         />
+                      </div>
+                   )}
+                </div>
+                <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50/50">
+                   <button onClick={() => setItemAnular(null)} className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-200/50 transition-all">Cancelar</button>
+                   <button 
+                      onClick={handleAnular}
+                      disabled={isAnulando || (motivoAnulacion === "Otro" && !otroMotivo.trim())}
+                      className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                   >
+                      {isAnulando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Anulación"}
+                   </button>
                 </div>
              </div>
           </div>
-        </div>
-      </div>
+       )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ from app.utils.logging import logger
 from app.models.pedido import PedidoComercial
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque, ReporteEmbarques
+from app.models.packing_list import EmisionPackingList, DetalleEmisionPackingList
 from pydantic import BaseModel
 import pandas as pd
 import openpyxl
@@ -136,11 +137,28 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                                 bookings_ogl_reales.append(b)
         
         if bookings_ogl_reales:
-            result.append(NaveInfo(
-                nave=nave,
-                fuente="consolidada",
-                bookings=bookings_ogl_reales
-            ))
+            # Check if all bookings for this nave are already locked
+            active_locks = set()
+            for bb in bookings_ogl_reales:
+                is_locked = db.query(DetalleEmisionPackingList).join(
+                    EmisionPackingList
+                ).filter(
+                    DetalleEmisionPackingList.booking == bb,
+                    EmisionPackingList.estado == "ACTIVO"
+                ).first()
+                if is_locked:
+                    active_locks.add(bb)
+
+            # Opcional: mostrar solo si hay al menos 1 NO bloqueado. O devolver info del estatus.
+            # Según regla: se filtran los que YA tienen packing list activo
+            bookings_disponibles = [b for b in bookings_ogl_reales if b not in active_locks]
+            
+            if bookings_disponibles:
+                result.append(NaveInfo(
+                    nave=nave,
+                    fuente="consolidada",
+                    bookings=bookings_disponibles
+                ))
 
     return result
 
@@ -188,6 +206,16 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
         ).first()
 
         if not pedido: continue
+
+        # VERIFICAR BLOQUEO
+        is_locked = db.query(DetalleEmisionPackingList).join(EmisionPackingList).filter(
+            DetalleEmisionPackingList.booking == booking,
+            EmisionPackingList.estado == "ACTIVO"
+        ).first()
+
+        if is_locked: 
+            # Excluir de la lista si está bloqueado por otro PL
+            continue
 
         emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking).first()
 
@@ -658,8 +686,32 @@ async def generate_packing_list_ogl(
         wb.save(output)
         output.seek(0)
         
-        # Formato: Packing List_OGL_MAESTRO_Nombre de nave_WK161.xlsx
         filename = f"Packing List_OGL_MAESTRO_{nave_clean.replace(' ','_')}_{pl_id}.xlsx"
+
+        # --- REGISTRAR EN EL HISTORIAL Y BLOQUEAR ---
+        try:
+            nueva_emision = EmisionPackingList(
+                usuario="Sistema/Automático", # Podría pasarse por JWT después
+                nave=nave_clean,
+                estado="ACTIVO",
+                archivo_nombre=filename
+            )
+            db.add(nueva_emision)
+            db.flush() # Para obtener el ID
+
+            for bk_id in bookings_set:
+                det = DetalleEmisionPackingList(
+                    emision_id=nueva_emision.id,
+                    booking=bk_id
+                )
+                db.add(det)
+                
+            db.commit()
+        except Exception as inner_e:
+            db.rollback()
+            logger.error(f"Error guardando auditoría de PL: {inner_e}")
+            raise HTTPException(status_code=500, detail="Error interno al guardar historial")
+
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -683,5 +735,51 @@ def format_container_ogl(code: str) -> str:
     if " " in code:
         return code
     return f"{code[:4]} {code[4:]}"
+
+# ---------------------------------------------------------------------------
+# GET /historial ─ Historial de Packing Lists OGL
+# ---------------------------------------------------------------------------
+@router.get("/historial")
+def obtener_historial_pl(db: Session = Depends(get_db)):
+    emisiones = db.query(EmisionPackingList).order_by(EmisionPackingList.fecha_generacion.desc()).limit(100).all()
+    resultado = []
+    for em in emisiones:
+        detalles = [d.booking for d in em.detalles]
+        resultado.append({
+            "id": em.id,
+            "fecha": em.fecha_generacion,
+            "nave": em.nave,
+            "estado": em.estado,
+            "archivo": em.archivo_nombre,
+            "motivo_anulacion": em.motivo_anulacion,
+            "bookings": detalles
+        })
+    return {"items": resultado}
+
+# ---------------------------------------------------------------------------
+# PATCH /{id}/anular ─ Anular y liberar bookings
+# ---------------------------------------------------------------------------
+class AnularPLRequest(BaseModel):
+    motivo: str
+
+@router.patch("/{id}/anular")
+def anular_pl(id: int, req: AnularPLRequest, db: Session = Depends(get_db)):
+    emision = db.query(EmisionPackingList).filter(EmisionPackingList.id == id).first()
+    if not emision:
+        raise HTTPException(status_code=404, detail="Packing List no encontrado")
+    
+    if emision.estado == "ANULADO":
+        raise HTTPException(status_code=400, detail="El Packing List ya se encuentra anulado")
+        
+    emision.estado = "ANULADO"
+    emision.motivo_anulacion = req.motivo
+    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="No se pudo anular el registro de PL")
+        
+    return {"message": "Packing List anulado, las órdenes han sido liberadas", "id": id}
 
 
