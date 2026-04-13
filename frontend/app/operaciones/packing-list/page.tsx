@@ -547,11 +547,10 @@ export default function PackingListCustomizadosPage() {
                 {genStatus === "loading" ? <><Loader2 className="h-5 w-5 animate-spin"/>Procesando...</> : <><Download className="h-5 w-5" />Generar Packing List Consolidado</>}
              </button>
 
-              </div>
-           </div>
-         </div>
-       </div>
-       ) : (
+          </div>
+        </div>
+      </div>
+      ) : (
          /* ── HISTORIAL TAB ── */
          <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-8 pb-12 animate-in fade-in slide-in-from-bottom-4">
             <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
