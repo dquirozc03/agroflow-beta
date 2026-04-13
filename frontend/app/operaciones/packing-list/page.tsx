@@ -242,13 +242,25 @@ export default function PackingListCustomizadosPage() {
   const [fileTermografos, setFileTermografos] = useState<File | null>(null);
   const [genStatus, setGenStatus] = useState<GenerationStatus>("idle");
 
+  // ROLE MANAGEMENT (SIMULADO HASTA CONECTAR CON TU AUTH/JWT)
+  const [userRole, setUserRole] = useState<"ADMIN" | "SUPERVISOR DOCUMENTARIO" | "OPERADOR">("SUPERVISOR DOCUMENTARIO");
+
   const [activeTab, setActiveTab] = useState<"generar" | "historial">("generar");
   const [historial, setHistorial] = useState<EmisionHistorial[]>([]);
   const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
   const [isAnulando, setIsAnulando] = useState(false);
   const [itemAnular, setItemAnular] = useState<EmisionHistorial | null>(null);
-  const [motivoAnulacion, setMotivoAnulacion] = useState("Error en datos de Excel");
+  const [motivoAnulacion, setMotivoAnulacion] = useState("Error en datos de Excel de Confirmación");
   const [otroMotivo, setOtroMotivo] = useState("");
+  const [isMotivoDropdownOpen, setIsMotivoDropdownOpen] = useState(false);
+
+  const MOTIVOS_OPCIONES = [
+    "Error en datos de Excel de Confirmación",
+    "Cambio de Nave por Naviera",
+    "Reproceso Interno de Beta",
+    "Asignación errónea de termógrafos",
+    "Otro"
+  ];
 
   const fetchNaves = async () => {
     setIsLoadingNaves(true);
@@ -402,6 +414,14 @@ export default function PackingListCustomizadosPage() {
                <p className="text-2xl font-black text-white truncate max-w-[200px] inline-block mt-4">Auditoría OGL</p>
              )}
           </div>
+        </div>
+        
+        {/* Toggle de Roles para prueba (Deberás quitarlo cuando lo vincules a tu login) */}
+        <div className="absolute bottom-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-xl flex items-center justify-center gap-2 border border-white/20">
+           <span className="text-[10px] text-white font-black opacity-50 uppercase">Rol Actual (Prueba):</span>
+           <button onClick={() => setUserRole("SUPERVISOR DOCUMENTARIO")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all max-w-[100px] truncate", userRole === "SUPERVISOR DOCUMENTARIO" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")} title="Supervisor Documentario">Sup. Doc.</button>
+           <button onClick={() => setUserRole("ADMIN")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all", userRole === "ADMIN" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")}>Admin</button>
+           <button onClick={() => setUserRole("OPERADOR")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all", userRole === "OPERADOR" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")}>Operador</button>
         </div>
       </div>
 
@@ -607,13 +627,21 @@ export default function PackingListCustomizadosPage() {
                           )}
                        </td>
                        <td className="p-4 rounded-r-2xl text-right">
-                          {h.estado === "ACTIVO" && (
+                          {h.estado === "ACTIVO" && (userRole === "SUPERVISOR DOCUMENTARIO" || userRole === "ADMIN") && (
                              <button
-                               onClick={() => setItemAnular(h)}
-                               className="px-3 py-1.5 bg-white border border-slate-200 hover:border-rose-200 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl font-bold text-xs transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto"
+                               onClick={() => {
+                                 setItemAnular(h);
+                                 setMotivoAnulacion(MOTIVOS_OPCIONES[0]);
+                                 setOtroMotivo("");
+                                 setIsMotivoDropdownOpen(false);
+                               }}
+                               className="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 hover:shadow-lg hover:shadow-rose-500/20 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-1.5 ml-auto"
                              >
-                                <FileX className="h-3 w-3" /> Anular
+                                <FileX className="h-3.5 w-3.5" /> Anular
                              </button>
+                          )}
+                          {h.estado === "ACTIVO" && userRole !== "SUPERVISOR DOCUMENTARIO" && userRole !== "ADMIN" && (
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Solo Sup. Doc. o Admin</span>
                           )}
                        </td>
                      </tr>
@@ -655,19 +683,42 @@ export default function PackingListCustomizadosPage() {
                       </p>
                    </div>
                    
-                   <div className="space-y-2">
+                   <div className="space-y-2 relative">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo de Anulación</label>
-                      <select 
-                         value={motivoAnulacion}
-                         onChange={(e) => setMotivoAnulacion(e.target.value)}
-                         className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all appearance-none"
-                      >
-                         <option value="Error en datos de Excel">Error en datos de Excel de Confirmación</option>
-                         <option value="Cambios directos de Nave (Rolled)">Cambio de Nave por Naviera</option>
-                         <option value="Reproceso interno Beta">Reproceso Interno de Beta</option>
-                         <option value="Falta de Termógrafos correctos">Asignación errónea de termógrafos</option>
-                         <option value="Otro">Otro (Especificar)</option>
-                      </select>
+                      
+                      {/* DROPDOWN CUSTOMIZADO */}
+                      <div className="relative">
+                        <button 
+                           onClick={() => setIsMotivoDropdownOpen(!isMotivoDropdownOpen)}
+                           className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 flex items-center justify-between hover:border-rose-300 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all shadow-sm"
+                        >
+                           <span>{motivoAnulacion}</span>
+                           <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", isMotivoDropdownOpen && "rotate-180 text-rose-500")} />
+                        </button>
+
+                        {isMotivoDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
+                             {MOTIVOS_OPCIONES.map((opt) => (
+                               <button 
+                                 key={opt}
+                                 onClick={() => {
+                                   setMotivoAnulacion(opt);
+                                   setIsMotivoDropdownOpen(false);
+                                   if(opt !== "Otro") setOtroMotivo("");
+                                 }}
+                                 className={cn(
+                                   "w-full text-left px-4 py-3 text-sm font-bold transition-all border-l-2",
+                                   motivoAnulacion === opt 
+                                     ? "border-rose-500 bg-rose-50/50 text-rose-700" 
+                                     : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                 )}
+                               >
+                                 {opt}
+                               </button>
+                             ))}
+                          </div>
+                        )}
+                      </div>
                    </div>
 
                    {motivoAnulacion === "Otro" && (
