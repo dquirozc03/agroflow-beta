@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -24,7 +24,9 @@ import {
   Files,
   History,
   FileX,
-  FileWarning
+  FileWarning,
+  Download as DownloadIcon,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -78,6 +80,8 @@ interface EmisionHistorial {
   nave: string;
   estado: string;
   archivo: string;
+  archivo_disponible: boolean;
+  usuario: string;
   motivo_anulacion: string | null;
   bookings: string[];
 }
@@ -608,14 +612,41 @@ export default function PackingListCustomizadosPage() {
                        </td>
                        <td className="p-4 font-black tracking-tight text-slate-700">{h.nave}</td>
                        <td className="p-4">
-                           <div className="flex items-center gap-2 max-w-[200px]">
-                              <FileSpreadsheet className={cn("h-4 w-4 shrink-0", h.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-400")} />
-                              <p className="font-bold text-xs text-slate-500 truncate">{h.archivo}</p>
+                           <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                 <User className="h-3.5 w-3.5 text-slate-500" />
+                              </div>
+                              <p className="font-bold text-xs text-slate-600 truncate max-w-[100px]">{h.usuario}</p>
                            </div>
                        </td>
-                       <td className="p-4 text-center">
-                          <span className="font-black px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 text-xs">{h.bookings.length}</span>
+                       <td className="p-4">
+                           <div className="flex items-center gap-2 max-w-[180px]">
+                              {h.archivo_disponible ? (
+                                <a
+                                  href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                  title={h.archivo}
+                                >
+                                  <DownloadIcon className="h-3 w-3" />
+                                  Descargar
+                                </a>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <FileSpreadsheet className={cn("h-4 w-4 shrink-0", h.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-400")} />
+                                  <p className="font-bold text-xs text-slate-400 truncate" title={h.archivo}>{h.archivo}</p>
+                                </div>
+                              )}
+                           </div>
                        </td>
+                        <td className="p-4 text-center">
+                           <div className="flex flex-wrap justify-center gap-1 max-w-[150px] mx-auto">
+                              <span className="font-black px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] whitespace-nowrap" title={h.bookings.join(' / ')}>
+                                 {h.bookings.join(' / ')}
+                              </span>
+                           </div>
+                        </td>
                        <td className="p-4 text-center">
                           {h.estado === "ACTIVO" ? (
                              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest">Activo</span>

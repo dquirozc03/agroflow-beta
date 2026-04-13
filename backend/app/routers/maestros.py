@@ -134,10 +134,30 @@ async def bulk_upload_transportistas(
 
         for index, row in df.iterrows():
             try:
-                # Extraer datos por índices corregidos según Excel
-                ruc = str(row[5]).strip() if pd.notna(row[5]) else None
+                # --- LIMPIEZA ROBUSTA DE RUC (Evitar Notación Científica) ---
+                ruc_raw = row[5]
+                if pd.notna(ruc_raw):
+                    try:
+                        # Si es número (float/int), lo convertimos a int y luego str
+                        ruc = str(int(float(ruc_raw))).strip()
+                    except:
+                        ruc = str(ruc_raw).strip()
+                else:
+                    ruc = None
+
                 nombre_empresa = str(row[4]).strip() if pd.notna(row[4]) else None
-                licencia_raw = str(row[6]).strip() if pd.notna(row[6]) else None
+                
+                # --- LIMPIEZA ROBUSTA DE LICENCIA ---
+                lic_val = row[6]
+                if pd.notna(lic_val):
+                    try:
+                        # Intentar limpiar si es float (.0)
+                        licencia_raw = str(int(float(lic_val))).strip()
+                    except:
+                        licencia_raw = str(lic_val).strip()
+                else:
+                    licencia_raw = None
+
                 conductor_raw = str(row[7]).strip() if pd.notna(row[7]) else None
                 placas_raw = str(row[8]).strip() if pd.notna(row[8]) else ""
                 
@@ -161,8 +181,10 @@ async def bulk_upload_transportistas(
                     db.add(transportista)
                     db.flush() # Para obtener el ID
                 else:
-                    if nombre_empresa:
+                    # SOLO actualizar el nombre si el actual es genérico o si el nuevo es válido
+                    if nombre_empresa and (transportista.nombre_transportista == "DESCONOCIDO" or len(nombre_empresa) > len(transportista.nombre_transportista)):
                         transportista.nombre_transportista = nombre_empresa
+                    # IMPORTANTE: NO tocamos codigo_sap ni otros campos para no "chancarlos"
                 
                 # 2. Registrar/Actualizar Chofer
                 if licencia_raw and licencia_raw.lower() != "nan":
@@ -204,11 +226,15 @@ async def bulk_upload_transportistas(
                             )
                             db.add(chofer)
                         else:
-                            # Actualizar licencia y nombres si cambiaron
-                            chofer.licencia = licencia_raw.upper()
-                            chofer.nombres = nombres_part.upper()
-                            chofer.apellido_paterno = ape_pat.upper()
-                            chofer.apellido_materno = ape_mat.upper()
+                            # SOLO actualizar si el dato en Excel es más completo 
+                            # (Evitamos borrar licencias ya registradas manualmente)
+                            if licencia_raw and (not chofer.licencia or len(licencia_raw) > len(chofer.licencia)):
+                                chofer.licencia = licencia_raw.upper()
+                            
+                            if nombres_part and nombres_part != "CONDUCTOR":
+                                chofer.nombres = nombres_part.upper()
+                                chofer.apellido_paterno = ape_pat.upper()
+                                chofer.apellido_materno = ape_mat.upper()
 
                 # 3. Registrar/Actualizar Control de Embarque
                 if dam_raw and dam_raw.lower() != "nan":

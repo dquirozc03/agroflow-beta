@@ -4,8 +4,8 @@ Módulo de generación automática del Packing List para el cliente OGL.
 Autor: AgroFlow Dev Team
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
+from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from typing import Optional, List
@@ -15,6 +15,7 @@ from app.models.pedido import PedidoComercial
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque, ReporteEmbarques
 from app.models.packing_list import EmisionPackingList, DetalleEmisionPackingList
+from app.dependencies.auth import OptionalUser
 from pydantic import BaseModel
 import pandas as pd
 import openpyxl
@@ -24,6 +25,10 @@ import io
 import os
 import re
 from datetime import datetime
+
+# Directorio donde se guardan los Excel generados para re-descarga
+PL_STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "storage", "packing_lists")
+os.makedirs(PL_STORAGE_DIR, exist_ok=True)
 
 router = APIRouter(
     prefix="/api/v1/packing-list",
@@ -253,7 +258,8 @@ async def generate_packing_list_ogl(
     confirmaciones: List[UploadFile] = File(...),
     termografos: Optional[UploadFile] = File(None),
     recibidor: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: OptionalUser = None
 ):
     """
     Motor de generación del Packing List OGL CONSOLIDADO por NAVE.
@@ -688,10 +694,19 @@ async def generate_packing_list_ogl(
         
         filename = f"Packing List_OGL_MAESTRO_{nave_clean.replace(' ','_')}_{pl_id}.xlsx"
 
+        # --- GUARDAR COPIA EN DISCO PARA RE-DESCARGA ---
+        file_bytes = output.getvalue()
+        storage_path = os.path.join(PL_STORAGE_DIR, filename)
+        with open(storage_path, "wb") as f_disk:
+            f_disk.write(file_bytes)
+
         # --- REGISTRAR EN EL HISTORIAL Y BLOQUEAR ---
         try:
+            # Capturar usuario del JWT si existe
+            nombre_usuario = current_user.nombre if current_user else "Sistema"
+
             nueva_emision = EmisionPackingList(
-                usuario="Sistema/Automático", # Podría pasarse por JWT después
+                usuario=nombre_usuario,
                 nave=nave_clean,
                 estado="ACTIVO",
                 archivo_nombre=filename
@@ -713,13 +728,15 @@ async def generate_packing_list_ogl(
             raise HTTPException(status_code=500, detail="Error interno al guardar historial")
 
         return StreamingResponse(
-            output,
+            io.BytesIO(file_bytes),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
                 "Content-Disposition": f"attachment; filename={filename}",
                 "Access-Control-Expose-Headers": "Content-Disposition"
             }
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -745,12 +762,19 @@ def obtener_historial_pl(db: Session = Depends(get_db)):
     resultado = []
     for em in emisiones:
         detalles = [d.booking for d in em.detalles]
+        # Verificar si el archivo existe en disco para indicar si es descargable
+        archivo_disponible = False
+        if em.archivo_nombre:
+            path_disco = os.path.join(PL_STORAGE_DIR, em.archivo_nombre)
+            archivo_disponible = os.path.exists(path_disco)
         resultado.append({
             "id": em.id,
             "fecha": em.fecha_generacion,
+            "usuario": em.usuario or "Desconocido",
             "nave": em.nave,
             "estado": em.estado,
             "archivo": em.archivo_nombre,
+            "archivo_disponible": archivo_disponible,
             "motivo_anulacion": em.motivo_anulacion,
             "bookings": detalles
         })
@@ -783,3 +807,24 @@ def anular_pl(id: int, req: AnularPLRequest, db: Session = Depends(get_db)):
     return {"message": "Packing List anulado, las órdenes han sido liberadas", "id": id}
 
 
+# ---------------------------------------------------------------------------
+# GET /{id}/descargar ─ Re-descarga de archivo guardado en disco
+# ---------------------------------------------------------------------------
+@router.get("/{id}/descargar")
+def descargar_pl(id: int, db: Session = Depends(get_db)):
+    emision = db.query(EmisionPackingList).filter(EmisionPackingList.id == id).first()
+    if not emision:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    if not emision.archivo_nombre:
+        raise HTTPException(status_code=404, detail="Este registro no tiene archivo asociado")
+    
+    path_disco = os.path.join(PL_STORAGE_DIR, emision.archivo_nombre)
+    if not os.path.exists(path_disco):
+        raise HTTPException(status_code=404, detail="El archivo no está disponible. Solo se pueden descargar PLs generados a partir de esta versión.")
+    
+    return FileResponse(
+        path=path_disco,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=emision.archivo_nombre,
+        headers={"Access-Control-Expose-Headers": "Content-Disposition"}
+    )
