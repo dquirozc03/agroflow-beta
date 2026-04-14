@@ -86,11 +86,6 @@ export default function VehiculosPage() {
     }
   };
 
-  const filtered = data.filter(v => {
-    const placa = (v.placa_tracto || v.placa_carreta || "").toLowerCase();
-    const transportista = (v.transportista?.nombre_transportista || "").toLowerCase();
-    return placa.includes(searchTerm.toLowerCase()) || transportista.includes(searchTerm.toLowerCase());
-  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -182,7 +177,7 @@ export default function VehiculosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
-                {filtered.map((v) => (
+                {data.map((v) => (
                   <tr key={`${mode}-${v.id}`} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-7 border-r border-slate-200/80">
                       <div className="flex items-center gap-4">
@@ -234,7 +229,7 @@ export default function VehiculosPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {data.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-20 text-center">
                        <p className="text-sm font-bold text-slate-300 uppercase tracking-widest font-['Outfit']">No se encontraron unidades registradas.</p>

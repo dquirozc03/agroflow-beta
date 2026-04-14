@@ -79,9 +79,13 @@ def list_tractos(
     transportista_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(VehiculoTracto)
+    query = db.query(VehiculoTracto).join(Transportista)
     if placa:
-        query = query.filter(VehiculoTracto.placa_tracto.ilike(f"%{placa}%"))
+        search = f"%{placa.strip().upper()}%"
+        query = query.filter(
+            (VehiculoTracto.placa_tracto.ilike(search)) |
+            (Transportista.nombre_transportista.ilike(search))
+        )
     if transportista_id:
         query = query.filter(VehiculoTracto.transportista_id == transportista_id)
         
@@ -126,9 +130,13 @@ def list_carretas(
     transportista_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(VehiculoCarreta)
+    query = db.query(VehiculoCarreta).join(Transportista)
     if placa:
-        query = query.filter(VehiculoCarreta.placa_carreta.ilike(f"%{placa}%"))
+        search = f"%{placa.strip().upper()}%"
+        query = query.filter(
+            (VehiculoCarreta.placa_carreta.ilike(search)) |
+            (Transportista.nombre_transportista.ilike(search))
+        )
     if transportista_id:
         query = query.filter(VehiculoCarreta.transportista_id == transportista_id)
         
