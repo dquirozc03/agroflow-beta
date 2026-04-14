@@ -594,13 +594,13 @@ export default function PackingListCustomizadosPage() {
                <table className="w-full text-left text-sm whitespace-nowrap border-spacing-y-2 border-separate">
                  <thead>
                    <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                     <th className="pb-3 px-4"># ID</th>
-                     <th className="pb-3 px-4">Fecha & Hora</th>
-                     <th className="pb-3 px-4">Nave Asignada</th>
-                     <th className="pb-3 px-4">Archivo</th>
-                     <th className="pb-3 px-4 text-center">Órdenes</th>
-                     <th className="pb-3 px-4 text-center">Estado</th>
-                     <th className="pb-3 px-4 text-right">Acción</th>
+                     <th className="pb-3 px-4 w-[80px]"># ID</th>
+                     <th className="pb-3 px-4 w-[160px]">Fecha & Hora</th>
+                     <th className="pb-3 px-4 w-[180px]">Nave Asignada</th>
+                     <th className="pb-3 px-4 min-w-[200px]">Archivo / Auditoría</th>
+                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes</th>
+                     <th className="pb-3 px-4 text-center w-[120px]">Estado</th>
+                     <th className="pb-3 px-4 text-right w-[120px]">Acción</th>
                    </tr>
                  </thead>
                  <tbody>
@@ -612,37 +612,40 @@ export default function PackingListCustomizadosPage() {
                        </td>
                        <td className="p-4 font-black tracking-tight text-slate-700">{h.nave}</td>
                        <td className="p-4">
-                           <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
-                                 <User className="h-3.5 w-3.5 text-slate-500" />
-                              </div>
-                              <p className="font-bold text-xs text-slate-600 truncate max-w-[100px]">{h.usuario}</p>
-                           </div>
-                       </td>
-                       <td className="p-4">
-                           <div className="flex items-center gap-2 max-w-[180px]">
-                              {h.archivo_disponible ? (
-                                <a
-                                  href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                                  title={h.archivo}
-                                >
-                                  <DownloadIcon className="h-3 w-3" />
-                                  Descargar
-                                </a>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <FileSpreadsheet className={cn("h-4 w-4 shrink-0", h.estado === "ACTIVO" ? "text-emerald-500" : "text-slate-400")} />
-                                  <p className="font-bold text-xs text-slate-400 truncate" title={h.archivo}>{h.archivo}</p>
+                          <div className="flex flex-col gap-2 min-w-0">
+                             {/* Fila Usuario */}
+                             <div className="flex items-center gap-1.5 overflow-hidden">
+                                <div className="h-5 w-5 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
+                                   <User className="h-3 w-3 text-slate-500" />
                                 </div>
-                              )}
-                           </div>
+                                <span className="font-bold text-[10px] text-slate-500 truncate" title={`Generador: ${h.usuario}`}>{h.usuario}</span>
+                             </div>
+
+                             {/* Fila Archivo / Descarga */}
+                             <div className="flex items-center gap-2 min-w-0">
+                                {h.archivo_disponible ? (
+                                  <a
+                                    href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                                    title={h.archivo}
+                                  >
+                                    <DownloadIcon className="h-3 w-3" />
+                                    Descargar PL
+                                  </a>
+                                ) : (
+                                  <div className="flex items-center gap-2 min-w-0 opacity-50">
+                                    <FileSpreadsheet className="h-4 w-4 shrink-0 text-slate-400" />
+                                    <p className="font-bold text-[10px] text-slate-400 truncate max-w-[150px]" title={h.archivo}>{h.archivo}</p>
+                                  </div>
+                                )}
+                             </div>
+                          </div>
                        </td>
                         <td className="p-4 text-center">
-                           <div className="flex flex-wrap justify-center gap-1 max-w-[150px] mx-auto">
-                              <span className="font-black px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] whitespace-nowrap" title={h.bookings.join(' / ')}>
+                           <div className="flex justify-center max-w-[200px] mx-auto">
+                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] break-all line-clamp-2 leading-tight" title={h.bookings.join(' / ')}>
                                  {h.bookings.join(' / ')}
                               </span>
                            </div>
