@@ -201,6 +201,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             type="number"
                             value={taraContenedor}
                             onChange={(e) => setTaraContenedor(Number(e.target.value))}
+                            onFocus={(e) => e.target.select()}
                             className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
                         />
                     </div>
@@ -212,6 +213,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             type="number"
                             value={pesoBrutoProducto}
                             onChange={(e) => setPesoBrutoProducto(Number(e.target.value))}
+                            onFocus={(e) => e.target.select()}
                             className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
                         />
                     </div>
@@ -224,6 +226,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                             placeholder="Ej: 001-00012345"
                             value={guiaRemision}
                             onChange={(e) => setGuiaRemision(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg uppercase"
                         />
                     </div>

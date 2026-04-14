@@ -270,10 +270,13 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                        type="text"
                        placeholder="Buscar por Nombre o RUC..."
                        value={searchTermTransportista}
-                       onFocus={() => setIsDropdownOpen(true)}
                        onChange={e => {
                          setSearchTermTransportista(e.target.value);
                          setIsDropdownOpen(true);
+                       }}
+                       onFocus={(e) => {
+                         setIsDropdownOpen(true);
+                         e.target.select();
                        }}
                        className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                      />
@@ -335,6 +338,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                           required
                           value={formData.placa}
                           onChange={e => setFormData({...formData, placa: e.target.value.toUpperCase()})}
+                          onFocus={(e) => e.target.select()}
                           placeholder="ABC-123"
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
@@ -348,6 +352,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                           type="number"
                           value={formData.numero_ejes}
                           onChange={e => setFormData({...formData, numero_ejes: e.target.value})}
+                          onFocus={(e) => e.target.select()}
                           placeholder="2, 3, 6..."
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
@@ -363,6 +368,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                        <input 
                           value={formData.marca}
                           onChange={e => setFormData({...formData, marca: e.target.value.toUpperCase()})}
+                          onFocus={(e) => e.target.select()}
                           placeholder="EJ: VOLVO, SCANIA, KENWORTH"
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                        />
@@ -379,6 +385,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                           type="number"
                           value={formData.peso_neto}
                           onChange={e => setFormData({...formData, peso_neto: e.target.value})}
+                          onFocus={(e) => e.target.select()}
                           placeholder="7500"
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
@@ -391,6 +398,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                         <input 
                           value={formData.certificado}
                           onChange={e => setFormData({...formData, certificado: e.target.value.toUpperCase()})}
+                          onFocus={(e) => e.target.select()}
                           placeholder="MTC-XXXX"
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
@@ -405,6 +413,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                        type="number" step="0.01"
                        value={formData.largo}
                        onChange={e => setFormData({...formData, largo: e.target.value})}
+                       onFocus={(e) => e.target.select()}
                        placeholder="LARGO"
                        className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
                      />
@@ -412,6 +421,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                        type="number" step="0.01"
                        value={formData.ancho}
                        onChange={e => setFormData({...formData, ancho: e.target.value})}
+                       onFocus={(e) => e.target.select()}
                        placeholder="ANCHO"
                        className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
                      />
@@ -419,6 +429,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                        type="number" step="0.01"
                        value={formData.alto}
                        onChange={e => setFormData({...formData, alto: e.target.value})}
+                       onFocus={(e) => e.target.select()}
                        placeholder="ALTO"
                        className="h-11 px-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-[10px] text-center"
                      />

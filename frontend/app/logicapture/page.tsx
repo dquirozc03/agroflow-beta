@@ -152,6 +152,7 @@ function FormField({ label, placeholder, icon: Icon, value, onChange, readOnly, 
           readOnly={readOnly}
           autoFocus={autoFocus}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={(e) => e.target.select()}
           onBlur={onBlur}
           placeholder={placeholder}
           className={cn(
