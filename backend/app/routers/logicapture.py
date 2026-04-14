@@ -329,110 +329,111 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         if existing_bk:
             raise HTTPException(status_code=400, detail=f"El Booking {req.booking} ya fue registrado anteriormente. Si es una carga compartida, active 'Tratamiento en Buque'.")
 
-    # 2. Validar Unicidad de Precintos/Termógrafos
+    # 2. Validar Unicidad de Precintos/Termógrafos (Excluyendo 'no aplica')
     codes_to_check = (req.precintoAduana + req.precintoOperador + req.precintoSenasa + 
                       req.precintoLinea + req.precintosBeta + req.termografos)
     
     # Carlos Style 💎: No validamos duplicidad para valores que indican "vacío" o "no aplica"
     ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]
+    codes_to_check = [c.strip().upper() for c in codes_to_check if c.strip().upper() not in ignore_values]
     
-    # a. Validar duplicados DENTRO del mismo formulario (Request)
-    request_codes = [c.strip().upper() for c in codes_to_check if c.strip().upper() not in ignore_values]
-    if len(request_codes) != len(set(request_codes)):
-        # Identificar qué código está repetido para un mensaje de error más claro
-        seen = set()
-        dupes = []
-        for c in request_codes:
-            if c in seen: dupes.append(c)
-            else: seen.add(c)
-        raise HTTPException(status_code=400, detail=f"Error: Los códigos {list(set(dupes))} están repetidos en el mismo formulario.")
-
-    # b. Validar duplicados contra otros registros ACTIVOS en la DB
-    if request_codes:
-        dup = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo.in_(request_codes)).first()
+    if codes_to_check:
+        dup = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo.in_(codes_to_check)).first()
         if dup:
             raise HTTPException(status_code=400, detail=f"El código de precinto/termógrafo '{dup.codigo}' ya fue utilizado en otra operación.")
 
-    # 3. Preparar Cabecera (Sin commit aún)
-    try:
-        new_reg = LogiCaptureRegistro(
-            booking=req.booking,
-            orden_beta=req.ordenBeta,
-            contenedor=req.contenedor,
-            dam=req.dam,
-            dni_chofer=req.dni,
-            placa_tracto=req.placaTracto,
-            placa_carreta=req.placaCarreta,
-            empresa_transporte=req.empresa,
-            precinto_aduana=req.precintoAduana,
-            precinto_operador=req.precintoOperador,
-            precinto_senasa=req.precintoSenasa,
-            precinto_linea=req.precintoLinea,
-            precintos_beta=req.precintosBeta,
-            termografos=req.termografos,
-            tratamiento_buque=req.tratamientoBuque,
-            planta=req.planta,
-            cultivo=req.cultivo,
-            codigo_sap=req.codigoSap,
-            ruc_transportista=req.ruc_transportista,
-            marca_tracto=req.marca_tracto,
-            cert_tracto=req.cert_tracto,
-            cert_carreta=req.cert_carreta,
-            fecha_embarque=datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00')) if req.fecha_embarque else None,
-            status="PENDIENTE",
-            nombre_chofer=req.nombreChofer,
-            licencia_chofer=req.licenciaChofer,
-            partida_registral=req.partidaRegistral,
-            usuario_registro=req.usuario_registro
-        )
-        db.add(new_reg)
-        db.flush() # Flush para obtener el ID sin comitear la transacción 💎
+    # 3. Guardar Cabecera
+    new_reg = LogiCaptureRegistro(
+        booking=req.booking,
+        orden_beta=req.ordenBeta,
+        contenedor=req.contenedor,
+        dam=req.dam,
+        dni_chofer=req.dni,
+        placa_tracto=req.placaTracto,
+        placa_carreta=req.placaCarreta,
+        empresa_transporte=req.empresa,
+        precinto_aduana=req.precintoAduana,
+        precinto_operador=req.precintoOperador,
+        precinto_senasa=req.precintoSenasa,
+        precinto_linea=req.precintoLinea,
+        precintos_beta=req.precintosBeta,
+        termografos=req.termografos,
+        tratamiento_buque=req.tratamientoBuque,
+        # Nuevos campos del ticket premium
+        planta=req.planta,
+        cultivo=req.cultivo,
+        codigo_sap=req.codigoSap,
+        ruc_transportista=req.ruc_transportista,
+        marca_tracto=req.marca_tracto,
+        cert_tracto=req.cert_tracto,
+        cert_carreta=req.cert_carreta,
+        fecha_embarque=datetime.fromisoformat(req.fecha_embarque.replace('Z', '+00:00')) if req.fecha_embarque else None,
+        status="PENDIENTE",
+        nombre_chofer=req.nombreChofer,
+        licencia_chofer=req.licenciaChofer,
+        partida_registral=req.partidaRegistral,
+        usuario_registro=req.usuario_registro # Enlace de autoría 🕵️‍♂️🖋️
+    )
+    db.add(new_reg)
+    db.commit() # Commit inicial para obtener id
+    db.refresh(new_reg)
 
-        # 4. Preparar Detalles
-        category_map = {
-            "ADUANA": req.precintoAduana,
-            "OPERADOR": req.precintoOperador,
-            "SENASA": req.precintoSenasa,
-            "LINEA": req.precintoLinea,
-            "BETA": req.precintosBeta,
-            "TERMOGRAFO": req.termografos
-        }
+    # 3.5 Sincronización Inversa (Retro-alimentación al Maestro)
+    if req.dam and req.dam.strip().upper() not in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]:
+        emb = db.query(ControlEmbarque).filter(
+            ControlEmbarque.booking == req.booking,
+            ControlEmbarque.contenedor == req.contenedor
+        ).first()
+        if emb and (not emb.dam or emb.dam in ["PENDIENTE", "S/P", "-"]):
+            emb.dam = req.dam
+            db.commit()
 
-        details = []
-        for tipo, codes in category_map.items():
-            for code in codes:
-                if not code: continue
-                code_upper = code.strip().upper()
-                if code_upper in ignore_values: continue
-                
-                details.append(LogiCaptureDetalle(
-                    registro_id=new_reg.id,
-                    categoria="PRECINTO" if tipo != "TERMOGRAFO" else "TERMOGRAFO",
-                    tipo=tipo,
-                    codigo=code_upper
-                ))
-        
-        if details:
-            db.add_all(details)
-        
-        # 5. Sincronización Inversa
-        if req.dam and req.dam.strip().upper() not in ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]:
-            emb = db.query(ControlEmbarque).filter(
-                ControlEmbarque.booking == req.booking,
-                ControlEmbarque.contenedor == req.contenedor
-            ).first()
-            if emb and (not emb.dam or emb.dam in ["PENDIENTE", "S/P", "-"]):
-                emb.dam = req.dam
+    # 4. Guardar Detalles de Unicidad
+    # Por cada categoría guardamos en la tabla de blindaje
+    details = []
+    category_map = {
+        "ADUANA": req.precintoAduana,
+        "OPERADOR": req.precintoOperador,
+        "SENASA": req.precintoSenasa,
+        "LINEA": req.precintoLinea,
+        "BETA": req.precintosBeta,
+        "TERMOGRAFO": req.termografos
+    }
 
-        # 6. COMMIT ÚNICO Y FINAL (Atomicidad Garantizada) 💣✨
-        db.commit()
-        return {"status": "success", "id": new_reg.id}
+    codigos_procesados_en_request = set()
+    for tipo, codes in category_map.items():
+        for code in codes:
+            if not code:
+                continue
+            code_upper = code.strip().upper()
+            if code_upper in ignore_values:
+                continue
+            
+            if code_upper in codigos_procesados_en_request:
+                db.rollback()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error: El código '{code_upper}' se ha ingresado varias veces en la misma actualización."
+                )
+            codigos_procesados_en_request.add(code_upper)
 
-    except Exception as e:
-        db.rollback()
-        if isinstance(e, HTTPException): raise e
-        logger.error(f"Error crítico en registro: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno al procesar registro: {str(e)}")
+            details.append(LogiCaptureDetalle(
+                registro_id=new_reg.id,
+                categoria="PRECINTO" if tipo != "TERMOGRAFO" else "TERMOGRAFO",
+                tipo=tipo,
+                codigo=code_upper
+            ))
+    
+    if details:
+        db.add_all(details)
+        try:
+            db.commit()
+        except IntegrityError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Error de integridad en base de datos. Se enviaron códigos duplicados."
+            )
 
     return {"status": "success", "id": new_reg.id}
 
@@ -574,7 +575,10 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
         req.precintoSenasa is not None, req.precintoLinea is not None,
         req.precintosBeta is not None, req.termografos is not None
     ]):
-        # a. Preparar datos y validar duplicados DENTRO del Request
+        # a. Limpiar detalles previos asociados a esta salida
+        db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.registro_id == id).delete()
+        
+        # b. Re-mapear y re-validar códigos actuales (post-edición)
         mapeo_detalles = [
             ("ADUANA", reg.precinto_aduana or []),
             ("OPERADOR", reg.precinto_operador or []),
@@ -587,9 +591,8 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
         ignore_values = ["**", "***", "****", "-", "S/P", "N/A", "PENDIENTE", ""]
         nuevos_detalles = []
         codigos_procesados_en_request = set()
-        
-        # Primero validamos que no haya duplicados en lo que el usuario envió
         for tipo, codigos in mapeo_detalles:
+            cat = "TERMOGRAFO" if tipo == "TERMOGRAFO" else "PRECINTO"
             for code in codigos:
                 if not code: continue
                 code_upper = code.strip().upper()
@@ -599,31 +602,17 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
                     db.rollback()
                     raise HTTPException(
                         status_code=400, 
-                        detail=f"Error: El código '{code_upper}' está repetido varias veces en este formulario de edición."
+                        detail=f"Error: El código '{code_upper}' se ha ingresado varias veces en la misma actualización."
                     )
                 codigos_procesados_en_request.add(code_upper)
 
-        # b. Si el request es internamente válido, limpiamos los antiguos y grabamos los nuevos
-        db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.registro_id == id).delete()
-        
-        for tipo, codigos in mapeo_detalles:
-            cat = "TERMOGRAFO" if tipo == "TERMOGRAFO" else "PRECINTO"
-            for code in codigos:
-                if not code: continue
-                code_upper = code.strip().upper()
-                if code_upper in ignore_values: continue
-
-                # c. Blindaje contra duplicados en OTROS registros activos
-                duplicado = db.query(LogiCaptureDetalle).filter(
-                    LogiCaptureDetalle.codigo == code_upper,
-                    LogiCaptureDetalle.registro_id != id # EL PUNTO CRÍTICO: No comparar contra sí mismo 🕵️‍♂️💎
-                ).first()
-                
+                # c. Blindaje contra duplicados sistémicos
+                duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code_upper).first()
                 if duplicado:
                     db.rollback()
                     raise HTTPException(
                         status_code=400, 
-                        detail=f"Error: El código '{code_upper}' ya está siendo usado en otro registro activo (# {duplicado.registro_id})."
+                        detail=f"Error: El código '{code_upper}' ya está siendo usado en otro registro activo."
                     )
                 
                 nuevos_detalles.append(LogiCaptureDetalle(

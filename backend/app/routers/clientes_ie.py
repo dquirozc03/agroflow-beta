@@ -110,21 +110,33 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
     # Gestionar Fitosanitario primero
     fito_id = req.fito_id
     if req.fitosanitario:
-        existing_fito = db.query(MaestroFito).filter(
-            MaestroFito.consignatario_fito == safe_to_upper(req.fitosanitario.consignatario_fito),
-            MaestroFito.direccion_fito == safe_to_upper(req.fitosanitario.direccion_fito)
-        ).first()
-        
-        if existing_fito:
-            fito_id = existing_fito.id
+        if req.fitosanitario.id:
+            # Caso 1: Fito existente editado → actualizar registro en BD
+            existing_fito = db.query(MaestroFito).filter(MaestroFito.id == req.fitosanitario.id).first()
+            if existing_fito:
+                existing_fito.consignatario_fito = safe_to_upper(req.fitosanitario.consignatario_fito)
+                existing_fito.direccion_fito = safe_to_upper(req.fitosanitario.direccion_fito)
+                db.flush()
+                fito_id = existing_fito.id
+            else:
+                raise HTTPException(status_code=404, detail="Registro Fitosanitario no encontrado")
         else:
-            new_fito = MaestroFito(
-                consignatario_fito=safe_to_upper(req.fitosanitario.consignatario_fito),
-                direccion_fito=safe_to_upper(req.fitosanitario.direccion_fito)
-            )
-            db.add(new_fito)
-            db.flush()
-            fito_id = new_fito.id
+            # Caso 2: Fito nuevo → buscar coincidencia o crear
+            existing_fito = db.query(MaestroFito).filter(
+                MaestroFito.consignatario_fito == safe_to_upper(req.fitosanitario.consignatario_fito),
+                MaestroFito.direccion_fito == safe_to_upper(req.fitosanitario.direccion_fito)
+            ).first()
+            
+            if existing_fito:
+                fito_id = existing_fito.id
+            else:
+                new_fito = MaestroFito(
+                    consignatario_fito=safe_to_upper(req.fitosanitario.consignatario_fito),
+                    direccion_fito=safe_to_upper(req.fitosanitario.direccion_fito)
+                )
+                db.add(new_fito)
+                db.flush()
+                fito_id = new_fito.id
     
     # Actualizar campos
     update_data = req.dict(exclude={'id', 'fitosanitario', 'fito_id'})

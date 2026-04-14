@@ -12,7 +12,8 @@ import {
   Save,
   Navigation,
   CheckCircle2,
-  Search
+  Search,
+  Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -107,6 +108,9 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // --- Estado de edición Fito: controla si los campos están desbloqueados ---
+  const [isFitoEditing, setIsFitoEditing] = useState(false);
+
   // --- Fito Search State ---
   const [isFitoSearchModalOpen, setIsFitoSearchModalOpen] = useState(false);
   const [fitoSearchTerm, setFitoSearchTerm] = useState("");
@@ -133,6 +137,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
   useEffect(() => {
     if (isOpen) {
       setErrors({});
+      setIsFitoEditing(false); // Siempre bloquear campos fito al abrir
       if (editingData) {
         setFormData({
           nombre_legal: editingData.nombre_legal || "",
@@ -432,31 +437,56 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <div className="flex gap-2 relative">
                         <input
                            value={formData.fitosanitario.consignatario_fito}
-                           readOnly={!!formData.fitosanitario.id}
+                           readOnly={!!formData.fitosanitario.id && !isFitoEditing}
                            onChange={(e) => setFormData({
                              ...formData,
-                             fitosanitario: { ...formData.fitosanitario, id: null, consignatario_fito: safeToUpperCase(e.target.value) }
+                             fitosanitario: { ...formData.fitosanitario, consignatario_fito: safeToUpperCase(e.target.value) }
                            })}
                            placeholder="INTRODUCIR O BUSCAR CONSIGNATARIO..."
                            className={cn(
                              "w-full h-14 px-6 border rounded-2xl focus:outline-none transition-all font-bold text-xs shadow-sm",
-                             formData.fitosanitario.id 
+                             formData.fitosanitario.id && !isFitoEditing
                                 ? "bg-emerald-50/30 border-emerald-100 text-emerald-800 cursor-not-allowed" 
-                                : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
+                                : formData.fitosanitario.id && isFitoEditing
+                                  ? "bg-amber-50/40 border-amber-200 text-amber-900 focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400"
+                                  : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
                            )}
                         />
+                        {/* Botones de acción para Fito vinculado */}
                         {formData.fitosanitario.id && (
+                          <div className="flex gap-1.5">
+                           {/* Botón Editar/Bloquear */}
                            <button
                              type="button"
-                             onClick={() => setFormData({
-                               ...formData,
-                               fitosanitario: { id: null, consignatario_fito: "", direccion_fito: "" }
-                             })}
-                             className="h-14 px-4 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-transparent rounded-2xl transition-all font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-sm hover:border-rose-200"
-                             title="Desvincular Maestro"
+                             onClick={() => setIsFitoEditing(!isFitoEditing)}
+                             className={cn(
+                               "h-14 px-4 border rounded-2xl transition-all font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-sm",
+                               isFitoEditing
+                                 ? "bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-200 hover:border-amber-300"
+                                 : "bg-blue-50 text-blue-500 hover:bg-blue-100 border-transparent hover:border-blue-200"
+                             )}
+                             title={isFitoEditing ? "Bloquear edición" : "Editar datos Fito"}
                            >
-                              <X className="h-4 w-4 mr-1" /> Desvincular
+                              <Pencil className="h-4 w-4 mr-1" /> {isFitoEditing ? "Editando" : "Editar"}
                            </button>
+                           {/* Botón Desvincular: solo visible si NO está editando */}
+                           {!isFitoEditing && (
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 setFormData({
+                                   ...formData,
+                                   fitosanitario: { id: null, consignatario_fito: "", direccion_fito: "" }
+                                 });
+                                 setIsFitoEditing(false);
+                               }}
+                               className="h-14 px-4 bg-rose-50 text-rose-500 hover:bg-rose-100 border border-transparent rounded-2xl transition-all font-bold text-xs flex items-center justify-center whitespace-nowrap shadow-sm hover:border-rose-200"
+                               title="Desvincular Maestro"
+                             >
+                                <X className="h-4 w-4 mr-1" /> Desvincular
+                             </button>
+                           )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -464,7 +494,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-xs">DIRECCIÓN (FITO)</label>
                       <textarea
                         value={formData.fitosanitario.direccion_fito}
-                        readOnly={!!formData.fitosanitario.id}
+                        readOnly={!!formData.fitosanitario.id && !isFitoEditing}
                         onChange={e => setFormData({
                           ...formData,
                           fitosanitario: { ...formData.fitosanitario, direccion_fito: safeToUpperCase(e.target.value) }
@@ -472,9 +502,11 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         placeholder="DIRECCIÓN PARA EL FITO..."
                         className={cn(
                            "w-full min-h-[120px] p-6 border rounded-2xl focus:outline-none transition-all font-bold text-xs lc-scroll shadow-sm",
-                           formData.fitosanitario.id 
+                           formData.fitosanitario.id && !isFitoEditing
                             ? "bg-emerald-50/30 border-emerald-100 text-emerald-800 cursor-not-allowed" 
-                            : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
+                            : formData.fitosanitario.id && isFitoEditing
+                              ? "bg-amber-50/40 border-amber-200 text-amber-900 focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400"
+                              : "bg-white border-slate-100 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500"
                         )}
                       />
                     </div>
