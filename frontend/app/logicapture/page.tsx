@@ -836,50 +836,52 @@ export default function LogiCaptureV2Page() {
                 {/* BLOQUE 1: DATOS DE EMBARQUE */}
                 <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm relative">
                    <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 rounded-l-3xl" />
-                   <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-4">
-                         <div className="flex items-center gap-3">
-                            <BadgeCheck className={cn("h-5 w-5", isBookingBlocked ? "text-rose-500" : "text-emerald-600")} />
-                            <h3 className={cn("text-xs font-black uppercase tracking-[0.2em]", isBookingBlocked ? "text-rose-950" : "text-emerald-950")}>01. Datos de Embarque</h3>
-                         </div>
-                         
-                         {isBookingBlocked && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 text-white rounded-xl shadow-lg shadow-rose-900/20 animate-in slide-in-from-top-4 duration-500">
-                               <AlertCircle className="h-4 w-4 animate-pulse" />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Documento Duplicado - Prohibido Guardar</span>
-                            </div>
-                         )}
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                          <div className="flex items-center gap-3">
+                             <div className={cn(
+                               "h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-500",
+                               isBookingBlocked ? "bg-rose-100 text-rose-600 shadow-sm" : "bg-emerald-100 text-emerald-600"
+                             )}>
+                                <BadgeCheck className="h-4 w-4" />
+                             </div>
+                             <h3 className={cn("text-xs font-black uppercase tracking-[0.2em]", isBookingBlocked ? "text-rose-900" : "text-emerald-950")}>
+                                01. Datos de Embarque
+                             </h3>
+                          </div>
 
-                         {/* Toggle Tratamiento en Buque (Compacto en Cabecera) */}
-                         {transportMode === "maritimo" && (
-                           <button 
-                              onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
-                              className={cn(
-                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 border",
-                                 formData.tratamientoBuque 
-                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm" 
-                                    : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200"
-                              )}
-                           >
-                              <div className={cn(
-                                 "w-2 h-2 rounded-full",
-                                 formData.tratamientoBuque ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
-                              )} />
-                              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Tratamiento en Buque</span>
-                           </button>
-                         )}
-                      </div>
-                      
-                      {/* Oráculo de Unicidad: Alerta Centralizada */}
-                      {(fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
-                        <div className="bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[200px]">
-                           <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
-                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight truncate">
-                              {fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam}
-                           </span>
-                        </div>
-                      )}
-                   </div>
+                          {/* Consolidación de Alertas de Duplicidad y Estado */}
+                          {(isBookingBlocked || fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam) && (
+                             <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl animate-in slide-in-from-left-4 duration-500 shadow-sm max-w-[280px]">
+                                <AlertCircle className="h-3.5 w-3.5 shrink-0 animate-pulse text-rose-600" />
+                                <span className="text-[10px] font-black uppercase tracking-tight truncate">
+                                   {isBookingBlocked 
+                                      ? "BLOQUEO: Documento ya procesado" 
+                                      : (fieldErrors.booking || fieldErrors.ordenBeta || fieldErrors.contenedor || fieldErrors.dam)}
+                                </span>
+                             </div>
+                          )}
+                       </div>
+                       
+                       {/* Toggle Tratamiento - Derecha y Compacto */}
+                       {transportMode === "maritimo" && (
+                         <button 
+                            onClick={() => updateField("tratamientoBuque", !formData.tratamientoBuque)}
+                            className={cn(
+                               "flex items-center gap-2 px-4 py-2 rounded-2xl transition-all duration-500 border group/toggle",
+                               formData.tratamientoBuque 
+                                  ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                            )}
+                         >
+                            <div className={cn(
+                               "w-1.5 h-1.5 rounded-full transition-all duration-500",
+                               formData.tratamientoBuque ? "bg-white scale-125" : "bg-slate-300 group-hover/toggle:bg-emerald-400"
+                            )} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Tratamiento Buque</span>
+                         </button>
+                       )}
+                    </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField 
