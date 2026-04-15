@@ -141,6 +141,7 @@ class InstructionPDFService:
             # Observaciones
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
             fob_val = override_data.get("fob", "USD 0.00")
+            emision_bl_val = override_data.get("emision_bl", "SWB")
             po_val = override_data.get("po", "")
             
         else:
@@ -205,6 +206,7 @@ class InstructionPDFService:
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
             flete_val = "PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"
+            emision_bl_val = cliente_maestro.emision_bl if cliente_maestro and cliente_maestro.emision_bl else "SWB"
             
             # Valores fijos default
             embarcador_nombre = "COMPLEJO AGROINDUSTRIAL BETA S.A."
@@ -314,7 +316,7 @@ class InstructionPDFService:
             t1_data.append([b_p("PO"), b_p(po_val)])
 
         t1_data.extend([
-            [b_p("EMISION B/L"), n_p("SWB")],
+            [b_p("EMISION B/L"), n_p(emision_bl_val)],
             [b_p("PUERTO EMBARQUE"), n_p(pos_pol)],
             [b_p("ETA"), n_p(eta_str)],
             [b_p("PUERTO DESTINO"), n_p(puerto_destino)],

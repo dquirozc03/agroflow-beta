@@ -62,6 +62,7 @@ class AdminOverrideRequest(BaseModel):
     direccion_planta: Optional[str] = None
     fecha_llenado: Optional[str] = None
     po: Optional[str] = ""
+    emision_bl: Optional[str] = "SWB"
 
 @router.get("/lookup/{booking}")
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
@@ -180,6 +181,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "pallets": total_pallets,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
+            "emision_bl": cliente_maestro.emision_bl if cliente_maestro else "SWB",
             
             "temperatura": pos.TEMPERATURA or "0.5 °C",
             "ventilacion": pos.VENTILACION or "15 CBM",
@@ -213,6 +215,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 "po": pedido.po if pedido and getattr(pedido, 'po', None) else "",
                 "notify_bl": cliente_maestro.notify_bl,
                 "direccion_notify": cliente_maestro.direccion_notify,
+                "emision_bl": cliente_maestro.emision_bl,
                 "fitosanitario": fito_data
             }
         else:

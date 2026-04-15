@@ -291,7 +291,7 @@ export default function InstruccionesEmbarque() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   {
                     label: "Booking",
@@ -318,6 +318,11 @@ export default function InstruccionesEmbarque() {
                     label: "PO",
                     val: lookupData?.po || "NO APLICA",
                     icon: FileText
+                  },
+                  {
+                    label: "Emisión B/L",
+                    val: lookupData?.emision_bl || "SWB",
+                    icon: Settings2
                   }
                 ].map((f, i) => (
                   <div key={i} className="space-y-2">
@@ -327,8 +332,8 @@ export default function InstruccionesEmbarque() {
                     <div 
                       title={f.val}
                       className={cn(
-                      "bg-slate-50/80 border rounded-2xl h-14 px-5 flex items-center gap-3 transition-all overflow-hidden relative group",
-                      f.isWarning ? "border-rose-500 bg-rose-50/30 ring-4 ring-rose-500/5" : "border-slate-100 opacity-80"
+                      "bg-slate-50/80 border rounded-[1.5rem] h-20 px-6 flex items-center gap-4 transition-all relative group",
+                      f.isWarning ? "border-rose-500 bg-rose-50/30 ring-4 ring-rose-500/5" : "border-slate-100 opacity-90 hover:opacity-100 hover:bg-white hover:shadow-md"
                     )}>
                       {isLoadingLookup && i === 0 ? (
                         <Loader2 className="h-4 w-4 text-emerald-500 animate-spin" />
@@ -337,7 +342,7 @@ export default function InstruccionesEmbarque() {
                       )}
 
                       <span className={cn(
-                        "text-xs font-black uppercase truncate",
+                        "text-sm font-black uppercase break-all",
                         f.isWarning ? "text-rose-600" : "text-slate-950"
                       )}>
                         {f.val}

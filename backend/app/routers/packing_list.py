@@ -703,7 +703,7 @@ async def generate_packing_list_ogl(
         # --- REGISTRAR EN EL HISTORIAL Y BLOQUEAR ---
         try:
             # Capturar usuario del JWT si existe
-            nombre_usuario = current_user.nombre if current_user else "Sistema"
+            nombre_usuario = current_user.usuario if current_user else "Sistema"
 
             nueva_emision = EmisionPackingList(
                 usuario=nombre_usuario,

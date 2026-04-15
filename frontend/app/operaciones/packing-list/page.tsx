@@ -269,7 +269,10 @@ export default function PackingListCustomizadosPage() {
   const fetchNaves = async () => {
     setIsLoadingNaves(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/naves`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/naves`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       if (resp.ok) setNaves(await resp.json());
       else toast.error("Error al cargar naves");
     } catch { toast.error("Error de conexión"); }
@@ -288,7 +291,10 @@ export default function PackingListCustomizadosPage() {
     setIsLoadingBookings(true);
 
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/bookings?nave=${encodeURIComponent(nave.nave)}`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/bookings?nave=${encodeURIComponent(nave.nave)}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       if (resp.ok) setBookings(await resp.json());
       else toast.error("No se encontraron bookings");
     } catch { toast.error("Error al cargar bookings"); }
@@ -313,8 +319,11 @@ export default function PackingListCustomizadosPage() {
       filesConfirmacion.forEach((f) => formData.append("confirmaciones", f));
       if (fileTermografos) formData.append("termografos", fileTermografos);
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/generate/${selectedCliente.endpoint}`, {
-        method: "POST", body: formData
+        method: "POST", 
+        body: formData,
+        headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (resp.ok) {
@@ -343,7 +352,10 @@ export default function PackingListCustomizadosPage() {
   const fetchHistorial = async () => {
     setIsLoadingHistorial(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/historial`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/historial`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       if (resp.ok) {
         const data = await resp.json();
         setHistorial(data.items);
@@ -368,9 +380,13 @@ export default function PackingListCustomizadosPage() {
 
     setIsAnulando(true);
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/${itemAnular.id}/anular`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ motivo: motivoFinal })
       });
 
