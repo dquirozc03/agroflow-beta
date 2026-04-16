@@ -551,12 +551,23 @@ async def generate_packing_list_ogl(
                 ).first()
                 
                 if pedido_ogl:
-                    n_up = p.NAVE.strip().upper()
-                    if n_up not in nave_etas or p.ETA < nave_etas[n_up]:
-                        nave_etas[n_up] = p.ETA
+                    # 5. Intentamos sacar la nave oficial del Reporte de Embarques para este posicionamiento (Inge Daniel Rule)
+                    rep = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == p.BOOKING).first()
+                    
+                    n_name = p.NAVE.strip().upper() if p.NAVE else "SIN NAVE"
+                    if rep and rep.nave_arribo:
+                        n_name = rep.nave_arribo.strip().upper()
+
+                    if n_name not in nave_etas or p.ETA < nave_etas[n_name]:
+                        nave_etas[n_name] = p.ETA
+
+            # 3. Asegurar que la nave actual está en el mapa (Verdad Absoluta Activa)
+            if nave_clean not in nave_etas:
+                nave_etas[nave_clean] = primer_pos.ETA
 
             # 4. Ordenar naves por su ETA mínima cronológica (Verdad Absoluta)
-            naves_ordenadas = sorted(nave_etas.items(), key=lambda x: x[1])
+            # En caso de empate en fecha, ordenamos alfabéticamente para permanencia (A < M < Y)
+            naves_ordenadas = sorted(nave_etas.items(), key=lambda x: (x[1], x[0]))
             
             # 5. El correlativo es el índice (1-based) de la nave actual en la lista ordenada de la semana
             correlativo = 1
@@ -564,8 +575,9 @@ async def generate_packing_list_ogl(
                 if n_name == nave_clean:
                     correlativo = i + 1
                     break
-                
-            pl_id = f"WK{semana_eta}{correlativo}"
+            
+            pl_id = f"WK{str(semana_eta).zfill(2)}{correlativo}"
+            logger.info(f"Fórmula WK: Nave {nave_clean} | Semana {semana_eta} | Pos {correlativo} | ID: {pl_id}")
 
         # --- CABECERA ESTÁTICA (Inge Daniel Rule) ---
         ws['C2'].value = "1101613"
