@@ -331,7 +331,8 @@ export default function PackingListCustomizadosPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `PL_${selectedCliente.id}_${selectedNave.nave.replace(/ /g, "_")}.xlsx`;
+        const safeNaveName = selectedNave.nave.replace(/[/\\?%*:|"<>]/g, '_').replace(/ /g, "_");
+        a.download = `PL_${selectedCliente.id}_${safeNaveName}.xlsx`;
         document.body.appendChild(a); a.click();
         window.URL.revokeObjectURL(url); document.body.removeChild(a);
         setGenStatus("success");

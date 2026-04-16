@@ -8,13 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, R
 from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from app.database import get_db
 from app.utils.logging import logger
 from app.models.pedido import PedidoComercial
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque, ReporteEmbarques
 from app.models.packing_list import EmisionPackingList, DetalleEmisionPackingList
+from app.utils.formatters import get_peru_time
 from app.dependencies.auth import OptionalUser
 from pydantic import BaseModel
 import pandas as pd
@@ -301,7 +302,7 @@ async def generate_packing_list_ogl(
         if not bookings_set:
             raise HTTPException(status_code=404, detail=f"No se encontraron bookings para la nave '{nave}'")
 
-        booking_data_map: dict[str, dict] = {}
+        booking_data_map: Dict[str, Dict] = {}
         primer_pedido = None
         primer_pos = None
 
@@ -366,7 +367,7 @@ async def generate_packing_list_ogl(
                 # Fallback: continuamos sin termógrafos si el archivo está corrupto
 
         # 2. Cargar todos los pallets
-        agrupado_por_booking: dict[str, list] = {b: [] for b in booking_data_map.keys()}
+        agrupado_por_booking: Dict[str, List] = {b: [] for b in booking_data_map.keys()}
         contenedor_default = next(iter(booking_data_map.values()))["contenedor"]
 
         for conf_file in confirmaciones:
@@ -502,12 +503,8 @@ async def generate_packing_list_ogl(
                     cell.value = value
             except: pass
 
-        # Header consolidado - REGLAS INGE DANIEL
         # Ajuste Zona Horaria Perú (UTC-5)
-        import datetime as dt_mod
-        ahora_utc = datetime.now(dt_mod.timezone.utc)
-        peru_tz = dt_mod.timezone(dt_mod.timedelta(hours=-5))
-        ahora = ahora_utc.astimezone(peru_tz)
+        ahora = get_peru_time()
         
         # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVES OGL DE LA SEMANA
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
@@ -692,7 +689,9 @@ async def generate_packing_list_ogl(
         wb.save(output)
         output.seek(0)
         
-        filename = f"Packing List_OGL_MAESTRO_{nave_clean.replace(' ','_')}_{pl_id}.xlsx"
+        # Sanitizar el nombre de la nave para evitar errores de archivo (especialmente si contiene '/')
+        safe_nave = re.sub(r'[\\/*?:"<>|]', "_", nave_clean).replace(' ', '_')
+        filename = f"Packing List_OGL_MAESTRO_{safe_nave}_{pl_id}.xlsx"
 
         # --- GUARDAR COPIA EN DISCO PARA RE-DESCARGA ---
         file_bytes = output.getvalue()

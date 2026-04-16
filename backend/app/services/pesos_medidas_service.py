@@ -6,7 +6,8 @@ from reportlab.platypus import Table, TableStyle
 from sqlalchemy.orm import Session
 from app.models.logicapture import LogiCaptureRegistro
 from app.models.maestros import VehiculoTracto, VehiculoCarreta
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from app.utils.formatters import get_peru_time
 import os
 
 # Configuración Oficial Beta
@@ -105,9 +106,11 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
         c.drawCentredString(width/2 + 1*cm, curr_y, line)
         curr_y -= 0.32*cm
 
-    # Fecha
+    # Fecha ajustada a Zona Horaria Perú (UTC-5) 🇵🇪
+    ahora = get_peru_time()
+    
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(1.5*cm, height - 3.8*cm, f"Fecha :   {datetime.now().strftime('%d/%m/%Y')}")
+    c.drawString(1.5*cm, height - 3.8*cm, f"Fecha :   {ahora.strftime('%d/%m/%Y')}")
 
     # --- I) DATOS DEL GENERADOR DE CARGA ---
     c.setFont("Helvetica-Bold", 8)
@@ -125,9 +128,9 @@ def generate_anexo_1_pdf(db: Session, registro_id: int, is_especial: bool = Fals
     nombre_planta_busqueda = (reg.planta or "").strip()
     planta_db = db.query(Planta).filter(Planta.planta.ilike(f"%{nombre_planta_busqueda}%")).first()
 
-    # 1. Código de Trazabilidad Dinámico
+    # 1. Código de Trazabilidad Dinámico (Usando la misma hora de Perú)
     centro_planta = planta_db.centro if (planta_db and planta_db.centro) else "4102"
-    fecha_trazabilidad = datetime.now().strftime('%d%m%y')
+    fecha_trazabilidad = ahora.strftime('%d%m%y')
     codigo_completo = f"{centro_planta}{fecha_trazabilidad}"
 
     c.setFillColor(black) # Forzamos NEGRO para el texto sobre el amarillo

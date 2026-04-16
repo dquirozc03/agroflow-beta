@@ -11,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.utils.formatters import normalize_client_name, normalize_country_name
+from app.utils.formatters import normalize_client_name, normalize_country_name, get_peru_time
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, Planta
@@ -144,6 +144,9 @@ class InstructionPDFService:
             emision_bl_val = override_data.get("emision_bl", "SWB")
             po_val = override_data.get("po", "")
             
+            # Fecha de emisión para el header (Extraída de la fecha de llenado)
+            fecha_emision = fecha_llenado.split(" - ")[0] if " - " in str(fecha_llenado) else str(fecha_llenado)
+            
         else:
             # Lógica automática original (Booking -> DB)
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
@@ -219,6 +222,9 @@ class InstructionPDFService:
                     if p.po and p.po.strip():
                         po_val = p.po.strip()
                         break
+            
+            # Fecha de emisión para el header (Usar Fecha Programada / ETD)
+            fecha_emision = f_str
 
         # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
@@ -275,7 +281,7 @@ class InstructionPDFService:
                 if granada_obj: header_row.append(granada_obj)
             
             if len(header_row) < 3:
-                header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
+                header_row.append(Paragraph(f"<font size=7>FECHA: {fecha_emision}</font>", styles["Normal"]))
                 
             header_table = Table([header_row])
             header_table.setStyle(TableStyle([

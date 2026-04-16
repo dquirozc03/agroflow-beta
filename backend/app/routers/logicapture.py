@@ -1,4 +1,4 @@
-from app.utils.formatters import clean_booking, clean_plate, clean_container, clean_dni
+from app.utils.formatters import clean_booking, clean_plate, clean_container, clean_dni, get_peru_time
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -676,7 +676,7 @@ def export_to_excel(db: Session = Depends(get_db)):
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=LogiCapture_Auditoria_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+        headers={"Content-Disposition": f"attachment; filename=LogiCapture_Auditoria_{get_peru_time().strftime('%Y%m%d')}.xlsx"}
     )
 
 @router.post("/registros/{id}/anexo1")
