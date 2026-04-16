@@ -37,6 +37,24 @@ router = APIRouter(
 )
 
 # ---------------------------------------------------------------------------
+# Mapeo de Recibidores Oficiales (Inge Daniel Rule 💎)
+# ---------------------------------------------------------------------------
+RECIPIENTS_DATA = {
+    "ISS": {
+        "full_name": "ISS (INTEGRATED SERVICE SOLUTIONS LTD)",
+        "notify_id": "1038367"
+    },
+    "VDH": {
+        "full_name": "VDH FRUITS BV",
+        "notify_id": "1041374"
+    },
+    "VDH FRUITS BV": {
+        "full_name": "VDH FRUITS BV",
+        "notify_id": "1041374"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Constante: nombre del cliente objetivo
 # ---------------------------------------------------------------------------
 OGL_KEYWORD = "OGL"
@@ -537,14 +555,15 @@ async def generate_packing_list_ogl(
                     if n_up not in nave_etas or p.ETA < nave_etas[n_up]:
                         nave_etas[n_up] = p.ETA
 
-            # El usuario requiere que el correlativo sea el TOTAL de naves en la semana
-            # Ej: Si hay 3 naves en toda la semana, el sufijo es 3 (WK183)
-            naves_unicas = list(nave_etas.keys())
+            # 4. Ordenar naves por su ETA mínima cronológica (Verdad Absoluta)
+            naves_ordenadas = sorted(nave_etas.items(), key=lambda x: x[1])
             
-            if nave_clean not in naves_unicas:
-                naves_unicas.append(nave_clean)
-                
-            correlativo = len(naves_unicas) if naves_unicas else 1
+            # 5. El correlativo es el índice (1-based) de la nave actual en la lista ordenada de la semana
+            correlativo = 1
+            for i, (n_name, _) in enumerate(naves_ordenadas):
+                if n_name == nave_clean:
+                    correlativo = i + 1
+                    break
                 
             pl_id = f"WK{semana_eta}{correlativo}"
 
@@ -566,7 +585,21 @@ async def generate_packing_list_ogl(
         safe_write(ws, "C8", nave_final)
 
         if primer_pedido:
-            safe_write(ws, "C11", primer_pedido.recibidor or "")
+            # C10 y C11: Recibidor y Notify ID (Lógica de Mapeo 💎)
+            recibidor_raw = (primer_pedido.recibidor or "").strip().upper()
+            recipient_info = RECIPIENTS_DATA.get(recibidor_raw)
+            
+            # Fallback por coincidencia parcial si es necesario
+            if not recipient_info:
+                if "VDH" in recibidor_raw: recipient_info = RECIPIENTS_DATA.get("VDH")
+                elif "ISS" in recibidor_raw: recipient_info = RECIPIENTS_DATA.get("ISS")
+
+            if recipient_info:
+                safe_write(ws, "C10", recipient_info["notify_id"])
+                safe_write(ws, "C11", recipient_info["full_name"])
+            else:
+                safe_write(ws, "C11", primer_pedido.recibidor or "")
+
             safe_write(ws, "C12", primer_pedido.port_id_orig or "")
             safe_write(ws, "C14", primer_pedido.port_id_dest or "")
             safe_write(ws, "C15", primer_pedido.pod or "")
@@ -714,9 +747,14 @@ async def generate_packing_list_ogl(
             db.flush() # Para obtener el ID
 
             for bk_id in bookings_set:
+                # Obtener la orden_beta para este booking desde el mapa o DB
+                b_info = booking_data_map.get(bk_id)
+                ord_val = b_info["pos"].ORDEN_BETA if b_info else None
+                
                 det = DetalleEmisionPackingList(
                     emision_id=nueva_emision.id,
-                    booking=bk_id
+                    booking=bk_id,
+                    orden_beta=ord_val
                 )
                 db.add(det)
                 
@@ -775,7 +813,8 @@ def obtener_historial_pl(db: Session = Depends(get_db)):
             "archivo": em.archivo_nombre,
             "archivo_disponible": archivo_disponible,
             "motivo_anulacion": em.motivo_anulacion,
-            "bookings": detalles
+            "bookings": [d.booking for d in em.detalles],
+            "ordenes": [d.orden_beta for d in em.detalles if d.orden_beta]
         })
     return {"items": resultado}
 

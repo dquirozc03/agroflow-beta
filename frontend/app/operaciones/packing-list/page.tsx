@@ -84,6 +84,7 @@ interface EmisionHistorial {
   usuario: string;
   motivo_anulacion: string | null;
   bookings: string[];
+  ordenes: string[];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -615,7 +616,7 @@ export default function PackingListCustomizadosPage() {
                      <th className="pb-3 px-4 w-[160px]">Fecha & Hora</th>
                      <th className="pb-3 px-4 w-[180px]">Nave Asignada</th>
                      <th className="pb-3 px-4 min-w-[200px]">Archivo / Auditoría</th>
-                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes</th>
+                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes (Beta)</th>
                      <th className="pb-3 px-4 text-center w-[120px]">Estado</th>
                      <th className="pb-3 px-4 text-right w-[120px]">Acción</th>
                    </tr>
@@ -662,8 +663,8 @@ export default function PackingListCustomizadosPage() {
                        </td>
                         <td className="p-4 text-center">
                            <div className="flex justify-center max-w-[200px] mx-auto">
-                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] break-all line-clamp-2 leading-tight" title={h.bookings.join(' / ')}>
-                                 {h.bookings.join(' / ')}
+                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-emerald-700 text-[10px] break-all line-clamp-2 leading-tight shadow-sm" title={h.ordenes?.join(' / ')}>
+                                 {h.ordenes && h.ordenes.length > 0 ? h.ordenes.join(' / ') : h.bookings.join(' / ')}
                               </span>
                            </div>
                         </td>
@@ -730,7 +731,7 @@ export default function PackingListCustomizadosPage() {
                 <div className="p-6 space-y-6">
                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-[11px] font-bold text-slate-600 leading-relaxed">
-                         Al anular este documento, las <span className="font-black text-slate-800">{itemAnular.bookings.length} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
+                         Al anular este documento, las <span className="font-black text-slate-800">{(itemAnular.ordenes?.length || itemAnular.bookings.length)} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
                       </p>
                    </div>
                    
