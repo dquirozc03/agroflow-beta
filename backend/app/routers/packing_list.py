@@ -560,7 +560,7 @@ async def generate_packing_list_ogl(
 
                     # Guardamos la fecha de salida (ETD) para el ranking de correlativo
                     # La semana se define por ETA, pero el ranking 1,2,3 por ETD (Inge Daniel Rule 💎)
-                    etd_val = p.SALIDA if p.SALIDA else p.ETA
+                    etd_val = p.ETD if p.ETD else p.ETA
                     
                     if n_name not in nave_etas or etd_val < nave_etas[n_name]:
                         nave_etas[n_name] = etd_val
@@ -568,7 +568,7 @@ async def generate_packing_list_ogl(
             # 3. Asegurar que la nave actual está en el mapa (Verdad Absoluta Activa)
             if nave_clean not in nave_etas:
                 # Usamos el ETD de la nave actual para su posición en el ranking
-                etd_actual = primer_pos.SALIDA if primer_pos.SALIDA else primer_pos.ETA
+                etd_actual = primer_pos.ETD if primer_pos.ETD else primer_pos.ETA
                 nave_etas[nave_clean] = etd_actual
 
             # 4. Ordenar naves por su ETD (Fecha de Salida) - Inge Daniel Rule 💎
@@ -632,7 +632,9 @@ async def generate_packing_list_ogl(
             except: return 0.0
 
         GRID_START_ROW = 21  # Empezamos en la 21 para no pisar cabecera en la 20
+        # --- LLENADO DE DATOS (Malla OGL) ---
         fila_secuencial = 1
+        therms_written = set() # Track termógrafos para no repetirlos
         
         # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
@@ -661,9 +663,11 @@ async def generate_packing_list_ogl(
                     ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
                 
                 # M: Additional info / Notes (Inyectamos Termógrafo si existe) 🌡️
+                # REGLA: Solo una vez por pallet para evitar repeticiones visuales
                 p_id_match = str(item["pallet"]).strip().upper()
-                if p_id_match in termografos_map:
+                if p_id_match in termografos_map and p_id_match not in therms_written:
                     ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
+                    therms_written.add(p_id_match)
 
                 # N: Gross Weight (Cajas * 4.2)
                 cajas_num = safe_float(item["cajas"])
@@ -712,8 +716,9 @@ async def generate_packing_list_ogl(
                     
                 # M: Additional info / Notes (Fallback para huérfanos) 🌡️
                 p_id_match = str(item["pallet"]).strip().upper()
-                if p_id_match in termografos_map:
+                if p_id_match in termografos_map and p_id_match not in therms_written:
                     ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
+                    therms_written.add(p_id_match)
 
                 ws.cell(row=fila_e, column=14).value = round(safe_float(item["cajas"]) * 4.2, 2)
                 ws.cell(row=fila_e, column=15).value = item["total_kilos"] # O
