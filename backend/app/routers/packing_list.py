@@ -558,15 +558,21 @@ async def generate_packing_list_ogl(
                     if rep and rep.nave_arribo:
                         n_name = rep.nave_arribo.strip().upper()
 
-                    if n_name not in nave_etas or p.ETA < nave_etas[n_name]:
-                        nave_etas[n_name] = p.ETA
+                    # Guardamos la fecha de salida (ETD) para el ranking de correlativo
+                    # La semana se define por ETA, pero el ranking 1,2,3 por ETD (Inge Daniel Rule 💎)
+                    etd_val = p.SALIDA if p.SALIDA else p.ETA
+                    
+                    if n_name not in nave_etas or etd_val < nave_etas[n_name]:
+                        nave_etas[n_name] = etd_val
 
             # 3. Asegurar que la nave actual está en el mapa (Verdad Absoluta Activa)
             if nave_clean not in nave_etas:
-                nave_etas[nave_clean] = primer_pos.ETA
+                # Usamos el ETD de la nave actual para su posición en el ranking
+                etd_actual = primer_pos.SALIDA if primer_pos.SALIDA else primer_pos.ETA
+                nave_etas[nave_clean] = etd_actual
 
-            # 4. Ordenar naves por su ETA mínima cronológica (Verdad Absoluta)
-            # En caso de empate en fecha, ordenamos alfabéticamente para permanencia (A < M < Y)
+            # 4. Ordenar naves por su ETD (Fecha de Salida) - Inge Daniel Rule 💎
+            # En caso de empate en ETD, usamos orden alfabético para permanencia (A < M < Y)
             naves_ordenadas = sorted(nave_etas.items(), key=lambda x: (x[1], x[0]))
             
             # 5. El correlativo es el índice (1-based) de la nave actual en la lista ordenada de la semana
@@ -577,7 +583,7 @@ async def generate_packing_list_ogl(
                     break
             
             pl_id = f"WK{str(semana_eta).zfill(2)}{correlativo}"
-            logger.info(f"Fórmula WK: Nave {nave_clean} | Semana {semana_eta} | Pos {correlativo} | ID: {pl_id}")
+            logger.info(f"Fórmula WK: Nave {nave_clean} | Semana {semana_eta} | Ranking ETD {correlativo} | ID: {pl_id}")
 
         # --- CABECERA ESTÁTICA (Inge Daniel Rule) ---
         ws['C2'].value = "1101613"
