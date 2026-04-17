@@ -147,18 +147,15 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
             # Primero buscamos en Posicionamiento para sacar la orden
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == b).first()
             if pos and pos.ORDEN_BETA:
-                # La orden debe tener prefijo BG o CO para OGL
-                upper_beta = pos.ORDEN_BETA.strip().upper()
-                if "BG" in upper_beta or "CO" in upper_beta:
-                    orden_num = strip_orden_beta(pos.ORDEN_BETA)
-                    if orden_num:
-                        pedido_ogl = db.query(PedidoComercial).filter(
-                            PedidoComercial.orden_beta == orden_num,
-                            PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                        ).first()
-                        if pedido_ogl:
-                            if b not in bookings_ogl_reales:
-                                bookings_ogl_reales.append(b)
+                orden_num = strip_orden_beta(pos.ORDEN_BETA)
+                if orden_num:
+                    pedido_ogl = db.query(PedidoComercial).filter(
+                        PedidoComercial.orden_beta == orden_num,
+                        PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+                    ).first()
+                    if pedido_ogl:
+                        if b not in bookings_ogl_reales:
+                            bookings_ogl_reales.append(b)
         
         if bookings_ogl_reales:
             # Check if all bookings for this nave are already locked
@@ -185,7 +182,6 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                 ))
 
     return result
-
 
 @router.get("/bookings")
 def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
