@@ -69,7 +69,7 @@ class InstructionPDFService:
         match = re.search(r'\d+', raw_orden)
         return match.group(0) if match else raw_orden
 
-    def _match_cliente_maestro(self, db: Session, cliente_nombre: str, pais: str, pod: str) -> Optional[ClienteIE]:
+    def _match_cliente_maestro(self, db: Session, cliente_nombre: str, pais: str, pod: str, cultivo: str = "") -> Optional[ClienteIE]:
         """
         Lógica de Match Inteligente (Westfalia Match 💎 v2.2)
         Encapsulada para reutilización y limpieza.
@@ -79,32 +79,42 @@ class InstructionPDFService:
         pais_val = normalize_country_name(pais)
         pod_val = pod.strip() if pod else ""
         cliente_clean_val = cliente_nombre.strip()
+        cultivo_val = cultivo.strip() if cultivo else ""
 
-        # 1. Match Exacto (Nombre + Pais + POD)
-        cliente = db.query(ClienteIE).filter(
+        # 1. Match Exacto (Nombre + Pais + POD + Cultivo)
+        query = db.query(ClienteIE).filter(
             func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
-            func.trim(ClienteIE.pais).ilike(pais_val),
-            func.trim(ClienteIE.destino).ilike(pod_val)
-        ).first()
+            func.trim(ClienteIE.pais).ilike(pais_val)
+        )
+        if pod_val: query = query.filter(func.trim(ClienteIE.destino).ilike(pod_val))
+        if cultivo_val: query = query.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
+        cliente = query.first()
 
-        # 2. Match Semiexacto (Nombre + Pais)
+        # 2. Match Semiexacto (Nombre + Pais + Cultivo)
+        if not cliente:
+            query2 = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
+                func.trim(ClienteIE.pais).ilike(pais_val)
+            )
+            if cultivo_val: query2 = query2.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
+            cliente = query2.first()
+
+        # 3. Fallback (Nombre + Pais)
         if not cliente:
             cliente = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
                 func.trim(ClienteIE.pais).ilike(pais_val)
             ).first()
 
-        # 3. Match solo por Nombre Legal
+        # 4. Fallback (Solo Nombre Legal)
         if not cliente:
             cliente = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
             ).first()
 
-        # 4. Smart Match (Fuzzy / Normalizado)
+        # 5. Smart Match (Fuzzy / Normalizado)
         if not cliente:
             clean_name = normalize_client_name(cliente_nombre)
-            
-            # 4.1. Contenido + Pais
             cliente = db.query(ClienteIE).filter(
                 (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
                 (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
@@ -112,7 +122,6 @@ class InstructionPDFService:
                 ClienteIE.estado == "ACTIVO"
             ).first()
 
-            # 4.2. Fallback: Solo Contenido (Sin Pais)
             if not cliente:
                 cliente = db.query(ClienteIE).filter(
                     (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
@@ -120,8 +129,6 @@ class InstructionPDFService:
                     ClienteIE.estado == "ACTIVO"
                 ).first()
         
-        return cliente
-
         return cliente
 
     def _format_multiline(self, text: str) -> str:
@@ -220,7 +227,7 @@ class InstructionPDFService:
             # Búsqueda de Maestro
             pais_val = pedidos[0].pais if pedidos else ""
             pod_val = pedidos[0].pod if pedidos else ""
-            cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
+            cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val, pos.cultivo)
             fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
             planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None
@@ -236,15 +243,15 @@ class InstructionPDFService:
             pos_operador = pos.operador_logistico or "DP WORLD LOGISTICS S.R.L."
             pos_pol = pos.pol or "CALLAO"
             
-            f_prog = pos.fecha_programada
-            h_prog = pos.hora_programada
+            f_prog = pos.fecha_llenado_reporte or pos.fecha_programada
+            h_prog = pos.hora_llenado_reporte or pos.hora_programada
             f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
             fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
 
             eta_dt = pos.eta
             eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
-            puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
+            puerto_destino = pos.destino_booking or (pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else ""))
             
             variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
             desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
@@ -284,12 +291,20 @@ class InstructionPDFService:
             humedad = pos.humedad or def_hum
             atm = pos.ac or def_ac
             
+            # Tipo de Tecnología para los Gases
+            tecnologia = (pos.tipo_tecnologia or "").upper()
+            
             # Gases por defecto
             oxigeno = "NO APLICA" 
             co2 = "NO APLICA" 
             if is_palta:
-                oxigeno = "4%"
-                co2 = "6%"
+                # O2 y CO2 recomendados para Palta, sujeto a tecnología
+                if "LIVENTUS" in tecnologia:
+                    oxigeno = "12%"
+                    co2 = "8%"
+                else:
+                    oxigeno = "4%"
+                    co2 = "6%"
                 
             filtros = pos.filtros or ("NO" if is_granada else ("SI" if is_palta else "NO"))
             cold_treatment = pos.ct or ("NO" if (is_granada or is_palta) else "NO")
@@ -396,6 +411,7 @@ class InstructionPDFService:
 
         # --- MASTER TABLE ---
         is_granada = "GRANADA" in cultivo_key
+        # Construimos t1_data dinámicamente para manejar opcionales
         t1_data = [
             [b_p(pos_orden or 'S/N'), b_p("")],
             [b_p("EMBARCADOR"), n_p(embarcador_nombre)],
@@ -405,21 +421,30 @@ class InstructionPDFService:
             [b_p("UBIGEO PLANTA"), n_p("110111")],
             [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
-            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(cliente_maestro.direccion_notify if cliente_maestro else ""))],
-            [b_p("DATOS REFERENCIALES"), format_desc(
-                f"EORI CONSIGNE: {eori_consignee}",
-                f"EORI NOTIFY: {eori_notify}"
-            )],
+            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(cliente_maestro.direccion_notify if cliente_maestro else ""))]
+        ]
+
+        # Insertar EORI solo si son válidos
+        if (eori_consignee and eori_consignee != "----") or (eori_notify and eori_notify != "----"):
+            t1_data.append([
+                b_p("DATOS REFERENCIALES"), format_desc(
+                    f"EORI CONSIGNE: {eori_consignee}",
+                    f"EORI NOTIFY: {eori_notify}"
+                )
+            ])
+
+        t1_data.extend([
             [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
             [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")],
             [b_p("MOTONAVE"), n_p(pos_nave or "")],
             [b_p("BOOKING No."), b_p(pos_booking or "")],
             [b_p("FREIGHT"), n_p(flete_val)],
-        ]
+        ])
 
-        # Inserción dinámica de PO si existe y NO ES 0
-        if po_val and po_val.strip() and po_val.strip() != "0":
-            t1_data.append([b_p("PO"), b_p(po_val)])
+        # Inserción dinámica de PO
+        if po_val and po_val.strip():
+            display_po = "---" if po_val.strip() == "0" else po_val.strip()
+            t1_data.append([b_p("PO"), b_p(display_po)])
 
         t1_data.extend([
             [b_p("EMISION B/L"), n_p(emision_bl)],
@@ -434,8 +459,14 @@ class InstructionPDFService:
             [b_p("HUMEDAD"), n_p(humedad)],
             [b_p("ATMOSFERA CONTROLADA"), n_p(atm)],
             [b_p("OXIGENO"), n_p(oxigeno)],
-            [b_p("CO2"), n_p(co2)],
-            [b_p("FILTROS"), b_p(filtros)],
+            [b_p("CO2"), n_p(co2)]
+        ])
+
+        # Filtros: Omitir si es PALTA
+        if not ("PALTA" in cultivo_key or "AVOCADO" in cultivo_key):
+            t1_data.append([b_p("FILTROS"), b_p(filtros)])
+
+        t1_data.extend([
             [b_p("COLD TREAMENT"), b_p(cold_treatment)],
             [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
             [b_p("VALOR FOB APROXIMADO"), n_p(fob_val)],

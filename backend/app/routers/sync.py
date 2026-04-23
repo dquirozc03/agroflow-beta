@@ -38,6 +38,10 @@ COLUMN_MAPPING = {
     "FILTROS": "filtros",
     "FECHA SOLICITADA (OPERADOR)": "fecha_programada",
     "HORA SOLICITADA (OPERADOR)": "hora_programada",
+    "DESTINO (BOOKING)": "destino_booking",
+    "FECHA DE LLENADO (REPORTE)": "fecha_llenado_reporte",
+    "HORA DE LLENADO (REPORTE)": "hora_llenado_reporte",
+    "TIPO DE TECNOLOGIA": "tipo_tecnologia",
     "CAJAS VACIAS (SI/NO)": "cajas_vacias"
 }
 
@@ -109,8 +113,8 @@ def clean_data_value(val: str, db_column: str):
         except:
             return 0
 
-    # 2. Manejo de Fechas (etd, eta, fecha_programada - Soporte Español)
-    if db_column in ["etd", "eta", "fecha_programada"]:
+    # 2. Manejo de Fechas (etd, eta, fecha_programada, fecha_llenado_reporte)
+    if db_column in ["etd", "eta", "fecha_programada", "fecha_llenado_reporte"]:
         try:
             # Traducción básica de meses en español a inglés para el parser
             meses_es_en = {
@@ -127,8 +131,8 @@ def clean_data_value(val: str, db_column: str):
             logger.warning(f"No se pudo parsear fecha: {val_str} para {db_column}: {str(e)}")
             return None
 
-    # 3. Manejo de Horas (hora_programada)
-    if db_column == "hora_programada":
+    # 3. Manejo de Horas (hora_programada, hora_llenado_reporte)
+    if db_column in ["hora_programada", "hora_llenado_reporte"]:
         try:
             return parse_date(val_str).time()
         except:
