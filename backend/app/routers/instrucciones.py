@@ -69,6 +69,7 @@ class AdminOverrideRequest(BaseModel):
     planta_llenado: Optional[str] = None
     direccion_planta: Optional[str] = None
     ubigeo_planta: Optional[str] = None
+    region_planta: Optional[str] = None
     fecha_llenado: Optional[str] = None
     po: Optional[str] = ""
     freight: Optional[str] = "PREPAID"
@@ -157,6 +158,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "planta_llenado": planta_maestro.planta if planta_maestro else (pos.planta_llenado or "PLANTA BETA"),
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
             "ubigeo_planta": planta_maestro.ubigeo if planta_maestro else "110111",
+            "region_planta": f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else "",
             "cliente_nombre": (cliente_maestro.consignatario_bl or pedido_cliente_raw) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido_cliente_raw if pedido_cliente_raw else "POR DEFINIR"),
             "incoterm": pedido.incoterm if pedido else "",
             "cajas": total_cajas,

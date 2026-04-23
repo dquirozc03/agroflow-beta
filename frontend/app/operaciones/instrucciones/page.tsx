@@ -118,6 +118,7 @@ export default function InstruccionesEmbarque() {
     planta_llenado: "",
     direccion_planta: "",
     ubigeo_planta: "",
+    region_planta: "",
     usuario: "DQUIROZ"
   });
 
@@ -311,7 +312,8 @@ export default function InstruccionesEmbarque() {
           etiquetas: data.etiquetas || "GENERICA",
           planta_llenado: data.planta_llenado || "",
           direccion_planta: data.direccion_planta || "",
-          ubigeo_planta: data.ubigeo_planta || ""
+          ubigeo_planta: data.ubigeo_planta || "",
+          region_planta: data.region_planta || ""
         });
       }
     } catch (e) {

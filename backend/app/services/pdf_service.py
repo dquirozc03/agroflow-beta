@@ -180,6 +180,7 @@ class InstructionPDFService:
             # Planta y Fecha Llenado Manual
             planta_nombre = override_data.get("planta_llenado", "PLANTA BETA").upper()
             planta_direccion = override_data.get("direccion_planta", "")
+            planta_region = override_data.get("region_planta", "")
             planta_ubigeo = override_data.get("ubigeo_planta", "110111")
             fecha_llenado = override_data.get("fecha_llenado", "")
             
@@ -244,6 +245,7 @@ class InstructionPDFService:
             planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None
             planta_nombre = (planta_maestro.planta if planta_maestro else (pos.planta_llenado or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")).upper()
             planta_direccion = planta_maestro.direccion if planta_maestro else ""
+            planta_region = f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else ""
             planta_ubigeo = planta_maestro.ubigeo if planta_maestro else "110111"
             
             # Datos de Posicionamiento
@@ -429,7 +431,7 @@ class InstructionPDFService:
             [b_p("EMBARCADOR"), n_p(embarcador_nombre)],
             [b_p("DIRECCIÓN"), n_p(embarcador_direccion)],
             [b_p("OPERADOR LOGISTICO", white=is_granada), b_p(pos_operador, white=is_granada)],
-            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", planta_direccion)],
+            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", f"{planta_direccion}<br/>{planta_region}" if planta_region else planta_direccion)],
             [b_p("UBIGEO PLANTA"), n_p(planta_ubigeo)],
             [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
