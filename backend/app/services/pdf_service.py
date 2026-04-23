@@ -464,7 +464,7 @@ class InstructionPDFService:
             [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)],
             [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)],
             [b_p("OBSERVACIONES"), n_p(observaciones_final)]
-        ]
+        ])
 
         # Estilo Tablas
         # Cálculo de índices dinámicos para los fondos naranjas (Filtros y Cold Treatment)
