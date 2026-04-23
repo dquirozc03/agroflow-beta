@@ -2,7 +2,7 @@ from app.utils.formatters import clean_booking, clean_plate, clean_container, cl
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
-from sqlalchemy import func, text
+from sqlalchemy import func, text, or_, not_
 from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from datetime import datetime
@@ -517,11 +517,9 @@ def list_registros(
     db: Session = Depends(get_db)
 ):
     """Listado paginado de registros con filtros operativos."""
-    from sqlalchemy import or_
     query = db.query(LogiCaptureRegistro)
     
     if q:
-        from sqlalchemy import func
         q_clean = q.replace(" ", "").replace("-", "")
         query = query.filter(
             or_(
@@ -537,7 +535,6 @@ def list_registros(
     if status: query = query.filter(LogiCaptureRegistro.status == status)
     
     if motivo and motivo.strip() and motivo != "all":
-        from sqlalchemy import func, not_
         clean_motivo = motivo.strip().lower()
         
         if clean_motivo == "otros":
