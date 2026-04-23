@@ -18,27 +18,27 @@ router = APIRouter(prefix="/api/v1/sync", tags=["sincronizacion"])
 
 # Mapeo de columnas: Nombre Exacto en Excel (Inge Daniel) -> Nombre en la Base de Datos
 COLUMN_MAPPING = {
-    "PLT. EMPACADORA": "PLANTA_LLENADO",
-    "CULTIVO": "CULTIVO",
-    "BOOKING LIMPIO": "BOOKING",
-    "NAVE": "NAVE",
-    "ETD BOOKING": "ETD",
-    "ETA BOOKING": "ETA",
-    "POL": "POL",
-    "O/BETA FINAL": "ORDEN_BETA",
-    "PRECINTO SENASA (SI/NO)": "PRECINTO_SENASA",
-    "OPERADOR": "OPERADOR_LOGISTICO",
-    "NAVIERA": "NAVIERA",
-    "TERMOREGISTROS": "TERMOREGISTROS",
-    "AC": "AC",
-    "C/T": "CT",
-    "VENT": "VENTILACION",
-    "T°": "TEMPERATURA",
-    "HUMEDAD": "HUMEDAD",
-    "FILTROS": "FILTROS",
-    "FECHA SOLICITADA (OPERADOR)": "FECHA_PROGRAMADA",
-    "HORA SOLICITADA (OPERADOR)": "HORA_PROGRAMADA",
-    "CAJAS VACIAS (SI/NO)": "CAJAS_VACIAS"
+    "PLT. EMPACADORA": "planta_llenado",
+    "CULTIVO": "cultivo",
+    "BOOKING LIMPIO": "booking",
+    "NAVE": "nave",
+    "ETD BOOKING": "etd",
+    "ETA BOOKING": "eta",
+    "POL": "pol",
+    "O/BETA FINAL": "orden_beta",
+    "PRECINTO SENASA (SI/NO)": "precinto_senasa",
+    "OPERADOR": "operador_logistico",
+    "NAVIERA": "naviera",
+    "TERMOREGISTROS": "termoregistros",
+    "AC": "ac",
+    "C/T": "ct",
+    "VENT": "ventilacion",
+    "T°": "temperatura",
+    "HUMEDAD": "humedad",
+    "FILTROS": "filtros",
+    "FECHA SOLICITADA (OPERADOR)": "fecha_programada",
+    "HORA SOLICITADA (OPERADOR)": "hora_programada",
+    "CAJAS VACIAS (SI/NO)": "cajas_vacias"
 }
 
 # Mapeo de columnas: Nombre Exacto en Excel (Pedidos) -> Nombre en la Base de Datos
@@ -190,7 +190,7 @@ async def sync_posicionamiento_raw(
             mapping_indices[db_col] = idx
             columnas_detectadas.append(f"{excel_col} -> {db_col}")
 
-    if "BOOKING" not in mapping_indices:
+    if "booking" not in mapping_indices:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -214,7 +214,7 @@ async def sync_posicionamiento_raw(
                     raw_val = row[col_idx]
                     row_data[db_col] = clean_data_value(raw_val, db_col)
 
-            if not row_data.get("BOOKING"):
+            if not row_data.get("booking"):
                 continue
 
             # Upsert Inteligente (Protección contra NULLs)
@@ -222,7 +222,7 @@ async def sync_posicionamiento_raw(
             
             # Solo actualizamos los campos que NO vienen nulos en esta fila de Excel,
             # manteniendo la información previa si en esta sincronización el campo está vacío.
-            update_data = {k: v for k, v in row_data.items() if k != "BOOKING" and v is not None}
+            update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
             
             if update_data:
                 upsert_stmt = stmt.on_conflict_do_update(
