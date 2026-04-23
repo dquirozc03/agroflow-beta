@@ -15,7 +15,10 @@ import {
   ChevronLeft,
   ChevronRight,
   SortAsc,
-  SortDesc
+  SortDesc,
+  AlertTriangle,
+  ShieldCheck,
+  XCircle as Ban
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -43,14 +46,20 @@ export default function ChoferesPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showIncompletos, setShowIncompletos] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingChofer, setEditingChofer] = useState<any>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [statusModal, setStatusModal] = useState<{ open: boolean; mode: 'ACTIVO' | 'INACTIVO'; title: string }>({
+    open: false,
+    mode: 'ACTIVO',
+    title: ''
+  });
 
   useEffect(() => {
     fetchChoferes();
-  }, [page, searchTerm, sortOrder]);
+  }, [page, searchTerm, sortOrder, showIncompletos]);
 
   const fetchChoferes = async () => {
     setIsLoading(true);
@@ -59,6 +68,7 @@ export default function ChoferesPage() {
       url.searchParams.append("page", page.toString());
       url.searchParams.append("size", size.toString());
       url.searchParams.append("order", sortOrder);
+      url.searchParams.append("incompletos", showIncompletos.toString());
       if (searchTerm) url.searchParams.append("q", searchTerm);
 
       const response = await fetch(url.toString());
@@ -99,7 +109,12 @@ export default function ChoferesPage() {
         setChoferes(choferes.map(c => 
           c.id === id ? { ...c, estado: nuevoEstado } : c
         ));
-        toast.success(`Conductor ${nuevoEstado === "ACTIVO" ? "habilitado" : "inhabilitado"}`);
+        setStatusModal({
+          open: true,
+          mode: nuevoEstado as any,
+          title: choferes.find(c => c.id === id)?.nombre_operativo || ""
+        });
+        setTimeout(() => setStatusModal(prev => ({ ...prev, open: false })), 3000);
       }
     } catch (error) {
       toast.error("Error al actualizar estado");
@@ -118,35 +133,86 @@ export default function ChoferesPage() {
         editingData={editingChofer}
       />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22]">Conductores</h1>
-          <p className="text-sm text-slate-500 font-medium tracking-tight">Gestión de conductores y operadores de flota.</p>
+      {/* Modal de Estado dinámico al estilo AgroFlow Premium 💎 */}
+      {statusModal.open && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setStatusModal(prev => ({ ...prev, open: false }))} />
+          <div className={cn(
+            "relative bg-white rounded-[3.5rem] shadow-2xl p-12 max-w-md w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border",
+            statusModal.mode === "ACTIVO" ? "border-emerald-50" : "border-rose-50"
+          )}>
+            <div className={cn(
+              "w-24 h-24 rounded-full flex items-center justify-center mx-auto relative group",
+              statusModal.mode === "ACTIVO" ? "bg-emerald-100" : "bg-rose-100"
+            )}>
+              <div className={cn(
+                "absolute inset-0 rounded-full animate-ping opacity-20",
+                statusModal.mode === "ACTIVO" ? "bg-emerald-500" : "bg-rose-500"
+              )} />
+              {statusModal.mode === "ACTIVO" ? (
+                <ShieldCheck className="h-12 w-12 text-emerald-600 relative z-10" />
+              ) : (
+                <Ban className="h-12 w-12 text-rose-600 relative z-10" />
+              )}
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
+                {statusModal.mode === "ACTIVO" ? "¡Habilitado!" : "¡Inhabilitado!"}
+              </h2>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+                El conductor <br />
+                <span className={cn(
+                  "border-b-2",
+                  statusModal.mode === "ACTIVO" ? "text-emerald-600 border-emerald-500/20" : "text-rose-600 border-rose-500/20"
+                )}>{statusModal.title}</span> <br />
+                ha sido {statusModal.mode === "ACTIVO" ? "activado" : "desactivado"} correctamente.
+              </p>
+            </div>
+          </div>
         </div>
+      )}
+
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+             <div className="h-10 w-10 bg-emerald-950 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/20">
+                <Users className="h-5 w-5" />
+             </div>
+             <h1 className="text-3xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit']">
+                Control de <span className="text-emerald-500">Conductores</span>
+             </h1>
+          </div>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-13">
+             Gestión de conductores y operadores de flota
+          </p>
+        </div>
+        
         <div className="flex items-center gap-3">
            <button 
              onClick={fetchChoferes}
-             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm group"
+             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm active:scale-95 group"
            >
               <RefreshCw className={cn("h-5 w-5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} />
            </button>
            <button 
              onClick={handleCreateNew}
-             className="h-12 px-6 bg-[#022c22] text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95">
-              <Plus className="h-5 w-5" />
+             className="h-12 px-6 bg-emerald-950 text-white rounded-2xl font-black uppercase tracking-[0.15em] text-[11px] flex items-center gap-2 hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/20 active:scale-95 border-none"
+           >
+              <Plus className="h-4 w-4" />
               Nuevo Conductor
            </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         <div className="lg:col-span-3 flex gap-3">
-            <div className="relative flex-1 group">
-               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm items-end transition-all duration-500">
+         <div className="lg:col-span-2 space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Búsqueda Rápida</label>
+            <div className="relative group">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                <input 
                  type="text" 
                  placeholder="Buscar por Nombre, DNI o Apellidos..."
-                 className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm font-medium"
+                 className="w-full h-11 pl-12 pr-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-sm"
                  value={searchTerm}
                  onChange={(e) => {
                    setSearchTerm(e.target.value);
@@ -154,48 +220,78 @@ export default function ChoferesPage() {
                  }}
                />
             </div>
+         </div>
+
+         <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Filtro Estado</label>
+            <div className="flex p-1 bg-slate-100/50 rounded-2xl border border-slate-100 h-11">
+               <button 
+                 onClick={() => { setShowIncompletos(false); setPage(1); }}
+                 className={cn(
+                   "flex-1 rounded-xl font-black uppercase tracking-tighter text-[9px] transition-all",
+                   !showIncompletos ? "bg-[#022c22] text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
+                 )}
+               >
+                 Todos
+               </button>
+               <button 
+                 onClick={() => { setShowIncompletos(true); setPage(1); }}
+                 className={cn(
+                   "flex-1 rounded-xl font-black uppercase tracking-tighter text-[9px] transition-all flex items-center justify-center gap-2",
+                   showIncompletos ? "bg-amber-500 text-white shadow-sm" : "text-amber-600/60 hover:text-amber-600"
+                 )}
+               >
+                 <AlertTriangle className="h-3 w-3" />
+                 Incompletos
+               </button>
+            </div>
+         </div>
+
+         <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Ordenamiento</label>
             <button 
               onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}
               className={cn(
-                "h-14 w-14 bg-white border border-slate-100 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-95 group shrink-0",
-                sortOrder === "asc" ? "text-emerald-600 border-emerald-100" : "text-slate-400"
+                "w-full h-11 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group",
+                sortOrder === "asc" ? "text-emerald-600 border-emerald-100" : "text-slate-500"
               )}
-              title={sortOrder === "asc" ? "Orden: A-Z" : "Orden: Z-A"}
             >
-               {sortOrder === "asc" ? <SortAsc className="h-6 w-6" /> : <SortDesc className="h-6 w-6" />}
+               {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+               <span className="text-[10px] font-black uppercase tracking-widest">{sortOrder === "asc" ? "Ascendente (A-Z)" : "Descendente (Z-A)"}</span>
             </button>
          </div>
-         <div className="bg-white border border-slate-100 rounded-2xl px-6 flex items-center justify-between shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total de Conductores</p>
-            <p className="text-2xl font-extrabold text-[#022c22]">{total}</p>
-         </div>
+
+          <div className="bg-emerald-50/30 border border-emerald-100 rounded-[1.5rem] px-6 h-11 flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60">Registros</p>
+            <p className="text-xl font-black text-emerald-900">{total}</p>
+          </div>
       </div>
 
-      <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4 text-slate-300 font-['Outfit']">
              <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
-             <p className="text-xs font-black uppercase tracking-[0.2em]">Sincronizando Base de Datos...</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em]">Sincronizando Base de Datos...</p>
           </div>
         ) : (
           <div className="overflow-x-auto overflow-y-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-50 bg-slate-50/30 font-['Outfit']">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-200/80">Identidad Operativa</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-200/80">Documentación</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-r border-slate-200/80">Estado</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Acciones</th>
+                <tr className="border-b border-slate-50 bg-slate-50/50 font-['Outfit']">
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-none">Identidad Operativa</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-none">Documentación</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-none">Estado</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center border-none">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 font-['Inter']">
                 {choferes.map((c: Chofer) => (
-                  <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-7 border-r border-slate-200/80">
+                  <tr key={c.id} className="group hover:bg-emerald-50/10 transition-colors border-none">
+                    <td className="px-8 py-7 border-none">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all shadow-sm shrink-0",
-                          c.estado === "ACTIVO" ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+                          c.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
                         )}>
                           <Users className="h-5 w-5" />
                         </div>
@@ -209,7 +305,7 @@ export default function ChoferesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-7 border-r border-slate-200/80">
+                    <td className="px-8 py-7 border-none">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                            <Contact className="h-3 w-3 text-slate-400" />
@@ -221,9 +317,15 @@ export default function ChoferesPage() {
                              <span className="text-[11px] font-bold text-emerald-600">BREVETE: {c.licencia}</span>
                           </div>
                         )}
+                        {(!c.licencia || !c.apellido_materno) && (
+                           <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded-md w-fit mt-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>FALTA: {!c.licencia && "Licencia"} {!c.licencia && !c.apellido_materno && "|"} {!c.apellido_materno && "Ap. Materno"}</span>
+                           </div>
+                        )}
                       </div>
                     </td>
-                    <td className="px-8 py-7 border-r border-slate-200/80">
+                    <td className="px-8 py-7 border-none text-center">
                        <div className="flex justify-center">
                           <div className={cn(
                              "inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
@@ -234,7 +336,7 @@ export default function ChoferesPage() {
                           </div>
                        </div>
                     </td>
-                    <td className="px-8 py-7">
+                    <td className="px-8 py-7 border-none">
                       <div className="flex items-center justify-center gap-2 outline-none transition-all duration-300">
                         <button 
                           onClick={() => handleEdit(c)}
@@ -277,37 +379,38 @@ export default function ChoferesPage() {
           </div>
         )}
 
-        {/* Footer de Paginación Unificado Premium */}
-        <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
-           <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
-              <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
-                 <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+        {!isLoading && totalPages > 1 && (
+           <div className="px-8 py-8 border-t border-slate-50 bg-white/50 flex items-center justify-between font-['Outfit']">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                 <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
+                   Mostrando {choferes.length} de {total} registros operativos
+                 </span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
-                 Mostrando {choferes.length} de {total} Conductores
-              </span>
+
+              <div className="flex items-center gap-3">
+                 <button 
+                   onClick={() => setPage(p => Math.max(1, p - 1))}
+                   disabled={page === 1}
+                   className="h-12 px-6 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
+                 >
+                   <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                   Anterior
+                 </button>
+                 <button 
+                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                   disabled={page === totalPages}
+                   className="h-12 px-8 bg-emerald-950 text-white rounded-2xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 disabled:cursor-not-allowed group"
+                 >
+                   Siguiente
+                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                 </button>
+              </div>
            </div>
-           
-           <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1 || isLoading}
-                className="h-10 px-4 bg-white border border-slate-100 rounded-xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
-              >
-                 <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                 Anterior
-              </button>
-              <button 
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages || isLoading}
-                className="h-10 px-4 bg-[#022c22] text-white rounded-xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-600 transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed group"
-              >
-                 Siguiente
-                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -105,7 +105,6 @@ class ClienteIE(Base):
     direccion_notify = Column(String(1000), nullable=True)
     eori_consignatario = Column(String(100), nullable=True)
     eori_notify = Column(String(100), nullable=True)
-    emision_bl = Column(String(100), nullable=True)
     
     estado = Column(String(20), default="ACTIVO")
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())

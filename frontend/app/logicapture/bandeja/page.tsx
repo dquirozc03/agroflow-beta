@@ -22,14 +22,16 @@ import {
   AlertTriangle,
   X,
   Loader2,
-  ShieldCheck,
+  ShieldCheck, ShieldAlert,
   User,
   Layers,
   Zap,
   Thermometer,
   Info,
   Inbox,
-  Scale
+  Scale,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { PesosMedidasModal } from "@/components/pesos-medidas-modal";
 import { 
@@ -183,6 +185,11 @@ export default function BandejaLogiCapture() {
   const [activeTab, setActiveTab] = useState("PENDIENTE");
   const [filterPlanta, setFilterPlanta] = useState("all");
   const [filterCultivo, setFilterCultivo] = useState("all");
+  const [filterMotivo, setFilterMotivo] = useState("all");
+  const [filterFechaInicio, setFilterFechaInicio] = useState("");
+  const [filterFechaFin, setFilterFechaFin] = useState("");
+  const [plantasUnicas, setPlantasUnicas] = useState<string[]>([]);
+  const [cultivosUnicos, setCultivosUnicos] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReg, setSelectedReg] = useState<any>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -193,8 +200,17 @@ export default function BandejaLogiCapture() {
   const [errorTitle, setErrorTitle] = useState("ERROR DE SISTEMA");
   const [isAnularOpen, setIsAnularOpen] = useState(false);
   const [isAnularSuccessOpen, setIsAnularSuccessOpen] = useState(false);
+  const [isEditSuccessOpen, setIsEditSuccessOpen] = useState(false);
   const [anularReason, setAnularReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
+
+  // --- Estados de Sincronización Premium 💎 ---
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isAnulando, setIsAnulando] = useState(false);
+  const [isSyncResultOpen, setIsSyncResultOpen] = useState(false);
+
+  const [syncResult, setSyncResult] = useState({ updated: 0, total: 0 });
 
   const [editSector, setEditSector] = useState<string>(""); // 'maestros' | 'precintos' | 'fecha'
   const [editData, setEditData] = useState<any>({
@@ -263,15 +279,13 @@ export default function BandejaLogiCapture() {
           codigoSap: data.codigo_sap,
           partidaRegistral: data.partida_registral
         }));
-        toast.success("Sincronizado con maestros oficiales 💎");
       }
     } catch (e) {}
   };
 
   const syncAllMasters = async () => {
-    setIsLoading(true);
-    toast.info("Sincronizando...", { description: "Actualización masiva de datos maestros en curso..." });
-
+    setIsSyncing(true);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/bulk_sync`, {
         method: 'POST'
@@ -281,22 +295,19 @@ export default function BandejaLogiCapture() {
 
       const data = await response.json();
       
-      if (data.updated > 0) {
-        toast.success("Sincronización Completada 💎", { 
-          description: `Se actualizaron ${data.updated} de ${data.total_eligible} registros elegibles.`
-        });
-      } else if (data.total_eligible === 0) {
-        toast.info("Sin Pendientes", { description: "Todos los registros procesados ya tienen información oficial." });
-      } else {
-        toast.error("Sincronización Incompleta", { 
-          description: "Se procesaron los registros pero no se encontró información nueva en los maestros de vehículos." 
-        });
-      }
+      setSyncResult({ 
+        updated: data.updated, 
+        total: data.total_eligible 
+      });
+      
+      setIsSyncResultOpen(true);
       fetchRegistros();
     } catch (e) {
-      toast.error("Error en la sincronización central", { description: "No se pudo completar el proceso masivo." });
+      setErrorTitle("ERROR DE SINCRONIZACIÓN");
+      setErrorMessage("No se pudo completar el proceso masivo con los servidores de maestros.");
+      setIsErrorOpen(true);
     } finally {
-      setIsLoading(false);
+      setIsSyncing(false);
     }
   };
 
@@ -336,38 +347,37 @@ export default function BandejaLogiCapture() {
   };
 
   const handleAnularConfirm = async () => {
-    if (!anularReason) {
-      toast.error("Seleccione un motivo de anulación");
-      return;
-    }
+    if (!selectedReg || !anularReason) return;
     
     const finalReason = anularReason === "Otros" ? otherReason : anularReason;
-    if (anularReason === "Otros" && !otherReason) {
-      toast.error("Especifique el motivo 'Otros'");
-      return;
-    }
+    if (anularReason === "Otros" && !otherReason) return;
 
+    setIsAnulando(true);
     try {
-       if (!selectedReg?.id) {
-         toast.error("Error crítico: Referencia de registro perdida 🛠️");
-         return;
-       }
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}/status?status=ANULADO&motivo=${encodeURIComponent(finalReason)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" }
+      });
 
-       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}/status?status=ANULADO&motivo=${encodeURIComponent(finalReason)}`, {
-         method: 'PATCH'
-       });
-       if (!response.ok) throw new Error();
-       
-       setIsAnularSuccessOpen(true);
-       setTimeout(() => setIsAnularSuccessOpen(false), 2500);
-       
-       setIsAnularOpen(false);
-       setAnularReason("");
-       setOtherReason("");
-       fetchRegistros();
-       setIsPanelOpen(false);
-    } catch (error) {
-       toast.error("Error al anular el registro");
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Error al anular" }));
+        throw new Error(error.detail || "Error al anular");
+      }
+
+      setIsAnularOpen(false);
+      setIsAnularSuccessOpen(true);
+      fetchRegistros();
+      
+      // Limpieza de estados
+      setAnularReason("");
+      setOtherReason("");
+      setTimeout(() => setIsAnularSuccessOpen(false), 4000);
+    } catch (error: any) {
+      setErrorTitle("ERROR DE SISTEMA");
+      setErrorMessage(error.message);
+      setIsErrorOpen(true);
+    } finally {
+      setIsAnulando(false);
     }
   };
 
@@ -386,6 +396,7 @@ export default function BandejaLogiCapture() {
   };
 
   const handleEditSave = async () => {
+    setIsSaving(true);
     try {
        const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${selectedReg.id}`, {
           method: 'PUT',
@@ -414,14 +425,36 @@ export default function BandejaLogiCapture() {
           })
        });
 
-       if (!response.ok) throw new Error();
+       if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || "No se pudieron guardar los cambios de auditoría.");
+       }
        
-       toast.success("Cambios aplicados correctamente 💎");
-       setIsEditOpen(false);
-       fetchRegistros();
-    } catch (error) {
-       setErrorMessage("No se pudieron guardar los cambios de auditoría.");
+        setIsEditOpen(false);
+        setIsEditSuccessOpen(true);
+        
+        // Actualizar el registro seleccionado en memoria para que el Panel SAP refleje los cambios
+        setSelectedReg((prev: any) => ({
+          ...prev,
+          ...editData,
+          placa_tracto: editData.placa_tracto,
+          placa_carreta: editData.placa_carreta,
+          empresa_transporte: editData.empresa_transporte,
+          nombre_chofer: editData.nombre_chofer,
+          dni_chofer: editData.dni_chofer,
+          licencia_chofer: editData.licencia_chofer,
+          orden_beta: editData.orden_beta,
+          fecha_embarque: editData.fecha_embarque
+        }));
+
+        setTimeout(() => setIsEditSuccessOpen(false), 4000);
+        fetchRegistros();
+    } catch (error: any) {
+       setErrorTitle("CONFLICTO DE VALIDACIÓN");
+       setErrorMessage(error.message);
        setIsErrorOpen(true);
+    } finally {
+       setIsSaving(false);
     }
   };
 
@@ -433,6 +466,7 @@ export default function BandejaLogiCapture() {
       params.append("page", page.toString());
       if (filterPlanta !== "all") params.append("planta", filterPlanta);
       if (filterCultivo !== "all") params.append("cultivo", filterCultivo);
+      if (filterMotivo !== "all") params.append("motivo", filterMotivo);
       if (searchTerm) params.append("q", searchTerm);
       
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros?${params.toString()}`);
@@ -442,6 +476,8 @@ export default function BandejaLogiCapture() {
       setRegistros(data.items || []);
       setTotalPages(data.total_pages || 1);
       setTotalRegistros(data.total || 0);
+      setPlantasUnicas(data.available_plantas || []);
+      setCultivosUnicos(data.available_cultivos || []);
     } catch (error) {
       setErrorMessage("No se pudo sincronizar la bandeja con el sistema central.");
       setIsErrorOpen(true);
@@ -451,18 +487,28 @@ export default function BandejaLogiCapture() {
   };
 
   useEffect(() => {
-    fetchRegistros();
-  }, [activeTab, filterPlanta, filterCultivo]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchRegistros();
+    }, 400);
 
-  // Filtros dinámicos basados en la data real
-  const plantasUnicas = Array.from(new Set(registros.map(r => r.planta).filter(Boolean)));
-  const cultivosUnicos = Array.from(new Set(registros.map(r => r.cultivo).filter(Boolean)));
+    return () => clearTimeout(delayDebounceFn);
+  }, [activeTab, filterPlanta, filterCultivo, filterMotivo, searchTerm]);
+
+  // Las opciones del dropdown ahora provienen del backend (plantasUnicas y cultivosUnicos) para evitar que desaparezcan al filtrar.
 
   const handleExportExcel = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/export/excel`);
-      if (!response.ok) throw new Error();
+      const params = new URLSearchParams();
+      if (filterFechaInicio) params.append("start_date", filterFechaInicio);
+      if (filterFechaFin) params.append("end_date", filterFechaFin);
+      params.append("status", activeTab);
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/export/excel?${params.toString()}`);
+      if (!response.ok) {
+         const errorData = await response.json().catch(() => ({}));
+         throw new Error(errorData.detail || "No se pudo generar el reporte premium.");
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -473,7 +519,7 @@ export default function BandejaLogiCapture() {
       a.click();
       a.remove();
       
-      toast.success('Reporte Excel generado correctamente 💎');
+
     } catch (error) {
       setErrorTitle("ERROR DE EXPORTACIÓN");
       setErrorMessage("No se pudo generar el reporte premium. Verifique que existan datos en el periodo seleccionado o contacte a soporte TI.");
@@ -483,18 +529,8 @@ export default function BandejaLogiCapture() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "PENDIENTE":
-        return <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 animate-pulse">Pendiente</Badge>;
-      case "PROCESADO":
-        return <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">Procesado</Badge>;
-      case "ANULADO":
-        return <Badge variant="secondary" className="bg-rose-50 text-rose-700 border-rose-200 text-xs font-black">ANULADO</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
+  // Antigüedad calculada inline en cada fila del map
+  const getStatusBadge = (_status: string) => null;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
@@ -537,13 +573,16 @@ export default function BandejaLogiCapture() {
             </div>
 
             {/* Filtros Inteligentes */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-               <div className="space-y-2">
+            <div className={cn(
+               "grid grid-cols-1 gap-4 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm items-end justify-items-center transition-all duration-500",
+               activeTab === "ANULADO" ? "md:grid-cols-7" : "md:grid-cols-6"
+            )}>
+               <div className="space-y-2 w-full">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Búsqueda Rápida</label>
                   <div className="relative group">
                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                      <Input 
-                        placeholder="Booking, Contenedor..." 
+                        placeholder="Booking, Contenedor, Orden Beta..." 
                         className="pl-10 rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-11"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -551,45 +590,105 @@ export default function BandejaLogiCapture() {
                   </div>
                </div>
 
-               <div className="space-y-2">
+               <div className="space-y-2 w-full">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Planta Llenado</label>
                   <Select value={filterPlanta} onValueChange={setFilterPlanta}>
-                     <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
+                     <SelectTrigger className="rounded-2xl border-slate-100 bg-white h-11 transition-all shadow-sm hover:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700">
                         <SelectValue placeholder="Todas las Plantas" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-200 shadow-2xl bg-white border">
-                        <SelectItem value="all" className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer font-bold">Todas las Plantas</SelectItem>
+                     <SelectContent className="rounded-3xl border-0 shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-[#022c22]/95 backdrop-blur-xl p-2 overflow-hidden">
+                        <div className="px-3 py-2 mb-1">
+                          <p className="text-[9px] font-black text-emerald-400/70 uppercase tracking-[0.3em]">Planta Llenado</p>
+                        </div>
+                        <SelectItem value="all" className="rounded-xl cursor-pointer font-black text-[11px] text-white/70 focus:bg-white/10 focus:text-white tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">Todas las Plantas</SelectItem>
+                        <div className="h-px bg-white/10 my-1 mx-2" />
                         {plantasUnicas.map(p => (
-                           <SelectItem key={p} value={p} className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{p}</SelectItem>
+                           <SelectItem key={p} value={p} className="rounded-xl cursor-pointer font-black text-[11px] text-white focus:bg-emerald-500/30 focus:text-emerald-300 tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">
+                             {p}
+                           </SelectItem>
                         ))}
                      </SelectContent>
                   </Select>
                </div>
 
-               <div className="space-y-2">
+               <div className="space-y-2 w-full">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cultivo</label>
                   <Select value={filterCultivo} onValueChange={setFilterCultivo}>
-                     <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-11 transition-all">
+                     <SelectTrigger className="rounded-2xl border-slate-100 bg-white h-11 transition-all shadow-sm hover:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700">
                         <SelectValue placeholder="Todos los Cultivos" />
                      </SelectTrigger>
-                     <SelectContent className="rounded-2xl border-slate-200 shadow-2xl bg-white border">
-                        <SelectItem value="all" className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer font-bold">Todos los Cultivos</SelectItem>
+                     <SelectContent className="rounded-3xl border-0 shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-[#022c22]/95 backdrop-blur-xl p-2 overflow-hidden">
+                        <div className="px-3 py-2 mb-1">
+                          <p className="text-[9px] font-black text-emerald-400/70 uppercase tracking-[0.3em]">Cultivo</p>
+                        </div>
+                        <SelectItem value="all" className="rounded-xl cursor-pointer font-black text-[11px] text-white/70 focus:bg-white/10 focus:text-white tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">Todos los Cultivos</SelectItem>
+                        <div className="h-px bg-white/10 my-1 mx-2" />
                         {cultivosUnicos.map(c => (
-                           <SelectItem key={c} value={c} className="focus:bg-emerald-600 focus:text-white text-slate-700 rounded-xl cursor-pointer uppercase font-bold text-[10px]">{c}</SelectItem>
+                           <SelectItem key={c} value={c} className="rounded-xl cursor-pointer font-black text-[11px] text-white focus:bg-emerald-500/30 focus:text-emerald-300 tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">
+                             {c}
+                           </SelectItem>
                         ))}
                      </SelectContent>
                   </Select>
                </div>
 
-               <div className="flex items-end pb-0.5">
-                  <Button 
-                    variant="ghost" 
-                    className="h-10 text-slate-400 hover:text-emerald-700 gap-2 font-bold px-4"
-                    onClick={() => { setFilterPlanta("all"); setFilterCultivo("all"); setSearchTerm(""); }}
+               {activeTab === "ANULADO" && (
+                  <div className="space-y-2 w-full animate-in slide-in-from-top-2 duration-500">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-rose-500/60 ml-1">Motivo Incidente</label>
+                     <Select value={filterMotivo} onValueChange={setFilterMotivo}>
+                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white h-11 transition-all shadow-sm hover:border-rose-300 focus:ring-2 focus:ring-rose-500/20 font-bold text-slate-700">
+                           <SelectValue placeholder="Todos los Motivos" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-3xl border-0 shadow-[0_20px_60px_rgba(244,63,94,0.15)] bg-slate-900/95 backdrop-blur-xl p-2 overflow-hidden border border-white/10">
+                           <div className="px-3 py-2 mb-1">
+                             <p className="text-[9px] font-black text-rose-400/70 uppercase tracking-[0.3em]">Filtrar por Causa</p>
+                           </div>
+                           <SelectItem value="all" className="rounded-xl cursor-pointer font-black text-[11px] text-white/70 focus:bg-rose-500/20 focus:text-white tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-rose-300 data-[state=checked]:bg-rose-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-rose-400">Todos los Motivos</SelectItem>
+                           <div className="h-px bg-white/10 my-1 mx-2" />
+                           {[
+                             "Error de precinto",
+                             "Error de precintado",
+                             "Error de guia",
+                             "Error de booking",
+                             "Otros"
+                           ].map(m => (
+                              <SelectItem key={m} value={m} className="rounded-xl cursor-pointer font-black text-[11px] text-white focus:bg-rose-500/30 focus:text-rose-300 tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-rose-300 data-[state=checked]:bg-rose-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-rose-400">
+                                {m}
+                              </SelectItem>
+                           ))}
+                        </SelectContent>
+                     </Select>
+                  </div>
+               )}
+               <div className="space-y-2 w-full">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Desde</label>
+                  <Input 
+                     type="date" 
+                     value={filterFechaInicio}
+                     onChange={(e) => setFilterFechaInicio(e.target.value)}
+                     className="rounded-2xl border-slate-100 bg-white h-11 transition-all shadow-sm focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700"
+                  />
+               </div>
+               <div className="space-y-2 w-full">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Hasta</label>
+                  <Input 
+                     type="date" 
+                     value={filterFechaFin}
+                     onChange={(e) => setFilterFechaFin(e.target.value)}
+                     className="rounded-2xl border-slate-100 bg-white h-11 transition-all shadow-sm focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700"
+                  />
+               </div>
+
+               <div className="flex items-end pb-0.5 w-full">
+                  <button 
+                    onClick={() => { setFilterPlanta("all"); setFilterCultivo("all"); setFilterMotivo("all");
+    setFilterFechaInicio("");
+    setFilterFechaFin(""); setSearchTerm(""); }}
+                    className="h-11 w-full flex items-center justify-center gap-2 px-6 bg-white border border-slate-200 hover:border-emerald-400 text-slate-500 hover:text-emerald-700 rounded-2xl shadow-sm text-[11px] font-black uppercase tracking-widest transition-all duration-500 active:scale-95 group overflow-hidden relative"
                   >
-                     <RefreshCw className="h-4 w-4" />
-                     Limpiar Filtros
-                  </Button>
+                     <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-700 relative z-10" />
+                     <span className="relative z-10">Limpiar Filtros</span>
+                  </button>
                </div>
             </div>
 
@@ -623,21 +722,23 @@ export default function BandejaLogiCapture() {
                         <CircleDot className="h-3 w-3 text-emerald-500 animate-pulse" />
                         {totalRegistros} total de registros
                      </div>
-                  </div>
+                 </div>
               </div>
-
+              
               <TabsContent value={activeTab} className="p-0 border-none outline-none">
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden lc-table-clean">
                   <Table>
                     <TableHeader className="bg-slate-50/50">
                       <TableRow className="hover:bg-transparent border-none px-6 [&_th]:border-none">
-                        <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest p-6 border-none">Fecha/Hora</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Embarque (B / D / C)</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Planta / Cultivo</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Transporte (T / C)</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest w-[140px] border-none">Estatus</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Registrador</TableHead>
-                        <TableHead className="text-right p-6 font-black text-[10px] uppercase tracking-widest w-[100px] border-none">Acciones</TableHead>
+                        <TableHead className="w-[120px] font-black text-[10px] uppercase tracking-widest p-6 border-none text-center">Fecha/Hora</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none">Embarque (BK / Orden / Cont.)</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none text-center">Planta / Cultivo</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none text-center">Transporte (T / C)</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest w-[160px] border-none text-center">
+                           {activeTab === "PENDIENTE" ? "Antigüedad" : activeTab === "ANULADO" ? "Motivo Incidente" : "T. Atención"}
+                        </TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest border-none text-center">Usuario</TableHead>
+                        {activeTab !== "ANULADO" && <TableHead className="text-center p-6 font-black text-[10px] uppercase tracking-widest w-[100px] border-none">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -662,8 +763,8 @@ export default function BandejaLogiCapture() {
                           className="group hover:bg-emerald-50/10 transition-colors border-none px-6 cursor-pointer [&_td]:border-none"
                           onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
                         >
-                          <TableCell className="p-6 font-medium text-slate-600">
-                             <div className="flex flex-col">
+                          <TableCell className="p-6 font-medium text-slate-600 text-center">
+                             <div className="flex flex-col items-center">
                                 <span className="text-sm font-bold text-slate-900 leading-none mb-1">
                                    {(reg.fecha_embarque ? new Date(reg.fecha_embarque) : new Date(reg.fecha_registro)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
@@ -673,21 +774,25 @@ export default function BandejaLogiCapture() {
                              </div>
                           </TableCell>
                           <TableCell>
-                             <div className="flex flex-col gap-1.5 py-4">
-                                <div className="flex items-center gap-3"><span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border border-emerald-100/50 shadow-sm">{reg.booking}</span></div>
-                                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 ml-1 italic capitalize">
-                                   {reg.dam} • {formatContainerId(reg.contenedor)}
-                                </div>
-                             </div>
-                          </TableCell>
-                          <TableCell>
-                             <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1.5 py-4">
+                                 <div className="flex items-center gap-3">
+                                    <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border border-emerald-100/50 shadow-sm">{reg.booking}</span>
+                                 </div>
+                                 <div className="flex items-center gap-2 text-[11px] font-bold ml-1">
+                                    {reg.orden_beta && <span className="text-slate-600 font-black">{reg.orden_beta}</span>}
+                                    {reg.orden_beta && reg.contenedor && <span className="text-slate-300 mx-0.5">·</span>}
+                                    <span className="italic text-slate-400">{formatContainerId(reg.contenedor)}</span>
+                                 </div>
+                              </div>
+                           </TableCell>
+                          <TableCell className="text-center">
+                             <div className="flex flex-col gap-1 items-center">
                                 <span className="text-xs font-black text-slate-900 tracking-tight">{reg.planta || "SIN PLANTA"}</span>
                                 <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{reg.cultivo || "SIN CULTIVO"}</span>
                              </div>
                           </TableCell>
-                          <TableCell>
-                             <div className="flex flex-col gap-1.5">
+                          <TableCell className="text-center">
+                             <div className="flex flex-col gap-1.5 items-center">
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
                                    <Truck className="h-3 w-3 text-emerald-500" />
                                    {reg.placa_tracto}
@@ -697,11 +802,35 @@ export default function BandejaLogiCapture() {
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{reg.empresa_transporte}</span>
                              </div>
                           </TableCell>
-                          <TableCell>
-                             {getStatusBadge(reg.status)}
+                          <TableCell className="text-center">
+                              {activeTab === "ANULADO" ? (
+                                 <NiceTooltip text={reg.motivo_anulacion || "Sin Detalle Técnico Registrado"}>
+                                    <div className="inline-flex items-center gap-2 px-3 py-2 bg-rose-50/50 border border-rose-100/50 rounded-xl animate-in fade-in zoom-in duration-500 shadow-sm group/motivo relative overflow-hidden max-w-[140px] cursor-help">
+                                       <ShieldAlert className="h-3.5 w-3.5 text-rose-600 shrink-0 relative z-10" />
+                                       <span className="text-[9px] font-black text-rose-700 uppercase tracking-widest truncate relative z-10">
+                                          {reg.motivo_anulacion || "Sin Detalle"}
+                                       </span>
+                                       <div className="absolute inset-0 bg-gradient-to-r from-rose-100/0 via-rose-100/20 to-rose-100/0 translate-x-[-100%] group-hover/motivo:translate-x-[100%] transition-transform duration-1000" />
+                                    </div>
+                                 </NiceTooltip>
+                              ) : (
+                                 <div className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500",
+                                    reg.antiguedad_color === "danger" 
+                                      ? "bg-rose-50 border-rose-100 text-rose-600 shadow-sm shadow-rose-100 animate-pulse" 
+                                      : reg.antiguedad_color === "warning"
+                                        ? "bg-amber-50 border-amber-100 text-amber-600 shadow-sm shadow-amber-100"
+                                        : reg.antiguedad_color === "success"
+                                          ? "bg-emerald-50 border-emerald-100 text-emerald-600 shadow-sm shadow-emerald-100"
+                                          : "bg-slate-50 border-slate-100 text-slate-500"
+                                  )}>
+                                     <Clock className={cn("h-3 w-3", reg.antiguedad_color === "danger" && "animate-spin-slow")} />
+                                     {reg.antiguedad_humanizada || "---"}
+                                  </div>
+                              )}
                           </TableCell>
-                          <TableCell className="p-6">
-                            <div className="flex items-center gap-2">
+                          <TableCell className="p-6 text-center">
+                            <div className="flex items-center justify-center gap-2">
                                <div className="h-6 w-6 bg-emerald-50 rounded-lg flex items-center justify-center">
                                   <User className="h-3.5 w-3.5 text-emerald-600" />
                                </div>
@@ -710,59 +839,55 @@ export default function BandejaLogiCapture() {
                                 </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right p-6" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                                  <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
-                                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
-                                
-                                <DropdownMenuItem 
-                                  className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
-                                  onClick={() => { setSelectedReg(reg); setIsPanelOpen(true); }}
-                                >
-                                  <Eye className="h-4 w-4" /> Ver Detalle (SAP)
-                                </DropdownMenuItem>
+                          {activeTab !== "ANULADO" && <TableCell className="text-center p-6" onClick={(e) => e.stopPropagation()}>
+                            {activeTab === "PENDIENTE" ? (
+                              <Button
+                                onClick={() => handleStatusChange(reg, 'PROCESADO')}
+                                className="h-10 px-5 bg-emerald-950 hover:bg-emerald-800 text-white rounded-2xl flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-emerald-950/10 active:scale-95 group/btn border-none"
+                              >
+                                <div className="h-5 w-5 bg-emerald-500/10 rounded-lg flex items-center justify-center group-hover/btn:bg-emerald-500/20 transition-colors">
+                                  <Zap className="h-3.5 w-3.5 text-emerald-400 group-hover/btn:scale-110 transition-transform" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.15em]">Procesar</span>
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
+                                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
+                                  
+                                  {activeTab === "PROCESADO" && (
+                                     <>
+                                        <DropdownMenuItem 
+                                          className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
+                                          onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
+                                        >
+                                          <Scale className="h-4 w-4 text-emerald-600" />
+                                          <div className="flex flex-col">
+                                             <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
+                                             <span className="text-[9px] text-emerald-500/70 font-black uppercase tracking-widest">DOCUMENTO OFICIAL</span>
+                                          </div>
+                                        </DropdownMenuItem>
 
-                                <DropdownMenuItem 
-                                  className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
-                                  onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
-                                >
-                                  <Scale className="h-4 w-4 text-emerald-600" />
-                                  <div className="flex flex-col">
-                                     <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
-                                     <span className="text-[9px] text-emerald-500/70 font-medium">MTC OFICIAL</span>
-                                  </div>
-                                </DropdownMenuItem>
-
-                                {activeTab === "PROCESADO" && (
-                                   <>
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
-                                        <Edit3 className="h-4 w-4" /> Editar
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
-                                      <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg, 'ANULADO')}>
-                                        <Trash2 className="h-4 w-4" /> Anular Registro
-                                      </DropdownMenuItem>
-                                   </>
-                                )}
-                                
-                                {activeTab === "PENDIENTE" && (
-                                   <>
-                                      <DropdownMenuItem 
-                                        className="rounded-xl p-3 text-sm font-bold gap-3 bg-emerald-950 text-white focus:bg-emerald-900 focus:text-white cursor-pointer mt-1"
-                                        onClick={() => handleStatusChange(reg, 'PROCESADO')}
-                                      >
-                                         <Zap className="h-4 w-4" /> Procesar Registro
-                                      </DropdownMenuItem>
-                                   </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                                        <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
+                                          <Edit3 className="h-4 w-4" /> Editar
+                                        </DropdownMenuItem>
+                                        
+                                        <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
+                                        
+                                        <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg, 'ANULADO')}>
+                                          <Trash2 className="h-4 w-4" /> Anular Registro
+                                        </DropdownMenuItem>
+                                     </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </TableCell>}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -771,7 +896,7 @@ export default function BandejaLogiCapture() {
 
                 {/* Paginación AgroFlow Premium 💎 */}
                 {!isLoading && totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-8 font-['Outfit']">
+                  <div className="flex items-center justify-between mt-8 font-['Outfit'] shadow-sm bg-white/50 p-6 rounded-[2rem] border border-slate-50">
                     <div className="flex items-center gap-2">
                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
                        <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
@@ -783,21 +908,22 @@ export default function BandejaLogiCapture() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                       <Button
-                          variant="outline"
+                       <button
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
-                          className="rounded-2xl h-12 px-6 font-bold text-xs border-slate-100 bg-white hover:bg-emerald-50 hover:text-emerald-700 transition-all disabled:opacity-30 shadow-sm"
+                          className="h-12 px-6 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
                        >
+                          <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                           Anterior
-                       </Button>
-                       <Button
+                       </button>
+                       <button
                           onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                           disabled={page === totalPages}
-                          className="rounded-2xl h-12 px-8 font-bold text-xs bg-emerald-950 text-white hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 border-none"
+                          className="h-12 px-8 bg-emerald-950 text-white rounded-2xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 disabled:cursor-not-allowed group"
                        >
                           Siguiente
-                       </Button>
+                          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                       </button>
                     </div>
                   </div>
                 )}
@@ -891,7 +1017,7 @@ export default function BandejaLogiCapture() {
                     {selectedReg.status === "PENDIENTE" ? (
                        <Button 
                          className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-[0.2em] text-[10px] h-14 shadow-xl shadow-emerald-950/40"
-                         onClick={() => handleStatusChange(selectedReg.id, 'PROCESADO')}
+                         onClick={() => handleStatusChange(selectedReg, 'PROCESADO')}
                        >
                           <Zap className="h-5 w-5 mr-3 animate-pulse text-emerald-400" /> Procesar Registro
                        </Button>
@@ -968,73 +1094,95 @@ export default function BandejaLogiCapture() {
                </div>
                
                <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest">
-                  Sincronizando con el Sistema de Datos
+                  Generando Reporte de Auditoría
                </p>
             </div>
          </DialogContent>
       </Dialog>
 
-      {/* Modal de Anulación Premium */}
+      {/* Modal de Anulación Premium 💎 */}
       <Dialog open={isAnularOpen} onOpenChange={setIsAnularOpen}>
-         <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl">
-            <DialogHeader className="p-10 pb-0">
-               <DialogTitle className="text-2xl font-black text-rose-600 tracking-tighter uppercase font-['Outfit'] flex items-center gap-3">
-                  <AlertTriangle className="h-6 w-6" /> Anular Registro
-               </DialogTitle>
-               <DialogDescription className="text-xs font-bold text-slate-400 mt-2">¿Está seguro de que desea anular esta operación? Esta acción quedará registrada.</DialogDescription>
-            </DialogHeader>
-            <div className="relative p-10 pt-4 flex flex-col gap-6">
-               <div className="space-y-4">
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Motivo de Anulación</label>
+         <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-500">
+            <div className="relative p-10 flex flex-col gap-8">
+               <div className="flex flex-col items-center text-center gap-4">
+                  <div className="h-20 w-20 bg-rose-50 rounded-[2rem] flex items-center justify-center animate-pulse">
+                     <AlertCircle className="h-10 w-10 text-rose-600" />
+                  </div>
+                  <div className="space-y-1">
+                     <h2 className="text-3xl font-black text-rose-600 tracking-tighter uppercase font-['Outfit']">
+                        Anular <span className="text-slate-900">Operación</span>
+                     </h2>
+                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-tight px-4">
+                        Esta acción es irreversible y quedará registrada en su historial de auditoría.
+                     </p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <div className="space-y-3">
+                     <div className="flex items-center justify-between px-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Motivo del Incidente</label>
+                        <ShieldAlert className="h-4 w-4 text-rose-200" />
+                     </div>
                      <Select value={anularReason} onValueChange={setAnularReason}>
-                        <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold text-slate-700">
-                           <SelectValue placeholder="Seleccione un motivo..." />
+                        <SelectTrigger className="rounded-[1.5rem] border-slate-100 bg-slate-50/80 h-16 px-6 font-black text-[12px] text-slate-700 hover:border-rose-200 transition-all focus:ring-rose-500/20">
+                           <SelectValue placeholder="Seleccione el motivo técnico..." />
                         </SelectTrigger>
-                        <SelectContent className="rounded-[2rem] border-slate-200 shadow-2xl bg-white p-2">
-                           <SelectItem value="Error de precinto" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de precinto</SelectItem>
-                           <SelectItem value="Error de precintado" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de precintado</SelectItem>
-                           <SelectItem value="Error de guia" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de guía</SelectItem>
-                           <SelectItem value="Error de booking" className="p-4 rounded-2xl font-bold text-slate-700 focus:bg-rose-50 focus:text-rose-700 cursor-pointer mb-1 border-b border-slate-50 last:border-none">Error de booking</SelectItem>
-                           <SelectItem value="Otros" className="p-4 rounded-2xl font-bold text-rose-600 focus:bg-rose-600 focus:text-white cursor-pointer border-none mt-2">Otros (Especificar)</SelectItem>
+                        <SelectContent className="rounded-[2.5rem] border-slate-100 shadow-2xl bg-white/95 backdrop-blur-xl p-3">
+                           {[
+                             { v: "Error de precinto", l: "Error en código de precinto" },
+                             { v: "Error de precintado", l: "Error físico de precintado" },
+                             { v: "Error de guia", l: "Error en guía de remisión" },
+                             { v: "Error de booking", l: "Cancelación de Booking" },
+                             { v: "Otros", l: "Otros motivos (Especificar)" }
+                           ].map((opt) => (
+                             <SelectItem 
+                               key={opt.v} 
+                               value={opt.v} 
+                               className="py-4 px-10 rounded-2xl font-black text-[11px] uppercase tracking-wider text-slate-600 focus:bg-rose-50 focus:text-rose-600 cursor-pointer mb-1 last:mb-0 transition-all"
+                             >
+                                {opt.l}
+                             </SelectItem>
+                           ))}
                         </SelectContent>
                      </Select>
                   </div>
 
                   {anularReason === "Otros" && (
-                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Detalle del Motivo</label>
+                     <div className="space-y-3 animate-in slide-in-from-top-4 duration-500">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 ml-2">Especificación Técnica</label>
                         <Input 
                            value={otherReason}
                            onChange={(e) => setOtherReason(e.target.value)}
-                           placeholder="Escriba el motivo aquí..."
-                           className="rounded-2xl border-slate-100 bg-white h-14 font-bold text-slate-700"
+                           placeholder="Escriba el detalle de la anulación..."
+                           className="rounded-[1.5rem] border-rose-100 bg-rose-50/30 h-16 px-6 font-bold text-slate-800 placeholder:text-rose-200 focus:border-rose-500 focus:ring-rose-500/10"
                         />
                      </div>
                   )}
                </div>
 
-               <div className="flex gap-4 mt-4">
+               <div className="flex flex-col gap-3 mt-4">
                   <Button 
-                    variant="ghost" 
-                    className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] text-slate-400 hover:bg-slate-100"
-                    onClick={() => setIsAnularOpen(false)}
-                  >
-                     Cancelar
-                  </Button>
-                  <Button 
-                    className="flex-1 rounded-2xl h-14 bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-600/20 text-white"
                     onClick={handleAnularConfirm}
+                    disabled={isAnulando || !anularReason || (anularReason === "Otros" && !otherReason)}
+                    className="w-full h-16 bg-rose-600 hover:bg-rose-700 text-white rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-rose-600/20 active:scale-95 transition-all flex items-center justify-center gap-3"
                   >
-                     Confirmar Anulación
+                     {isAnulando ? <><Loader2 className="h-5 w-5 animate-spin" /> Anulando...</> : "Confirmar Anulación"}
                   </Button>
+                  <button 
+                    onClick={() => setIsAnularOpen(false)}
+                    className="w-full py-4 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-[1.5rem] transition-all"
+                  >
+                     CANCELAR OPERACIÓN
+                  </button>
                </div>
             </div>
          </DialogContent>
       </Dialog>
+
        {/* Modal de Error Premium Carlos Style 💎 */}
        <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
-          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-300">
+          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-300">
              <DialogHeader className="sr-only">
                 <DialogTitle>Error del Sistema</DialogTitle>
                 <DialogDescription>{errorMessage}</DialogDescription>
@@ -1064,9 +1212,100 @@ export default function BandejaLogiCapture() {
              </div>
           </DialogContent>
        </Dialog>
+
+       <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
+          <DialogContent className="sm:max-w-md bg-white border-none p-0 overflow-hidden rounded-[3.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-500">
+             <div className="relative p-12 flex flex-col items-center text-center gap-8">
+                <div className="h-24 w-24 bg-emerald-50 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+                   <div className="h-16 w-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+                      <CheckCircle2 className="h-8 w-8 text-white" />
+                   </div>
+                </div>
+                <div className="space-y-3">
+                   <h2 className="text-3xl font-black tracking-tighter text-slate-900 font-['Outfit'] uppercase">Operación <span className="text-emerald-600">Anulada</span></h2>
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-relaxed px-4">El registro ha sido invalidado correctamente y se ha notificado al sistema central.</p>
+                </div>
+                <Button 
+                  onClick={() => setIsAnularSuccessOpen(false)}
+                  className="w-full py-8 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95 mt-4"
+                >
+                   Cerrar y Volver
+                </Button>
+             </div>
+          </DialogContent>
+       </Dialog>
+
+        {/* MODAL DE RESULTADO DE SINCRONIZACIÓN PREMIUM 💎 */}
+        <Dialog open={isSyncResultOpen} onOpenChange={setIsSyncResultOpen}>
+           <DialogContent className="sm:max-w-lg bg-white border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl animate-in zoom-in-95 duration-500">
+              <div className="relative p-12 flex flex-col items-center text-center gap-8">
+                 <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-emerald-50 to-transparent pointer-events-none" />
+                 
+                 <div className="relative h-28 w-28 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center animate-in slide-in-from-top-8 duration-700">
+                    <div className="h-20 w-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+                       <RefreshCw className={cn("h-10 w-10 text-white", syncResult.updated > 0 && "animate-spin-slow")} />
+                    </div>
+                    {syncResult.updated > 0 && (
+                       <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-lg border-4 border-white animate-bounce">
+                          <Zap className="h-5 w-5 text-amber-900" />
+                       </div>
+                    )}
+                 </div>
+
+                 <div className="space-y-3 relative z-10">
+                    <h2 className="text-4xl font-black tracking-tighter text-slate-900 font-['Outfit'] uppercase">
+                       {syncResult.updated > 0 ? "Sincronización" : "Sin Cambios"} <br/>
+                       <span className="text-emerald-600">{syncResult.updated > 0 ? "Completada" : "Detectados"}</span>
+                    </h2>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 leading-relaxed px-8">
+                       {syncResult.updated > 0 
+                         ? `Se han actualizado ${syncResult.updated} registros con información oficial de datos maestros.` 
+                         : "Todos los registros analizados ya se encuentran alineados con los datos maestros oficiales."}
+                    </p>
+                 </div>
+
+                 {syncResult.updated > 0 && (
+                    <div className="w-full grid grid-cols-2 gap-4 mt-2">
+                       <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Registros</p>
+                          <p className="text-2xl font-black text-emerald-950">{syncResult.total}</p>
+                       </div>
+                       <div className="p-6 bg-emerald-950 rounded-[2rem] border border-emerald-900">
+                          <p className="text-[9px] font-black text-emerald-400/60 uppercase tracking-widest mb-1">Actualizados</p>
+                          <p className="text-2xl font-black text-white">{syncResult.updated}</p>
+                       </div>
+                    </div>
+                 )}
+
+                 <Button 
+                   onClick={() => setIsSyncResultOpen(false)}
+                   className="w-full py-8 bg-slate-900 text-white rounded-[2.5rem] text-[12px] font-black uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-2xl shadow-slate-900/20 active:scale-95"
+                 >
+                    Entendido
+                 </Button>
+              </div>
+           </DialogContent>
+        </Dialog>
+
+        {/* OVERLAY DE CARGA DE SINCRONIZACIÓN (BLOCKER) 💎 */}
+        <Dialog open={isSyncing} onOpenChange={() => {}}>
+           <DialogContent className="sm:max-w-[280px] bg-emerald-950/90 backdrop-blur-xl border-none p-10 overflow-hidden rounded-[3rem] shadow-2xl pointer-events-auto flex flex-col items-center gap-6 [&>button]:hidden">
+              <div className="h-20 w-20 relative">
+                 <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full" />
+                 <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin" />
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <RefreshCw className="h-8 w-8 text-emerald-400 animate-pulse" />
+                 </div>
+              </div>
+              <div className="space-y-1 text-center">
+                 <p className="text-white font-black text-sm tracking-tighter uppercase font-['Outfit']">Sincronizando</p>
+                 <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Datos Maestros</p>
+              </div>
+           </DialogContent>
+        </Dialog>
        {/* Modal de Edición Directa Carlos Style 💎 */}
        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="max-w-[70vw] min-h-[85vh] h-[85vh] bg-emerald-950/40 backdrop-blur-3xl border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl pointer-events-auto flex flex-col scale-in flex-col">
+          <DialogContent className="max-w-[70vw] min-h-[85vh] h-[85vh] bg-emerald-950/40 backdrop-blur-3xl border-none p-0 overflow-hidden rounded-[4rem] shadow-2xl pointer-events-auto flex flex-col scale-in flex-col [&>button]:hidden">
              <DialogHeader className="sr-only">
                 <DialogTitle>Panel de Auditoría</DialogTitle>
                 <DialogDescription>Edición técnica de campos operativos</DialogDescription>
@@ -1078,45 +1317,32 @@ export default function BandejaLogiCapture() {
                       <Edit3 className="h-8 w-8" />
                    </div>
                    <div className="space-y-1">
-                      <h2 className="text-3xl font-black text-white tracking-tighter uppercase font-['Outfit']">Auditoría <span className="text-emerald-400">Dirigida</span></h2>
-                      <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">Corrección Selectiva de Registro #{selectedReg?.id}</p>
+                      <h2 className="text-3xl font-black text-white tracking-tighter uppercase font-['Outfit']">Edición de <span className="text-emerald-400">Datos</span></h2>
+                      <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.3em]">Gestión Técnica de Registro #{selectedReg?.id}</p>
                    </div>
                 </div>
-                <button onClick={() => setIsEditOpen(false)} className="h-12 w-12 bg-white/10 hover:bg-emerald-500 text-white rounded-2xl transition-all flex items-center justify-center group">
-                   <X className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                </button>
+                 {/* Botón de Cierre Rediseñado Premium 💎 */}
+                 <button 
+                   onClick={() => setIsEditOpen(false)} 
+                   className="absolute top-8 right-10 h-14 w-14 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all flex items-center justify-center group shadow-xl backdrop-blur-sm active:scale-90"
+                 >
+                    <X className="h-6 w-6 text-white/50 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />
+                    <div className="absolute inset-0 rounded-full bg-emerald-500/0 group-hover:bg-emerald-500/10 blur-xl transition-all" />
+                 </button>
              </div>
 
-             <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-slate-50/30 pb-24">
-                {/* Modal Transitorio de Éxito Anulación */}
-      <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
-          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-emerald-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-emerald-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
-             <DialogHeader className="sr-only">
-                <DialogTitle>Registro Actualizado</DialogTitle>
-                <DialogDescription>Los cambios han sido guardados</DialogDescription>
-             </DialogHeader>
-             <div className="h-24 w-24 bg-emerald-500 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200 animate-bounce">
-                <CheckCircle2 className="h-12 w-12" />
-             </div>
-             <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Registro <span className="text-emerald-600">Actualizado</span></h2>
-                <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Operación modificada correctamente</p>
-             </div>
-             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
-                <div className="absolute inset-x-0 h-full bg-emerald-500 animate-pulse" />
-             </div>
-          </DialogContent>
-      </Dialog>
+             <div className="flex-1 overflow-y-auto p-12 space-y-10 lc-scroll bg-gradient-to-b from-[#022c22] to-slate-900 pb-24">
+                
                 <div className="space-y-6">
                    <div className="flex items-center gap-3 ml-2">
-                      <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                      <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Paso 1: ¿Qué campo desea corregir?</h3>
+                      <div className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+                      <h3 className="text-[12px] font-black text-emerald-100 uppercase tracking-widest">Paso 1: ¿Qué sección desea editar?</h3>
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
                         { id: 'maestros', label: 'DATOS DE TRANSPORTE', desc: 'Chofer, Transportista, Unidades', icon: Truck },
                         { id: 'precintos', label: 'DATOS DE SEGURIDAD', desc: 'Aduana, Beta, Sellos, Termos', icon: ShieldCheck },
-                        { id: 'embarque', label: 'DATOS DE EMBARQUE', desc: 'Booking, Contenedor, Orden, Cronos', icon: Inbox }
+                        { id: 'embarque', label: 'DATOS DE EMBARQUE', desc: 'Booking, Contenedor, Orden, Fechas', icon: Inbox }
                       ].map((item) => (
                          <button 
                            key={item.id}
@@ -1149,9 +1375,9 @@ export default function BandejaLogiCapture() {
                 {/* Paso 2: Edición Dinámica */}
                 {editSector && (
                    <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-700">
-                      <div className="flex items-center gap-3 ml-2 border-t border-slate-100 pt-10">
-                         <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse" />
-                         <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-widest uppercase">Paso 2: Formulario de Corrección</h3>
+                      <div className="flex items-center gap-3 ml-2 border-t border-white/5 pt-10">
+                         <div className="h-3 w-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse" />
+                         <h3 className="text-[12px] font-black text-amber-100 uppercase tracking-widest uppercase">Paso 2: Formulario de Edición</h3>
                       </div>
 
                       <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl space-y-8 relative">
@@ -1392,10 +1618,18 @@ export default function BandejaLogiCapture() {
                 <div className="flex gap-4">
                    <button onClick={() => setIsEditOpen(false)} className="px-10 py-5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-all">Cancelar</button>
                    <Button 
-                     onClick={handleEditSave}
-                     className="px-12 py-7 bg-emerald-950 hover:bg-emerald-900 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-emerald-950/20 active:scale-95 transition-all"
+                      onClick={handleEditSave}
+                      disabled={isSaving}
+                      className="px-12 py-7 bg-emerald-950 hover:bg-emerald-900 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-2xl shadow-emerald-950/20 active:scale-95 transition-all disabled:opacity-50 min-w-[240px]"
                    >
-                      Aplicar Corrección
+                      {isSaving ? (
+                         <div className="flex items-center gap-3">
+                            <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                            <span>Procesando...</span>
+                         </div>
+                       ) : (
+                         "Aplicar Corrección"
+                       )}
                    </Button>
                 </div>
              </div>
@@ -1408,7 +1642,63 @@ export default function BandejaLogiCapture() {
          onClose={() => setIsPesosModalOpen(false)}
          registroId={selectedRegForPesos}
        />
+
+       {/* --- MODALES DE ÉXITO GLOBALES CARLOS STYLE 💎 --- */}
+       
+       {/* Éxito Anulación */}
+        {/* Éxito Anulación Carlos Style 💎 */}
+        <Dialog open={isAnularSuccessOpen} onOpenChange={setIsAnularSuccessOpen}>
+           <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-rose-100 p-12 overflow-hidden rounded-[4rem] shadow-2xl shadow-rose-500/10 text-center flex flex-col items-center gap-8 animate-in zoom-in duration-500">
+              <DialogHeader className="sr-only">
+                 <DialogTitle>Operación Anulada</DialogTitle>
+                 <DialogDescription>El registro ha sido invalidado correctamente</DialogDescription>
+              </DialogHeader>
+              
+              <div className="relative">
+                 <div className="absolute -inset-4 bg-rose-500/20 rounded-full blur-2xl animate-pulse" />
+                 <div className="h-28 w-28 bg-gradient-to-br from-rose-500 to-rose-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-rose-200 relative animate-in zoom-in duration-700">
+                    <ShieldAlert className="h-14 w-14 drop-shadow-lg" />
+                 </div>
+              </div>
+
+              <div className="space-y-3">
+                 <h2 className="text-4xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Operación <span className="text-rose-600">Anulada</span></h2>
+                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] leading-relaxed">Registro invalidado por incidencia técnica correctamente.</p>
+              </div>
+
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
+                 <div className="absolute inset-x-0 h-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-400 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+              </div>
+              
+              <Button 
+                onClick={() => setIsAnularSuccessOpen(false)}
+                className="w-full py-8 bg-rose-600 hover:bg-rose-700 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-rose-600/20 active:scale-95"
+              >
+                 Entendido
+              </Button>
+           </DialogContent>
+        </Dialog>
+
+       {/* Éxito Edición Directa */}
+       <Dialog open={isEditSuccessOpen} onOpenChange={setIsEditSuccessOpen}>
+          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-md border border-emerald-100 p-10 overflow-hidden rounded-[3.5rem] shadow-2xl shadow-emerald-500/10 text-center flex flex-col items-center gap-6 animate-in zoom-in duration-300">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Edición Guardada</DialogTitle>
+                <DialogDescription>Los cambios técnicos han sido aplicados</DialogDescription>
+             </DialogHeader>
+             <div className="h-24 w-24 bg-emerald-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200 animate-bounce">
+                <CheckCircle2 className="h-12 w-12" />
+             </div>
+             <div className="space-y-2">
+                <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase font-['Outfit']">Edición <span className="text-emerald-600">Completada</span></h2>
+                <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]">Los datos maestros han sido actualizados</p>
+             </div>
+             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
+                <div className="absolute inset-x-0 h-full bg-emerald-600 animate-pulse" />
+             </div>
+          </DialogContent>
+       </Dialog>
     </div>
   );
 }
-
+// Sync Test

@@ -226,12 +226,12 @@ async def sync_posicionamiento_raw(
             
             if update_data:
                 upsert_stmt = stmt.on_conflict_do_update(
-                    index_elements=[Posicionamiento.BOOKING],
+                    index_elements=[Posicionamiento.booking],
                     set_=update_data
                 )
             else:
                 # Si todo el payload es nulo excepto el ID, solo intentamos insertar si no existe
-                upsert_stmt = stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
+                upsert_stmt = stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.booking])
             
             db.execute(upsert_stmt)
             procesados += 1
@@ -390,7 +390,7 @@ async def sync_pedidos_raw(
 @router.get("/posicionamiento/list")
 def list_posicionamiento(db: Session = Depends(get_db)):
     """Retorna listado completo del Plan Maestro para el módulo de Instrucciones."""
-    return db.query(Posicionamiento).order_by(Posicionamiento.FECHA_CREACION.desc()).all()
+    return db.query(Posicionamiento).order_by(Posicionamiento.fecha_creacion.desc()).all()
 
 @router.get("/pedidos/list")
 def list_pedidos(db: Session = Depends(get_db)):

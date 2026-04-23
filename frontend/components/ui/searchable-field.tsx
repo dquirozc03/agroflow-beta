@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Loader2, X, Navigation } from "lucide-react";
+import { Search, Loader2, X, Navigation, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchableFieldProps {
@@ -121,18 +121,20 @@ export function SearchableField({
                    onClick={() => { onSelect(res); setShowResults(false); }} 
                    className="p-4 hover:bg-emerald-50/80 cursor-pointer rounded-2xl flex items-center gap-4 group transition-all duration-300"
                  >
-                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-slate-50 group-hover:bg-emerald-600 group-hover:text-white group-hover:scale-110 transition-all">
-                      <Navigation className="h-4 w-4" />
+                    <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 shadow-inner border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                       <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col flex-1 min-w-0">
-                       <span className="text-sm font-black text-slate-800 group-hover:text-emerald-900 uppercase truncate tracking-tight">
-                          {res.nombre || res.placa || res.booking || res.consignatario_fito}
-                       </span>
-                       <div className="flex flex-wrap gap-x-3 items-center opacity-60">
-                          {res.dni && <span className="text-[10px] font-bold text-slate-500 uppercase">DNI: {res.dni}</span>}
-                          {res.marca && <span className="text-[10px] font-bold text-slate-500 uppercase">{res.marca}</span>}
-                          {res.transportista && <span className="text-[10px] font-bold text-slate-500 uppercase truncate max-w-[150px]">{res.transportista}</span>}
-                          {res.dam && <span className="text-[10px] font-bold text-slate-500 uppercase truncate">DAM: {res.dam}</span>}
+                       <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-emerald-950 group-hover:text-emerald-900 uppercase truncate tracking-tight">
+                             {res.nombre || res.placa || res.booking || res.consignatario_fito}
+                          </span>
+                       </div>
+                       <div className="flex flex-wrap gap-x-3 items-center mt-0.5">
+                          {res.dni && <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded-md">DNI: {res.dni}</span>}
+                          {res.marca && <span className="text-[9px] font-black text-emerald-600/70 uppercase tracking-widest">{res.marca}</span>}
+                          {res.transportista && <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[200px] italic">/ {res.transportista}</span>}
+                          {res.dam && <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">DAM: {res.dam}</span>}
                        </div>
                     </div>
                  </div>

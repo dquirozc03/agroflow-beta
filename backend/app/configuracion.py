@@ -37,7 +37,8 @@ class Settings(BaseSettings):
     # Carga primero .env (prod) y luego .env.local (dev)
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.local"),
-        case_sensitive=False
+        case_sensitive=False,
+        extra="ignore"
     )
 
 

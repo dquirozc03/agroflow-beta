@@ -306,6 +306,7 @@ def list_transportistas(
     page: int = 1, 
     size: int = 10, 
     q: Optional[str] = None, 
+    incompletos: Optional[bool] = False,
     db: Session = Depends(get_db)
 ):
     query = db.query(Transportista)
@@ -315,6 +316,15 @@ def list_transportistas(
         query = query.filter(
             (Transportista.nombre_transportista.ilike(search)) |
             (Transportista.ruc.ilike(search))
+        )
+        
+    if incompletos:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Transportista.codigo_sap == None, Transportista.codigo_sap == "",
+                Transportista.partida_registral == None, Transportista.partida_registral == ""
+            )
         )
         
     total = query.count()
@@ -405,6 +415,7 @@ def list_choferes(
     size: int = 10, 
     q: Optional[str] = None, 
     order: str = "asc",
+    incompletos: Optional[bool] = False,
     db: Session = Depends(get_db)
 ):
     """Listado paginado con búsqueda y orden A-Z / Z-A."""
@@ -417,6 +428,15 @@ def list_choferes(
             (Chofer.apellido_paterno.ilike(search)) |
             (Chofer.apellido_materno.ilike(search)) |
             (Chofer.dni.ilike(search))
+        )
+        
+    if incompletos:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Chofer.licencia == None, Chofer.licencia == "",
+                Chofer.apellido_materno == None, Chofer.apellido_materno == ""
+            )
         )
     
     # Ordenamiento alfabético por nombres (Inge Daniel Special)
@@ -624,3 +644,41 @@ def patch_centro_planta(id: int, centro: str, db: Session = Depends(get_db)):
     p.centro = centro.strip().upper()
     db.commit()
     return {"status": "success", "nuevo_centro": p.centro}
+
+@router.post("/plantas", response_model=PlantaResponse)
+def create_planta(data: PlantaCreate, db: Session = Depends(get_db)):
+    """Crea una nueva planta/sede operativa."""
+    existing = db.query(Planta).filter(Planta.planta == data.planta).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"La planta {data.planta} ya está registrada")
+    
+    new_p = Planta(**data.model_dump())
+    db.add(new_p)
+    db.commit()
+    db.refresh(new_p)
+    return new_p
+
+@router.put("/plantas/{id}", response_model=PlantaResponse)
+def update_planta(id: int, data: PlantaCreate, db: Session = Depends(get_db)):
+    """Actualiza todos los campos de una planta existente."""
+    p = db.query(Planta).filter(Planta.id == id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Planta no encontrada")
+    
+    for key, value in data.model_dump().items():
+        setattr(p, key, value)
+    
+    db.commit()
+    db.refresh(p)
+    return p
+
+@router.delete("/plantas/{id}")
+def delete_planta(id: int, db: Session = Depends(get_db)):
+    """Elimina una planta del maestro."""
+    p = db.query(Planta).filter(Planta.id == id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Planta no encontrada")
+    
+    db.delete(p)
+    db.commit()
+    return {"status": "success"}

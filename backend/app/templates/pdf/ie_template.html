@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>INSTRUCCIONES DE EMBARQUE - {{ pos.BOOKING }}</title>
+    <title>INSTRUCCIONES DE EMBARQUE - {{ pos.booking }}</title>
     <style>
         @page {
             size: A4;
@@ -125,7 +125,7 @@
         <img src="https://beta.com.pe/wp-content/uploads/2021/05/logo-complejo-agroindustrial-beta.png" class="header-logo" alt="Logo Beta">
         <div class="header-title">
             <h1>Instrucciones de Embarque</h1>
-            <div>BOOKING: {{ pos.BOOKING }} | ORDEN: {{ pos.ORDEN_BETA or 'S/N' }}</div>
+            <div>BOOKING: {{ pos.booking }} | ORDEN: {{ pos.orden_beta or 'S/N' }}</div>
         </div>
         <div class="header-info">
             EMISIÓN: {{ fecha_emision }}<br>
@@ -160,7 +160,7 @@
         </thead>
         <tbody>
             <tr>
-                <td class="value">{{ pos.CULTIVO }}</td>
+                <td class="value">{{ pos.cultivo }}</td>
                 <td class="value">{{ total_cajas }}</td>
                 <td class="value">{{ total_pallets }}</td>
                 <td class="value">{{ peso_bruto }} KG</td>
@@ -173,7 +173,7 @@
     <div class="data-grid">
         <div class="data-box">
             <div class="label">NAVE / VIAJE</div>
-            <div class="value">{{ pos.NAVE or 'PENDIENTE' }}</div>
+            <div class="value">{{ pos.nave or 'PENDIENTE' }}</div>
         </div>
         <div class="data-box">
             <div class="label">PUERTO DESTINO</div>
@@ -181,11 +181,11 @@
         </div>
         <div class="data-box">
             <div class="label">NAVIERA / LINEA</div>
-            <div class="value">{{ pos.NAVIERA or 'S/N' }}</div>
+            <div class="value">{{ pos.naviera or 'S/N' }}</div>
         </div>
         <div class="data-box">
             <div class="label">PLANTA LLENADO</div>
-            <div class="value">{{ pos.PLANTA_LLENADO or 'S/N' }}</div>
+            <div class="value">{{ pos.planta_llenado or 'S/N' }}</div>
         </div>
     </div>
 

@@ -3,24 +3,60 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, Flowable
 import io
 import os
 import re
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from typing import Optional
-from app.utils.formatters import normalize_client_name, normalize_country_name, get_peru_time
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from typing import Optional, Any
+from app.utils.formatters import normalize_client_name, normalize_country_name
 from app.models.posicionamiento import Posicionamiento
 from app.models.pedido import PedidoComercial
 from app.models.maestros import ClienteIE, Planta
+
+class FloatingImage(Flowable):
+    def __init__(self, path, width, height, dx=0, dy=0):
+        Flowable.__init__(self)
+        self.path = path
+        self.width = width
+        self.height = height
+        self.dx = dx
+        self.dy = dy
+    def wrap(self, availWidth, availHeight):
+        return 0, 0
+    def draw(self):
+        self.canv.drawImage(self.path, self.dx, self.dy, self.width, self.height, mask='auto')
 
 class InstructionPDFService:
     # --- Constantes de Diseño (Westfalia V2 Style) ---
     COLOR_BETA_GREEN = colors.HexColor("#7CC546")
     COLOR_BETA_ORANGE = colors.HexColor("#F5A623")
     COLOR_BG_GRAY = colors.HexColor("#F3F4F6")
+
+    # Paletas por Cultivo
+    PALETTES = {
+        "PALTA": {
+            "primary": colors.HexColor("#2E7D32"),   # Verde Aguacate
+            "secondary": colors.HexColor("#8BC34A"), # Verde Hoja
+            "bg": colors.HexColor("#F2F6E9"),        # Crema Natural
+            "text_accent": colors.HexColor("#263238") # Gris Oscuro
+        },
+        "GRANADA": {
+            "primary": colors.HexColor("#A81D26"),   # Rojo Granada Vibrante (Ajustado para visibilidad)
+            "secondary": colors.HexColor("#7B1E28"), # Rojo Granada Principal (Fondo oscuro)
+            "bg": colors.HexColor("#F5F1ED"),        # Crema Claro Fondo
+            "text_accent": colors.HexColor("#2F5D3A") # Verde Hoja Acento
+        },
+        "DEFAULT": {
+            "primary": colors.HexColor("#7CC546"),
+            "secondary": colors.HexColor("#F5A623"),
+            "bg": colors.HexColor("#F3F4F6"),
+            "text_accent": colors.HexColor("#7CC546")
+        }
+    }
     
     FONT_NORMAL = 'Helvetica'
     FONT_BOLD = 'Helvetica-Bold'
@@ -92,7 +128,7 @@ class InstructionPDFService:
         if not text: return ""
         return text.replace('\n', '<br/>')
 
-    def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = "", override_data: Optional[dict] = None):
+    def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = "", override_data: Optional[dict] = None, emision_bl: str = "SWB"):
         # 1. Obtencion de datos (Modificado para soportar OVERRIDE de Admin 💎)
         if override_data:
             # Si hay override, usamos los datos inyectados manualmente
@@ -127,7 +163,7 @@ class InstructionPDFService:
             variedad = override_data.get("variedad")
             
             # Flete (Freight)
-            flete_val = override_data.get("fob", "PREPAID") # Reutilizamos el campo fob para freight si es necesario o un campo directo
+            flete_val = override_data.get("freight", "PREPAID")
             
             # Descripción BL
             desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
@@ -138,28 +174,25 @@ class InstructionPDFService:
             planta_direccion = override_data.get("direccion_planta", "")
             fecha_llenado = override_data.get("fecha_llenado", "")
             
-            # Observaciones
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
             fob_val = override_data.get("fob", "USD 0.00")
-            emision_bl_val = override_data.get("emision_bl", "SWB")
             po_val = override_data.get("po", "")
-            
-            # Fecha de emisión para el header (Extraída de la fecha de llenado)
-            fecha_emision = fecha_llenado.split(" - ")[0] if " - " in str(fecha_llenado) else str(fecha_llenado)
+            eori_consignee = override_data.get("eori_consignatario", "----")
+            eori_notify = override_data.get("eori_notify", "----")
             
         else:
             # Lógica automática original (Booking -> DB)
-            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
+            pos = db.query(Posicionamiento).filter(Posicionamiento.booking == booking).first()
             if not pos: raise Exception(f"Booking {booking} no encontrado")
 
-            normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
+            normalized_orden = self._normalize_orden(pos.orden_beta)
             pedidos = []
             if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
                 query_pedidos = db.query(PedidoComercial).filter(
                     PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
                 )
-                if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
-                    query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
+                if pos.cultivo and pos.cultivo.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                    query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.cultivo))
                 pedidos = query_pedidos.all()
 
             total_cajas = sum(p.total_cajas or 0 for p in pedidos)
@@ -179,16 +212,16 @@ class InstructionPDFService:
             cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val)
             fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
-            planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
-            planta_nombre = planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")
+            planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None
+            planta_nombre = planta_maestro.planta if planta_maestro else (pos.planta_llenado or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")
             planta_direccion = planta_maestro.direccion if planta_maestro else ""
             
             # Datos de Posicionamiento
-            pos_booking = pos.BOOKING or ""
-            pos_orden = pos.ORDEN_BETA or ""
-            pos_cultivo = pos.CULTIVO or ""
-            pos_nave = pos.NAVE or ""
-            pos_naviera = pos.NAVIERA or ""
+            pos_booking = pos.booking or ""
+            pos_orden = pos.orden_beta or ""
+            pos_cultivo = pos.cultivo or ""
+            pos_nave = pos.nave or ""
+            pos_naviera = pos.naviera or ""
             pos_operador = getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L."
             pos_pol = getattr(pos, 'POL', "CALLAO") or "CALLAO"
             
@@ -209,7 +242,8 @@ class InstructionPDFService:
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
             flete_val = "PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"
-            emision_bl_val = cliente_maestro.emision_bl if cliente_maestro and cliente_maestro.emision_bl else "SWB"
+            eori_consignee = cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else "----"
+            eori_notify = cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else "----"
             
             # Valores fijos default
             embarcador_nombre = "COMPLEJO AGROINDUSTRIAL BETA S.A."
@@ -222,9 +256,19 @@ class InstructionPDFService:
                     if p.po and p.po.strip():
                         po_val = p.po.strip()
                         break
-            
-            # Fecha de emisión para el header (Usar Fecha Programada / ETD)
-            fecha_emision = f_str
+
+        # 2. Selección de Paleta de Colores Dinámica
+        cultivo_key = (pos_cultivo or "").upper()
+        if "PALTA" in cultivo_key or "AVOCADO" in cultivo_key:
+            palette = self.PALETTES["PALTA"]
+        elif "GRANADA" in cultivo_key or "POMEGRANATE" in cultivo_key:
+            palette = self.PALETTES["GRANADA"]
+        else:
+            palette = self.PALETTES["DEFAULT"]
+
+        primary_color = palette["primary"]
+        secondary_color = palette["secondary"]
+        bg_color = palette["bg"]
 
         # 3. Construcción PDF (ReportLab)
         buffer = io.BytesIO()
@@ -235,11 +279,13 @@ class InstructionPDFService:
         # Estilos compartidos
         normal_style = ParagraphStyle('N', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1)
         bold_style = ParagraphStyle('B', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_BOLD)
+        white_bold_style = ParagraphStyle('WB', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_BOLD, textColor=colors.white)
+        white_normal_style = ParagraphStyle('WN', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_NORMAL, textColor=colors.white)
 
-        def b_p(text): return Paragraph(f"<b>{text}</b>", bold_style)
-        def b_pc(text): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1))
-        def n_p(text): return Paragraph(str(text), normal_style)
-        def format_desc(t1, t2): return Paragraph(f"{t1}<br/>{t2}", normal_style)
+        def b_p(text, white=False): return Paragraph(f"<b>{text}</b>", white_bold_style if white else bold_style)
+        def b_pc(text, white=False): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1, textColor=colors.white if white else colors.black))
+        def n_p(text, white=False): return Paragraph(str(text), white_normal_style if white else normal_style)
+        def format_desc(t1, t2, white=False): return Paragraph(f"{t1}<br/>{t2}", white_normal_style if white else normal_style)
 
         # Header con Logo Local
         try:
@@ -274,20 +320,31 @@ class InstructionPDFService:
             subtitle_txt = " - ".join(subtitle_parts)
             
             titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos_cultivo or ''}"
-            header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=10, alignment=1, fontName=self.FONT_BOLD)))
+            header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=13, alignment=1, fontName=self.FONT_BOLD)))
 
             if "GRANADA" in (pos_cultivo or "").upper():
-                granada_obj = get_safe_image(os.path.join(assets_dir, "image_granada.png"), 60, 60)
-                if granada_obj: header_row.append(granada_obj)
+                # Usamos FloatingImage para que no empuje el resto del documento
+                granada_path = os.path.join(assets_dir, "image_granada.png")
+                if os.path.exists(granada_path):
+                    header_row.append(FloatingImage(granada_path, 90, 90, dx=-20, dy=-25))
+                else:
+                    header_row.append(Paragraph("", styles["Normal"]))
+            elif "PALTA" in (pos_cultivo or "").upper() or "AVOCADO" in (pos_cultivo or "").upper():
+                palta_path = os.path.join(assets_dir, "image_palta.png")
+                if os.path.exists(palta_path):
+                    # dy subido de -50 a -35 para alejarlo de la línea verde
+                    header_row.append(FloatingImage(palta_path, 100, 100, dx=-25, dy=-35))
+                else:
+                    header_row.append(Paragraph("", styles["Normal"]))
             
             if len(header_row) < 3:
-                header_row.append(Paragraph(f"<font size=7>FECHA: {fecha_emision}</font>", styles["Normal"]))
+                header_row.append(Paragraph(f"<font size=7>FECHA: {datetime.now().strftime('%d/%m/%Y')}</font>", styles["Normal"]))
                 
             header_table = Table([header_row])
             header_table.setStyle(TableStyle([
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('LINEBELOW', (0,0), (-1,-1), 1, self.COLOR_BETA_GREEN)
+                ('LINEBELOW', (0,0), (-1,-1), 1, primary_color)
             ]))
             elements.append(header_table)
         except Exception:
@@ -296,19 +353,20 @@ class InstructionPDFService:
         elements.append(Spacer(1, 12))
 
         # --- MASTER TABLE ---
+        is_granada = "GRANADA" in cultivo_key
         t1_data = [
             [b_p(pos_orden or 'S/N'), b_p("")],
             [b_p("EMBARCADOR"), n_p(embarcador_nombre)],
             [b_p("DIRECCIÓN"), n_p(embarcador_direccion)],
-            [b_p("OPERADOR LOGISTICO"), b_p(pos_operador)],
+            [b_p("OPERADOR LOGISTICO", white=is_granada), b_p(pos_operador, white=is_granada)],
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", planta_direccion)],
             [b_p("UBIGEO PLANTA"), n_p("110111")],
-            [b_p("FECHA Y HORA DEL LLENADO"), b_pc(fecha_llenado)],
+            [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(cliente_maestro.direccion_notify if cliente_maestro else ""))],
             [b_p("DATOS REFERENCIALES"), format_desc(
-                f"EORI CONSIGNE: {override_data.get('eori_consignatario', '----') if override_data else (cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else '----')}",
-                f"EORI NOTIFY: {override_data.get('eori_notify', '----') if override_data else (cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else '----')}"
+                f"EORI CONSIGNE: {eori_consignee}",
+                f"EORI NOTIFY: {eori_notify}"
             )],
             [b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)],
             [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")],
@@ -322,7 +380,7 @@ class InstructionPDFService:
             t1_data.append([b_p("PO"), b_p(po_val)])
 
         t1_data.extend([
-            [b_p("EMISION B/L"), n_p(emision_bl_val)],
+            [b_p("EMISION B/L"), n_p(emision_bl)],
             [b_p("PUERTO EMBARQUE"), n_p(pos_pol)],
             [b_p("ETA"), n_p(eta_str)],
             [b_p("PUERTO DESTINO"), n_p(puerto_destino)],
@@ -343,7 +401,7 @@ class InstructionPDFService:
 
 
         t2_data = [
-            [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD)), ""],
+            [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD, textColor=colors.white if is_granada else colors.black)), ""],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else self._format_multiline(fito.direccion_fito if fito else "")))],
             [b_p("PAIS DE DESTINO"), b_p(override_data.get('pais_destino') if override_data else (pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else "")))],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
@@ -368,14 +426,27 @@ class InstructionPDFService:
         t1_styles = [
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0,0), (0,-1), self.COLOR_BG_GRAY),
-            ('BACKGROUND', (0,3), (-1,3), self.COLOR_BETA_ORANGE),
-            ('BACKGROUND', (0,6), (-1,6), self.COLOR_BETA_ORANGE),
+            ('BACKGROUND', (0,0), (0,-1), bg_color),
+            ('BACKGROUND', (0,3), (-1,3), secondary_color),
+            ('BACKGROUND', (0,6), (-1,6), secondary_color),
             ('ALIGN', (1,6), (1,6), 'CENTER'),
         ]
 
+        # Texto en blanco si el fondo es muy oscuro (como Borgoña de Granada)
+        if "GRANADA" in cultivo_key:
+             t1_styles.extend([
+                 ('TEXTCOLOR', (0,3), (-1,3), colors.white),
+                 ('TEXTCOLOR', (0,6), (-1,6), colors.white)
+             ])
+
         if idx_filters != -1 and idx_cold != -1:
-            t1_styles.append(('BACKGROUND', (0, idx_filters), (-1, idx_cold), self.COLOR_BETA_ORANGE))
+            t1_styles.append(('BACKGROUND', (0, idx_filters), (-1, idx_cold), secondary_color))
+            if is_granada:
+                # Re-generar párrafos en blanco para estas filas específicas si es granada
+                t1_data[idx_filters][0] = b_p("FILTROS", white=True)
+                t1_data[idx_filters][1] = b_p(override_data.get('filtros', 'NO') if override_data else "NO", white=True)
+                t1_data[idx_cold][0] = b_p("COLD TREAMENT", white=True)
+                t1_data[idx_cold][1] = b_p(override_data.get('cold_treatment', 'NO') if override_data else "NO", white=True)
 
         t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
         t1.setStyle(TableStyle(t1_styles))
@@ -383,15 +454,20 @@ class InstructionPDFService:
         elements.append(t1)
         elements.append(Spacer(1, 12))
 
-        t2 = Table(t2_data, colWidths=[6.5*cm, 12.5*cm])
-        t2.setStyle(TableStyle([
+        t2_styles = [
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0,0), (0,-1), self.COLOR_BG_GRAY),
-            ('BACKGROUND', (0,0), (-1,0), self.COLOR_BETA_ORANGE),
+            ('BACKGROUND', (0,0), (0,-1), bg_color),
+            ('BACKGROUND', (0,0), (-1,0), secondary_color),
             ('SPAN', (0,0), (1,0)),
             ('ALIGN', (0,0), (1,0), 'CENTER'),
-        ]))
+        ]
+
+        if "GRANADA" in cultivo_key:
+            t2_styles.append(('TEXTCOLOR', (0,0), (-1,0), colors.white))
+
+        t2 = Table(t2_data, colWidths=[6.5*cm, 12.5*cm])
+        t2.setStyle(TableStyle(t2_styles))
         elements.append(t2)
 
         # Build PDF

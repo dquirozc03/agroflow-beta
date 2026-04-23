@@ -84,7 +84,6 @@ interface EmisionHistorial {
   usuario: string;
   motivo_anulacion: string | null;
   bookings: string[];
-  ordenes: string[];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -270,10 +269,7 @@ export default function PackingListCustomizadosPage() {
   const fetchNaves = async () => {
     setIsLoadingNaves(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/naves`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/naves`);
       if (resp.ok) setNaves(await resp.json());
       else toast.error("Error al cargar naves");
     } catch { toast.error("Error de conexión"); }
@@ -292,10 +288,7 @@ export default function PackingListCustomizadosPage() {
     setIsLoadingBookings(true);
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/bookings?nave=${encodeURIComponent(nave.nave)}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/bookings?nave=${encodeURIComponent(nave.nave)}`);
       if (resp.ok) setBookings(await resp.json());
       else toast.error("No se encontraron bookings");
     } catch { toast.error("Error al cargar bookings"); }
@@ -320,11 +313,8 @@ export default function PackingListCustomizadosPage() {
       filesConfirmacion.forEach((f) => formData.append("confirmaciones", f));
       if (fileTermografos) formData.append("termografos", fileTermografos);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/generate/${selectedCliente.endpoint}`, {
-        method: "POST", 
-        body: formData,
-        headers: { "Authorization": `Bearer ${token}` }
+        method: "POST", body: formData
       });
 
       if (resp.ok) {
@@ -332,8 +322,7 @@ export default function PackingListCustomizadosPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        const safeNaveName = selectedNave.nave.replace(/[/\\?%*:|"<>]/g, '_').replace(/ /g, "_");
-        a.download = `PL_${selectedCliente.id}_${safeNaveName}.xlsx`;
+        a.download = `PL_${selectedCliente.id}_${selectedNave.nave.replace(/ /g, "_")}.xlsx`;
         document.body.appendChild(a); a.click();
         window.URL.revokeObjectURL(url); document.body.removeChild(a);
         setGenStatus("success");
@@ -354,10 +343,7 @@ export default function PackingListCustomizadosPage() {
   const fetchHistorial = async () => {
     setIsLoadingHistorial(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
-      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/historial`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/historial`);
       if (resp.ok) {
         const data = await resp.json();
         setHistorial(data.items);
@@ -382,13 +368,9 @@ export default function PackingListCustomizadosPage() {
 
     setIsAnulando(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/${itemAnular.id}/anular`, {
         method: "PATCH",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ motivo: motivoFinal })
       });
 
@@ -616,7 +598,7 @@ export default function PackingListCustomizadosPage() {
                      <th className="pb-3 px-4 w-[160px]">Fecha & Hora</th>
                      <th className="pb-3 px-4 w-[180px]">Nave Asignada</th>
                      <th className="pb-3 px-4 min-w-[200px]">Archivo / Auditoría</th>
-                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes (Beta)</th>
+                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes</th>
                      <th className="pb-3 px-4 text-center w-[120px]">Estado</th>
                      <th className="pb-3 px-4 text-right w-[120px]">Acción</th>
                    </tr>
@@ -663,8 +645,8 @@ export default function PackingListCustomizadosPage() {
                        </td>
                         <td className="p-4 text-center">
                            <div className="flex justify-center max-w-[200px] mx-auto">
-                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-emerald-700 text-[10px] break-all line-clamp-2 leading-tight shadow-sm" title={h.ordenes?.join(' / ')}>
-                                 {h.ordenes && h.ordenes.length > 0 ? h.ordenes.join(' / ') : h.bookings.join(' / ')}
+                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] break-all line-clamp-2 leading-tight" title={h.bookings.join(' / ')}>
+                                 {h.bookings.join(' / ')}
                               </span>
                            </div>
                         </td>
@@ -731,7 +713,7 @@ export default function PackingListCustomizadosPage() {
                 <div className="p-6 space-y-6">
                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-[11px] font-bold text-slate-600 leading-relaxed">
-                         Al anular este documento, las <span className="font-black text-slate-800">{(itemAnular.ordenes?.length || itemAnular.bookings.length)} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
+                         Al anular este documento, las <span className="font-black text-slate-800">{itemAnular.bookings.length} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
                       </p>
                    </div>
                    

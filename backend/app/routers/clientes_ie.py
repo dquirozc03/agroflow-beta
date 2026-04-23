@@ -37,7 +37,6 @@ class ClienteIESchema(BaseModel):
     direccion_notify: Optional[str] = None
     eori_consignatario: Optional[str] = None
     eori_notify: Optional[str] = None
-    emision_bl: Optional[str] = None
     estado: Optional[str] = "ACTIVO"
     fito_id: Optional[int] = None
     fitosanitario: Optional[MaestroFitoSchema] = None
@@ -87,7 +86,6 @@ def create_cliente_ie(req: ClienteIESchema, db: Session = Depends(get_db)):
         direccion_notify=safe_to_upper(req.direccion_notify) if req.direccion_notify else None,
         eori_consignatario=safe_to_upper(req.eori_consignatario) if req.eori_consignatario else None,
         eori_notify=safe_to_upper(req.eori_notify) if req.eori_notify else None,
-        emision_bl=safe_to_upper(req.emision_bl) if req.emision_bl else None,
         fito_id=fito_id
     )
     
@@ -204,7 +202,6 @@ def duplicate_cliente_ie(id: int, db: Session = Depends(get_db)):
         direccion_notify=original.direccion_notify,
         eori_consignatario=original.eori_consignatario,
         eori_notify=original.eori_notify,
-        emision_bl=original.emision_bl,
         fito_id=original.fito_id
     )
     db.add(new_cliente)

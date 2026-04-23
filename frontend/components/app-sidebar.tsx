@@ -28,7 +28,8 @@ import {
   UserRound,
   FileUp,
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  Factory
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,7 +47,7 @@ export function AppSidebar({ className }: { className?: string }) {
     // Visibilidad por sección: Visible si al menos un hijo es visible o es ADMIN
     const hasLogi = isAdmin || !!(p.lc_registro || p.lc_bandeja);
     const hasOper = isAdmin || !!(p.op_instrucciones || p.op_packing_list);
-    const hasMaestros = isAdmin || !!(p.m_bulk || p.m_contenedores || p.m_transportistas || p.m_vehiculos || p.m_choferes || p.m_clientes_ie);
+    const hasMaestros = isAdmin || !!(p.m_bulk || p.m_contenedores || p.m_transportistas || p.m_vehiculos || p.m_choferes || p.m_clientes_ie || p.m_plantas);
     const hasSys = isAdmin || !!(p.sys_usuarios || p.sys_roles);
 
     const allSections = [
@@ -86,6 +87,7 @@ export function AppSidebar({ className }: { className?: string }) {
           { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas", visible: isAdmin || !!p.m_transportistas },
           { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos", visible: isAdmin || !!p.m_vehiculos },
           { name: "Conductores", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes", visible: isAdmin || !!p.m_choferes },
+          { name: "Plantas / Sedes", icon: Factory, href: "/maestros/plantas", active: pathname === "/maestros/plantas", visible: isAdmin || !!p.m_plantas },
           { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie", visible: isAdmin || !!p.m_clientes_ie },
         ].filter(i => i.visible)
       },
@@ -196,9 +198,9 @@ export function AppSidebar({ className }: { className?: string }) {
            {!isCollapsed && (
              <div className="flex flex-col min-w-0 animate-in fade-in">
                <p className="text-xs font-bold text-white truncate uppercase tracking-tight">{user?.nombre || "Carlos"}</p>
-               <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-                  <p className="text-[9px] text-emerald-500/60 font-black uppercase tracking-[0.2em]">En Línea</p>
+               <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500/50" />
+                  <p className="text-[9px] text-emerald-500/60 font-black uppercase tracking-[0.2em]">{user?.rol || "Operador"}</p>
                </div>
              </div>
            )}

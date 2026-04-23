@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiUpdateOwnPassword } from "@/lib/api";
 import { toast } from "sonner";
-import { KeyRound, ShieldAlert, Loader2 } from "lucide-react";
+import { KeyRound, ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -27,6 +28,7 @@ export function ChangePasswordModal({ isOpen, onSuccess, onCancel }: ChangePassw
     const [nuevaPassword, setNuevaPassword] = useState("");
     const [confirmarPassword, setConfirmarPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,8 +47,11 @@ export function ChangePasswordModal({ isOpen, onSuccess, onCancel }: ChangePassw
                 password_actual: passwordActual,
                 nueva_password: nuevaPassword,
             });
-            toast.success("Contraseña actualizada correctamente");
-            onSuccess();
+            setIsSuccess(true);
+            setTimeout(() => {
+                setIsSuccess(false);
+                onSuccess();
+            }, 2000);
         } catch (error: any) {
             toast.error(error.message || "Error al actualizar contraseña. Verifica tu contraseña actual.");
         } finally {
@@ -69,7 +74,17 @@ export function ChangePasswordModal({ isOpen, onSuccess, onCancel }: ChangePassw
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                <form onSubmit={handleSubmit} className="space-y-4 py-4 relative">
+                    {/* Integrated Success Overlay style AgroFlow Premium */}
+                    {isSuccess && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm rounded-xl animate-in fade-in zoom-in duration-300">
+                            <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-4 shadow-sm animate-bounce">
+                                <CheckCircle2 className="h-10 w-10" />
+                            </div>
+                            <p className="text-sm font-black text-emerald-950 uppercase tracking-[0.2em]">Contraseña Actualizada</p>
+                            <p className="text-[10px] font-bold text-emerald-600 mt-2 uppercase">Seguridad Sincronizada 💎</p>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="current" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                             Contraseña Actual (Temporal)

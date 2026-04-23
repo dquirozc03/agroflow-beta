@@ -1,4 +1,4 @@
-from app.utils.formatters import clean_booking, clean_plate, clean_container, clean_dni, get_peru_time
+from app.utils.formatters import clean_booking, clean_plate, clean_container, clean_dni
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -106,7 +106,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     clean_booking_val = clean_booking(booking)
     
     # 1. Buscar en Posicionamientos (Orden Beta / Plan Maestro)
-    pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == clean_booking_val).first()
+    pos = db.query(Posicionamiento).filter(Posicionamiento.booking == clean_booking_val).first()
     
     # 2. Buscar en Control de Embarque (DAM / Contenedor)
     emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == clean_booking_val).first()
@@ -119,12 +119,12 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     
     return {
         "booking": clean_booking_val,
-        "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
+        "orden_beta": pos.orden_beta if pos else "PENDIENTE",
         "dam": emb.dam if emb else "PENDIENTE",
         "contenedor": emb.contenedor if emb else "PENDIENTE",
         # Jalar desde posicionamiento real
-        "planta": pos.PLANTA_LLENADO if pos else None,
-        "cultivo": pos.CULTIVO if pos else None,
+        "planta": pos.planta_llenado if pos else None,
+        "cultivo": pos.cultivo if pos else None,
         "codigo_sap": getattr(pos, 'CODIGO_SAP', None), # Si existe en el modelo
         "status": "success"
     }
@@ -284,16 +284,16 @@ def search_bookings(q: str, db: Session = Depends(get_db)):
     for b in results:
         # Intentar jalar Orden Beta desde Posicionamiento
         pos = db.query(Posicionamiento).filter(
-            Posicionamiento.BOOKING == b.booking
+            Posicionamiento.booking == b.booking
         ).first()
         
         output.append({
             "booking": b.booking,
             "dam": b.dam,
             "contenedor": b.contenedor,
-            "orden_beta": pos.ORDEN_BETA if pos else "PENDIENTE",
-            "planta": pos.PLANTA_LLENADO if pos else None,
-            "cultivo": pos.CULTIVO if pos else None
+            "orden_beta": pos.orden_beta if pos else "PENDIENTE",
+            "planta": pos.planta_llenado if pos else None,
+            "cultivo": pos.cultivo if pos else None
         })
     return output
 
@@ -340,7 +340,13 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
     if codes_to_check:
         dup = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo.in_(codes_to_check)).first()
         if dup:
-            raise HTTPException(status_code=400, detail=f"El código de precinto/termógrafo '{dup.codigo}' ya fue utilizado en otra operación.")
+            reg_dup = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == dup.registro_id).first()
+            label = "TERMÓGRAFO" if dup.categoria == "TERMOGRAFO" else f"PRECINTO DE {dup.tipo}"
+            ref_val = reg_dup.orden_beta if reg_dup and reg_dup.orden_beta else f"ID #{dup.registro_id}"
+            raise HTTPException(
+                status_code=400, 
+                detail=f"CONFLICTO: El {label} [{dup.codigo}] ya fue utilizado en la Orden Beta: {ref_val}."
+            )
 
     # 3. Guardar Cabecera
     new_reg = LogiCaptureRegistro(
@@ -435,24 +441,14 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
                 detail="Error de integridad en base de datos. Se enviaron códigos duplicados."
             )
 
-    return {"status": "success", "id": new_reg.id}
-
 @router.post("/bulk_sync")
 def bulk_sync_masters(db: Session = Depends(get_db)):
-    """Sincronización masiva interna para optimizar rendimiento y evitar CORS 💎."""
-    from sqlalchemy import or_
+    """Sincronización masiva interna para optimizar rendimiento y asegurar datos maestros actualizados 💎."""
+    from app.models.maestros import VehiculoTracto
     
-    # 1. Traer registros procesados que les falta Código SAP o Partida
+    # 1. Traer registros que no estén anulados para sincronizar info oficial
     registros = db.query(LogiCaptureRegistro).filter(
-        LogiCaptureRegistro.status == "PROCESADO",
-        or_(
-            LogiCaptureRegistro.codigo_sap == None,
-            LogiCaptureRegistro.codigo_sap == "-",
-            LogiCaptureRegistro.codigo_sap == "",
-            LogiCaptureRegistro.partida_registral == None,
-            LogiCaptureRegistro.partida_registral == "-",
-            LogiCaptureRegistro.partida_registral == ""
-        )
+        LogiCaptureRegistro.status.in_(["PENDIENTE", "PROCESADO"])
     ).all()
     
     updated_count = 0
@@ -460,19 +456,43 @@ def bulk_sync_masters(db: Session = Depends(get_db)):
         if not reg.placa_tracto:
             continue
             
-        # Limpiar placa y buscar en el maestro de tractos
+        # Buscar en el maestro de tractos por placa limpia
         placa_clean = clean_plate(reg.placa_tracto)
         vehiculo = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == placa_clean).first()
         
-        if vehiculo and vehiculo.transportista:
-            # Solo actualizar si hay info útil en el maestro
-            has_master_data = (vehiculo.transportista.codigo_sap and vehiculo.transportista.codigo_sap != "-") or \
-                              (vehiculo.transportista.partida_registral and vehiculo.transportista.partida_registral != "-")
+        if vehiculo:
+            has_changed = False
             
-            if has_master_data:
-                reg.codigo_sap = vehiculo.transportista.codigo_sap or "-"
-                reg.partida_registral = vehiculo.transportista.partida_registral or "-"
-                reg.empresa_transporte = vehiculo.transportista.nombre_transportista
+            # a. Sincronizar Marca
+            if vehiculo.marca and reg.marca_tracto != vehiculo.marca:
+                reg.marca_tracto = vehiculo.marca
+                has_changed = True
+                
+            # b. Sincronizar Datos de Transportista (Relación cruzada)
+            if vehiculo.transportista:
+                t = vehiculo.transportista
+                
+                # Actualizar Nombre de Empresa
+                if t.nombre_transportista and reg.empresa_transporte != t.nombre_transportista:
+                    reg.empresa_transporte = t.nombre_transportista
+                    has_changed = True
+                
+                # Actualizar Código SAP (Crucial para Liquidaciones)
+                if t.codigo_sap and reg.codigo_sap != t.codigo_sap:
+                    reg.codigo_sap = t.codigo_sap
+                    has_changed = True
+                
+                # Actualizar Partida Registral (Anexo 1)
+                if t.partida_registral and reg.partida_registral != t.partida_registral:
+                    reg.partida_registral = t.partida_registral
+                    has_changed = True
+
+                # Actualizar RUC
+                if t.ruc and reg.ruc_transportista != t.ruc:
+                    reg.ruc_transportista = t.ruc
+                    has_changed = True
+            
+            if has_changed:
                 updated_count += 1
             
     if updated_count > 0:
@@ -488,28 +508,76 @@ def bulk_sync_masters(db: Session = Depends(get_db)):
 def list_registros(
     page: int = 1, 
     size: int = 10,
+    q: Optional[str] = None,
     planta: Optional[str] = None, 
     cultivo: Optional[str] = None,
     status: Optional[str] = None,
+    motivo: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Listado paginado de registros con filtros operativos."""
+    from sqlalchemy import or_
     query = db.query(LogiCaptureRegistro)
     
+    if q:
+        from sqlalchemy import func
+        q_clean = q.replace(" ", "").replace("-", "")
+        query = query.filter(
+            or_(
+                LogiCaptureRegistro.booking.ilike(f"%{q}%"),
+                LogiCaptureRegistro.orden_beta.ilike(f"%{q}%"),
+                LogiCaptureRegistro.contenedor.ilike(f"%{q}%"),
+                # Búsqueda flexible: ignora espacios y guiones en el campo contenedor
+                func.replace(func.replace(LogiCaptureRegistro.contenedor, ' ', ''), '-', '').ilike(f"%{q_clean}%")
+            )
+        )
     if planta: query = query.filter(LogiCaptureRegistro.planta == planta)
     if cultivo: query = query.filter(LogiCaptureRegistro.cultivo == cultivo)
     if status: query = query.filter(LogiCaptureRegistro.status == status)
     
+    if motivo and motivo.strip() and motivo != "all":
+        from sqlalchemy import func, not_
+        clean_motivo = motivo.strip().lower()
+        
+        if clean_motivo == "otros":
+            # Si es "Otros", filtramos todo lo que NO esté en la lista estándar
+            standard_motivos = [
+                "error de precinto",
+                "error de precintado",
+                "error de guia",
+                "error de booking",
+                "termógrafo dañado"
+            ]
+            conditions = [not_(func.lower(LogiCaptureRegistro.motivo_anulacion).contains(m)) for m in standard_motivos]
+            query = query.filter(*conditions)
+        else:
+            query = query.filter(func.lower(LogiCaptureRegistro.motivo_anulacion).contains(clean_motivo))
+    
     total = query.count()
-    items = query.order_by(LogiCaptureRegistro.fecha_registro.desc()).offset((page - 1) * size).limit(size).all()
+    # Orden estable: fecha desc, luego id desc para evitar duplicados en paginación
+    items = query.order_by(LogiCaptureRegistro.fecha_registro.desc(), LogiCaptureRegistro.id.desc()).offset((page - 1) * size).limit(size).all()
     
     total_pages = (total + size - 1) // size if size > 0 else 1
+    
+    # Obtener valores únicos para los dropdowns ignorando los filtros de planta/cultivo/q
+    base_query = db.query(LogiCaptureRegistro)
+    if status: base_query = base_query.filter(LogiCaptureRegistro.status == status)
+    available_plantas = [r[0] for r in base_query.with_entities(LogiCaptureRegistro.planta).distinct().all() if r[0]]
+    available_cultivos = [r[0] for r in base_query.with_entities(LogiCaptureRegistro.cultivo).distinct().all() if r[0]]
     
     return {
         "total": total,
         "page": page,
         "total_pages": total_pages,
-        "items": items
+        "items": [
+            {
+                **{c.name: getattr(item, c.name) for c in item.__table__.columns},
+                "antiguedad_humanizada": item.antiguedad_humanizada,
+                "antiguedad_color": item.antiguedad_color
+            } for item in items
+        ],
+        "available_plantas": available_plantas,
+        "available_cultivos": available_cultivos
     }
 
 @router.get("/registros/{id}")
@@ -553,8 +621,22 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
     if req.codigoSAP is not None: reg.codigo_sap = req.codigoSAP
 
     # 3.5 Datos de Despacho (Auditoría de Carga)
+    if req.ordenBeta is not None and req.ordenBeta != reg.orden_beta:
+        # Validar si la nueva orden ya existe en otro registro activo
+        exists = db.query(LogiCaptureRegistro).filter(
+            LogiCaptureRegistro.orden_beta == req.ordenBeta,
+            LogiCaptureRegistro.status != "ANULADO",
+            LogiCaptureRegistro.id != id
+        ).first()
+        if exists:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail=f"CONFLICTO: La Orden Beta {req.ordenBeta} ya está asignada a otro registro activo (ID #{exists.id})."
+            )
+        reg.orden_beta = req.ordenBeta
+
     if req.booking is not None: reg.booking = req.booking
-    if req.ordenBeta is not None: reg.orden_beta = req.ordenBeta
     if req.dam is not None: reg.dam = req.dam
     if req.contenedor is not None: reg.contenedor = req.contenedor
     if req.planta is not None: reg.planta = req.planta
@@ -610,9 +692,12 @@ def update_registro(id: int, req: LogiCaptureUpdateRequest, db: Session = Depend
                 duplicado = db.query(LogiCaptureDetalle).filter(LogiCaptureDetalle.codigo == code_upper).first()
                 if duplicado:
                     db.rollback()
+                    reg_dup = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.id == duplicado.registro_id).first()
+                    label = "TERMÓGRAFO" if duplicado.categoria == "TERMOGRAFO" else f"PRECINTO DE {duplicado.tipo}"
+                    ref_val = reg_dup.orden_beta if reg_dup and reg_dup.orden_beta else f"ID #{duplicado.registro_id}"
                     raise HTTPException(
                         status_code=400, 
-                        detail=f"Error: El código '{code_upper}' ya está siendo usado en otro registro activo."
+                        detail=f"CONFLICTO: El {label} [{code_upper}] ya está registrado en la Orden Beta: {ref_val}."
                     )
                 
                 nuevos_detalles.append(LogiCaptureDetalle(
@@ -668,15 +753,33 @@ def change_registro_status(id: int, status: str, motivo: Optional[str] = None, d
     return {"status": "success", "message": f"Registro marcado como {clean_status}"}
 
 @router.get("/export/excel")
-def export_to_excel(db: Session = Depends(get_db)):
-    """Generación de reporte Excel Premium con formateo de tabla y auto-ajuste."""
+def export_to_excel(start_date: Optional[str] = None, end_date: Optional[str] = None, status: Optional[str] = None, db: Session = Depends(get_db)):
+    """Generación de reporte Excel Premium con filtrado opcional por fechas y estatus."""
     from app.services.logicapture_service import LogiCaptureService
-    output = LogiCaptureService.generate_excel_report(db)
+    
+    s_dt = None
+    e_dt = None
+    
+    if start_date:
+        try:
+            # Si viene solo fecha YYYY-MM-DD, fromisoformat lo maneja.
+            # Aseguramos que sea el inicio del día
+            s_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00')).replace(hour=0, minute=0, second=0)
+        except: pass
+    if end_date:
+        try:
+            # Si viene solo fecha, aseguramos que sea el final del día (23:59:59)
+            e_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00')).replace(hour=23, minute=59, second=59)
+        except: pass
+
+    output = LogiCaptureService.generate_excel_report(db, start_date=s_dt, end_date=e_dt, status=status)
+    
+    filename = f"LogiCapture_Reporte_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=LogiCapture_Auditoria_{get_peru_time().strftime('%Y%m%d')}.xlsx"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 @router.post("/registros/{id}/anexo1")

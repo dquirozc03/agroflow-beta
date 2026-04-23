@@ -14,7 +14,8 @@ import {
   Scaling,
   Weight,
   Layers,
-  Search
+  Search,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
   
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [searchTermTransportista, setSearchTermTransportista] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -196,9 +198,12 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
       });
 
       if (response.ok) {
-        toast.success("Vehículo guardado exitosamente");
+        setIsSuccess(true);
         onSuccess();
-        onClose();
+        setTimeout(() => {
+          onClose();
+          setIsSuccess(false);
+        }, 2000);
       } else {
         const err = await response.json();
         toast.error(err.detail || "Error al guardar");
@@ -214,7 +219,31 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white rounded-[2.5rem] p-8 shadow-2xl z-[110] animate-in zoom-in-95 focus:outline-none max-h-[90vh] overflow-y-auto lc-scroll">
+        <Dialog.Content className={cn(
+          "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full z-[110] animate-in zoom-in-95 focus:outline-none",
+          isSuccess ? "max-w-md bg-transparent shadow-none p-0" : "max-w-xl bg-white rounded-[2.5rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto lc-scroll"
+        )}>
+          {isSuccess ? (
+            <div className="relative bg-white rounded-[3.5rem] shadow-2xl p-12 w-full text-center space-y-8 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ease-out border border-emerald-50">
+              <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto relative group">
+                <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-emerald-500" />
+                <ShieldCheck className="h-12 w-12 text-emerald-600 relative z-10" />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
+                  {editingData ? "¡Actualizado!" : "¡Registrado!"}
+                </h2>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+                  El vehículo <br />
+                  <span className="text-emerald-600 border-b-2 border-emerald-500/20">
+                    {formData.placa || "NUEVO"}
+                  </span> <br />
+                  ha sido guardado correctamente.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
            
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
@@ -236,7 +265,10 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
             </Dialog.Close>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="relative">
+
+
+            <form onSubmit={handleSubmit} className="space-y-5 transition-all duration-300">
             
             {/* OCR TIV Area */}
             <div className={cn(
@@ -440,12 +472,15 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
             <button
                type="submit"
                disabled={isSubmitting}
-               className="w-full h-14 bg-[#022c22] text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10 active:scale-95 disabled:opacity-50 mt-4"
+               className="w-full h-14 bg-emerald-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/20 active:scale-95 disabled:opacity-50 mt-4 border-none"
             >
               {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : editingData ? "Actualizar Unidad" : "Registrar Vehículo"}
             </button>
 
           </form>
+          </div>
+          </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

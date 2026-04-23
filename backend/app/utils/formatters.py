@@ -1,12 +1,11 @@
 import re
-from datetime import datetime
-import pytz
 from fastapi import HTTPException
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 def get_peru_time() -> datetime:
-    """Retorna la fecha y hora actual ajustada a la zona horaria de Perú (UTC-5)."""
-    tz_peru = pytz.timezone('America/Lima')
-    return datetime.now(tz_peru)
+    """Devuelve la fecha y hora actual en la zona horaria de Perú."""
+    return datetime.now(ZoneInfo("America/Lima"))
 
 def clean_booking(value: str) -> str:
     """Upper + Strip"""

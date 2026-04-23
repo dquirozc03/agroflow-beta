@@ -28,6 +28,5 @@ class DetalleEmisionPackingList(Base):
     id = Column(Integer, primary_key=True, index=True)
     emision_id = Column(Integer, ForeignKey("emision_packing_list.id"))
     booking = Column(String(100), index=True)
-    orden_beta = Column(String(100), index=True, nullable=True)
     
     emision = relationship("EmisionPackingList", back_populates="detalles")

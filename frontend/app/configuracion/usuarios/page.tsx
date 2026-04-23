@@ -13,7 +13,9 @@ import {
   MoreVertical,
   Activity,
   ShieldAlert,
-  Edit3
+  Edit3,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -45,6 +47,9 @@ export default function UsuariosPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     fetchUsuarios();
@@ -87,6 +92,9 @@ export default function UsuariosPage() {
     u.usuario.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentUsuarios = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 font-['Outfit']">
       <UsuarioModal 
@@ -97,28 +105,32 @@ export default function UsuariosPage() {
       />
 
       {/* HEADER PREMIUM */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-             <ShieldCheck className="h-8 w-8 text-emerald-600" />
-             <h1 className="text-4xl font-extrabold tracking-tighter text-[#022c22] uppercase">
-                Administración de Usuarios
+             <div className="h-10 w-10 bg-emerald-950 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/20">
+                <ShieldCheck className="h-5 w-5" />
+             </div>
+             <h1 className="text-3xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit']">
+                Seguridad de <span className="text-emerald-500">Usuarios</span>
              </h1>
           </div>
-          <p className="text-sm text-slate-500 font-medium tracking-tight uppercase tracking-widest pl-11">
-             Gestión de Seguridad, Permisos y Accesos Maestros.
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-13">
+             Gestión de Seguridad, Permisos y Accesos Maestros
           </p>
         </div>
+        
         <div className="flex items-center gap-3">
            <button 
              onClick={fetchUsuarios}
-             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm group"
+             className="h-12 w-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm active:scale-95 group"
            >
               <RefreshCw className={cn("h-5 w-5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} />
            </button>
            <button 
              onClick={handleCreate}
-             className="h-12 px-8 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-3 hover:bg-[#022c22] transition-all shadow-xl shadow-emerald-500/20 active:scale-95">
+             className="h-12 px-6 bg-emerald-950 text-white rounded-2xl font-black uppercase tracking-[0.15em] text-[11px] flex items-center gap-2 hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/20 active:scale-95 border-none"
+           >
               <UserPlus className="h-4 w-4" />
               Nuevo Usuario
            </button>
@@ -126,30 +138,33 @@ export default function UsuariosPage() {
       </div>
 
       {/* STATS & SEARCH */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-         <div className="lg:col-span-3 relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Buscar por Nombre o ID de Usuario..."
-              className="w-full h-14 pl-14 pr-6 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/50 transition-all shadow-sm font-medium"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-         </div>
-         <div className="bg-white border border-slate-100 rounded-2xl px-6 py-4 flex items-center justify-between shadow-sm">
-            <div className="flex flex-col">
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Usuarios Registrados</p>
-              <p className="text-3xl font-black text-[#022c22] leading-none mt-1">{usuarios.length}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm items-end transition-all duration-500">
+         <div className="lg:col-span-3 space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Búsqueda Rápida</label>
+            <div className="relative group">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+               <input 
+                 type="text" 
+                 placeholder="Buscar por Nombre o ID de Usuario..."
+                 className="w-full h-11 pl-12 pr-6 bg-slate-50/50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-sm"
+                 value={searchTerm}
+                 onChange={(e) => {
+                   setSearchTerm(e.target.value);
+                   setPage(1);
+                 }}
+               />
             </div>
-            <Activity className="h-8 w-8 text-emerald-500/20" />
+         </div>
+         <div className="bg-emerald-50/30 border border-emerald-100 rounded-[1.5rem] px-6 h-11 flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60">Operadores</p>
+            <p className="text-xl font-black text-emerald-900">{usuarios.length}</p>
          </div>
       </div>
 
       {/* TABLE CARLOS STYLE */}
       <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm">
         {isLoading ? (
-          <div className="p-24 flex flex-col items-center justify-center gap-4 text-slate-300">
+          <div className="p-24 flex flex-col items-center justify-center gap-4 text-slate-300 font-['Outfit']">
              <Loader2 className="h-12 w-12 animate-spin text-emerald-500" />
              <p className="text-[10px] font-black uppercase tracking-[0.3em]">Autenticando Permisos...</p>
           </div>
@@ -157,20 +172,20 @@ export default function UsuariosPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identidad Digital</th>
-                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Permisos / Rol</th>
-                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Seguridad</th>
-                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Gestión</th>
+                <tr className="bg-slate-50/50 border-none">
+                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-none">Identidad Digital</th>
+                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center border-none">Permisos / Rol</th>
+                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center border-none">Seguridad</th>
+                  <th className="px-10 py-7 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center border-none">Gestión</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50">
-                {filtered.map((u) => (
-                  <tr key={u.id} className="group hover:bg-slate-50/30 transition-all duration-300">
-                    <td className="px-10 py-7">
+                {currentUsuarios.map((u) => (
+                  <tr key={u.id} className="group hover:bg-emerald-50/10 transition-all duration-300 border-none">
+                    <td className="px-10 py-7 border-none">
                       <div className="flex items-center gap-5">
                         <div className={cn(
-                          "h-14 w-14 rounded-[1.2rem] flex items-center justify-center font-black text-lg shadow-sm border-2",
+                          "h-14 w-14 rounded-[1.2rem] flex items-center justify-center font-black text-lg shadow-sm border-2 transition-all",
                           u.activo ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-slate-50 border-slate-100 text-slate-300"
                         )}>
                           {u.nombre?.[0] || "U"}
@@ -181,7 +196,7 @@ export default function UsuariosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-10 py-7">
+                    <td className="px-10 py-7 border-none">
                       <div className="flex flex-col items-center gap-2">
                          <div className={cn(
                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
@@ -203,7 +218,7 @@ export default function UsuariosPage() {
                          </div>
                       </div>
                     </td>
-                    <td className="px-10 py-7">
+                    <td className="px-10 py-7 border-none">
                       <div className="flex flex-col items-center gap-1.5">
                          {u.bloqueado ? (
                            <div className="flex items-center gap-1.5 text-rose-600">
@@ -227,7 +242,7 @@ export default function UsuariosPage() {
                          )}
                       </div>
                     </td>
-                    <td className="px-10 py-7">
+                    <td className="px-10 py-7 border-none">
                        <div className="flex justify-center items-center gap-2">
                           <button 
                             onClick={() => handleEdit(u)}
@@ -256,14 +271,14 @@ export default function UsuariosPage() {
                                <DropdownMenuSeparator />
                                <DropdownMenuItem className="rounded-xl py-3 cursor-pointer text-xs font-bold text-rose-600 focus:bg-rose-50 focus:text-rose-700">
                                   {u.activo ? "Inhabilitar Acceso" : "Habilitar Acceso"}
-                               </DropdownMenuItem>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                        </div>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {currentUsuarios.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-10 py-32 text-center">
                        <p className="text-sm font-black text-slate-200 uppercase tracking-[0.4em] italic">No se encontraros operadores en el radar.</p>
@@ -273,6 +288,39 @@ export default function UsuariosPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {!isLoading && totalPages > 1 && (
+           <div className="px-10 py-8 border-t border-slate-50 bg-white/50 flex items-center justify-between font-['Outfit']">
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                 <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
+                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
+                   Mostrando {currentUsuarios.length} de {filtered.length} registros operativos
+                 </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                 <button 
+                   onClick={() => setPage(p => Math.max(1, p - 1))}
+                   disabled={page === 1}
+                   className="h-12 px-6 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
+                 >
+                   <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                   Anterior
+                 </button>
+                 <button 
+                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                   disabled={page === totalPages}
+                   className="h-12 px-8 bg-emerald-950 text-white rounded-2xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 disabled:cursor-not-allowed group"
+                 >
+                   Siguiente
+                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                 </button>
+              </div>
+           </div>
         )}
       </div>
     </div>

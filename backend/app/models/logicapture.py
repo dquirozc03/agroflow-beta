@@ -59,7 +59,62 @@ class LogiCaptureRegistro(Base):
 
     # Metadatos de Sistema
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_status_update = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     usuario_registro = Column(String(100), nullable=True)
+
+    @property
+    def antiguedad_humanizada(self) -> str:
+        """
+        Calcula la antigüedad del registro de forma legible para humanos.
+        - Para PENDIENTES: Tiempo desde el registro hasta ahora.
+        - Para PROCESADOS/ANULADOS: Tiempo que tomó la gestión (desde registro hasta cambio de estado).
+        """
+        from datetime import datetime, timezone
+        ahora = datetime.now(timezone.utc)
+        
+        # Si está procesado o anulado, usamos la fecha de actualización de estado
+        # Si está pendiente, comparamos contra 'ahora'
+        fecha_final = ahora if self.status == "PENDIENTE" else (self.fecha_status_update or ahora)
+        
+        # Asegurarnos de que ambas fechas tengan timezone o ninguna
+        f_reg = self.fecha_registro
+        if f_reg.tzinfo is None:
+            f_reg = f_reg.replace(tzinfo=timezone.utc)
+        if fecha_final.tzinfo is None:
+            fecha_final = fecha_final.replace(tzinfo=timezone.utc)
+            
+        diff = fecha_final - f_reg
+        segundos = int(diff.total_seconds())
+        
+        if segundos < 0: return "Recién creado"
+        
+        minutos = segundos // 60
+        horas = minutos // 60
+        dias = horas // 24
+        
+        if dias > 0:
+            return f"{dias}d {horas % 24}h"
+        if horas > 0:
+            return f"{horas}h {minutos % 60}m"
+        if minutos > 0:
+            return f"{minutos}m"
+        return f"{segundos}s"
+
+    @property
+    def antiguedad_color(self) -> str:
+        """Categoriza el nivel de urgencia/atención basado en el tiempo."""
+        from datetime import datetime, timezone
+        ahora = datetime.now(timezone.utc)
+        f_reg = self.fecha_registro
+        if f_reg.tzinfo is None: f_reg = f_reg.replace(tzinfo=timezone.utc)
+        
+        diff = ahora - f_reg
+        horas = diff.total_seconds() / 3600
+        
+        if self.status != "PENDIENTE": return "default"
+        if horas > 6: return "danger"
+        if horas > 2: return "warning"
+        return "success"
 
 class LogiCaptureDetalle(Base):
     """

@@ -77,6 +77,7 @@ def list_tractos(
     size: int = 10,
     placa: Optional[str] = None,
     transportista_id: Optional[int] = None,
+    incompletos: Optional[bool] = False,
     db: Session = Depends(get_db)
 ):
     query = db.query(VehiculoTracto).join(Transportista)
@@ -88,6 +89,19 @@ def list_tractos(
         )
     if transportista_id:
         query = query.filter(VehiculoTracto.transportista_id == transportista_id)
+        
+    if incompletos:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                VehiculoTracto.marca == None, VehiculoTracto.marca == "",
+                VehiculoTracto.certificado_vehicular_tracto == None, VehiculoTracto.certificado_vehicular_tracto == "",
+                VehiculoTracto.peso_neto_tracto == None,
+                VehiculoTracto.largo_tracto == None,
+                VehiculoTracto.ancho_tracto == None,
+                VehiculoTracto.alto_tracto == None
+            )
+        )
         
     total = query.count()
     items = query.order_by(VehiculoTracto.placa_tracto.asc()).offset((page - 1) * size).limit(size).all()
@@ -128,6 +142,7 @@ def list_carretas(
     size: int = 10,
     placa: Optional[str] = None,
     transportista_id: Optional[int] = None,
+    incompletos: Optional[bool] = False,
     db: Session = Depends(get_db)
 ):
     query = db.query(VehiculoCarreta).join(Transportista)
@@ -139,6 +154,18 @@ def list_carretas(
         )
     if transportista_id:
         query = query.filter(VehiculoCarreta.transportista_id == transportista_id)
+        
+    if incompletos:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                VehiculoCarreta.certificado_vehicular_carreta == None, VehiculoCarreta.certificado_vehicular_carreta == "",
+                VehiculoCarreta.peso_neto_carreta == None,
+                VehiculoCarreta.largo_carreta == None,
+                VehiculoCarreta.ancho_carreta == None,
+                VehiculoCarreta.alto_carreta == None
+            )
+        )
         
     total = query.count()
     items = query.order_by(VehiculoCarreta.placa_carreta.asc()).offset((page - 1) * size).limit(size).all()

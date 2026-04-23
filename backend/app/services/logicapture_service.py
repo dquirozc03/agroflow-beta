@@ -15,8 +15,21 @@ from app.utils.formatters import clean_booking, clean_plate, clean_container, cl
 
 class LogiCaptureService:
     @staticmethod
-    def generate_excel_report(db: Session):
-        regs = db.query(LogiCaptureRegistro).all()
+    def generate_excel_report(db: Session, start_date: datetime = None, end_date: datetime = None, status: str = None):
+        query = db.query(LogiCaptureRegistro)
+        
+        if start_date:
+            query = query.filter(LogiCaptureRegistro.fecha_registro >= start_date)
+        if end_date:
+            query = query.filter(LogiCaptureRegistro.fecha_registro <= end_date)
+        if status:
+            query = query.filter(LogiCaptureRegistro.status == status)
+            
+        regs = query.order_by(LogiCaptureRegistro.fecha_registro.desc()).all()
+        
+        if not regs:
+            raise HTTPException(status_code=404, detail="No se encontraron registros en el rango de fechas seleccionado.")
+            
         data = []
         for r in regs:
             placas = f"{r.placa_tracto}/{r.placa_carreta}" if r.placa_tracto else "-"
@@ -28,7 +41,7 @@ class LogiCaptureService:
             linea_codes = ", ".join(r.precinto_linea) if r.precinto_linea else "**"
             senasa_linea = f"{senasa_codes}/PS.LIN:{linea_codes}"
             
-            data.append({
+            row = {
                 "FECHA EMBARQUE": r.fecha_registro.strftime("%Y-%m-%d") if r.fecha_registro else "-",
                 "ORDEN BETA": r.orden_beta,
                 "BOOKING": r.booking,
@@ -49,7 +62,12 @@ class LogiCaptureService:
                 "PARTIDA REGISTRAL": r.partida_registral,
                 "TUC (CERTIFICADOS)": tuc,
                 "ESTATUS": r.status
-            })
+            }
+            
+            if status == "ANULADO":
+                row["MOTIVO ANULACIÓN"] = r.motivo_anulacion if r.motivo_anulacion else "-"
+                
+            data.append(row)
         
         df = pd.DataFrame(data)
         output = io.BytesIO()

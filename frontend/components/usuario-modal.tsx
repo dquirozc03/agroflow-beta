@@ -51,6 +51,7 @@ interface UsuarioModalProps {
 
 export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: UsuarioModalProps) {
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     usuario: "",
     nombre: "",
@@ -126,9 +127,12 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         throw new Error(err.detail || "Error al guardar usuario");
       }
 
-      toast.success(editingData ? "Usuario actualizado" : "Usuario creado exitosamente");
+      setIsSuccess(true);
       onSuccess();
-      onClose();
+      setTimeout(() => {
+        onClose();
+        setIsSuccess(false);
+      }, 2000);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -192,7 +196,8 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         body: JSON.stringify({ nueva_password: "123456" }),
       });
       if (response.ok) {
-        toast.success("Contraseña restablecida a 123456");
+        setIsSuccess(true);
+        setTimeout(() => setIsSuccess(false), 2000);
       }
     } catch (error) {
       toast.error("Error al restablecer contraseña");
@@ -213,8 +218,9 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         }
       });
       if (response.ok) {
-        toast.success("Cuenta desbloqueada correctamente");
+        setIsSuccess(true);
         onSuccess();
+        setTimeout(() => setIsSuccess(false), 2000);
       }
     } catch (error) {
       toast.error("Error al desbloquear cuenta");
@@ -256,8 +262,23 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-6">
-          <Tabs defaultValue="perfil" className="w-full">
+        <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-6 relative min-h-[500px]">
+          {isSuccess && (
+            <div className="absolute inset-0 bg-white z-[150] flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300 rounded-[2rem]">
+              <div className="h-24 w-24 bg-emerald-50 text-emerald-500 rounded-[2rem] flex items-center justify-center shadow-sm">
+                <ShieldCheck className="h-12 w-12 fill-emerald-500/20" />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                  {editingData ? "¡Usuario Actualizado!" : "¡Autorización Exitosa!"}
+                </h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Permisos y perfil sincronizados</p>
+              </div>
+            </div>
+          )}
+
+          <div className={cn("space-y-6 transition-all duration-300", isSuccess && "opacity-0 scale-95 pointer-events-none")}>
+            <Tabs defaultValue="perfil" className="w-full">
             <TabsList className="bg-slate-50 p-1 rounded-xl mb-6 w-full flex justify-start gap-1">
               <TabsTrigger value="perfil" className="rounded-lg text-[10px] uppercase font-black tracking-widest data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm px-6 py-2">
                 Perfil
@@ -513,18 +534,19 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
             )}
           </Tabs>
 
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full h-14 bg-emerald-600 hover:bg-[#022c22] text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/20 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {loading ? (
-              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-            ) : (
-              <Save className="h-5 w-5 mr-3" />
-            )}
-            {editingData ? "Guardar Cambios Maestros" : "Autorizar Nuevo Usuario"}
-          </Button>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full h-14 bg-emerald-950 hover:bg-emerald-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-950/20 transition-all active:scale-95 disabled:opacity-50 border-none"
+            >
+              {loading ? (
+                <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+              ) : (
+                <Save className="h-5 w-5 mr-3" />
+              )}
+              {editingData ? "Guardar Cambios Maestros" : "Autorizar Nuevo Usuario"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

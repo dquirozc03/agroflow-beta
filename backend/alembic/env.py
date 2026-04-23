@@ -8,7 +8,21 @@ from alembic import context
 # ====== NUEVO: importa settings + Base + modelos ======
 from app.configuracion import settings
 from app.database import Base
-from app.models import auth, auditoria  # para que Alembic detecte las tablas
+
+# ====== CRÍTICO: Importar TODOS los módulos de modelos ======
+# Alembic necesita que cada clase que hereda de Base esté importada en este
+# contexto para que su tabla aparezca en target_metadata y sea incluida
+# en el autogenerate. Omitir un módulo = Alembic ignora esas tablas.
+from app.models import (
+    auth,           # → auth_usuarios, auth_roles
+    auditoria,      # → ope_registro_eventos
+    maestros,       # → transportistas, vehiculos_tracto, vehiculos_carreta, choferes, clientes_ie, maestro_fitos, plantas
+    embarque,       # → control_embarque, reporte_embarques
+    logicapture,    # → logicapture_registros, logicapture_detalles
+    pedido,         # → pedidos_comerciales
+    packing_list,   # → emision_packing_list, detalle_emision_packing_list
+    posicionamiento, # → posicionamientos
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
