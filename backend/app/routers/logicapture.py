@@ -2,6 +2,7 @@ from app.utils.formatters import clean_booking, clean_plate, clean_container, cl
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
+from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from datetime import datetime
@@ -152,7 +153,7 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
 def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     """Busca vehículo y su transportista por placa."""
     clean_placa_val = clean_plate(placa)
-    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa_val).first()
+    vehicle = db.query(VehiculoTracto).filter(func.trim(VehiculoTracto.placa_tracto) == clean_placa_val).first()
     
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_val} no registrado")
@@ -211,7 +212,7 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
 def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     """Busca carreta en maestros por placa."""
     clean_placa = clean_plate(placa)
-    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa).first()
+    trailer = db.query(VehiculoCarreta).filter(func.trim(VehiculoCarreta.placa_carreta) == clean_placa).first()
     
     if not trailer:
         raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
@@ -554,8 +555,9 @@ def list_registros(
             query = query.filter(func.lower(LogiCaptureRegistro.motivo_anulacion).contains(clean_motivo))
     
     total = query.count()
-    # Orden estable: fecha desc, luego id desc para evitar duplicados en paginación
-    items = query.order_by(LogiCaptureRegistro.fecha_registro.desc(), LogiCaptureRegistro.id.desc()).offset((page - 1) * size).limit(size).all()
+    # Ordenamiento Premium 💎: Priorizamos la fecha de embarque (o registro) para que la bandeja sea cronológica por salida
+    sort_date = func.coalesce(LogiCaptureRegistro.fecha_embarque, LogiCaptureRegistro.fecha_registro)
+    items = query.order_by(sort_date.desc(), LogiCaptureRegistro.id.desc()).offset((page - 1) * size).limit(size).all()
     
     total_pages = (total + size - 1) // size if size > 0 else 1
     
