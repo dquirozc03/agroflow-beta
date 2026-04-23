@@ -126,7 +126,7 @@ export default function InstruccionesEmbarque() {
 
   useEffect(() => {
     if (user?.usuario) {
-      setOverrideData(prev => ({ ...prev, usuario: user.usuario }));
+      setOverrideData((prev: any) => ({ ...prev, usuario: user.usuario }));
     }
   }, [user]);
 
