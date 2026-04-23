@@ -227,7 +227,17 @@ class InstructionPDFService:
             # Búsqueda de Maestro
             pais_val = pedidos[0].pais if pedidos else ""
             pod_val = pedidos[0].pod if pedidos else ""
-            cliente_maestro = self._match_cliente_maestro(db, cliente_nombre, pais_val, pod_val, pos.cultivo)
+            
+            # Intervención Especial para OGL (Palta 4KG vs 10KG)
+            cliente_buscar = cliente_nombre
+            if cliente_nombre and "OGL" in cliente_nombre.upper() and pos.cultivo and "PALTA" in pos.cultivo.upper():
+                peso_kilos = float(pedidos[0].peso_kg) if pedidos and getattr(pedidos[0], 'peso_kg', None) else 0
+                if peso_kilos >= 10:
+                    cliente_buscar = "OGL 10KG"
+                elif peso_kilos > 0:
+                    cliente_buscar = "OGL 4KG"
+
+            cliente_maestro = self._match_cliente_maestro(db, cliente_buscar, pais_val, pod_val, pos.cultivo)
             fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
             planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None

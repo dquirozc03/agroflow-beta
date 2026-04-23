@@ -138,18 +138,18 @@ export default function ContenedoresDamsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-             <div className="h-10 w-10 bg-emerald-950 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/20">
-                <Package className="h-5 w-5" />
-             </div>
-             <h1 className="text-3xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit']">
-                Contenedores y <span className="text-emerald-500">Dam's</span>
-             </h1>
+            <div className="h-10 w-10 bg-emerald-950 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/20">
+              <Package className="h-5 w-5" />
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tighter text-emerald-950 font-['Outfit']">
+              Contenedores y <span className="text-emerald-500">Dam's</span>
+            </h1>
           </div>
           <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-13">
-             Gestión operativa de unidades y despachos aduaneros
+            Gestión operativa de unidades y despachos aduaneros
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <button
             onClick={fetchEmbarques}
@@ -259,39 +259,39 @@ export default function ContenedoresDamsPage() {
                 </tbody>
               </table>
             </div>
-        {/* Paginación AgroFlow Premium */}
-        {!isLoading && totalPages > 1 && (
-           <div className="px-8 py-8 border-t border-slate-50 bg-white/50 flex items-center justify-between font-['Outfit']">
-              <div className="flex items-center gap-2">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
-                 <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
-                   <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
-                   Mostrando {embarques.length} de {total} registros operativos
-                 </span>
-              </div>
+            {/* Paginación AgroFlow Premium */}
+            {!isLoading && totalPages > 1 && (
+              <div className="px-8 py-8 border-t border-slate-50 bg-white/50 flex items-center justify-between font-['Outfit']">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                  <div className="h-10 px-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
+                    <span className="text-sm font-bold text-emerald-700">{page} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">
+                    Mostrando {embarques.length} de {total} registros operativos
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-3">
-                 <button 
-                   onClick={() => setPage(p => Math.max(1, p - 1))}
-                   disabled={page === 1}
-                   className="h-12 px-6 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
-                 >
-                   <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                   Anterior
-                 </button>
-                 <button 
-                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                   disabled={page === totalPages}
-                   className="h-12 px-8 bg-emerald-950 text-white rounded-2xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 disabled:cursor-not-allowed group"
-                 >
-                   Siguiente
-                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                 </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="h-12 px-6 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 font-bold text-xs hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed group"
+                  >
+                    <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="h-12 px-8 bg-emerald-950 text-white rounded-2xl flex items-center gap-2 font-bold text-xs hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-950/10 disabled:opacity-30 disabled:cursor-not-allowed group"
+                  >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
               </div>
-           </div>
-        )}
+            )}
           </>
         )}
       </div>
