@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
