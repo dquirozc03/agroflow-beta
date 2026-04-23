@@ -233,7 +233,7 @@ class InstructionPDFService:
             # Intervención Especial para OGL (Palta 4KG vs 10KG)
             cliente_buscar = cliente_nombre
             if cliente_nombre and "OGL" in cliente_nombre.upper() and pos.cultivo and "PALTA" in pos.cultivo.upper():
-                peso_kilos = float(pedidos[0].peso_kg) if pedidos and getattr(pedidos[0], 'peso_kg', None) else 0
+                peso_kilos = float(pedidos[0].peso_por_caja) if pedidos and getattr(pedidos[0], 'peso_por_caja', None) else 0
                 if peso_kilos >= 10:
                     cliente_buscar = "OGL 10KG"
                 elif peso_kilos > 0:

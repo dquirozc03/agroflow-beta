@@ -121,8 +121,17 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pedido_pais_clean = normalize_country_name(pedido.pais)
         pedido_pod_clean = pedido.pod.strip() if pedido.pod else ""
     
+        # Intervención Especial para OGL (Palta 4KG vs 10KG) 💎
+        cliente_nombre_final = pedido_cliente_raw
+        if pedido_cliente_raw and "OGL" in pedido_cliente_raw.upper() and pos.cultivo and "PALTA" in pos.cultivo.upper():
+            peso_kilos = float(pedidos[0].peso_por_caja or 0) if pedidos else 0
+            if peso_kilos >= 10:
+                cliente_nombre_final = "OGL 10KG"
+            elif peso_kilos > 0:
+                cliente_nombre_final = "OGL 4KG"
+
         cliente_maestro = db.query(ClienteIE).filter(
-            func.trim(ClienteIE.nombre_legal).ilike(pedido_cliente_raw.strip()),
+            func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
             func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
             func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
             ClienteIE.estado == "ACTIVO"
@@ -130,7 +139,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(pedido_cliente_raw.strip()),
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
                 func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
                 ClienteIE.estado == "ACTIVO"
             ).first()
