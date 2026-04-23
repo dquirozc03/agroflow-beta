@@ -42,6 +42,7 @@ COLUMN_MAPPING = {
     "FECHA DE LLENADO (REPORTE)": "fecha_llenado_reporte",
     "HORA DE LLENADO (REPORTE)": "hora_llenado_reporte",
     "TIPO DE TECNOLOGIA": "tipo_tecnologia",
+    "ETIQUETA CAJA": "etiqueta_caja",
     "CAJAS VACIAS (SI/NO)": "cajas_vacias"
 }
 

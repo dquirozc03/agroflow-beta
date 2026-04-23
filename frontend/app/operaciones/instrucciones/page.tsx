@@ -115,6 +115,9 @@ export default function InstruccionesEmbarque() {
     etiquetas: "",
     observaciones: "",
     po: "",
+    planta_llenado: "",
+    direccion_planta: "",
+    ubigeo_planta: "",
     usuario: "DQUIROZ"
   });
 
@@ -305,7 +308,10 @@ export default function InstruccionesEmbarque() {
           consignatario_fito: data.maestro?.fitosanitario?.consignatario_fito || "",
           direccion_fito: data.maestro?.fitosanitario?.direccion_fito || "",
           presentacion: data.presentacion || "CAJA 3.8 KG",
-          etiquetas: data.etiquetas || "GENERICA"
+          etiquetas: data.etiquetas || "GENERICA",
+          planta_llenado: data.planta_llenado || "",
+          direccion_planta: data.direccion_planta || "",
+          ubigeo_planta: data.ubigeo_planta || ""
         });
       }
     } catch (e) {
@@ -507,7 +513,7 @@ export default function InstruccionesEmbarque() {
                           { label: "Booking ID", val: lookupData?.booking || selectedBooking?.booking || selectedBooking?.BOOKING || "N/A", icon: Inbox },
                           { label: "Cliente", val: lookupData?.cliente_nombre || selectedBooking?.cliente || "SELECCIONE...", icon: RefreshCw },
                           { label: "Orden Beta", val: lookupData?.orden_beta || "PENDIENTE", icon: ShieldCheck },
-                          { label: "PO / Orden Compra", val: lookupData?.maestro?.po || lookupData?.po || "NO ASIGNADO", icon: FileText },
+                          { label: "PO / Orden Compra", val: (lookupData?.maestro?.po || lookupData?.po) === "0" || !(lookupData?.maestro?.po || lookupData?.po) ? "-" : (lookupData?.maestro?.po || lookupData?.po), icon: FileText },
                           { label: "Cultivo", val: lookupData?.cultivo || selectedBooking?.cultivo || "PENDIENTE", icon: Zap },
                           { label: "Notify", val: lookupData?.maestro?.notify_bl || "SAME AS CONSIGNEE", icon: Bell }
                         ].map((f, i) => (

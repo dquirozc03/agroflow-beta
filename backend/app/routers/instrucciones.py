@@ -68,6 +68,7 @@ class AdminOverrideRequest(BaseModel):
     operador_logistico: Optional[str] = "DP WORLD LOGISTICS S.R.L."
     planta_llenado: Optional[str] = None
     direccion_planta: Optional[str] = None
+    ubigeo_planta: Optional[str] = None
     fecha_llenado: Optional[str] = None
     po: Optional[str] = ""
     freight: Optional[str] = "PREPAID"
@@ -155,6 +156,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "operador_logistico": getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L.",
             "planta_llenado": planta_maestro.planta if planta_maestro else (pos.planta_llenado or "PLANTA BETA"),
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
+            "ubigeo_planta": planta_maestro.ubigeo if planta_maestro else "110111",
             "cliente_nombre": (cliente_maestro.consignatario_bl or pedido_cliente_raw) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido_cliente_raw if pedido_cliente_raw else "POR DEFINIR"),
             "incoterm": pedido.incoterm if pedido else "",
             "cajas": total_cajas,
@@ -169,6 +171,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "co2": "----",
             "filtros": pos.filtros or "NO",
             "cold_treatment": pos.ct or "NO",
+            "etiquetas": pos.etiqueta_caja or "GENERICA",
             "warning": None,
             "maestro": None,
             "emision_activa": emision_activa.id if emision_activa else None

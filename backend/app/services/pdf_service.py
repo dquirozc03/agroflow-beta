@@ -178,8 +178,9 @@ class InstructionPDFService:
             desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
             
             # Planta y Fecha Llenado Manual
-            planta_nombre = override_data.get("planta_llenado", "PLANTA BETA")
+            planta_nombre = override_data.get("planta_llenado", "PLANTA BETA").upper()
             planta_direccion = override_data.get("direccion_planta", "")
+            planta_ubigeo = override_data.get("ubigeo_planta", "110111")
             fecha_llenado = override_data.get("fecha_llenado", "")
             
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
@@ -241,8 +242,9 @@ class InstructionPDFService:
             fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
             planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None
-            planta_nombre = planta_maestro.planta if planta_maestro else (pos.planta_llenado or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")
+            planta_nombre = (planta_maestro.planta if planta_maestro else (pos.planta_llenado or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")).upper()
             planta_direccion = planta_maestro.direccion if planta_maestro else ""
+            planta_ubigeo = planta_maestro.ubigeo if planta_maestro else "110111"
             
             # Datos de Posicionamiento
             pos_booking = pos.booking or ""
@@ -428,7 +430,7 @@ class InstructionPDFService:
             [b_p("DIRECCIÓN"), n_p(embarcador_direccion)],
             [b_p("OPERADOR LOGISTICO", white=is_granada), b_p(pos_operador, white=is_granada)],
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", planta_direccion)],
-            [b_p("UBIGEO PLANTA"), n_p("110111")],
+            [b_p("UBIGEO PLANTA"), n_p(planta_ubigeo)],
             [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
             [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(cliente_maestro.direccion_notify if cliente_maestro else ""))]
@@ -451,10 +453,9 @@ class InstructionPDFService:
             [b_p("FREIGHT"), n_p(flete_val)],
         ])
 
-        # Inserción dinámica de PO
-        if po_val and po_val.strip():
-            display_po = "---" if po_val.strip() == "0" else po_val.strip()
-            t1_data.append([b_p("PO"), b_p(display_po)])
+        # Inserción dinámica de PO (Solo si no es 0 o vacío)
+        if po_val and po_val.strip() and po_val.strip() != "0":
+            t1_data.append([b_p("PO"), b_p(po_val.strip())])
 
         t1_data.extend([
             [b_p("EMISION B/L"), n_p(emision_bl)],
@@ -501,7 +502,7 @@ class InstructionPDFService:
             
         t2_data.extend([
             [b_p("PRESENTACION"), b_p(presentacion_val)],
-            [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas', 'GENERICA') if override_data else "GENERICA")],
+            [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas') if override_data else (pos.etiqueta_caja or "GENERICA"))],
             [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)],
             [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)],
             [b_p("OBSERVACIONES"), n_p(observaciones_final)]
