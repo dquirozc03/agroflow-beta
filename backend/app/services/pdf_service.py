@@ -358,10 +358,16 @@ class InstructionPDFService:
         white_bold_style = ParagraphStyle('WB', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_BOLD, textColor=colors.white)
         white_normal_style = ParagraphStyle('WN', fontSize=self.SIZE_BODY, leading=self.SIZE_BODY + 1, fontName=self.FONT_NORMAL, textColor=colors.white)
 
-        def b_p(text, white=False): return Paragraph(f"<b>{text}</b>", white_bold_style if white else bold_style)
-        def b_pc(text, white=False): return Paragraph(f"<b>{text}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1, textColor=colors.white if white else colors.black))
-        def n_p(text, white=False): return Paragraph(str(text), white_normal_style if white else normal_style)
-        def format_desc(t1, t2, white=False): return Paragraph(f"{t1}<br/>{t2}", white_normal_style if white else normal_style)
+        from xml.sax.saxutils import escape as xml_escape
+
+        def _safe(text):
+            if text is None: return \"\"
+            return xml_escape(str(text))
+
+        def b_p(text, white=False): return Paragraph(f"<b>{_safe(text)}</b>", white_bold_style if white else bold_style)
+        def b_pc(text, white=False): return Paragraph(f"<b>{_safe(text)}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1, textColor=colors.white if white else colors.black))
+        def n_p(text, white=False): return Paragraph(_safe(text), white_normal_style if white else normal_style)
+        def format_desc(t1, t2, white=False): return Paragraph(f"{t1}<br/>{_safe(t2)}", white_normal_style if white else normal_style)
 
         # Header con Logo Local
         try:
@@ -436,11 +442,11 @@ class InstructionPDFService:
             [b_p("EMBARCADOR"), n_p(embarcador_nombre)],
             [b_p("DIRECCIÓN"), n_p(embarcador_direccion)],
             [b_p("OPERADOR LOGISTICO", white=is_granada), b_p(pos_operador, white=is_granada)],
-            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", f"{planta_direccion}<br/>{planta_region}" if planta_region else planta_direccion)],
+            [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{_safe(planta_nombre)}</b>", f"{planta_direccion}<br/>{planta_region}" if planta_region else planta_direccion)],
             [b_p("UBIGEO PLANTA"), n_p(planta_ubigeo)],
             [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else self._clean_text( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_consignatario) if cliente_maestro else ""))],
-            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else self._clean_text(cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_notify) if cliente_maestro else ""))]
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{_safe(override_data.get('consignatario_bl') if override_data else self._clean_text( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre ))}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_consignatario) if cliente_maestro else ""))],
+            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{_safe(override_data.get('notify_bl') if override_data else self._clean_text(cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE'))}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_notify) if cliente_maestro else ""))]
         ]
 
         # Insertar EORI solo si son válidos

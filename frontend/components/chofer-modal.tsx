@@ -273,7 +273,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                               setFormData({
                                 ...formData, 
                                 licencia: val,
-                                dni: onlyDigits.length >= 8 ? onlyDigits.slice(-8) : onlyDigits
+                                dni: onlyDigits.length >= 9 ? onlyDigits.slice(-9) : onlyDigits
                               });
                             }}
                             placeholder="Q72505661"

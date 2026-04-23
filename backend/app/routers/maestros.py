@@ -191,8 +191,8 @@ async def bulk_upload_transportistas(
                     # Extraer DNI de la licencia (limpiar caracteres no numéricos)
                     dni_extract = re.sub(r'[^0-9]', '', licencia_raw)
                     if len(dni_extract) >= 8:
-                        # Si el DNI es muy largo (ej: 11 dígitos de RUC?), tomamos los últimos 8 o 9
-                        dni_final = dni_extract[-8:] 
+                        # Si el DNI es muy largo (ej: 11 dígitos de RUC?), tomamos los últimos 9
+                        dni_final = dni_extract[-9:] 
                         
                         chofer = db.query(Chofer).filter(Chofer.dni == dni_final).first()
                         
