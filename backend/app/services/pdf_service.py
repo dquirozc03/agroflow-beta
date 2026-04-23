@@ -150,6 +150,7 @@ class InstructionPDFService:
             # Datos de pesos y cantidades
             total_cajas = override_data.get("cajas", 0)
             total_pallets = override_data.get("pallets", 0)
+            peso_kg = override_data.get("peso_por_caja", Decimal("0"))
             peso_neto_full = override_data.get("peso_neto", "0.000 KG")
             peso_bruto_full = override_data.get("peso_bruto", "0.000 KG")
             
@@ -179,6 +180,16 @@ class InstructionPDFService:
             po_val = override_data.get("po", "")
             eori_consignee = override_data.get("eori_consignatario", "----")
             eori_notify = override_data.get("eori_notify", "----")
+            
+            # Variables térmicas/operativas para el PDF (Override)
+            temperatura = override_data.get('temperatura', '6.0°C')
+            ventilacion = override_data.get('ventilacion', '15CBM')
+            humedad = override_data.get('humedad', 'OFF')
+            atm = override_data.get('atm', 'NO APLICA')
+            oxigeno = override_data.get('oxigeno', 'NO APLICA')
+            co2 = override_data.get('co2', 'NO APLICA')
+            filtros = override_data.get('filtros', 'NO')
+            cold_treatment = override_data.get('cold_treatment', 'NO')
             
         else:
             # Lógica automática original (Booking -> DB)
@@ -222,16 +233,16 @@ class InstructionPDFService:
             pos_cultivo = pos.cultivo or ""
             pos_nave = pos.nave or ""
             pos_naviera = pos.naviera or ""
-            pos_operador = getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L."
-            pos_pol = getattr(pos, 'POL', "CALLAO") or "CALLAO"
+            pos_operador = pos.operador_logistico or "DP WORLD LOGISTICS S.R.L."
+            pos_pol = pos.pol or "CALLAO"
             
-            f_prog = getattr(pos, 'FECHA_PROGRAMADA', None)
-            h_prog = getattr(pos, 'HORA_PROGRAMADA', None)
+            f_prog = pos.fecha_programada
+            h_prog = pos.hora_programada
             f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
             fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
 
-            eta_dt = getattr(pos, 'ETA', None)
+            eta_dt = pos.eta
             eta_str = eta_dt.strftime('%d/%m/%Y') if eta_dt else ""
             puerto_destino = pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else "")
             
@@ -256,6 +267,37 @@ class InstructionPDFService:
                     if p.po and p.po.strip():
                         po_val = p.po.strip()
                         break
+                        
+            # Variables térmicas/operativas extraídas directo de la BD
+            cultivo_upper = (pos_cultivo or "").upper()
+            is_palta = "PALTA" in cultivo_upper or "AVOCADO" in cultivo_upper
+            is_granada = "GRANADA" in cultivo_upper
+            
+            # Defaults según cultivo
+            def_temp = "6.0°C" if (is_palta or is_granada) else ""
+            def_vent = "CERRADA" if is_palta else ("15CBM" if is_granada else "")
+            def_hum = "OFF" if (is_palta or is_granada) else ""
+            def_ac = "SI" if is_palta else ("NO APLICA" if is_granada else "NO APLICA")
+            
+            temperatura = pos.temperatura or def_temp
+            ventilacion = pos.ventilacion or def_vent
+            humedad = pos.humedad or def_hum
+            atm = pos.ac or def_ac
+            
+            # Gases por defecto
+            oxigeno = "NO APLICA" 
+            co2 = "NO APLICA" 
+            if is_palta:
+                oxigeno = "4%"
+                co2 = "6%"
+                
+            filtros = pos.filtros or ("NO" if is_granada else ("SI" if is_palta else "NO"))
+            cold_treatment = pos.ct or ("NO" if (is_granada or is_palta) else "NO")
+
+            # Reglas especiales por cliente (Calidad)
+            cliente_upper = (cliente_nombre or "").upper()
+            if is_palta and "TESCO" in cliente_upper:
+                filtros = "NO (SIN FILTROS)"
 
         # 2. Selección de Paleta de Colores Dinámica
         cultivo_key = (pos_cultivo or "").upper()
@@ -375,8 +417,8 @@ class InstructionPDFService:
             [b_p("FREIGHT"), n_p(flete_val)],
         ]
 
-        # Inserción dinámica de PO si existe
-        if po_val and po_val.strip():
+        # Inserción dinámica de PO si existe y NO ES 0
+        if po_val and po_val.strip() and po_val.strip() != "0":
             t1_data.append([b_p("PO"), b_p(po_val)])
 
         t1_data.extend([
@@ -387,14 +429,14 @@ class InstructionPDFService:
             [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")],
             [b_p("PRODUCTO"), n_p(pos_cultivo or "GRANADAS")],
             [b_p("VARIEDAD"), n_p(variedad)],
-            [b_p("TEMPERATURA"), n_p(override_data.get('temperatura', '6.0°C') if override_data else ("6.0°C" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("VENTILACION"), n_p(override_data.get('ventilacion', '15CBM') if override_data else ("15CBM" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("HUMEDAD"), n_p(override_data.get('humedad', 'OFF') if override_data else ("OFF" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("ATMOSFERA CONTROLADA"), n_p(override_data.get('atm', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("OXIGENO"), n_p(override_data.get('oxigeno', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("CO2"), n_p(override_data.get('co2', 'NO APLICA') if override_data else ("NO APLICA" if "GRANADA" in (pos_cultivo or "").upper() else ""))],
-            [b_p("FILTROS"), b_p(override_data.get('filtros', 'NO') if override_data else "NO")],
-            [b_p("COLD TREAMENT"), b_p(override_data.get('cold_treatment', 'NO') if override_data else "NO")],
+            [b_p("TEMPERATURA"), n_p(temperatura)],
+            [b_p("VENTILACION"), n_p(ventilacion)],
+            [b_p("HUMEDAD"), n_p(humedad)],
+            [b_p("ATMOSFERA CONTROLADA"), n_p(atm)],
+            [b_p("OXIGENO"), n_p(oxigeno)],
+            [b_p("CO2"), n_p(co2)],
+            [b_p("FILTROS"), b_p(filtros)],
+            [b_p("COLD TREAMENT"), b_p(cold_treatment)],
             [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")],
             [b_p("VALOR FOB APROXIMADO"), n_p(fob_val)],
         ])
@@ -404,8 +446,20 @@ class InstructionPDFService:
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD, textColor=colors.white if is_granada else colors.black)), ""],
             [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else self._format_multiline(fito.direccion_fito if fito else "")))],
             [b_p("PAIS DE DESTINO"), b_p(override_data.get('pais_destino') if override_data else (pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else "")))],
-            [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)],
-            [b_p("PRESENTACION"), b_p(override_data.get('presentacion') if override_data else (getattr(pedidos[0], 'presentacion', "CAJA 3.8 KG") if pedidos else "CAJA 3.8 KG"))],
+            [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)]
+        ]
+        
+        # Lógica de fallback para PRESENTACION
+        presentacion_val = override_data.get('presentacion') if override_data else getattr(pedidos[0], 'presentacion', None) if pedidos else None
+        if not presentacion_val or str(presentacion_val).strip() == "0":
+            # Contingencia: Usar el peso por caja (peso_kg) para armar la presentación
+            if peso_kg and float(peso_kg) > 0:
+                presentacion_val = f"CAJA {float(peso_kg):g} KG"
+            else:
+                presentacion_val = "CAJA 4.0 KG" if "PALTA" in cultivo_key or "AVOCADO" in cultivo_key else "CAJA 3.8 KG"
+            
+        t2_data.extend([
+            [b_p("PRESENTACION"), b_p(presentacion_val)],
             [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas', 'GENERICA') if override_data else "GENERICA")],
             [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)],
             [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)],
@@ -444,9 +498,9 @@ class InstructionPDFService:
             if is_granada:
                 # Re-generar párrafos en blanco para estas filas específicas si es granada
                 t1_data[idx_filters][0] = b_p("FILTROS", white=True)
-                t1_data[idx_filters][1] = b_p(override_data.get('filtros', 'NO') if override_data else "NO", white=True)
+                t1_data[idx_filters][1] = b_p(filtros, white=True)
                 t1_data[idx_cold][0] = b_p("COLD TREAMENT", white=True)
-                t1_data[idx_cold][1] = b_p(override_data.get('cold_treatment', 'NO') if override_data else "NO", white=True)
+                t1_data[idx_cold][1] = b_p(cold_treatment, white=True)
 
         t1 = Table(t1_data, colWidths=[6.5*cm, 12.5*cm])
         t1.setStyle(TableStyle(t1_styles))

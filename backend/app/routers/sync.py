@@ -100,8 +100,8 @@ def clean_data_value(val: str, db_column: str):
     if not val_str or val_str.upper() in null_and_errors:
         return None
     
-    # 1. Manejo de Enteros (ej. CAJAS_VACIAS)
-    if db_column == "CAJAS_VACIAS":
+    # 1. Manejo de Enteros (ej. cajas_vacias)
+    if db_column == "cajas_vacias":
         if val_str.upper() == "SI": return 1
         if val_str.upper() == "NO": return 0
         try:
@@ -109,8 +109,8 @@ def clean_data_value(val: str, db_column: str):
         except:
             return 0
 
-    # 2. Manejo de Fechas (ETD, ETA, FECHA_PROGRAMADA - Soporte Español)
-    if db_column in ["ETD", "ETA", "FECHA_PROGRAMADA"]:
+    # 2. Manejo de Fechas (etd, eta, fecha_programada - Soporte Español)
+    if db_column in ["etd", "eta", "fecha_programada"]:
         try:
             # Traducción básica de meses en español a inglés para el parser
             meses_es_en = {
@@ -127,8 +127,8 @@ def clean_data_value(val: str, db_column: str):
             logger.warning(f"No se pudo parsear fecha: {val_str} para {db_column}: {str(e)}")
             return None
 
-    # 3. Manejo de Horas (HORA_PROGRAMADA)
-    if db_column == "HORA_PROGRAMADA":
+    # 3. Manejo de Horas (hora_programada)
+    if db_column == "hora_programada":
         try:
             return parse_date(val_str).time()
         except:
