@@ -9,8 +9,11 @@ import {
   TrendingUp,
   MapPin,
   CalendarClock,
-  BookOpen
+  BookOpen,
+  Filter,
+  X
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
@@ -60,9 +63,25 @@ const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ef4444', '#64748b'
 export default function AgroHubDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [metadata, setMetadata] = useState<any>({ plantas: [], cultivos: [] });
+  const [filters, setFilters] = useState({ planta: "", cultivo: "" });
 
+  // Fetch Metadata (Plants/Crops)
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/dashboard/summary`)
+    fetch(`${API_BASE_URL}/api/v1/dashboard/metadata`)
+      .then(res => res.json())
+      .then(m => setMetadata(m))
+      .catch(err => console.error("Metadata error:", err));
+  }, []);
+
+  // Fetch Dashboard Data
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filters.planta) params.append("planta", filters.planta);
+    if (filters.cultivo) params.append("cultivo", filters.cultivo);
+
+    fetch(`${API_BASE_URL}/api/v1/dashboard/summary?${params.toString()}`)
       .then((res) => res.json())
       .then((d) => {
         setData(d);
@@ -72,7 +91,7 @@ export default function AgroHubDashboardPage() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [filters]);
 
   if (loading) {
     return (
@@ -103,6 +122,58 @@ export default function AgroHubDashboardPage() {
         <main className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
           <div className="max-w-[1500px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             
+            {/* FILTER BAR */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200/60 shadow-sm">
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                     <Filter className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Filtros de Análisis</h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Segmentación de datos operativos</p>
+                  </div>
+               </div>
+
+               <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Planta:</span>
+                     <select 
+                        className="text-xs font-bold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none min-w-[120px]"
+                        value={filters.planta}
+                        onChange={(e) => setFilters(prev => ({ ...prev, planta: e.target.value }))}
+                     >
+                        <option value="">TODAS</option>
+                        {metadata.plantas.map((p: string) => (
+                           <option key={p} value={p}>{p}</option>
+                        ))}
+                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cultivo:</span>
+                     <select 
+                        className="text-xs font-bold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none min-w-[120px]"
+                        value={filters.cultivo}
+                        onChange={(e) => setFilters(prev => ({ ...prev, cultivo: e.target.value }))}
+                     >
+                        <option value="">TODOS</option>
+                        {metadata.cultivos.map((c: string) => (
+                           <option key={c} value={c}>{c}</option>
+                        ))}
+                     </select>
+                  </div>
+
+                  {(filters.planta || filters.cultivo) && (
+                    <button 
+                      onClick={() => setFilters({ planta: "", cultivo: "" })}
+                      className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                      title="Limpiar Filtros"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+               </div>
+            </div>
             {/* ROW 1: KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                <StatCard 

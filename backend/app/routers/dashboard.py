@@ -13,15 +13,29 @@ from sqlalchemy import or_
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
-def get_dashboard_summary(db: Session = Depends(get_db)):
+def get_dashboard_summary(
+    planta: Optional[str] = None,
+    cultivo: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     hoy = datetime.now()
     hoy_date = hoy.date()
-    hace_7_dias = hoy - timedelta(days=7)
     
+    # Base queries for filtering
+    lc_base = db.query(LogiCaptureRegistro)
+    pos_base = db.query(Posicionamiento)
+    
+    if planta:
+        lc_base = lc_base.filter(LogiCaptureRegistro.planta == planta)
+        pos_base = pos_base.filter(Posicionamiento.planta_llenado == planta)
+    if cultivo:
+        lc_base = lc_base.filter(LogiCaptureRegistro.cultivo == cultivo)
+        pos_base = pos_base.filter(Posicionamiento.cultivo == cultivo)
+
     # 1. KPIs
-    procesados = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.status == "PROCESADO").count()
-    pendientes = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.status == "PENDIENTE").count()
-    alertas = db.query(LogiCaptureRegistro).filter(LogiCaptureRegistro.status.in_(["PENDIENTE", "ANULADO"])).count()
+    procesados = lc_base.filter(LogiCaptureRegistro.status == "PROCESADO").count()
+    pendientes = lc_base.filter(LogiCaptureRegistro.status == "PENDIENTE").count()
+    alertas = lc_base.filter(LogiCaptureRegistro.status.in_(["PENDIENTE", "ANULADO"])).count()
     
     # Maestros incompletos (Cualquier dato faltante en Transportistas, Choferes o Vehículos)
     trans_incompletos = db.query(Transportista).filter(
@@ -61,14 +75,14 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     
     maestros_incompletos = trans_incompletos + choferes_incompletos + tractos_incompletos + carretas_incompletas
     
-    # En Alta Mar: Posicionamientos que ya zarparon (ETD <= hoy) pero aún no llegan (ETA >= hoy)
-    en_alta_mar = db.query(Posicionamiento).filter(
+    # En Alta Mar
+    en_alta_mar = pos_base.filter(
         Posicionamiento.etd <= hoy_date,
         Posicionamiento.eta >= hoy_date
     ).count()
 
     # Programados Hoy
-    programados_hoy = db.query(Posicionamiento).filter(
+    programados_hoy = pos_base.filter(
         Posicionamiento.fecha_programada == hoy_date,
         Posicionamiento.estado != "ANULADO"
     ).count()
@@ -77,9 +91,9 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     fin_semana = inicio_semana + timedelta(days=6)
     
-    registros_recientes = db.query(
-        func.date(LogiCaptureRegistro.fecha_registro).label("fecha"),
-        func.count(LogiCaptureRegistro.id).label("cantidad")
+    registros_recientes = lc_base.with_entities(
+        func.date(LogiCaptureRegistro.fecha_registro).label(\"fecha\"),
+        func.count(LogiCaptureRegistro.id).label(\"cantidad\")
     ).filter(
         func.date(LogiCaptureRegistro.fecha_registro) >= inicio_semana.date(),
         func.date(LogiCaptureRegistro.fecha_registro) <= fin_semana.date()
@@ -102,17 +116,22 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         })
             
     # 3. Distribución por Cultivos
-    cultivos = db.query(
+    cultivos_query = lc_base.with_entities(
         LogiCaptureRegistro.cultivo,
-        func.count(LogiCaptureRegistro.id).label("cantidad")
+        func.count(LogiCaptureRegistro.id).label(\"cantidad\")
     ).filter(
         LogiCaptureRegistro.cultivo != None,
-        LogiCaptureRegistro.cultivo != ""
+        LogiCaptureRegistro.cultivo != \"\"
     ).group_by(
         LogiCaptureRegistro.cultivo
     ).order_by(
         func.count(LogiCaptureRegistro.id).desc()
-    ).limit(5).all()
+    )
+    
+    if cultivo: # Si ya hay filtro de cultivo, solo saldrá 1, es correcto
+        cultivos = cultivos_query.all()
+    else:
+        cultivos = cultivos_query.limit(5).all()
     
     distribucion_cultivos = [
         {"cultivo": c.cultivo.upper() if c.cultivo else "OTROS", "cantidad": c.cantidad} for c in cultivos
@@ -121,7 +140,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
          distribucion_cultivos = [{"cultivo": "SIN DATOS", "cantidad": 1}]
          
     # 4. Últimos Registros
-    ultimos = db.query(LogiCaptureRegistro).order_by(LogiCaptureRegistro.fecha_registro.desc()).limit(5).all()
+    ultimos = lc_base.order_by(LogiCaptureRegistro.fecha_registro.desc()).limit(5).all()
     ultimos_registros = []
     
     from zoneinfo import ZoneInfo
@@ -151,8 +170,8 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     bookings_en_proceso = db.query(LogiCaptureRegistro.booking).distinct().all()
     bookings_excluir = [b[0] for b in bookings_en_proceso if b[0]]
 
-    proximos = db.query(Posicionamiento).filter(
-        Posicionamiento.estado != "ANULADO",
+    proximos = pos_base.filter(
+        Posicionamiento.estado != \"ANULADO\",
         Posicionamiento.fecha_programada >= hoy_date,
         ~Posicionamiento.booking.in_(bookings_excluir) if bookings_excluir else True
     ).order_by(
@@ -189,4 +208,15 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         "distribucion_cultivos": distribucion_cultivos,
         "ultimos_registros": ultimos_registros,
         "proximos_posicionamientos": proximos_posicionamientos
+    }
+
+@router.get("/metadata")
+def get_dashboard_metadata(db: Session = Depends(get_db)):
+    """Retorna listas de plantas y cultivos disponibles para filtros."""
+    plantas = db.query(Posicionamiento.planta_llenado).distinct().all()
+    cultivos = db.query(LogiCaptureRegistro.cultivo).distinct().all()
+    
+    return {
+        "plantas": sorted([p[0] for p in plantas if p[0]]),
+        "cultivos": sorted([c[0] for c in cultivos if c[0]])
     }
