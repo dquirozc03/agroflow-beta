@@ -331,11 +331,8 @@ async def sync_pedidos_raw(
                 mapping_indices["total_pallets"] = i
                 break
 
-    # 3. RECARGA TOTAL Entrenada (Atómica)
+    # 3. RECARGA POR PARTICIÓN (Atómica)
     try:
-        # Iniciamos el proceso
-        db.query(PedidoComercial).delete()
-        
         # 4. Procesamiento de Filas (Filtro de Alto Rendimiento)
         mappings = []
         errores = 0
@@ -375,8 +372,16 @@ async def sync_pedidos_raw(
             except:
                 errores += 1
 
-        # 5. Inserción Masiva
+        # 5. Inserción Masiva (Particionada por Planta/Zona)
         if mappings:
+            # Extraemos las plantas (zonas) que vienen en este archivo
+            plantas_detectadas = {m.get("planta") for m in mappings if m.get("planta")}
+            
+            if plantas_detectadas:
+                # Borramos solo lo que corresponde a estas plantas, permitiendo coexistencia de archivos
+                db.query(PedidoComercial).filter(PedidoComercial.planta.in_(plantas_detectadas)).delete(synchronize_session=False)
+                logger.info(f"Limpieza de partición finalizada para plantas: {plantas_detectadas}")
+            
             db.bulk_insert_mappings(PedidoComercial, mappings)
         
         db.commit()
@@ -507,14 +512,22 @@ async def sync_reportes_embarques_raw(
             mappings.append({"booking": bkg_val, "nave_arribo": nave_val})
 
     try:
-        db.query(ReporteEmbarques).delete()
-        if mappings:
-            db.bulk_insert_mappings(ReporteEmbarques, mappings)
+        from sqlalchemy.dialects.postgresql import insert
+        procesados = 0
+        for m in mappings:
+            stmt = insert(ReporteEmbarques).values(**m)
+            upsert_stmt = stmt.on_conflict_do_update(
+                index_elements=[ReporteEmbarques.booking],
+                set_={"nave_arribo": m.get("nave_arribo")}
+            )
+            db.execute(upsert_stmt)
+            procesados += 1
+            
         db.commit()
         
         return {
             "status": "success",
-            "mensaje": f"Sincronización exitosa. {len(mappings)} filas guardadas."
+            "mensaje": f"Sincronización exitosa. {procesados} filas actualizadas/insertadas."
         }
     except Exception as e:
         db.rollback()
