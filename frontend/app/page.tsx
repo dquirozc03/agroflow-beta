@@ -62,7 +62,7 @@ export default function AgroHubDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/dashboard/summary")
+    fetch(`${API_BASE_URL}/api/v1/dashboard/summary`)
       .then((res) => res.json())
       .then((d) => {
         setData(d);

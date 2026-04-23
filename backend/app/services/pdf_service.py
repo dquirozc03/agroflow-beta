@@ -131,6 +131,11 @@ class InstructionPDFService:
         
         return cliente
 
+    def _clean_text(self, text: str) -> str:
+        """Limpia caracteres residuales como punto y coma de Excel."""
+        if not text: return ""
+        return str(text).replace(";", "").strip()
+
     def _format_multiline(self, text: str) -> str:
         if not text: return ""
         return text.replace('\n', '<br/>')
@@ -217,7 +222,7 @@ class InstructionPDFService:
 
             total_cajas = sum(p.total_cajas or 0 for p in pedidos)
             total_pallets = sum(p.total_pallets or 0 for p in pedidos)
-            cliente_nombre = pedidos[0].cliente if pedidos else "POR DEFINIR"
+            cliente_nombre = self._clean_text(pedidos[0].cliente) if pedidos else "POR DEFINIR"
             peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
             
             # Formula de Peso Bruto Real (Neto + Taras): Pallet (30kg) + Caja (0.25kg)
@@ -434,8 +439,8 @@ class InstructionPDFService:
             [b_p("DIRECCION DE LA PLANTA"), format_desc(f"<b>{planta_nombre}</b>", f"{planta_direccion}<br/>{planta_region}" if planta_region else planta_direccion)],
             [b_p("UBIGEO PLANTA"), n_p(planta_ubigeo)],
             [b_p("FECHA Y HORA DEL LLENADO", white=is_granada), b_pc(fecha_llenado, white=is_granada)],
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else ( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(cliente_maestro.direccion_consignatario if cliente_maestro else ""))],
-            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else (cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(cliente_maestro.direccion_notify if cliente_maestro else ""))]
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('consignatario_bl') if override_data else self._clean_text( (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre )}</b>", override_data.get('direccion_consignatario', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_consignatario) if cliente_maestro else ""))],
+            [b_p("NOTIFICADO<br/>DIRECCIÓN"), format_desc(f"<b>{override_data.get('notify_bl') if override_data else self._clean_text(cliente_maestro.notify_bl if cliente_maestro else 'SAME AS CONSIGNEE')}</b>", override_data.get('direccion_notify', '') if override_data else self._format_multiline(self._clean_text(cliente_maestro.direccion_notify) if cliente_maestro else ""))]
         ]
 
         # Insertar EORI solo si son válidos

@@ -139,7 +139,9 @@ def clean_data_value(val: str, db_column: str):
         except:
             return None
 
-    return val_str
+    # 4. Limpieza de caracteres residuales de Excel (ej: punto y coma)
+    # Algunos scripts de Office añaden ';' al final de las cadenas por error
+    return val_str.replace(";", "").strip()
 
 @router.post("/posicionamiento/raw")
 async def sync_posicionamiento_raw(
