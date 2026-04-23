@@ -361,7 +361,7 @@ class InstructionPDFService:
         from xml.sax.saxutils import escape as xml_escape
 
         def _safe(text):
-            if text is None: return \"\"
+            if text is None: return ""
             return xml_escape(str(text))
 
         def b_p(text, white=False): return Paragraph(f"<b>{_safe(text)}</b>", white_bold_style if white else bold_style)
