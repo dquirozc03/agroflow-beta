@@ -573,6 +573,11 @@ class InstructionPDFService:
         pdf_bytes = buffer.getvalue()
         buffer.close()
 
-        return {"pdf_bytes": pdf_bytes, "orden_beta": pos_orden}
+        return {
+            "pdf_bytes": pdf_bytes, 
+            "orden_beta": pos_orden,
+            "cliente_nombre": (cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre,
+            "cultivo": pos.cultivo if pos else "N/A"
+        }
 
 instruction_pdf_service = InstructionPDFService()

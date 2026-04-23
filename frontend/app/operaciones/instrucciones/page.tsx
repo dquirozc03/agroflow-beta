@@ -37,6 +37,7 @@ import {
   Filter,
   ChevronLeft
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -52,6 +53,7 @@ import { Label } from "@/components/ui/label";
 import { API_BASE_URL } from "@/lib/constants";
 
 export default function InstruccionesEmbarque() {
+  const { user } = useAuth();
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [lookupData, setLookupData] = useState<any>(null);
@@ -119,8 +121,14 @@ export default function InstruccionesEmbarque() {
     direccion_planta: "",
     ubigeo_planta: "",
     region_planta: "",
-    usuario: "DQUIROZ"
+    usuario: user?.usuario || "DQUIROZ"
   });
+
+  useEffect(() => {
+    if (user?.usuario) {
+      setOverrideData(prev => ({ ...prev, usuario: user.usuario }));
+    }
+  }, [user]);
 
   useEffect(() => {
     loadBookings();
@@ -191,7 +199,7 @@ export default function InstruccionesEmbarque() {
         booking: bookingId,
         observaciones: observaciones,
         emision_bl: emisionSWB ? "SWB" : "EMISIÓN EN ORIGEN",
-        usuario: "DQUIROZ"
+        usuario: user?.usuario || "DQUIROZ"
       };
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
