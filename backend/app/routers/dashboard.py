@@ -92,8 +92,8 @@ def get_dashboard_summary(
     fin_semana = inicio_semana + timedelta(days=6)
     
     registros_recientes = lc_base.with_entities(
-        func.date(LogiCaptureRegistro.fecha_registro).label(\"fecha\"),
-        func.count(LogiCaptureRegistro.id).label(\"cantidad\")
+        func.date(LogiCaptureRegistro.fecha_registro).label("fecha"),
+        func.count(LogiCaptureRegistro.id).label("cantidad")
     ).filter(
         func.date(LogiCaptureRegistro.fecha_registro) >= inicio_semana.date(),
         func.date(LogiCaptureRegistro.fecha_registro) <= fin_semana.date()
@@ -118,10 +118,10 @@ def get_dashboard_summary(
     # 3. Distribución por Cultivos
     cultivos_query = lc_base.with_entities(
         LogiCaptureRegistro.cultivo,
-        func.count(LogiCaptureRegistro.id).label(\"cantidad\")
+        func.count(LogiCaptureRegistro.id).label("cantidad")
     ).filter(
         LogiCaptureRegistro.cultivo != None,
-        LogiCaptureRegistro.cultivo != \"\"
+        LogiCaptureRegistro.cultivo != ""
     ).group_by(
         LogiCaptureRegistro.cultivo
     ).order_by(
@@ -171,7 +171,7 @@ def get_dashboard_summary(
     bookings_excluir = [b[0] for b in bookings_en_proceso if b[0]]
 
     proximos = pos_base.filter(
-        Posicionamiento.estado != \"ANULADO\",
+        Posicionamiento.estado != "ANULADO",
         Posicionamiento.fecha_programada >= hoy_date,
         ~Posicionamiento.booking.in_(bookings_excluir) if bookings_excluir else True
     ).order_by(

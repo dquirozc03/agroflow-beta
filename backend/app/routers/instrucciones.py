@@ -195,14 +195,14 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             }
             response["maestro"] = {
                 "id": cliente_maestro.id,
-                "nombre_legal": cliente_maestro.nombre_legal.replace(\";\", \"\").strip() if cliente_maestro.nombre_legal else \"\",
+                "nombre_legal": cliente_maestro.nombre_legal.replace(";", "").strip() if cliente_maestro.nombre_legal else "",
                 "pais": cliente_maestro.pais,
                 "destino": cliente_maestro.destino,
-                "consignatario_bl": (cliente_maestro.consignatario_bl or \"\").replace(\";\", \"\").strip(),
-                "direccion_consignatario": (cliente_maestro.direccion_consignatario or \"\").replace(\";\", \"\").strip(),
-                "po": pedido.po if pedido and getattr(pedido, 'po', None) else \"\",
-                "notify_bl": (cliente_maestro.notify_bl or \"\").replace(\";\", \"\").strip(),
-                "direccion_notify": (cliente_maestro.direccion_notify or \"\").replace(\";\", \"\").strip(),
+                "consignatario_bl": (cliente_maestro.consignatario_bl or "").replace(";", "").strip(),
+                "direccion_consignatario": (cliente_maestro.direccion_consignatario or "").replace(";", "").strip(),
+                "po": pedido.po if pedido and getattr(pedido, 'po', None) else "",
+                "notify_bl": (cliente_maestro.notify_bl or "").replace(";", "").strip(),
+                "direccion_notify": (cliente_maestro.direccion_notify or "").replace(";", "").strip(),
                 "fitosanitario": fito_data,
                 "eori_consignatario": getattr(cliente_maestro, 'eori_consignatario', ""),
                 "eori_notify": getattr(cliente_maestro, 'eori_notify', "")
