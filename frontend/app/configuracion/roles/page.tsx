@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -20,7 +20,8 @@ import {
   Users,
   UserRound,
   Map,
-  FileUp
+  FileUp,
+  LayoutDashboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ export default function RolesPage() {
     nombre_rol: "",
     descripcion: "",
     permisos_plantilla: {
+      g_dashboard: true,
       lc_registro: true, lc_bandeja: true,
       op_instrucciones: true, op_packing_list: true,
       m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
@@ -101,6 +103,7 @@ export default function RolesPage() {
       nombre_rol: "",
       descripcion: "",
       permisos_plantilla: {
+        g_dashboard: true,
         lc_registro: true, lc_bandeja: true,
         op_instrucciones: true, op_packing_list: true,
         m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
@@ -182,6 +185,26 @@ export default function RolesPage() {
                <div className="space-y-6 border-t border-slate-100 pt-6 h-[400px] overflow-y-auto pr-2 custom-scroll">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plantilla de Permisos Granulares</Label>
                   
+                  {/* GENERAL */}
+                  <div className="space-y-2">
+                     <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50">General</p>
+                     <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <LayoutDashboard className="h-4 w-4 text-emerald-600" />
+                              <span className="text-[10px] font-bold text-slate-700 uppercase">Panel de Control (Dashboard)</span>
+                           </div>
+                           <Switch 
+                              checked={!!(formData.permisos_plantilla as any).g_dashboard}
+                              onCheckedChange={v => setFormData({
+                                 ...formData, 
+                                 permisos_plantilla: { ...formData.permisos_plantilla, g_dashboard: v }
+                              })}
+                           />
+                        </div>
+                     </div>
+                  </div>
+
                   {/* LOGICAPTURE */}
                   <div className="space-y-2">
                      <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50">LogiCapture</p>

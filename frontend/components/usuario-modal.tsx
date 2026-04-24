@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
+  LayoutDashboard,
   FileBarChart, 
   RefreshCw,
   History,
@@ -59,6 +60,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
     password: "123456",
     activo: true,
     permisos: {
+      g_dashboard: true,
       lc_registro: true, lc_bandeja: true,
       op_instrucciones: true, op_packing_list: true,
       m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
@@ -75,6 +77,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         password: "", // No se edita password aquí normalmente
         activo: editingData.activo ?? true,
         permisos: editingData.permisos || {
+          g_dashboard: true,
           lc_registro: true, lc_bandeja: true,
           op_instrucciones: true, op_packing_list: true,
           m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
@@ -89,6 +92,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         password: "123456",
         activo: true,
         permisos: {
+          g_dashboard: true,
           lc_registro: true, lc_bandeja: true,
           op_instrucciones: true, op_packing_list: true,
           m_bulk: true, m_contenedores: true, m_transportistas: true, m_vehiculos: true, m_choferes: true, m_clientes_ie: true,
@@ -386,6 +390,23 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
 
             {/* TAB: PERMISOS ATÓMICOS */}
             <TabsContent value="permisos" className="space-y-6 animate-in fade-in slide-in-from-top-2 pt-2 h-[450px] overflow-y-auto pr-2 lc-scroll">
+               
+               {/* GENERAL */}
+               <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 ml-1">General</p>
+                  <div className="grid grid-cols-1 gap-2">
+                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-3">
+                           <LayoutDashboard className="h-4 w-4 text-emerald-500" />
+                           <span className="text-[11px] font-bold text-slate-700 uppercase">Panel de Control (Dashboard)</span>
+                        </div>
+                        <Switch 
+                           checked={!!(formData.permisos as any).g_dashboard} 
+                           onCheckedChange={(v) => setFormData({...formData, permisos: {...formData.permisos, g_dashboard: v}})} 
+                        />
+                     </div>
+                  </div>
+               </div>
                
                {/* LOGICAPTURE */}
                <div className="space-y-3">

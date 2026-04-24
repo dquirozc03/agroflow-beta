@@ -95,6 +95,27 @@ export default function UsuariosPage() {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentUsuarios = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const handleToggleStatus = async (u: Usuario) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("nexo-token") : null;
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/usuarios/${u.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ activo: !u.activo })
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar estado del usuario");
+      
+      toast.success(`Usuario ${!u.activo ? "habilitado" : "inhabilitado"} correctamente`);
+      fetchUsuarios();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 font-['Outfit']">
       <UsuarioModal 
@@ -269,7 +290,10 @@ export default function UsuariosPage() {
                                   Seguridad y Pasword
                                </DropdownMenuItem>
                                <DropdownMenuSeparator />
-                               <DropdownMenuItem className="rounded-xl py-3 cursor-pointer text-xs font-bold text-rose-600 focus:bg-rose-50 focus:text-rose-700">
+                               <DropdownMenuItem 
+                                 onClick={() => handleToggleStatus(u)}
+                                 className="rounded-xl py-3 cursor-pointer text-xs font-bold text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                               >
                                   {u.activo ? "Inhabilitar Acceso" : "Habilitar Acceso"}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

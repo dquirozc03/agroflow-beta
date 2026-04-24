@@ -54,10 +54,10 @@ export function AppSidebar({ className }: { className?: string }) {
       {
         id: "general",
         label: "General",
-        visible: true,
+        visible: isAdmin || p.g_dashboard !== false,
         items: [
-          { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/" },
-        ]
+          { name: "Panel de Control", icon: LayoutDashboard, href: "/", active: pathname === "/", visible: isAdmin || p.g_dashboard !== false },
+        ].filter(i => i.visible)
       },
       {
         id: "logicapture",
