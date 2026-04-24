@@ -326,6 +326,17 @@ export default function BandejaLogiCapture() {
        return;
     }
 
+    if (newStatus === "PROCESADO") {
+       // Validación de Pesos y Medidas ⚖️
+       if (!reg.peso_bruto || parseFloat(reg.peso_bruto) <= 0) {
+          toast.error("ALERTA: No se puede procesar sin completar Pesos y Medidas ⚖️", {
+             description: "Complete el pesaje en el menú de acciones del registro.",
+             style: { background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b' }
+          });
+          return;
+       }
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/registros/${reg.id}/status?status=${newStatus}`, {
         method: 'PATCH'
@@ -840,53 +851,74 @@ export default function BandejaLogiCapture() {
                             </div>
                           </TableCell>
                           {activeTab !== "ANULADO" && <TableCell className="text-center p-6" onClick={(e) => e.stopPropagation()}>
-                            {activeTab === "PENDIENTE" ? (
-                              <Button
-                                onClick={() => handleStatusChange(reg, 'PROCESADO')}
-                                className="h-10 px-5 bg-emerald-950 hover:bg-emerald-800 text-white rounded-2xl flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-emerald-950/10 active:scale-95 group/btn border-none"
-                              >
-                                <div className="h-5 w-5 bg-emerald-500/10 rounded-lg flex items-center justify-center group-hover/btn:bg-emerald-500/20 transition-colors">
-                                  <Zap className="h-3.5 w-3.5 text-emerald-400 group-hover/btn:scale-110 transition-transform" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.15em]">Procesar</span>
-                              </Button>
-                            ) : (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
-                                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
-                                  
-                                  {activeTab === "PROCESADO" && (
-                                     <>
-                                        <DropdownMenuItem 
-                                          className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
-                                          onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
-                                        >
-                                          <Scale className="h-4 w-4 text-emerald-600" />
-                                          <div className="flex flex-col">
-                                             <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
-                                             <span className="text-[9px] text-emerald-500/70 font-black uppercase tracking-widest">DOCUMENTO OFICIAL</span>
-                                          </div>
-                                        </DropdownMenuItem>
+                            <div className="flex items-center justify-center gap-2">
+                               {activeTab === "PENDIENTE" && (
+                                 <Button
+                                   onClick={() => handleStatusChange(reg, 'PROCESADO')}
+                                   className="h-10 px-5 bg-emerald-950 hover:bg-emerald-800 text-white rounded-2xl flex items-center gap-2.5 transition-all duration-300 shadow-lg shadow-emerald-950/10 active:scale-95 group/btn border-none"
+                                 >
+                                   <div className="h-5 w-5 bg-emerald-500/10 rounded-lg flex items-center justify-center group-hover/btn:bg-emerald-500/20 transition-colors">
+                                     <Zap className="h-3.5 w-3.5 text-emerald-400 group-hover/btn:scale-110 transition-transform" />
+                                   </div>
+                                   <span className="text-[10px] font-black uppercase tracking-[0.15em]">Procesar</span>
+                                 </Button>
+                               )}
 
-                                        <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
-                                          <Edit3 className="h-4 w-4" /> Editar
-                                        </DropdownMenuItem>
-                                        
-                                        <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
-                                        
-                                        <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg, 'ANULADO')}>
-                                          <Trash2 className="h-4 w-4" /> Anular Registro
-                                        </DropdownMenuItem>
-                                     </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                                     <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-2xl p-2 min-w-[160px]">
+                                   <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-3">Gestión</DropdownMenuLabel>
+                                   
+                                   {activeTab === "PENDIENTE" && (
+                                      <>
+                                         <DropdownMenuItem 
+                                           className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
+                                           onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
+                                         >
+                                           <Scale className="h-4 w-4 text-emerald-600" />
+                                           <div className="flex flex-col">
+                                              <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
+                                              <span className="text-[9px] text-emerald-500/70 font-black uppercase tracking-widest">DOCUMENTO OFICIAL</span>
+                                           </div>
+                                         </DropdownMenuItem>
+
+                                         <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
+                                           <Edit3 className="h-4 w-4" /> Editar Registro
+                                         </DropdownMenuItem>
+                                      </>
+                                   )}
+
+                                   {activeTab === "PROCESADO" && (
+                                      <>
+                                         <DropdownMenuItem 
+                                           className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer"
+                                           onClick={() => { setSelectedRegForPesos(reg.id); setIsPesosModalOpen(true); }}
+                                         >
+                                           <Scale className="h-4 w-4 text-emerald-600" />
+                                           <div className="flex flex-col">
+                                              <span className="text-[11px] uppercase tracking-tighter">Pesos y Medidas</span>
+                                              <span className="text-[9px] text-emerald-500/70 font-black uppercase tracking-widest">VER / DESCARGAR PDF</span>
+                                           </div>
+                                         </DropdownMenuItem>
+
+                                         <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleEditOpen(reg)}>
+                                           <Edit3 className="h-4 w-4" /> Editar Registro
+                                         </DropdownMenuItem>
+                                         
+                                         <DropdownMenuSeparator className="bg-slate-50 mx-1 my-2" />
+                                         
+                                         <DropdownMenuItem className="rounded-xl p-3 text-sm font-bold gap-3 focus:bg-rose-50 focus:text-rose-700 cursor-pointer" onClick={() => handleStatusChange(reg, 'ANULADO')}>
+                                           <Trash2 className="h-4 w-4" /> Anular Registro
+                                         </DropdownMenuItem>
+                                      </>
+                                   )}
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
+                            </div>
                           </TableCell>}
                         </TableRow>
                       ))}
@@ -1013,21 +1045,58 @@ export default function BandejaLogiCapture() {
                     </div>
                  </div>
 
-                 <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex gap-4">
+                 <div className="p-8 bg-white border-t border-slate-100 sticky bottom-0 z-10 flex flex-col gap-3">
+                    {selectedReg.status === "PENDIENTE" && (
+                       <div className="grid grid-cols-2 gap-3 mb-1">
+                          <Button 
+                            variant="outline"
+                            className="rounded-2xl border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-bold uppercase tracking-widest text-[9px] h-12"
+                            onClick={() => { setSelectedRegForPesos(selectedReg.id); setIsPesosModalOpen(true); }}
+                          >
+                             <Scale className="h-4 w-4 mr-2" /> Pesos y Medidas
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="rounded-2xl border-slate-100 text-slate-600 hover:bg-slate-50 font-bold uppercase tracking-widest text-[9px] h-12"
+                            onClick={() => handleEditOpen(selectedReg)}
+                          >
+                             <Edit3 className="h-4 w-4 mr-2" /> Editar Datos
+                          </Button>
+                       </div>
+                    )}
+
                     {selectedReg.status === "PENDIENTE" ? (
                        <Button 
-                         className="flex-1 rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-[0.2em] text-[10px] h-14 shadow-xl shadow-emerald-950/40"
+                         className="w-full rounded-2xl bg-emerald-950 hover:bg-emerald-900 font-bold uppercase tracking-[0.2em] text-[10px] h-14 shadow-xl shadow-emerald-950/40"
                          onClick={() => handleStatusChange(selectedReg, 'PROCESADO')}
                        >
                           <Zap className="h-5 w-5 mr-3 animate-pulse text-emerald-400" /> Procesar Registro
                        </Button>
                     ) : (
-                       <Button className="flex-1 rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none" onClick={() => handleEditOpen(selectedReg)}
-                       >
-                          <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
-                       </Button>
+                       <div className="space-y-3">
+                          <Button 
+                            variant="outline"
+                            className="w-full rounded-2xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-black uppercase tracking-widest text-[10px] h-14 shadow-sm"
+                            onClick={() => { setSelectedRegForPesos(selectedReg.id); setIsPesosModalOpen(true); }}
+                          >
+                             <Scale className="h-5 w-5 mr-3" /> Ver Pesos y Medidas
+                          </Button>
+                          <div className="flex gap-3">
+                             <Button 
+                               variant="outline"
+                               className="flex-1 rounded-2xl border-rose-100 text-rose-600 hover:bg-rose-50 font-bold uppercase tracking-widest text-[10px] h-14"
+                               onClick={() => handleStatusChange(selectedReg, 'ANULADO')}
+                             >
+                                <Trash2 className="h-4 w-4 mr-2" /> Anular
+                             </Button>
+                             <Button className="flex-[2] rounded-2xl bg-emerald-950 text-white h-14 font-black uppercase tracking-[0.2em] shadow-xl text-[10px] hover:bg-emerald-800 transition-all border-none" onClick={() => handleEditOpen(selectedReg)}
+                             >
+                                <Edit3 className="h-4 w-4 mr-2" /> Editar Registro
+                             </Button>
+                          </div>
+                       </div>
                     )}
-                 </div>
+                  </div>
               </div>
            )}
         </SheetContent>
@@ -1636,12 +1705,12 @@ export default function BandejaLogiCapture() {
           </DialogContent>
        </Dialog>
 
-       {/* MODAL PESOS Y MEDIDAS (ANEXO 1) ⚖️ */}
-       <PesosMedidasModal 
-         isOpen={isPesosModalOpen}
-         onClose={() => setIsPesosModalOpen(false)}
-         registroId={selectedRegForPesos}
-       />
+        <PesosMedidasModal 
+          isOpen={isPesosModalOpen}
+          onClose={() => setIsPesosModalOpen(false)}
+          registroId={selectedRegForPesos}
+          onSuccess={fetchRegistros}
+        />
 
        {/* --- MODALES DE ÉXITO GLOBALES CARLOS STYLE 💎 --- */}
        

@@ -32,9 +32,10 @@ interface PesosMedidasModalProps {
   isOpen: boolean;
   onClose: () => void;
   registroId: number | null;
+  onSuccess?: () => void;
 }
 
-export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasModalProps) {
+export function PesosMedidasModal({ isOpen, onClose, registroId, onSuccess }: PesosMedidasModalProps) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
 
@@ -129,6 +130,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
       a.click();
       window.URL.revokeObjectURL(url);
 
+      if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
       toast.error(error.message);
@@ -238,15 +240,15 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                 <div className="space-y-3">
                   <div className="flex justify-between items-center opacity-40">
                     <span className="text-[8px] font-black uppercase tracking-widest">Tara Tracto ({data?.placa_tracto})</span>
-                    <span className="text-xs font-bold">{taraTracto.toLocaleString()} KG</span>
+                    <span className="text-xs font-bold">{taraTracto.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
                   </div>
                   <div className="flex justify-between items-center opacity-40">
                     <span className="text-[8px] font-black uppercase tracking-widest">Tara Carreta ({data?.placa_carreta})</span>
-                    <span className="text-xs font-bold">{taraCarreta.toLocaleString()} KG</span>
+                    <span className="text-xs font-bold">{taraCarreta.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
                   </div>
                   <div className="flex justify-between items-center opacity-40">
                     <span className="text-[8px] font-black uppercase tracking-widest">Tara Contenedor</span>
-                    <span className="text-xs font-bold">{(Number(taraContenedor) || 0).toLocaleString()} KG</span>
+                    <span className="text-xs font-bold">{(Number(taraContenedor) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded-lg bg-white/5 border border-white/10 mt-1">
                     <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">Configuración MTC</span>
@@ -258,9 +260,8 @@ export function PesosMedidasModal({ isOpen, onClose, registroId }: PesosMedidasM
                 </div>
 
                 <div className="mt-8 pt-4 border-t border-emerald-500/30">
-                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Peso Bruto Total</p>
                   <p className="text-4xl font-black text-white tracking-tighter">
-                    {pesoBrutoTotal.toLocaleString()} <span className="text-sm opacity-50">KG</span>
+                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(pesoBrutoTotal)} <span className="text-sm opacity-50">KG</span>
                   </p>
                 </div>
               </div>
