@@ -30,6 +30,9 @@ interface ClienteIE {
   id: number;
   nombre_legal: string;
   cultivo?: string;
+  eori_consignatario: string;
+  eori_notify: string;
+  po?: string;
   pais: string;
   destino: string;
   estado: string;
