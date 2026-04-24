@@ -130,12 +130,33 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             elif peso_kilos > 0:
                 cliente_nombre_final = "OGL 4KG"
 
+        # Búsqueda Inteligente Multinivel 🧠💎
+        # Nivel 1: Match Exacto (Cliente + País + Destino + PO)
         cliente_maestro = db.query(ClienteIE).filter(
             func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
             func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
             func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
+            func.trim(ClienteIE.po) == (pedido.po.strip() if pedido.po else ""),
             ClienteIE.estado == "ACTIVO"
         ).first()
+
+        # Nivel 2: Match con PO pero sin Destino específico
+        if not cliente_maestro:
+            cliente_maestro = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
+                func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
+                func.trim(ClienteIE.po) == (pedido.po.strip() if pedido.po else ""),
+                ClienteIE.estado == "ACTIVO"
+            ).first()
+
+        # Nivel 3: Match General (como venía funcionando)
+        if not cliente_maestro:
+            cliente_maestro = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
+                func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
+                func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
+                ClienteIE.estado == "ACTIVO"
+            ).first()
     
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(

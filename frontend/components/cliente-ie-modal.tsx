@@ -82,7 +82,8 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
       id: null as number | null,
       consignatario_fito: "",
       direccion_fito: ""
-    }
+    },
+    po: ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,7 +137,8 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
             id: editingData.fitosanitario?.id || null,
             consignatario_fito: editingData.fitosanitario?.consignatario_fito || "",
             direccion_fito: editingData.fitosanitario?.direccion_fito || ""
-          }
+          },
+          po: editingData.po || ""
         });
       } else {
         setFormData({
@@ -154,7 +156,8 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
             id: null,
             consignatario_fito: "",
             direccion_fito: ""
-          }
+          },
+          po: ""
         });
       }
     }
@@ -389,7 +392,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       <input 
                         value={formData.destino}
                         onChange={e => setFormData({ ...formData, destino: safeToUpperCase(e.target.value) })}
-                        placeholder="EJ: BARCELONA"
+                        placeholder="BARCELONA"
                         className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-extrabold text-sm truncate"
                       />
                     </SmartTooltip>
@@ -448,7 +451,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Consignatario</label>
                     <SmartTooltip text={formData.eori_consignatario}>
@@ -468,6 +471,17 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                         onChange={e => setFormData({ ...formData, eori_notify: safeToUpperCase(e.target.value) })}
                         placeholder="EORI..."
                         className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none font-extrabold text-xs truncate"
+                      />
+                    </SmartTooltip>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">PO (Orden de Compra)</label>
+                    <SmartTooltip text={formData.po}>
+                      <input
+                        value={formData.po}
+                        onChange={e => setFormData({ ...formData, po: safeToUpperCase(e.target.value) })}
+                        placeholder="PO-12345"
+                        className="w-full h-14 px-6 bg-amber-50/30 border border-amber-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all font-extrabold text-xs truncate"
                       />
                     </SmartTooltip>
                   </div>

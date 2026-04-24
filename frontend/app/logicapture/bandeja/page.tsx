@@ -503,6 +503,11 @@ export default function BandejaLogiCapture() {
     }, 400);
 
     return () => clearTimeout(delayDebounceFn);
+  }, [activeTab, filterPlanta, filterCultivo, filterMotivo, searchTerm, page]);
+
+  // Reiniciar a la página 1 cuando cambian los filtros principales
+  useEffect(() => {
+    setPage(1);
   }, [activeTab, filterPlanta, filterCultivo, filterMotivo, searchTerm]);
 
   // Las opciones del dropdown ahora provienen del backend (plantasUnicas y cultivosUnicos) para evitar que desaparezcan al filtrar.

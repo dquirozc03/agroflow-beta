@@ -249,7 +249,7 @@ export default function ClientesIEPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-2" ref={menuRef}>
+        <div className="lg:col-span-2 space-y-2 relative" ref={menuRef}>
           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Filtrar Cultivo</label>
           <button
             onClick={() => setIsCultivoMenuOpen(!isCultivoMenuOpen)}
@@ -265,8 +265,11 @@ export default function ClientesIEPage() {
           </button>
 
           {isCultivoMenuOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl p-1.5 animate-in zoom-in-95 slide-in-from-top-2 duration-200 origin-top">
-               <div className="max-h-[260px] overflow-y-auto lc-scroll">
+            <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-[#022c22]/95 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-2 animate-in zoom-in-95 slide-in-from-top-2 duration-300 origin-top">
+               <div className="px-4 py-3 mb-1 border-b border-white/5">
+                 <p className="text-[9px] font-black text-emerald-400/70 uppercase tracking-[0.3em]">Seleccionar Cultivo</p>
+               </div>
+               <div className="max-h-[280px] overflow-y-auto lc-scroll pr-1">
                   {cultivosDisponibles.map((cult) => (
                     <button
                       key={cult}
@@ -275,13 +278,15 @@ export default function ClientesIEPage() {
                         setIsCultivoMenuOpen(false);
                       }}
                       className={cn(
-                        "w-full px-5 py-3.5 flex items-center justify-between rounded-xl transition-all text-left group/item",
-                        selectedCultivo === cult ? "bg-emerald-50 text-emerald-700" : "hover:bg-slate-50 text-slate-600"
+                        "w-full px-5 py-3.5 flex items-center justify-between rounded-xl transition-all text-left group/item mb-1",
+                        selectedCultivo === cult 
+                          ? "bg-emerald-500/20 text-emerald-300 border-l-2 border-emerald-400" 
+                          : "hover:bg-white/10 text-white/70 hover:text-white"
                       )}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest">{cult}</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">{cult}</span>
                       {selectedCultivo === cult && (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        <Check className="h-4 w-4 text-emerald-400" />
                       )}
                     </button>
                   ))}
@@ -363,6 +368,9 @@ export default function ClientesIEPage() {
                         <div className="flex items-center gap-2 pl-5">
                           <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.destino}</span>
+                          {c.po && (
+                            <Badge className="ml-2 bg-amber-50 text-amber-600 border-amber-100 text-[8px] font-black h-5 uppercase">PO: {c.po}</Badge>
+                          )}
                         </div>
                       </div>
                     </td>

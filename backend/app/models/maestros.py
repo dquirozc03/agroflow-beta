@@ -105,6 +105,7 @@ class ClienteIE(Base):
     direccion_notify = Column(String(1000), nullable=True)
     eori_consignatario = Column(String(100), nullable=True)
     eori_notify = Column(String(100), nullable=True)
+    po = Column(String(50), nullable=True) # Nuevo: Filtro por PO opcional 🎯
     
     estado = Column(String(20), default="ACTIVO")
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
