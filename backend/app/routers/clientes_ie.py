@@ -138,14 +138,18 @@ def update_cliente_ie(id: int, req: ClienteIESchema, db: Session = Depends(get_d
                 db.flush()
                 fito_id = new_fito.id
     
-    # Actualizar campos
-    update_data = req.dict(exclude={'id', 'fitosanitario', 'fito_id'})
-    for key, value in update_data.items():
-        if value is not None and isinstance(value, str):
-            setattr(cliente, key, safe_to_upper(value))
-        else:
-            setattr(cliente, key, value)
-            
+    # Actualizar campos de forma explícita 🎯
+    cliente.nombre_legal = safe_to_upper(req.nombre_legal)
+    cliente.cultivo = safe_to_upper(req.cultivo) if req.cultivo else None
+    cliente.pais = safe_to_upper(req.pais)
+    cliente.destino = safe_to_upper(req.destino) if req.destino else None
+    cliente.consignatario_bl = safe_to_upper(req.consignatario_bl) if req.consignatario_bl else None
+    cliente.direccion_consignatario = safe_to_upper(req.direccion_consignatario) if req.direccion_consignatario else None
+    cliente.notify_bl = safe_to_upper(req.notify_bl) if req.notify_bl else None
+    cliente.direccion_notify = safe_to_upper(req.direccion_notify) if req.direccion_notify else None
+    cliente.eori_consignatario = safe_to_upper(req.eori_consignatario) if req.eori_consignatario else None
+    cliente.eori_notify = safe_to_upper(req.eori_notify) if req.eori_notify else None
+    cliente.po = safe_to_upper(req.po) if req.po else None
     cliente.fito_id = fito_id
     
     try:

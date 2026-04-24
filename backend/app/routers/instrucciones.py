@@ -131,37 +131,57 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 cliente_nombre_final = "OGL 4KG"
 
         # Búsqueda Inteligente Multinivel 🧠💎
-        # Nivel 1: Match Exacto (Cliente + País + Destino + PO)
-        cliente_maestro = db.query(ClienteIE).filter(
-            func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
-            func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
-            func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
-            func.trim(ClienteIE.po) == (pedido.po.strip() if pedido.po else ""),
-            ClienteIE.estado == "ACTIVO"
-        ).first()
+        cliente_id = cliente_nombre_final.strip()
+        pais = pedido_pais_clean
+        destino = pedido_pod_clean
+        po_id = pedido.po.strip() if pedido.po else None
 
-        # Nivel 2: Match con PO pero sin Destino específico
-        if not cliente_maestro:
+        # 1. Prioridad Máxima: Cliente + País + Destino + PO (Búsqueda flexible en lista)
+        cliente_maestro = None
+        if po_id:
             cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
-                func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
-                func.trim(ClienteIE.po) == (pedido.po.strip() if pedido.po else ""),
-                ClienteIE.estado == "ACTIVO"
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
+                func.trim(ClienteIE.pais).ilike(pais),
+                func.trim(ClienteIE.destino).ilike(destino),
+                ClienteIE.estado == "ACTIVO",
+                ClienteIE.po.isnot(None),
+                or_(
+                    ClienteIE.po == po_id,
+                    ClienteIE.po.like(f"%,{po_id},%"),
+                    ClienteIE.po.like(f"{po_id},%"),
+                    ClienteIE.po.like(f"%,{po_id}")
+                )
+            ).first()
+        
+        # 2. Segunda Prioridad: Cliente + País + PO (Si el destino varía pero el PO manda)
+        if not cliente_maestro and po_id:
+            cliente_maestro = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
+                func.trim(ClienteIE.pais).ilike(pais),
+                ClienteIE.estado == "ACTIVO",
+                ClienteIE.po.isnot(None),
+                or_(
+                    ClienteIE.po == po_id,
+                    ClienteIE.po.like(f"%,{po_id},%"),
+                    ClienteIE.po.like(f"{po_id},%"),
+                    ClienteIE.po.like(f"%,{po_id}")
+                )
             ).first()
 
-        # Nivel 3: Match General (como venía funcionando)
+        # 3. Nivel 3: Match General (Cliente + País + Destino)
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
-                func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
-                func.trim(ClienteIE.destino).ilike(pedido_pod_clean),
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
+                func.trim(ClienteIE.pais).ilike(pais),
+                func.trim(ClienteIE.destino).ilike(destino),
                 ClienteIE.estado == "ACTIVO"
             ).first()
     
+        # 4. Nivel 4: Match Genérico (Cliente + País)
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
-                func.trim(ClienteIE.nombre_legal).ilike(cliente_nombre_final.strip()),
-                func.trim(ClienteIE.pais).ilike(pedido_pais_clean),
+                func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
+                func.trim(ClienteIE.pais).ilike(pais),
                 ClienteIE.estado == "ACTIVO"
             ).first()
     

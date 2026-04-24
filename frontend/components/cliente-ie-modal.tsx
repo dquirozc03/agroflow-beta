@@ -15,7 +15,10 @@ import {
   Search,
   Pencil,
   ChevronDown,
-  Check
+  Check,
+  Plus,
+  Inbox,
+  Scale
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -213,8 +216,23 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
     return true;
   };
 
+  const poInputRef = useRef<HTMLInputElement>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Captura forzada de PO pendiente antes de validar/enviar 🎯
+    let finalPo = formData.po;
+    if (poInputRef.current && poInputRef.current.value.trim()) {
+        const val = safeToUpperCase(poInputRef.current.value.trim());
+        const tags = formData.po.split(',').filter(Boolean);
+        if (!tags.includes(val)) {
+            finalPo = [...tags, val].join(',');
+        }
+        // No limpiamos el ref aquí porque se cerrará el modal o se reseteará, 
+        // pero usamos finalPo para el envío.
+    }
+
     if (!validate()) return;
     
     setIsSubmitting(true);
@@ -228,7 +246,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, po: finalPo })
       });
 
       if (response.ok) {
@@ -451,7 +469,7 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">EORI Consignatario</label>
                     <SmartTooltip text={formData.eori_consignatario}>
@@ -474,16 +492,56 @@ export function ClienteIEModal({ isOpen, onClose, onSuccess, editingData }: Clie
                       />
                     </SmartTooltip>
                   </div>
+                  
+                  {/* Campo PO con Etiquetas Premium 💎 */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">PO (Orden de Compra)</label>
-                    <SmartTooltip text={formData.po}>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">POs Autorizados <span className="text-amber-500/50 italic lowercase font-medium">(enter para agregar)</span></label>
+                    <div className="min-h-14 p-2 bg-amber-50/30 border border-amber-100/50 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-500 transition-all flex flex-wrap gap-2 items-center">
+                      {formData.po.split(',').filter(Boolean).map((tag, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 bg-amber-100 text-amber-700 px-3 py-1.5 rounded-xl text-[10px] font-black animate-in zoom-in-95 duration-200 shadow-sm border border-amber-200/50">
+                          {tag.trim()}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const tags = formData.po.split(',').filter(Boolean);
+                              tags.splice(idx, 1);
+                              setFormData({ ...formData, po: tags.join(',') });
+                            }}
+                            className="hover:text-amber-950 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
                       <input
-                        value={formData.po}
-                        onChange={e => setFormData({ ...formData, po: safeToUpperCase(e.target.value) })}
-                        placeholder="PO-12345"
-                        className="w-full h-14 px-6 bg-amber-50/30 border border-amber-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all font-extrabold text-xs truncate"
+                        ref={poInputRef}
+                        placeholder={formData.po ? "Añadir..." : "PO-12345..."}
+                        className="flex-1 bg-transparent border-none outline-none font-extrabold text-xs px-2 min-w-[80px]"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            const val = safeToUpperCase(e.currentTarget.value.trim());
+                            if (val) {
+                              const tags = formData.po.split(',').filter(Boolean);
+                              if (!tags.includes(val)) {
+                                setFormData({ ...formData, po: [...tags, val].join(',') });
+                                e.currentTarget.value = "";
+                              }
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const val = safeToUpperCase(e.target.value.trim());
+                          if (val) {
+                            const tags = formData.po.split(',').filter(Boolean);
+                            if (!tags.includes(val)) {
+                              setFormData({ ...formData, po: [...tags, val].join(',') });
+                              e.target.value = "";
+                            }
+                          }
+                        }}
                       />
-                    </SmartTooltip>
+                    </div>
                   </div>
                 </div>
               </TabsContent>
