@@ -362,7 +362,10 @@ class InstructionPDFService:
 
         def _safe(text):
             if text is None: return ""
-            return xml_escape(str(text))
+            # Primero escapamos para seguridad XML
+            res = xml_escape(str(text))
+            # Convertimos saltos de línea y tags br escapados a tags de ReportLab
+            return res.replace('\n', '<br/>').replace('&lt;br/&gt;', '<br/>').replace('&lt;br&gt;', '<br/>').replace('&lt;br /&gt;', '<br/>')
 
         def b_p(text, white=False): return Paragraph(f"<b>{_safe(text)}</b>", white_bold_style if white else bold_style)
         def b_pc(text, white=False): return Paragraph(f"<b>{_safe(text)}</b>", ParagraphStyle('BC', fontSize=self.SIZE_BODY, leading=8, fontName=self.FONT_BOLD, alignment=1, textColor=colors.white if white else colors.black))
@@ -499,7 +502,7 @@ class InstructionPDFService:
 
         t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD, textColor=colors.white if is_granada else colors.black)), ""],
-            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else self._format_multiline(fito.direccion_fito if fito else "")))],
+            [b_p("CONSIGNATARIO<br/>DIRECCIÓN"), format_desc(f"<b>{_safe(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else self._format_multiline(fito.direccion_fito if fito else "")))],
             [b_p("PAIS DE DESTINO"), b_p(override_data.get('pais_destino') if override_data else (pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else "")))],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)]
         ]
