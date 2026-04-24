@@ -29,6 +29,13 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // --- Components ---
 function StatCard({ title, value, icon: Icon, trendValue, colorClass, desc }: any) {
@@ -135,32 +142,56 @@ export default function AgroHubDashboardPage() {
                </div>
 
                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Planta:</span>
-                     <select 
-                        className="text-xs font-bold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none min-w-[120px]"
-                        value={filters.planta}
-                        onChange={(e) => setFilters(prev => ({ ...prev, planta: e.target.value }))}
+                  <div className="flex items-center gap-2">
+                     <Select 
+                        value={filters.planta || "all"} 
+                        onValueChange={(val) => setFilters(prev => ({ ...prev, planta: val === "all" ? "" : val }))}
                      >
-                        <option value="">TODAS</option>
-                        {metadata.plantas.map((p: string) => (
-                           <option key={p} value={p}>{p}</option>
-                        ))}
-                     </select>
+                        <SelectTrigger className="w-[180px] rounded-2xl border-slate-100 bg-white shadow-sm hover:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700 h-11 px-4">
+                           <div className="flex flex-col items-start">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Planta</span>
+                              <SelectValue placeholder="Todas" />
+                           </div>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-3xl border-0 shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-[#022c22]/95 backdrop-blur-xl p-2 overflow-hidden">
+                           <div className="px-3 py-2 mb-1">
+                              <p className="text-[9px] font-black text-emerald-400/70 uppercase tracking-[0.3em]">Planta Llenado</p>
+                           </div>
+                           <SelectItem value="all" className="rounded-xl cursor-pointer font-black text-[11px] text-white/70 focus:bg-white/10 focus:text-white tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">Todas las Plantas</SelectItem>
+                           <div className="h-px bg-white/10 my-1 mx-2" />
+                           {metadata.plantas.map((p: string) => (
+                              <SelectItem key={p} value={p} className="rounded-xl cursor-pointer font-black text-[11px] text-white focus:bg-emerald-500/30 focus:text-emerald-300 tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">
+                                 {p}
+                              </SelectItem>
+                           ))}
+                        </SelectContent>
+                     </Select>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cultivo:</span>
-                     <select 
-                        className="text-xs font-bold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none min-w-[120px]"
-                        value={filters.cultivo}
-                        onChange={(e) => setFilters(prev => ({ ...prev, cultivo: e.target.value }))}
+                  <div className="flex items-center gap-2">
+                     <Select 
+                        value={filters.cultivo || "all"} 
+                        onValueChange={(val) => setFilters(prev => ({ ...prev, cultivo: val === "all" ? "" : val }))}
                      >
-                        <option value="">TODOS</option>
-                        {metadata.cultivos.map((c: string) => (
-                           <option key={c} value={c}>{c}</option>
-                        ))}
-                     </select>
+                        <SelectTrigger className="w-[180px] rounded-2xl border-slate-100 bg-white shadow-sm hover:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700 h-11 px-4">
+                           <div className="flex flex-col items-start">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Cultivo</span>
+                              <SelectValue placeholder="Todos" />
+                           </div>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-3xl border-0 shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-[#022c22]/95 backdrop-blur-xl p-2 overflow-hidden">
+                           <div className="px-3 py-2 mb-1">
+                              <p className="text-[9px] font-black text-emerald-400/70 uppercase tracking-[0.3em]">Cultivo Operativo</p>
+                           </div>
+                           <SelectItem value="all" className="rounded-xl cursor-pointer font-black text-[11px] text-white/70 focus:bg-white/10 focus:text-white tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">Todos los Cultivos</SelectItem>
+                           <div className="h-px bg-white/10 my-1 mx-2" />
+                           {metadata.cultivos.map((c: string) => (
+                              <SelectItem key={c} value={c} className="rounded-xl cursor-pointer font-black text-[11px] text-white focus:bg-emerald-500/30 focus:text-emerald-300 tracking-widest uppercase py-3 pl-4 pr-4 transition-all [&>span:first-child]:hidden data-[state=checked]:text-emerald-300 data-[state=checked]:bg-emerald-500/20 data-[state=checked]:border-l-2 data-[state=checked]:border-emerald-400">
+                                 {c}
+                              </SelectItem>
+                           ))}
+                        </SelectContent>
+                     </Select>
                   </div>
 
                   {(filters.planta || filters.cultivo) && (

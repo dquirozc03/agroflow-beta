@@ -10,6 +10,10 @@ from app.models.posicionamiento import Posicionamiento
 from app.models.packing_list import EmisionPackingList
 from app.models.maestros import Transportista, Chofer, VehiculoTracto, VehiculoCarreta
 from sqlalchemy import or_
+from zoneinfo import ZoneInfo
+
+LIMA_TZ = ZoneInfo("America/Lima")
+
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
 
@@ -19,7 +23,7 @@ def get_dashboard_summary(
     cultivo: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    hoy = datetime.now()
+    hoy = datetime.now(LIMA_TZ)
     hoy_date = hoy.date()
     
     # Base queries for filtering
@@ -34,7 +38,20 @@ def get_dashboard_summary(
         pos_base = pos_base.filter(Posicionamiento.cultivo == cultivo)
 
     # 1. KPIs
-    procesados = lc_base.filter(LogiCaptureRegistro.status == "PROCESADO").count()
+    # Ajuste: Contenedores Despachados AHORA es semanal (Lunes a Domingo) para coincidir con el gráfico
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+
+    # Expresión para la fecha efectiva en zona horaria de Lima
+    effective_timestamp = func.coalesce(LogiCaptureRegistro.fecha_embarque, LogiCaptureRegistro.fecha_registro)
+    effective_date_lima = func.date(func.timezone('America/Lima', effective_timestamp))
+
+    procesados = lc_base.filter(
+        LogiCaptureRegistro.status == "PROCESADO",
+        effective_date_lima >= inicio_semana.date(),
+        effective_date_lima <= fin_semana.date()
+    ).count()
+
     pendientes = lc_base.filter(LogiCaptureRegistro.status == "PENDIENTE").count()
     alertas = lc_base.filter(LogiCaptureRegistro.status.in_(["PENDIENTE", "ANULADO"])).count()
     
@@ -93,15 +110,16 @@ def get_dashboard_summary(
     fin_semana = inicio_semana + timedelta(days=6)
     
     registros_recientes = lc_base.with_entities(
-        func.date(LogiCaptureRegistro.fecha_registro).label("fecha"),
+        effective_date_lima.label("fecha"),
         func.count(LogiCaptureRegistro.id).label("cantidad")
     ).filter(
-        func.date(LogiCaptureRegistro.fecha_registro) >= inicio_semana.date(),
-        func.date(LogiCaptureRegistro.fecha_registro) <= fin_semana.date()
+        LogiCaptureRegistro.status == "PROCESADO",
+        effective_date_lima >= inicio_semana.date(),
+        effective_date_lima <= fin_semana.date()
     ).group_by(
-        func.date(LogiCaptureRegistro.fecha_registro)
+        effective_date_lima
     ).order_by(
-        func.date(LogiCaptureRegistro.fecha_registro)
+        effective_date_lima
     ).all()
     
     datos_db = {str(r.fecha): r.cantidad for r in registros_recientes}
@@ -144,8 +162,7 @@ def get_dashboard_summary(
     ultimos = lc_base.order_by(LogiCaptureRegistro.fecha_registro.desc()).limit(5).all()
     ultimos_registros = []
     
-    from zoneinfo import ZoneInfo
-    lima_tz = ZoneInfo("America/Lima")
+    lima_tz = LIMA_TZ
     
     for r in ultimos:
         if r.fecha_registro:
