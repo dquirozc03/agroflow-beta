@@ -145,9 +145,9 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         bookings_ogl_reales = []
         for b in bookings:
             # Primero buscamos en Posicionamiento para sacar la orden
-            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == b).first()
-            if pos and pos.ORDEN_BETA:
-                orden_num = strip_orden_beta(pos.ORDEN_BETA)
+            pos = db.query(Posicionamiento).filter(Posicionamiento.booking == b).first()
+            if pos and pos.orden_beta:
+                orden_num = strip_orden_beta(pos.orden_beta)
                 if orden_num:
                     pedido_ogl = db.query(PedidoComercial).filter(
                         PedidoComercial.orden_beta == orden_num,
@@ -197,9 +197,9 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
     ).all() if r.booking}
 
     # 2. Bookings que dicen estar aquí en posicionamiento
-    bk_pos = {p.BOOKING for p in db.query(Posicionamiento.BOOKING).filter(
-        func.upper(func.trim(Posicionamiento.NAVE)) == nave_upper
-    ).all() if p.BOOKING}
+    bk_pos = {p.booking for p in db.query(Posicionamiento.booking).filter(
+        func.upper(func.trim(Posicionamiento.nave)) == nave_upper
+    ).all() if p.booking}
 
     # 3. Filtrado: Los de posicionamiento solo valen si el reporte no dice otra cosa
     bookings_actuales = set(bk_reporte)
@@ -216,10 +216,10 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 
     resultado = []
     for booking in sorted(bookings_actuales):
-        pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
-        if not pos or not pos.ORDEN_BETA: continue
+        pos = db.query(Posicionamiento).filter(Posicionamiento.booking == booking).first()
+        if not pos or not pos.orden_beta: continue
 
-        orden_num = strip_orden_beta(pos.ORDEN_BETA)
+        orden_num = strip_orden_beta(pos.orden_beta)
         pedido = db.query(PedidoComercial).filter(
             PedidoComercial.orden_beta == orden_num,
             PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
@@ -241,7 +241,7 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 
         resultado.append({
             "booking":       booking,
-            "orden_beta":    pos.ORDEN_BETA,
+            "orden_beta":    pos.orden_beta,
             "contenedor":    emb.contenedor if emb else None,
             "dam":           emb.dam if emb else None,
             "port_id_orig":  pedido.port_id_orig,
@@ -290,10 +290,10 @@ async def generate_packing_list_ogl(
         bookings_reporte_set = {r.booking for r in bookings_reporte if r.booking}
 
         # 2. Obtener bookings que en el Posicionamiento están en esta nave
-        bookings_pos = db.query(Posicionamiento.BOOKING).filter(
-            func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean
+        bookings_pos = db.query(Posicionamiento.booking).filter(
+            func.upper(func.trim(Posicionamiento.nave)) == nave_clean
         ).all()
-        bookings_pos_set = {r.BOOKING for r in bookings_pos if r.BOOKING}
+        bookings_pos_set = {r.booking for r in bookings_pos if r.booking}
 
         # 3. Fusión inteligente: Prioridad TOTAL al Reporte
         # Empezamos con los que el reporte dice que están aquí
@@ -321,12 +321,12 @@ async def generate_packing_list_ogl(
         primer_pos = None
 
         for booking in sorted(bookings_set):
-            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
+            pos = db.query(Posicionamiento).filter(Posicionamiento.booking == booking).first()
             if not pos: continue
 
             pedido = None
-            if pos.ORDEN_BETA:
-                orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
+            if pos.orden_beta:
+                orden_numeric = strip_orden_beta(pos.orden_beta)
                 if orden_numeric:
                     pedido = db.query(PedidoComercial).filter(
                         PedidoComercial.orden_beta == orden_numeric,
@@ -345,7 +345,7 @@ async def generate_packing_list_ogl(
             contenedor_fmt = format_container_ogl(emb.contenedor if emb else "")
 
             # Prioridad de fecha: FECHA_PROGRAMADA -> ETD -> Hoy
-            prog_date = getattr(pos, "FECHA_PROGRAMADA", None) or getattr(pos, "ETD", None) or datetime.now().date()
+            prog_date = getattr(pos, "fecha_programada", None) or getattr(pos, "etd", None) or datetime.now().date()
 
             booking_data_map[booking] = {
                 "contenedor": contenedor_fmt, 
@@ -432,7 +432,7 @@ async def generate_packing_list_ogl(
             # Mapa inverso: número de orden limpio ("4") -> ID del Booking ("EBKG...")
             orden_to_bk = {}
             for bk, data in booking_data_map.items():
-                num_obj = strip_orden_beta(data["pos"].ORDEN_BETA)
+                num_obj = strip_orden_beta(data["pos"].orden_beta)
                 if num_obj:
                     try:
                         n_str = str(int(num_obj))
@@ -528,16 +528,16 @@ async def generate_packing_list_ogl(
             
             # Buscar todos los posicionamientos de esa misma semana
             pos_semana = db.query(Posicionamiento).filter(
-                func.extract('week', Posicionamiento.ETA) == semana_eta,
-                func.extract('year', Posicionamiento.ETA) == anio_eta
+                func.extract('week', Posicionamiento.eta) == semana_eta,
+                func.extract('year', Posicionamiento.eta) == anio_eta
             ).all()
 
             # Mapear naves con carga OGL a su fecha mínima de ETA cronológica
             nave_etas = {}
             for p in pos_semana:
-                if not p.NAVE or not p.ETA or not p.ORDEN_BETA: continue
+                if not p.nave or not p.eta or not p.orden_beta: continue
                 
-                num_ord = strip_orden_beta(p.ORDEN_BETA)
+                num_ord = strip_orden_beta(p.orden_beta)
                 if not num_ord: continue
                 
                 # Validar si este posicionamiento es para OGL
@@ -548,15 +548,15 @@ async def generate_packing_list_ogl(
                 
                 if pedido_ogl:
                     # 5. Intentamos sacar la nave oficial del Reporte de Embarques para este posicionamiento (Inge Daniel Rule)
-                    rep = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == p.BOOKING).first()
+                    rep = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == p.booking).first()
                     
-                    n_name = p.NAVE.strip().upper() if p.NAVE else "SIN NAVE"
+                    n_name = p.nave.strip().upper() if p.nave else "SIN NAVE"
                     if rep and rep.nave_arribo:
                         n_name = rep.nave_arribo.strip().upper()
 
                     # Guardamos la fecha de salida (ETD) para el ranking de correlativo
                     # La semana se define por ETA, pero el ranking 1,2,3 por ETD (Inge Daniel Rule 💎)
-                    etd_val = p.ETD if p.ETD else p.ETA
+                    etd_val = p.etd if p.etd else p.eta
                     
                     if n_name not in nave_etas or etd_val < nave_etas[n_name]:
                         nave_etas[n_name] = etd_val
@@ -564,7 +564,7 @@ async def generate_packing_list_ogl(
             # 3. Asegurar que la nave actual está en el mapa (Verdad Absoluta Activa)
             if nave_clean not in nave_etas:
                 # Usamos el ETD de la nave actual para su posición en el ranking
-                etd_actual = primer_pos.ETD if primer_pos.ETD else primer_pos.ETA
+                etd_actual = primer_pos.etd if primer_pos.etd else primer_pos.eta
                 nave_etas[nave_clean] = etd_actual
 
             # 4. Ordenar naves por su ETD (Fecha de Salida) - Inge Daniel Rule 💎
@@ -592,7 +592,7 @@ async def generate_packing_list_ogl(
         safe_write(ws, "C7", "VESSEL")
         
         # C8: Nave Arribo (Reporte > Posicionamiento)
-        nave_final = primer_pos.NAVE if primer_pos else nave_clean
+        nave_final = primer_pos.nave if primer_pos else nave_clean
         reporte_n = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == next(iter(bookings_set))).first()
         if reporte_n and reporte_n.nave_arribo:
             nave_final = reporte_n.nave_arribo
@@ -619,9 +619,9 @@ async def generate_packing_list_ogl(
             safe_write(ws, "C15", primer_pedido.pod or "")
         
         if primer_pos:
-            safe_write(ws, "C13", primer_pos.POL or "")
-            safe_write(ws, "C16", primer_pos.ETD.strftime("%d/%m/%Y") if primer_pos.ETD else "")
-            safe_write(ws, "C17", primer_pos.ETA.strftime("%d/%m/%Y") if primer_pos.ETA else "")
+            safe_write(ws, "C13", primer_pos.pol or "")
+            safe_write(ws, "C16", primer_pos.etd.strftime("%d/%m/%Y") if primer_pos.etd else "")
+            safe_write(ws, "C17", primer_pos.eta.strftime("%d/%m/%Y") if primer_pos.eta else "")
 
         def safe_float(val):
             try: return float(val) if pd.notna(val) else 0.0
@@ -638,8 +638,8 @@ async def generate_packing_list_ogl(
             fecha_prog = booking_data_map[bk_id]["fecha_prog"]
             
             # 4. Inyectar Pedido Dinámico (Solo del primer booking del set filtrado)
-            pos_bk = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == bk_id).first()
-            planta_llenado_raw = pos_bk.PLANTA_LLENADO.strip() if pos_bk and pos_bk.PLANTA_LLENADO else ""
+            pos_bk = db.query(Posicionamiento).filter(Posicionamiento.booking == bk_id).first()
+            planta_llenado_raw = pos_bk.planta_llenado.strip() if pos_bk and pos_bk.planta_llenado else ""
             planta_llenado_up = planta_llenado_raw.upper()
 
             for item in agrupado_por_booking.get(bk_id, []):
@@ -694,7 +694,7 @@ async def generate_packing_list_ogl(
 
         # Luego los "DESCONOCIDOS" o huérfanos (si los hay)
         if agrupado_por_booking.get("DESCONOCIDO"):
-            planta_llenado_raw = primer_pos.PLANTA_LLENADO.strip() if primer_pos and primer_pos.PLANTA_LLENADO else ""
+            planta_llenado_raw = primer_pos.planta_llenado.strip() if primer_pos and primer_pos.planta_llenado else ""
             planta_llenado_up = planta_llenado_raw.upper()
             
             for item in agrupado_por_booking["DESCONOCIDO"]:
@@ -768,7 +768,7 @@ async def generate_packing_list_ogl(
             for bk_id in bookings_set:
                 # Obtener la orden_beta para este booking desde el mapa o DB
                 b_info = booking_data_map.get(bk_id)
-                ord_val = b_info["pos"].ORDEN_BETA if b_info else None
+                ord_val = b_info["pos"].orden_beta if b_info else None
                 
                 det = DetalleEmisionPackingList(
                     emision_id=nueva_emision.id,
