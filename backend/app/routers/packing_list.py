@@ -812,8 +812,7 @@ async def generate_packing_list_ogl(
                 
                 det = DetalleEmisionPackingList(
                     emision_id=nueva_emision.id,
-                    booking=bk_id,
-                    orden_beta=ord_val
+                    booking=bk_id
                 )
                 db.add(det)
                 
