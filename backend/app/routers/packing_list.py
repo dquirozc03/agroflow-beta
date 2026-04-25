@@ -99,8 +99,9 @@ TEMPLATE_PATH = os.path.join(
 # ---------------------------------------------------------------------------
 class NaveInfo(BaseModel):
     nave: str
-    fuente: str      # "reporte_embarques" | "posicionamiento"
+    fuente: str      # "reporte_embarques" | "posicionamiento" | "consolidada"
     bookings: List[str]
+    cultivos: List[str]
 
 class BookingOGL(BaseModel):
     booking: str
@@ -130,22 +131,39 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
     # Usamos nave_arribo que es el dato real del Packing List
     shipments = db.query(ReporteEmbarques).all()
     
-    # Agrupar bookings por nave de arribo
+    # Agrupar bookings por nave de arribo (Prioridad Reporte -> Respaldo Posicionamiento)
     nave_stats = {}
     for s in shipments:
-        nave = s.nave_arribo if s.nave_arribo else "SIN NAVE"
-        if nave not in nave_stats:
-            nave_stats[nave] = []
-        if s.booking and s.booking not in nave_stats[nave]:
-            nave_stats[nave].append(s.booking)
+        if not s.booking: continue
+        
+        # 1. Prioridad: Reporte
+        nave_final = s.nave_arribo.strip().upper() if s.nave_arribo else None
+        
+        # 2. Respaldo: Posicionamiento
+        if not nave_final:
+            p_res = db.query(Posicionamiento).filter(Posicionamiento.booking == s.booking).first()
+            if p_res and p_res.nave:
+                nave_final = p_res.nave.strip().upper()
+        
+        # 3. Última instancia
+        nave_final = nave_final if nave_final else "SIN NAVE"
+        
+        if nave_final not in nave_stats:
+            nave_stats[nave_final] = []
+        if s.booking not in nave_stats[nave_final]:
+            nave_stats[nave_final].append(s.booking)
 
     # 4. Construir resultado final filtrando solo naves que tengan algun pedido OGL
     result = []
     for nave, bookings in sorted(nave_stats.items()):
         bookings_ogl_reales = []
+        cultivos_nave = set()
+        
         for b in bookings:
-            # Primero buscamos en Posicionamiento para sacar la orden
+            # Buscar info en Posicionamiento
             pos = db.query(Posicionamiento).filter(Posicionamiento.booking == b).first()
+            
+            # Solo procesamos si hay orden para buscar en PedidoComercial (OGL)
             if pos and pos.orden_beta:
                 orden_num = strip_orden_beta(pos.orden_beta)
                 if orden_num:
@@ -153,9 +171,19 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                         PedidoComercial.orden_beta == orden_num,
                         PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
                     ).first()
+                    
                     if pedido_ogl:
+                        # Si llegamos aquí, el booking es OGL legítimo
                         if b not in bookings_ogl_reales:
                             bookings_ogl_reales.append(b)
+                        
+                        # Determinar Cultivo con Jerarquía (Posicionamiento > PedidoComercial)
+                        c_final = pos.cultivo.strip().upper() if pos.cultivo else None
+                        if not c_final and pedido_ogl.cultivo:
+                            c_final = pedido_ogl.cultivo.strip().upper()
+                        
+                        if c_final:
+                            cultivos_nave.add(c_final)
         
         if bookings_ogl_reales:
             # Check if all bookings for this nave are already locked
@@ -178,7 +206,8 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                 result.append(NaveInfo(
                     nave=nave,
                     fuente="consolidada",
-                    bookings=bookings_disponibles
+                    bookings=bookings_disponibles,
+                    cultivos=sorted(list(cultivos_nave))
                 ))
 
     return result

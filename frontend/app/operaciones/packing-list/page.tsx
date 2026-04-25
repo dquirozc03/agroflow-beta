@@ -31,14 +31,16 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
+import { useAuth } from "@/contexts/auth-context";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────
 interface NaveInfo {
   nave: string;
-  fuente: "reporte_embarques" | "posicionamiento";
+  fuente: "reporte_embarques" | "posicionamiento" | "consolidada";
   bookings: string[];
+  cultivos: string[];
 }
 
 interface BookingOGL {
@@ -234,6 +236,7 @@ export default function PackingListCustomizadosPage() {
   const [naves, setNaves] = useState<NaveInfo[]>([]);
   const [isLoadingNaves, setIsLoadingNaves] = useState(true);
   const [searchNave, setSearchNave] = useState("");
+  const [selectedCultivo, setSelectedCultivo] = useState<string>("");
   const [selectedNave, setSelectedNave] = useState<NaveInfo | null>(null);
   const [bookings, setBookings] = useState<BookingOGL[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
@@ -246,8 +249,8 @@ export default function PackingListCustomizadosPage() {
   const [fileTermografos, setFileTermografos] = useState<File | null>(null);
   const [genStatus, setGenStatus] = useState<GenerationStatus>("idle");
 
-  // ROLE MANAGEMENT (SIMULADO HASTA CONECTAR CON TU AUTH/JWT)
-  const [userRole, setUserRole] = useState<"ADMIN" | "SUPERVISOR DOCUMENTARIO" | "OPERADOR">("SUPERVISOR DOCUMENTARIO");
+  const { user } = useAuth();
+  const userRole = user?.rol || "OPERADOR";
 
   const [activeTab, setActiveTab] = useState<"generar" | "historial">("generar");
   const [historial, setHistorial] = useState<EmisionHistorial[]>([]);
@@ -390,7 +393,14 @@ export default function PackingListCustomizadosPage() {
     }
   };
 
-  const filteredNaves = naves.filter((n) => n.nave.toLowerCase().includes(searchNave.toLowerCase()));
+  // Obtener lista única de cultivos de todas las naves
+  const allCultivos = Array.from(new Set(naves.flatMap(n => n.cultivos))).sort();
+
+  const filteredNaves = naves.filter((n) => {
+    const matchesSearch = n.nave.toLowerCase().includes(searchNave.toLowerCase());
+    const matchesCultivo = !selectedCultivo || n.cultivos.includes(selectedCultivo);
+    return matchesSearch && matchesCultivo;
+  });
 
   return (
     <div className="space-y-8">
@@ -419,14 +429,6 @@ export default function PackingListCustomizadosPage() {
              )}
           </div>
         </div>
-        
-        {/* Toggle de Roles para prueba (Deberás quitarlo cuando lo vincules a tu login) */}
-        <div className="absolute bottom-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-xl flex items-center justify-center gap-2 border border-white/20">
-           <span className="text-[10px] text-white font-black opacity-50 uppercase">Rol Actual (Prueba):</span>
-           <button onClick={() => setUserRole("SUPERVISOR DOCUMENTARIO")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all max-w-[100px] truncate", userRole === "SUPERVISOR DOCUMENTARIO" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")} title="Supervisor Documentario">Sup. Doc.</button>
-           <button onClick={() => setUserRole("ADMIN")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all", userRole === "ADMIN" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")}>Admin</button>
-           <button onClick={() => setUserRole("OPERADOR")} className={cn("px-2 py-1 rounded-lg text-[10px] font-black transition-all", userRole === "OPERADOR" ? "bg-white text-[#022c22]" : "text-white hover:bg-white/20")}>Operador</button>
-        </div>
       </div>
 
       {activeTab === "generar" ? (
@@ -439,11 +441,45 @@ export default function PackingListCustomizadosPage() {
                 <button onClick={fetchNaves} className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-emerald-600 transition-all"><RefreshCw className={cn("h-3.5 w-3.5", isLoadingNaves && "animate-spin")} /></button>
              </div>
              <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" /><input type="text" placeholder="Buscar nave..." value={searchNave} onChange={(e) => setSearchNave(e.target.value)} className="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" /></div>
+             
+             {allCultivos.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button 
+                    onClick={() => setSelectedCultivo("")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2",
+                      selectedCultivo === "" ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
+                    )}
+                  >
+                    TODOS
+                  </button>
+                  {allCultivos.map((c) => (
+                    <button 
+                      key={c}
+                      onClick={() => setSelectedCultivo(c)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase",
+                        selectedCultivo === c ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
+                      )}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+             )}
+
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 lc-scroll">
             {filteredNaves.map((n) => (
               <button key={n.nave} onClick={() => handleSelectNave(n)} className={cn("w-full p-4 rounded-2xl text-left transition-all border-2", selectedNave?.nave === n.nave ? "bg-emerald-500 border-emerald-500 text-white shadow-lg" : "bg-slate-50/50 border-transparent hover:border-slate-200 text-slate-700")}>
-                <p className="text-xs font-black uppercase truncate">{n.nave}</p>
+                <div className="flex justify-between items-start">
+                   <p className="text-xs font-black uppercase truncate max-w-[140px]">{n.nave}</p>
+                   {n.cultivos.length > 0 && (
+                     <span className={cn("text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter", selectedNave?.nave === n.nave ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700")}>
+                        {n.cultivos.join(' / ')}
+                     </span>
+                   )}
+                </div>
                 <p className={cn("text-[9px] font-bold mt-1", selectedNave?.nave === n.nave ? "text-white/70" : "text-slate-400")}>{n.bookings.length} Bookings OGL</p>
               </button>
             ))}
