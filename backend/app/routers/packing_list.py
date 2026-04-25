@@ -872,7 +872,7 @@ def obtener_historial_pl(db: Session = Depends(get_db)):
             "archivo_disponible": archivo_disponible,
             "motivo_anulacion": em.motivo_anulacion,
             "bookings": [d.booking for d in em.detalles],
-            "ordenes": [d.orden_beta for d in em.detalles if d.orden_beta]
+            "ordenes": []
         })
     return {"items": resultado}
 
