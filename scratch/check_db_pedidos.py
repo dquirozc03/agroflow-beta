@@ -1,23 +1,14 @@
-import os
-os.environ["DATABASE_URL"] = "postgresql://postgres.pngjnfncravlteonjeyv:OQtIdgASy3WfZ76C@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
-os.environ["SYNC_TOKEN"] = "e2R5SKkbFn1nYRGW3b0CIxp_NVHl5eeCaEaE0bHrRv8"
+from app.database import engine
+from sqlalchemy import text
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "backend"))
-from app.models.pedido import PedidoComercial
-
-engine = create_engine(os.environ["DATABASE_URL"])
-SessionLocal = sessionmaker(bind=engine)
-db = SessionLocal()
-
-print("--- REVISIÓN GENERAL PEDIDOS ---")
-total = db.query(PedidoComercial).count()
-print(f"Total registros en PedidoComercial: {total}")
-
-if total > 0:
-    first = db.query(PedidoComercial).first()
-    print(f"Muestra: ID {first.id} | Cliente: {first.cliente} | Orden: {first.orden_beta}")
-
-db.close()
+with engine.connect() as conn:
+    res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'pedidos_comerciales'"))
+    columns = [r[0] for r in res]
+    print("Columnas encontradas en pedidos_comerciales:")
+    for col in columns:
+        print(f"- {col}")
+    
+    if 'semana_eta' in columns:
+        print("\n✅ La columna 'semana_eta' EXISTE.")
+    else:
+        print("\n❌ La columna 'semana_eta' NO EXISTE.")

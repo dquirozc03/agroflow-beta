@@ -81,7 +81,9 @@ COLUMN_MAPPING_PEDIDOS = {
     "TOTAL CAJAS": "total_cajas",
     "INCOTERM": "incoterm",
     "TIPO PRECIO": "tipo_precio",
-    "TIPO DE PRECIO": "tipo_precio"
+    "TIPO DE PRECIO": "tipo_precio",
+    "SEMANA ETA PROGRAMA COMERCIAL": "semana_eta",
+    "SEMANA ETA COMERCIAL": "semana_eta"
 }
 
 from dateutil.parser import parse as parse_date
@@ -338,7 +340,7 @@ async def sync_pedidos_raw(
         # 4. Procesamiento de Filas (Filtro de Alto Rendimiento)
         mappings = []
         errores = 0
-        numeric_cols = ["peso_por_caja", "caja_por_pallet", "total_pallets", "total_cajas"]
+        numeric_cols = ["peso_por_caja", "caja_por_pallet", "total_pallets", "total_cajas", "semana_eta"]
         null_values = {"", "-", "N/A", "NONE", "NULL", "#¡VALOR!", "#VALUE!", "#DIV/0!"}
 
         # Limitamos a 5000 filas para evitar abusos de memoria y saltamos vacías
