@@ -862,17 +862,24 @@ def obtener_historial_pl(db: Session = Depends(get_db)):
         if em.archivo_nombre:
             path_disco = os.path.join(PL_STORAGE_DIR, em.archivo_nombre)
             archivo_disponible = os.path.exists(path_disco)
+        # Obtener las órdenes reales para este historial
+        bk_list = [d.booking for d in em.detalles]
+        ord_list = []
+        if bk_list:
+            pos_data = db.query(Posicionamiento.orden_beta).filter(Posicionamiento.booking.in_(bk_list)).all()
+            ord_list = sorted(list(set([p[0] for p in pos_data if p[0]])))
+
         resultado.append({
             "id": em.id,
             "fecha": em.fecha_generacion,
-            "usuario": em.usuario or "Desconocido",
+            "usuario": em.usuario or "Sistema",
             "nave": em.nave,
             "estado": em.estado,
             "archivo": em.archivo_nombre,
             "archivo_disponible": archivo_disponible,
             "motivo_anulacion": em.motivo_anulacion,
-            "bookings": [d.booking for d in em.detalles],
-            "ordenes": []
+            "bookings": bk_list,
+            "ordenes": ord_list
         })
     return {"items": resultado}
 

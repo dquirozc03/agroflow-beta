@@ -86,6 +86,7 @@ interface EmisionHistorial {
   usuario: string;
   motivo_anulacion: string | null;
   bookings: string[];
+  ordenes: string[];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -629,23 +630,28 @@ export default function PackingListCustomizadosPage() {
             <div className="overflow-x-auto">
                <table className="w-full text-left text-sm whitespace-nowrap border-spacing-y-2 border-separate">
                  <thead>
-                   <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                     <th className="pb-3 px-4 w-[80px]"># ID</th>
-                     <th className="pb-3 px-4 w-[160px]">Fecha & Hora</th>
-                     <th className="pb-3 px-4 w-[180px]">Nave Asignada</th>
-                     <th className="pb-3 px-4 min-w-[200px]">Archivo / Auditoría</th>
-                     <th className="pb-3 px-4 text-center w-[200px]">Órdenes</th>
-                     <th className="pb-3 px-4 text-center w-[120px]">Estado</th>
-                     <th className="pb-3 px-4 text-right w-[120px]">Acción</th>
-                   </tr>
+                    <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                      <th className="pb-3 px-4 w-[160px]">Fecha & Hora</th>
+                      <th className="pb-3 px-4 w-[180px]">Nave Asignada</th>
+                      <th className="pb-3 px-4 min-w-[200px]">Archivo / Auditoría</th>
+                      <th className="pb-3 px-4 text-center w-[200px]">Órdenes Vinculadas</th>
+                      <th className="pb-3 px-4 text-center w-[120px]">Estado</th>
+                      <th className="pb-3 px-4 text-right w-[120px]">Acción</th>
+                    </tr>
                  </thead>
                  <tbody>
-                   {historial.map((h) => (
-                     <tr key={h.id} className={cn("bg-slate-50/50 hover:bg-slate-50 transition-colors group", h.estado === "ANULADO" ? "opacity-60" : "")}>
-                       <td className="p-4 rounded-l-2xl font-black text-slate-800">PL-{String(h.id).padStart(4, '0')}</td>
-                       <td className="p-4 text-slate-600 font-medium">
-                          {new Date(h.fecha).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
-                       </td>
+                    {historial.map((h) => (
+                      <tr key={h.id} className={cn("bg-slate-50/50 hover:bg-slate-50 transition-colors group", h.estado === "ANULADO" ? "opacity-60" : "")}>
+                        <td className="p-4 rounded-l-2xl">
+                           <div className="flex flex-col">
+                              <span className="text-xs font-black text-slate-800 uppercase tracking-tighter">
+                                 {new Date(h.fecha).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' })}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                 {new Date(h.fecha).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit', hour12: true })}
+                              </span>
+                           </div>
+                        </td>
                        <td className="p-4 font-black tracking-tight text-slate-700">{h.nave}</td>
                        <td className="p-4">
                           <div className="flex flex-col gap-2 min-w-0">
@@ -680,21 +686,35 @@ export default function PackingListCustomizadosPage() {
                           </div>
                        </td>
                         <td className="p-4 text-center">
-                           <div className="flex justify-center max-w-[200px] mx-auto">
-                              <span className="font-black px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 text-[10px] break-all line-clamp-2 leading-tight" title={h.bookings.join(' / ')}>
-                                 {h.bookings.join(' / ')}
-                              </span>
+                           <div className="flex flex-wrap justify-center gap-1 max-w-[220px] mx-auto">
+                              {h.ordenes && h.ordenes.length > 0 ? (
+                                h.ordenes.map(ord => (
+                                  <span key={ord} className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-slate-700 text-[9px] font-black">
+                                     {ord}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-[9px] font-bold text-slate-300 italic">Sin órdenes</span>
+                              )}
                            </div>
                         </td>
                        <td className="p-4 text-center">
-                          {h.estado === "ACTIVO" ? (
-                             <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest">Activo</span>
-                          ) : (
-                             <div className="flex flex-col items-center gap-1">
-                               <span className="px-3 py-1 bg-rose-100 text-rose-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest">Anulado</span>
-                               {h.motivo_anulacion && <span className="text-[9px] font-bold text-slate-400 max-w-[100px] truncate" title={h.motivo_anulacion}>"{h.motivo_anulacion}"</span>}
-                             </div>
-                          )}
+                          <div className="relative group/status flex justify-center">
+                             {h.estado === "ACTIVO" ? (
+                                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest border border-emerald-200">Activo</span>
+                             ) : (
+                                <div className="flex flex-col items-center cursor-help">
+                                   <span className="px-3 py-1 bg-rose-100 text-rose-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest border border-rose-200">Anulado</span>
+                                   {h.motivo_anulacion && (
+                                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-xl shadow-2xl opacity-0 group-hover/status:opacity-100 transition-all pointer-events-none z-50">
+                                         <p className="font-black text-rose-400 uppercase tracking-widest text-[8px] mb-1 text-center">Motivo de Anulación</p>
+                                         <p className="font-medium leading-tight italic text-center">"{h.motivo_anulacion}"</p>
+                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                                      </div>
+                                   )}
+                                </div>
+                             )}
+                          </div>
                        </td>
                        <td className="p-4 rounded-r-2xl text-right">
                           {h.estado === "ACTIVO" && (userRole === "SUPERVISOR DOCUMENTARIO" || userRole === "ADMIN") && (
