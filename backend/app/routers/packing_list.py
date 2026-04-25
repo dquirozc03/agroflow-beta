@@ -25,6 +25,7 @@ from copy import copy
 import io
 import os
 import re
+import difflib
 from datetime import datetime
 
 # Directorio donde se guardan los Excel generados para re-descarga
@@ -95,6 +96,28 @@ TEMPLATE_PATH = os.path.join(
 )
 
 # ---------------------------------------------------------------------------
+# Helper: Detectar si dos nombres de nave son la misma (Smart Match)
+# ---------------------------------------------------------------------------
+def is_same_ship(name1: str, name2: str, threshold: float = 0.75) -> bool:
+    if not name1 or not name2: return False
+    if name1 == "SIN NAVE" or name2 == "SIN NAVE": return False
+    
+    n1 = re.sub(r'[^A-Z0-9]', '', name1.upper())
+    n2 = re.sub(r'[^A-Z0-9]', '', name2.upper())
+    
+    # 1. Identidad exacta normalizada
+    if n1 == n2: return True
+    
+    # 2. Match por prefijo (Nombre del Barco)
+    # Si comparten los primeros 10 caracteres, es el mismo barco
+    min_len = min(len(n1), len(n2))
+    if min_len >= 10 and n1[:10] == n2[:10]:
+        return True
+
+    # 3. Similitud difusa
+    return difflib.SequenceMatcher(None, n1, n2).ratio() >= threshold
+
+# ---------------------------------------------------------------------------
 # Schemas de respuesta
 # ---------------------------------------------------------------------------
 class NaveInfo(BaseModel):
@@ -157,11 +180,19 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
             
         nave_final = nave_final if nave_final else "SIN NAVE"
         
-        # Agrupar
-        if nave_final not in nave_stats:
-            nave_stats[nave_final] = {"bookings": [], "cultivos": set()}
+        # --- SMART MATCH: Buscar si ya existe una nave parecida en las estadísticas ---
+        target_nave = nave_final
+        if nave_final != "SIN NAVE":
+            for existing_nave in nave_stats.keys():
+                if existing_nave != "SIN NAVE" and is_same_ship(nave_final, existing_nave):
+                    target_nave = existing_nave
+                    break
         
-        if b not in nave_stats[nave_final]["bookings"]:
+        # Agrupar bajo el nombre encontrado (o el original)
+        if target_nave not in nave_stats:
+            nave_stats[target_nave] = {"bookings": [], "cultivos": set()}
+        
+        if b not in nave_stats[target_nave]["bookings"]:
             # VERIFICAR SI ESTÁ BLOQUEADO POR PL ACTIVO
             is_locked = db.query(DetalleEmisionPackingList).join(EmisionPackingList).filter(
                 DetalleEmisionPackingList.booking == b,
