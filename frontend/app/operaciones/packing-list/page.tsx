@@ -318,11 +318,33 @@ export default function PackingListCustomizadosPage() {
       if (fileTermografos) formData.append("termografos", fileTermografos);
 
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/generate/${selectedCliente.endpoint}`, {
-        method: "POST", body: formData
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: formData
       });
 
       if (resp.ok) {
         const blob = await resp.blob();
+        
+        // --- PROCESAR ALERTAS DE VALIDACIÓN (X-PL-Warnings) ---
+        const warningsHeader = resp.headers.get("X-PL-Warnings");
+        if (warningsHeader) {
+          try {
+            const warnings = JSON.parse(warningsHeader);
+            warnings.forEach((msg: string) => {
+              toast.warning(msg, {
+                duration: 10000,
+                icon: <AlertCircle className="h-5 w-5 text-amber-500" />,
+                style: { border: '2px solid #f59e0b', background: '#fffbeb' }
+              });
+            });
+          } catch (e) {
+            console.error("Error parseando warnings:", e);
+          }
+        }
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -374,7 +396,10 @@ export default function PackingListCustomizadosPage() {
     try {
       const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/${itemAnular.id}/anular`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         body: JSON.stringify({ motivo: motivoFinal })
       });
 
@@ -705,13 +730,16 @@ export default function PackingListCustomizadosPage() {
                              ) : (
                                 <div className="flex flex-col items-center cursor-help">
                                    <span className="px-3 py-1 bg-rose-100 text-rose-700 font-extrabold text-[10px] uppercase rounded-xl tracking-widest border border-rose-200">Anulado</span>
-                                   {h.motivo_anulacion && (
-                                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-xl shadow-2xl opacity-0 group-hover/status:opacity-100 transition-all pointer-events-none z-50">
-                                         <p className="font-black text-rose-400 uppercase tracking-widest text-[8px] mb-1 text-center">Motivo de Anulación</p>
-                                         <p className="font-medium leading-tight italic text-center">"{h.motivo_anulacion}"</p>
-                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
-                                      </div>
-                                   )}
+                                   
+                                   {/* Tooltip Mejorado 💎 */}
+                                   <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-56 p-3 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover/status:opacity-100 transition-all duration-200 pointer-events-none z-[100] scale-95 group-hover/status:scale-100 origin-bottom">
+                                      <p className="font-black text-rose-400 uppercase tracking-widest text-[8px] mb-1.5 border-b border-white/10 pb-1.5">Motivo de Anulación</p>
+                                      <p className="font-bold text-[10px] leading-tight italic text-slate-200">
+                                         {h.motivo_anulacion ? `"${h.motivo_anulacion}"` : "Sin motivo especificado"}
+                                      </p>
+                                      {/* Triángulo del Tooltip */}
+                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900" />
+                                   </div>
                                 </div>
                              )}
                           </div>

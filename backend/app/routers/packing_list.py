@@ -672,6 +672,11 @@ async def generate_packing_list_ogl(
         fila_secuencial = 1
         therms_written = set() # Track termógrafos para no repetirlos
         
+        # --- ACUMULADORES PARA VALIDACIÓN ---
+        total_cajas_acum = 0
+        total_gross_acum = 0.0
+        tipo_emision = "OTRO" # Para saber qué validación aplicar
+        
         # Primero los bookings conocidos y ordenados
         for bk_id, _ in lista_ordenada:
             pedido = booking_data_map[bk_id]["pedido"]
@@ -705,9 +710,28 @@ async def generate_packing_list_ogl(
                     ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
                     therms_written.add(p_id_match)
 
-                # N: Gross Weight (Cajas * 4.2)
+                # N: Gross Weight Inteligente 🧠
                 cajas_num = safe_float(item["cajas"])
-                ws.cell(row=fila_e, column=14).value = round(cajas_num * 4.2, 2)
+                
+                # Determinamos el factor según cultivo y peso por caja
+                factor = 4.2 # Default (Granada)
+                cultivo_up = (pedido.cultivo or "").upper() if pedido else ""
+                peso_nominal = safe_float(pedido.peso_por_caja) if pedido else 0.0
+                
+                if "PALTA" in cultivo_up or "AVOCADO" in cultivo_up:
+                    if peso_nominal == 10: 
+                        factor = 10.97
+                        tipo_emision = "PALTA_10KG"
+                    elif peso_nominal == 4: 
+                        factor = 4.3
+                        tipo_emision = "PALTA_4KG"
+                
+                gross_val = round(cajas_num * factor, 2)
+                ws.cell(row=fila_e, column=14).value = gross_val
+                
+                # Acumulamos para validación final
+                total_cajas_acum += cajas_num
+                total_gross_acum += gross_val
                 
                 # O: Net Weight (TOTAL KILOS)
                 ws.cell(row=fila_e, column=15).value = item["total_kilos"]
@@ -781,6 +805,19 @@ async def generate_packing_list_ogl(
         wb.save(output)
         output.seek(0)
         
+        # --- VALIDACIONES FINALES (ALERTAS) ---
+        warnings = []
+        if tipo_emision == "PALTA_10KG":
+            if int(total_cajas_acum) != 2400:
+                warnings.append(f"ALERTA: El total de cajas ({int(total_cajas_acum)}) no es 2400 para Palta 10kg.")
+            if round(total_gross_acum, 2) != 26328.00:
+                warnings.append(f"ALERTA: El Peso Bruto Total ({round(total_gross_acum, 2)}) no es 26328 para Palta 10kg.")
+        elif tipo_emision == "PALTA_4KG":
+            if int(total_cajas_acum) != 5280:
+                warnings.append(f"ALERTA: El total de cajas ({int(total_cajas_acum)}) no es 5280 para Palta 4kg.")
+            if round(total_gross_acum, 2) != 22704.00:
+                warnings.append(f"ALERTA: El Peso Bruto Total ({round(total_gross_acum, 2)}) no es 22704 para Palta 4kg.")
+        
         # Sanitizar el nombre de la nave para evitar errores de archivo (especialmente si contiene '/')
         safe_nave = re.sub(r'[\\/*?:"<>|]', "_", nave_clean).replace(' ', '_')
         filename = f"Packing List_OGL_MAESTRO_{safe_nave}_{pl_id}.xlsx"
@@ -793,8 +830,8 @@ async def generate_packing_list_ogl(
 
         # --- REGISTRAR EN EL HISTORIAL Y BLOQUEAR ---
         try:
-            # Capturar usuario del JWT si existe
-            nombre_usuario = current_user.usuario if current_user else "Sistema"
+            # Capturar ID de usuario en mayúsculas para el historial
+            nombre_usuario = current_user.usuario.upper() if current_user else "SISTEMA"
 
             nueva_emision = EmisionPackingList(
                 usuario=nombre_usuario,
@@ -822,13 +859,20 @@ async def generate_packing_list_ogl(
             logger.error(f"Error guardando auditoría de PL: {inner_e}")
             raise HTTPException(status_code=500, detail="Error interno al guardar historial")
 
-        return StreamingResponse(
-            io.BytesIO(file_bytes),
+        # Preparamos la respuesta con headers de advertencia si existen
+        headers = {
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Access-Control-Expose-Headers": "X-PL-Warnings"
+        }
+        if warnings:
+            # Codificamos en JSON y escapamos para que viaje seguro en el header
+            import json
+            headers["X-PL-Warnings"] = json.dumps(warnings)
+
+        return Response(
+            content=file_bytes,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Access-Control-Expose-Headers": "Content-Disposition"
-            }
+            headers=headers
         )
     except HTTPException:
         raise
