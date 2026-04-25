@@ -27,5 +27,5 @@ class PedidoComercial(Base):
     total_cajas = Column(Integer, nullable=True)
     incoterm = Column(String(50), nullable=True)
     tipo_precio = Column(String(50), nullable=True)
-    
+    semana_eta = Column(Integer, nullable=True)
     fecha_actualizacion = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

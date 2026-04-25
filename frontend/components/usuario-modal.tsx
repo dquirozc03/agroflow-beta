@@ -244,7 +244,7 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         message="¿Estás seguro de resetear la contraseña del usuario a '123456'? Se obligará al usuario a cambiarla al ingresar."
         confirmText="Sí, Resetear"
       />
-      <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-[2rem] overflow-hidden p-0 lc-scroll">
+      <DialogContent className="max-w-2xl max-h-[90vh] bg-white border-0 shadow-2xl rounded-[2rem] overflow-y-auto p-0 lc-scroll">
         <div className="h-2 bg-emerald-500" />
         
         <DialogHeader className="px-8 pt-8 pb-4">

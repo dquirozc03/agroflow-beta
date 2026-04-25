@@ -562,9 +562,9 @@ async def generate_packing_list_ogl(
         
         # Lógica C4: WK + SEMANA ETA + CORRELATIVO NAVES OGL DE LA SEMANA
         pl_id = f"WK{ahora.isocalendar()[1]}1" # Fallback
-        if primer_pos and primer_pos.ETA:
-            semana_eta = primer_pos.ETA.isocalendar()[1]
-            anio_eta = primer_pos.ETA.year
+        if primer_pos and primer_pos.eta:
+            semana_eta = primer_pos.eta.isocalendar()[1]
+            anio_eta = primer_pos.eta.year
             
             # Buscar todos los posicionamientos de esa misma semana
             pos_semana = db.query(Posicionamiento).filter(
