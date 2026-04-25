@@ -200,7 +200,7 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
             ).first()
             
             if not is_locked:
-                nave_stats[nave_final]["bookings"].append(b)
+                nave_stats[target_nave]["bookings"].append(b)
                 
                 # Determinar Cultivo (Posicionamiento > PedidoComercial)
                 c_final = pos.cultivo.strip().upper() if pos.cultivo else None
@@ -208,7 +208,7 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
                     c_final = pedido_ogl.cultivo.strip().upper()
                 
                 if c_final:
-                    nave_stats[nave_final]["cultivos"].add(c_final)
+                    nave_stats[target_nave]["cultivos"].add(c_final)
 
     # Construir respuesta
     result = []
