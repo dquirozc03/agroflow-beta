@@ -75,15 +75,15 @@ def strip_orden_beta(orden_beta: Optional[str]) -> Optional[str]:
     
     val_upper = orden_beta.strip().upper()
     
-    # Si tiene letras, nos aseguramos de que sea solo BG o CO (los típicos de OGL/Beta)
+    # Si tiene letras, nos aseguramos de que sea solo BG, CO, BP, BAM, BU o BAA (prefijos de Beta)
     has_letters = any(c.isalpha() for c in val_upper)
     if has_letters:
-        if not ("BG" in val_upper or "CO" in val_upper):
-            # Si tiene letras y no es BG ni CO, devolvemos el valor original crudo.
-            # Al devolver "PE004", NO hará match con la orden "4" de PedidoComercial, evitando el bug de POLAR CHILE.
+        allowed_prefixes = ["BG", "CO", "BP", "BAM", "BU", "BAA"]
+        if not any(prefix in val_upper for prefix in allowed_prefixes):
+            # Si tiene letras y no es de Beta, devolvemos el valor original crudo.
             return val_upper
             
-    # Si es puramente numérico o tiene BG/CO, le quitamos las letras
+    # Si es puramente numérico o tiene prefijos autorizados, le quitamos las letras
     numeric = re.sub(r'[^0-9]', '', val_upper)
     return numeric if numeric else None
 
@@ -120,95 +120,75 @@ class BookingOGL(BaseModel):
 @router.get("/naves", response_model=List[NaveInfo])
 def listar_naves_ogl(db: Session = Depends(get_db)):
     """
-    Retorna naves únicas basándose en la VERDAD ABSOLUTA:
-    1. ReporteEmbarques.nave_arribo (Prioridad 1)
-    2. Posicionamiento.NAVE (Fallback solo si no hay reporte con otra nave)
+    Retorna naves únicas basándose en la unión de ReporteEmbarques y Posicionamiento.
     """
-    # Mapa de verdad: booking -> nave_actual
-    # 1. Obtener todas las naves distintas con carga OGL desde ReporteEmbarques
-    # Usamos nave_arribo que es el dato real del Packing List
+    # 1. Obtener todos los bookings de ambas fuentes para no dejar a nadie fuera
     shipments = db.query(ReporteEmbarques).all()
-    # Usamos nave_arribo que es el dato real del Packing List
-    shipments = db.query(ReporteEmbarques).all()
+    posicionamientos = db.query(Posicionamiento).all()
     
-    # Agrupar bookings por nave de arribo (Prioridad Reporte -> Respaldo Posicionamiento)
+    # Mapa de booking -> nave (Prioridad Reporte)
+    reporte_naves = {s.booking: s.nave_arribo for s in shipments if s.booking}
+    
+    # Conjunto total de bookings a evaluar
+    all_bookings = set(reporte_naves.keys()) | {p.booking for p in posicionamientos if p.booking}
+    
     nave_stats = {}
-    for s in shipments:
-        if not s.booking: continue
+    
+    for b in all_bookings:
+        # Verificar si es un booking OGL (Jerarquía de info)
+        pos = db.query(Posicionamiento).filter(Posicionamiento.booking == b).first()
+        if not pos or not pos.orden_beta: continue
         
-        # 1. Prioridad: Reporte
-        nave_final = s.nave_arribo.strip().upper() if s.nave_arribo else None
+        orden_num = strip_orden_beta(pos.orden_beta)
+        if not orden_num: continue
         
-        # 2. Respaldo: Posicionamiento
-        if not nave_final:
-            p_res = db.query(Posicionamiento).filter(Posicionamiento.booking == s.booking).first()
-            if p_res and p_res.nave:
-                nave_final = p_res.nave.strip().upper()
+        pedido_ogl = db.query(PedidoComercial).filter(
+            PedidoComercial.orden_beta == orden_num,
+            PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+        ).first()
         
-        # 3. Última instancia
+        if not pedido_ogl: continue
+        
+        # SI ES OGL -> Determinar su nave final
+        nave_final = reporte_naves.get(b).strip().upper() if reporte_naves.get(b) else None
+        
+        if not nave_final and pos.nave:
+            nave_final = pos.nave.strip().upper()
+            
         nave_final = nave_final if nave_final else "SIN NAVE"
         
+        # Agrupar
         if nave_final not in nave_stats:
-            nave_stats[nave_final] = []
-        if s.booking not in nave_stats[nave_final]:
-            nave_stats[nave_final].append(s.booking)
+            nave_stats[nave_final] = {"bookings": [], "cultivos": set()}
+        
+        if b not in nave_stats[nave_final]["bookings"]:
+            # VERIFICAR SI ESTÁ BLOQUEADO POR PL ACTIVO
+            is_locked = db.query(DetalleEmisionPackingList).join(EmisionPackingList).filter(
+                DetalleEmisionPackingList.booking == b,
+                EmisionPackingList.estado == "ACTIVO"
+            ).first()
+            
+            if not is_locked:
+                nave_stats[nave_final]["bookings"].append(b)
+                
+                # Determinar Cultivo (Posicionamiento > PedidoComercial)
+                c_final = pos.cultivo.strip().upper() if pos.cultivo else None
+                if not c_final and pedido_ogl.cultivo:
+                    c_final = pedido_ogl.cultivo.strip().upper()
+                
+                if c_final:
+                    nave_stats[nave_final]["cultivos"].add(c_final)
 
-    # 4. Construir resultado final filtrando solo naves que tengan algun pedido OGL
+    # Construir respuesta
     result = []
-    for nave, bookings in sorted(nave_stats.items()):
-        bookings_ogl_reales = []
-        cultivos_nave = set()
-        
-        for b in bookings:
-            # Buscar info en Posicionamiento
-            pos = db.query(Posicionamiento).filter(Posicionamiento.booking == b).first()
-            
-            # Solo procesamos si hay orden para buscar en PedidoComercial (OGL)
-            if pos and pos.orden_beta:
-                orden_num = strip_orden_beta(pos.orden_beta)
-                if orden_num:
-                    pedido_ogl = db.query(PedidoComercial).filter(
-                        PedidoComercial.orden_beta == orden_num,
-                        PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                    ).first()
-                    
-                    if pedido_ogl:
-                        # Si llegamos aquí, el booking es OGL legítimo
-                        if b not in bookings_ogl_reales:
-                            bookings_ogl_reales.append(b)
-                        
-                        # Determinar Cultivo con Jerarquía (Posicionamiento > PedidoComercial)
-                        c_final = pos.cultivo.strip().upper() if pos.cultivo else None
-                        if not c_final and pedido_ogl.cultivo:
-                            c_final = pedido_ogl.cultivo.strip().upper()
-                        
-                        if c_final:
-                            cultivos_nave.add(c_final)
-        
-        if bookings_ogl_reales:
-            # Check if all bookings for this nave are already locked
-            active_locks = set()
-            for bb in bookings_ogl_reales:
-                is_locked = db.query(DetalleEmisionPackingList).join(
-                    EmisionPackingList
-                ).filter(
-                    DetalleEmisionPackingList.booking == bb,
-                    EmisionPackingList.estado == "ACTIVO"
-                ).first()
-                if is_locked:
-                    active_locks.add(bb)
-
-            # Opcional: mostrar solo si hay al menos 1 NO bloqueado. O devolver info del estatus.
-            # Según regla: se filtran los que YA tienen packing list activo
-            bookings_disponibles = [b for b in bookings_ogl_reales if b not in active_locks]
-            
-            if bookings_disponibles:
-                result.append(NaveInfo(
-                    nave=nave,
-                    fuente="consolidada",
-                    bookings=bookings_disponibles,
-                    cultivos=sorted(list(cultivos_nave))
-                ))
+    for nave_name, stats in sorted(nave_stats.items()):
+        if stats["bookings"]:
+            result.append(NaveInfo(
+                nave=nave_name,
+                fuente="consolidada",
+                bookings=stats["bookings"],
+                cultivos=sorted(list(stats["cultivos"]))
+            ))
 
     return result
 
