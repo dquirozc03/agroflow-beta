@@ -32,10 +32,10 @@ def get_dashboard_summary(
     
     if planta:
         lc_base = lc_base.filter(LogiCaptureRegistro.planta == planta)
-        pos_base = pos_base.filter(Posicionamiento.planta_llenado == planta)
+        pos_base = pos_base.filter(Posicionamiento.PLANTA_LLENADO == planta)
     if cultivo:
         lc_base = lc_base.filter(LogiCaptureRegistro.cultivo == cultivo)
-        pos_base = pos_base.filter(Posicionamiento.cultivo == cultivo)
+        pos_base = pos_base.filter(Posicionamiento.CULTIVO == cultivo)
 
     # 1. KPIs
     # Ajuste: Contenedores Despachados AHORA es semanal (Lunes a Domingo) para coincidir con el gráfico
@@ -95,14 +95,14 @@ def get_dashboard_summary(
     
     # En Alta Mar
     en_alta_mar = pos_base.filter(
-        Posicionamiento.etd <= hoy_date,
-        Posicionamiento.eta >= hoy_date
+        Posicionamiento.ETD <= hoy_date,
+        Posicionamiento.ETA >= hoy_date
     ).count()
 
     # Programados Hoy
     programados_hoy = pos_base.filter(
-        Posicionamiento.fecha_programada == hoy_date,
-        Posicionamiento.estado != "ANULADO"
+        Posicionamiento.FECHA_PROGRAMADA == hoy_date,
+        Posicionamiento.ESTADO != "ANULADO"
     ).count()
     
     # 2. Despachos por semana actual (Lunes a Domingo)
@@ -189,28 +189,28 @@ def get_dashboard_summary(
     bookings_excluir = [b[0] for b in bookings_en_proceso if b[0]]
 
     proximos = pos_base.filter(
-        Posicionamiento.estado != "ANULADO",
-        Posicionamiento.fecha_programada >= hoy_date,
-        ~Posicionamiento.booking.in_(bookings_excluir) if bookings_excluir else True
+        Posicionamiento.ESTADO != "ANULADO",
+        Posicionamiento.FECHA_PROGRAMADA >= hoy_date,
+        ~Posicionamiento.BOOKING.in_(bookings_excluir) if bookings_excluir else True
     ).order_by(
-        Posicionamiento.fecha_programada.asc().nullslast()
+        Posicionamiento.FECHA_PROGRAMADA.asc().nullslast()
     ).limit(5).all()
     
     proximos_posicionamientos = []
     meses_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
     
     for p in proximos:
-        if p.fecha_programada:
-            fecha_str = f"{p.fecha_programada.day} {meses_es[p.fecha_programada.month - 1]} {p.fecha_programada.year}"
+        if p.FECHA_PROGRAMADA:
+            fecha_str = f"{p.FECHA_PROGRAMADA.day} {meses_es[p.FECHA_PROGRAMADA.month - 1]} {p.FECHA_PROGRAMADA.year}"
         else:
             fecha_str = "Por definir"
             
         proximos_posicionamientos.append({
-            "booking": p.booking,
-            "orden_beta": p.orden_beta or "S/OB",
-            "planta_llenado": p.planta_llenado or "S/A",
+            "booking": p.BOOKING,
+            "orden_beta": p.ORDEN_BETA or "S/OB",
+            "planta_llenado": p.PLANTA_LLENADO or "S/A",
             "fecha_programada": fecha_str,
-            "nave": p.nave or "TBD"
+            "nave": p.NAVE or "TBD"
         })
 
     return {
@@ -231,7 +231,7 @@ def get_dashboard_summary(
 @router.get("/metadata")
 def get_dashboard_metadata(db: Session = Depends(get_db)):
     """Retorna listas de plantas y cultivos disponibles para filtros."""
-    plantas = db.query(Posicionamiento.planta_llenado).distinct().all()
+    plantas = db.query(Posicionamiento.PLANTA_LLENADO).distinct().all()
     cultivos = db.query(LogiCaptureRegistro.cultivo).distinct().all()
     
     return {
