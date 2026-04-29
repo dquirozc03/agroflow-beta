@@ -270,6 +270,7 @@ export default function PackingListCustomizadosPage() {
   const [activeTab, setActiveTab] = useState<"generar" | "historial">("generar");
   const [historial, setHistorial] = useState<EmisionHistorial[]>([]);
   const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [searchTermHistorial, setSearchTermHistorial] = useState("");
   const [isAnulando, setIsAnulando] = useState(false);
   const [itemAnular, setItemAnular] = useState<EmisionHistorial | null>(null);
@@ -401,6 +402,30 @@ export default function PackingListCustomizadosPage() {
       fetchHistorial();
     }
   }, [activeTab]);
+
+  const handleDownload = async (item: any) => {
+    setDownloadingId(item.id);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/packing-list/${item.id}/descargar`);
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = item.archivo || `PL_${item.id}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        toast.error("Error al descargar el archivo");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleAnular = async () => {
     if (!itemAnular) return;
@@ -767,16 +792,19 @@ export default function PackingListCustomizadosPage() {
                            <td className="px-8 py-7 text-center">
                               <div className="flex items-center justify-center gap-2">
                                  {h.archivo_disponible && (
-                                    <a 
-                                      href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-100 transition-all shadow-sm hover:shadow-md"
-                                      title="Descargar"
-                                    >
-                                       <DownloadIcon className="h-5 w-5" />
-                                    </a>
-                                 )}
+                                     <button 
+                                       onClick={() => handleDownload(h)}
+                                       disabled={downloadingId === h.id}
+                                       className="h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-100 transition-all shadow-sm hover:shadow-md disabled:opacity-50"
+                                       title="Descargar"
+                                     >
+                                        {downloadingId === h.id ? (
+                                           <Loader2 className="h-5 w-5 animate-spin" />
+                                        ) : (
+                                           <DownloadIcon className="h-5 w-5" />
+                                        )}
+                                     </button>
+                                  )}
                                  {h.estado === "ACTIVO" && (userRole === "SUPERVISOR DOCUMENTARIO" || userRole === "ADMIN") && (
                                     <button 
                                       onClick={() => {
