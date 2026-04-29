@@ -30,8 +30,12 @@ def create_access_token(usuario: str, rol: str, user_id: int) -> str:
 
 def decode_token(token: str) -> dict | None:
     try:
-        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-    except Exception:
+        clean_token = token.strip()
+        payload = jwt.decode(clean_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        # print(f"DEBUG: Token decodificado para usuario: {payload.get('usuario')}") # Solo para debug profundo si fuera necesario
+        return payload
+    except Exception as e:
+        print(f"DEBUG: Error decodificando token: {e}")
         return None
 
 

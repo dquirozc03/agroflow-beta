@@ -4,19 +4,20 @@ Módulo de generación automática del Packing List para el cliente OGL.
 Autor: AgroFlow Dev Team
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request, Response
 from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, select
 from typing import Optional, List, Dict, Any
 from app.database import get_db
 from app.utils.logging import logger
+from app.configuracion import settings
 from app.models.pedido import PedidoComercial
 from app.models.posicionamiento import Posicionamiento
 from app.models.embarque import ControlEmbarque, ReporteEmbarques
 from app.models.packing_list import EmisionPackingList, DetalleEmisionPackingList
 from app.utils.formatters import get_peru_time
-from app.dependencies.auth import OptionalUser
+from app.dependencies.auth import OptionalUser, CurrentUser
 from pydantic import BaseModel
 import pandas as pd
 import openpyxl
@@ -194,9 +195,13 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         
         if b not in nave_stats[target_nave]["bookings"]:
             # VERIFICAR SI ESTÁ BLOQUEADO POR PL ACTIVO
-            is_locked = db.query(DetalleEmisionPackingList).join(EmisionPackingList).filter(
+            blocked_sq = db.query(DetalleEmisionPackingList.booking).join(
+                EmisionPackingList, DetalleEmisionPackingList.emision_id == EmisionPackingList.id
+            ).filter(EmisionPackingList.estado == "ACTIVO").subquery()
+
+            is_locked = db.query(DetalleEmisionPackingList).filter(
                 DetalleEmisionPackingList.booking == b,
-                EmisionPackingList.estado == "ACTIVO"
+                DetalleEmisionPackingList.booking.in_(blocked_sq.select())
             ).first()
             
             if not is_locked:
@@ -236,10 +241,17 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
         func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_upper
     ).all() if r.booking}
 
+    # Subquery de bloqueos
+    blocked_sq = db.query(DetalleEmisionPackingList.booking).join(
+        EmisionPackingList, DetalleEmisionPackingList.emision_id == EmisionPackingList.id
+    ).filter(EmisionPackingList.estado == "ACTIVO").subquery()
+
     # 2. Bookings que dicen estar aquí en posicionamiento
-    bk_pos = {p.booking for p in db.query(Posicionamiento.booking).filter(
-        func.upper(func.trim(Posicionamiento.nave)) == nave_upper
-    ).all() if p.booking}
+    bk_pos_data = db.query(Posicionamiento).filter(
+        func.upper(func.trim(Posicionamiento.nave)) == nave_upper,
+        ~Posicionamiento.booking.in_(blocked_sq.select())
+    ).all()
+    bk_pos = {p.booking for p in bk_pos_data if p.booking}
 
     # 3. Filtrado: Los de posicionamiento solo valen si el reporte no dice otra cosa
     bookings_actuales = set(bk_reporte)
@@ -309,12 +321,12 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 @router.post("/generate/ogl")
 async def generate_packing_list_ogl(
+    current_user: OptionalUser,
     nave: str = Form(...),
     confirmaciones: List[UploadFile] = File(...),
     termografos: Optional[UploadFile] = File(None),
     recibidor: Optional[str] = Form(None),
-    db: Session = Depends(get_db),
-    current_user: OptionalUser = None
+    db: Session = Depends(get_db)
 ):
     """
     Motor de generación del Packing List OGL CONSOLIDADO por NAVE.
@@ -719,6 +731,7 @@ async def generate_packing_list_ogl(
                 peso_nominal = safe_float(pedido.peso_por_caja) if pedido else 0.0
                 
                 if "PALTA" in cultivo_up or "AVOCADO" in cultivo_up:
+                    ws.cell(row=fila_e, column=10).value = "LOOSE"
                     if peso_nominal == 10: 
                         factor = 10.97
                         tipo_emision = "PALTA_10KG"
@@ -775,6 +788,8 @@ async def generate_packing_list_ogl(
                     ws.cell(row=fila_e, column=9).value = f"{str(peso_val).strip()} KG"
                     
                 # M: Additional info / Notes (Fallback para huérfanos) 🌡️
+                if primer_pedido and ("PALTA" in (primer_pedido.cultivo or "").upper() or "AVOCADO" in (primer_pedido.cultivo or "").upper()):
+                    ws.cell(row=fila_e, column=10).value = "LOOSE"
                 p_id_match = str(item["pallet"]).strip().upper()
                 if p_id_match in termografos_map and p_id_match not in therms_written:
                     ws.cell(row=fila_e, column=13).value = termografos_map[p_id_match]
@@ -877,7 +892,10 @@ async def generate_packing_list_ogl(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(f"FATAL ERROR en generar_pl_ogl: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 
 # ---------------------------------------------------------------------------
@@ -922,6 +940,8 @@ def obtener_historial_pl(db: Session = Depends(get_db)):
             "archivo": em.archivo_nombre,
             "archivo_disponible": archivo_disponible,
             "motivo_anulacion": em.motivo_anulacion,
+            "usuario_anulacion": em.usuario_anulacion,
+            "fecha_anulacion": em.fecha_anulacion,
             "bookings": bk_list,
             "ordenes": ord_list
         })
@@ -934,7 +954,7 @@ class AnularPLRequest(BaseModel):
     motivo: str
 
 @router.patch("/{id}/anular")
-def anular_pl(id: int, req: AnularPLRequest, db: Session = Depends(get_db)):
+def anular_pl(id: int, req: AnularPLRequest, current_user: CurrentUser, db: Session = Depends(get_db)):
     emision = db.query(EmisionPackingList).filter(EmisionPackingList.id == id).first()
     if not emision:
         raise HTTPException(status_code=404, detail="Packing List no encontrado")
@@ -944,6 +964,8 @@ def anular_pl(id: int, req: AnularPLRequest, db: Session = Depends(get_db)):
         
     emision.estado = "ANULADO"
     emision.motivo_anulacion = req.motivo
+    emision.usuario_anulacion = current_user.usuario.upper()
+    emision.fecha_anulacion = get_peru_time()
     
     try:
         db.commit()
