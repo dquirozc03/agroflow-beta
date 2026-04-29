@@ -19,12 +19,15 @@ router = APIRouter(prefix="/api/v1/sync", tags=["sincronizacion"])
 COLUMN_MAPPING = {
     "PLT. EMPACADORA": "planta_llenado",
     "CULTIVO": "cultivo",
+    "BOOKING": "booking",
     "BOOKING LIMPIO": "booking",
     "NAVE": "nave",
     "ETD BOOKING": "etd",
     "ETA BOOKING": "eta",
     "POL": "pol",
     "O/BETA FINAL": "orden_beta",
+    "O/BETA": "orden_beta",
+    "ORDEN BETA": "orden_beta",
     "PRECINTO SENASA (SI/NO)": "precinto_senasa",
     "OPERADOR": "operador_logistico",
     "NAVIERA": "naviera",
@@ -70,8 +73,11 @@ async def sync_posicionamiento_raw(payload: Any = Body(...), x_sync_token: str =
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN: raise HTTPException(status_code=401)
     
     headers = [str(h).strip().upper() for h in payload[0]]
+    logger.info(f"Sync Headers received: {headers}")
     data_rows = payload[1:]
+    
     mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in COLUMN_MAPPING.items() if ex_col.upper() in headers}
+    logger.info(f"Mapping indices: {mapping_indices}")
     
     for row in data_rows:
         row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
