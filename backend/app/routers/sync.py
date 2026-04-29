@@ -15,34 +15,34 @@ from dateutil.parser import parse as parse_date
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sync", tags=["sincronizacion"])
 
-# Mapeo de columnas: Nombre Exacto en Excel -> Atributo en el Modelo (MAYÚSCULAS)
+# Mapeo de columnas: Nombre Exacto en Excel -> Nombre de columna en DB (minúsculas)
 COLUMN_MAPPING = {
-    "PLT. EMPACADORA": "PLANTA_LLENADO",
-    "CULTIVO": "CULTIVO",
-    "BOOKING LIMPIO": "BOOKING",
-    "NAVE": "NAVE",
-    "ETD BOOKING": "ETD",
-    "ETA BOOKING": "ETA",
-    "POL": "POL",
-    "O/BETA FINAL": "ORDEN_BETA",
-    "PRECINTO SENASA (SI/NO)": "PRECINTO_SENASA",
-    "OPERADOR": "OPERADOR_LOGISTICO",
-    "NAVIERA": "NAVIERA",
-    "TERMOREGISTROS": "TERMOREGISTROS",
-    "AC": "AC",
-    "C/T": "CT",
-    "VENT": "VENTILACION",
-    "T°": "TEMPERATURA",
-    "HUMEDAD": "HUMEDAD",
-    "FILTROS": "FILTROS",
-    "FECHA SOLICITADA (OPERADOR)": "FECHA_PROGRAMADA",
-    "HORA SOLICITADA (OPERADOR)": "HORA_PROGRAMADA",
-    "DESTINO (BOOKING)": "DESTINO_BOOKING",
-    "FECHA DE LLENADO (REPORTE)": "FECHA_LLENADO_REPORTE",
-    "HORA DE LLENADO (REPORTE)": "HORA_LLENADO_REPORTE",
-    "TIPO DE TECNOLOGIA": "TIPO_TECNOLOGIA",
-    "ETIQUETA CAJA": "ETIQUETA_CAJA",
-    "CAJAS VACIAS (SI/NO)": "CAJAS_VACIAS"
+    "PLT. EMPACADORA": "planta_llenado",
+    "CULTIVO": "cultivo",
+    "BOOKING LIMPIO": "booking",
+    "NAVE": "nave",
+    "ETD BOOKING": "etd",
+    "ETA BOOKING": "eta",
+    "POL": "pol",
+    "O/BETA FINAL": "orden_beta",
+    "PRECINTO SENASA (SI/NO)": "precinto_senasa",
+    "OPERADOR": "operador_logistico",
+    "NAVIERA": "naviera",
+    "TERMOREGISTROS": "termoregistros",
+    "AC": "ac",
+    "C/T": "ct",
+    "VENT": "ventilacion",
+    "T°": "temperatura",
+    "HUMEDAD": "humedad",
+    "FILTROS": "filtros",
+    "FECHA SOLICITADA (OPERADOR)": "fecha_programada",
+    "HORA SOLICITADA (OPERADOR)": "hora_programada",
+    "DESTINO (BOOKING)": "destino_booking",
+    "FECHA DE LLENADO (REPORTE)": "fecha_llenado_reporte",
+    "HORA DE LLENADO (REPORTE)": "hora_llenado_reporte",
+    "TIPO DE TECNOLOGIA": "tipo_tecnologia",
+    "ETIQUETA CAJA": "etiqueta_caja",
+    "CAJAS VACIAS (SI/NO)": "cajas_vacias"
 }
 
 def clean_data_value(val: str, db_column: str):
@@ -75,9 +75,9 @@ async def sync_posicionamiento_raw(payload: Any = Body(...), x_sync_token: str =
     
     for row in data_rows:
         row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-        if not row_data.get("BOOKING"): continue
+        if not row_data.get("booking"): continue
         stmt = insert(Posicionamiento).values(**row_data)
-        update_data = {k: v for k, v in row_data.items() if k != "BOOKING" and v is not None}
+        update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
         upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
         db.execute(upsert_stmt)
     db.commit()
