@@ -51,15 +51,15 @@ def clean_data_value(val: str, db_column: str):
     val_str = str(val).strip()
     if not val_str or val_str.upper() in null_and_errors: return None
     
-    if db_column == "CAJAS_VACIAS":
+    if db_column == "cajas_vacias":
         if val_str.upper() == "SI": return 1
         if val_str.upper() == "NO": return 0
         try: return int(float(val_str))
         except: return 0
-    if db_column in ["ETD", "ETA", "FECHA_PROGRAMADA", "FECHA_LLENADO_REPORTE"]:
+    if db_column in ["etd", "eta", "fecha_programada", "fecha_llenado_reporte"]:
         try: return parse_date(val_str).date()
         except: return None
-    if db_column in ["HORA_PROGRAMADA", "HORA_LLENADO_REPORTE"]:
+    if db_column in ["hora_programada", "hora_llenado_reporte"]:
         try: return parse_date(val_str).time()
         except: return None
     return val_str.replace(";", "").strip()
