@@ -323,7 +323,7 @@ export default function InstruccionesEmbarque() {
           eta: data.eta || "",
           cultivo: data.cultivo || "",
           variedad: data.variedad || "WONDERFUL",
-          temperatura: data.temperatura || "0.5 \u00b0C",
+          temperatura: data.temperatura || "0.5 °C",
           ventilacion: data.ventilacion || "15 CBM",
           humedad: data.humedad || "OFF",
           atm: data.atm || "NO APLICA",
@@ -362,7 +362,7 @@ export default function InstruccionesEmbarque() {
     setOverrideData((prev: any) => {
       const newData = { ...prev, [field]: value };
       
-      // Sincronizaci\u00f3n inteligente de Descripciones B/L
+      // Sincronización inteligente de Descripciones B/L
       if (field === 'cajas' || field === 'pallets' || field === 'cultivo' || field === 'variedad') {
         const cajas = field === 'cajas' ? value : prev.cajas;
         const pallets = field === 'pallets' ? value : prev.pallets;
@@ -404,7 +404,7 @@ export default function InstruccionesEmbarque() {
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <Input
-                    placeholder="Escriba el N\u00b0 del Booking..."
+                    placeholder="Escriba el N° del Booking..."
                     className="pl-12 h-14 bg-white/10 border-white/10 text-white rounded-2xl focus:bg-white/20 transition-all font-bold"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -422,7 +422,7 @@ export default function InstruccionesEmbarque() {
                         <div className="py-20 text-center opacity-30 animate-in fade-in zoom-in duration-300">
                           <Inbox className="h-12 w-12 mx-auto mb-4 text-slate-400" />
                           <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-500">No se encontraron resultados</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Intente con otro n\u00famero de booking</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Intente con otro número de booking</p>
                         </div>
                       );
                     }
@@ -443,7 +443,7 @@ export default function InstruccionesEmbarque() {
                               <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{bookingId}</p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <p className="text-[9px] font-bold text-slate-400 uppercase">{b.NAVE || "NAVE PENDIENTE"}</p>
-                                <span className="text-slate-200">\u2022</span>
+                                <span className="text-slate-200">•</span>
                                 <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">{b.CULTIVO || "CULTIVO N/A"}</p>
                               </div>
                             </div>
@@ -589,7 +589,7 @@ export default function InstruccionesEmbarque() {
                 <div className="h-14 w-px bg-white/10 mx-2" />
                 <div className="text-right">
                   <span className="block text-[10px] font-black uppercase text-emerald-400/80">Estado</span>
-                  <span className="block text-sm font-black uppercase">M\u00f3dulo Activo</span>
+                  <span className="block text-sm font-black uppercase">Módulo Activo</span>
                 </div>
               </div>
             </div>
@@ -729,7 +729,7 @@ export default function InstruccionesEmbarque() {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* SECCI\u00d3N 1: LOG\u00cdSTICA */}
+                    {/* SECCIÓN 1: LOGÍSTICA */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Ship className="h-4 w-4 text-emerald-500" />
@@ -775,7 +775,7 @@ export default function InstruccionesEmbarque() {
                       </div>
                     </div>
 
-                    {/* SECCI\u00d3N 2: DOCUMENTACI\u00d3N */}
+                    {/* SECCIÓN 2: DOCUMENTACIÓN */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <FileText className="h-4 w-4 text-emerald-500" />
@@ -798,7 +798,7 @@ export default function InstruccionesEmbarque() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">EORI Consignatario</Label>
-                          <Input value={overrideData.eori_consignatario} onChange={(e) => handleOverrideChange('eori_consignatario', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N\u00b0..." />
+                          <Input value={overrideData.eori_consignatario} onChange={(e) => handleOverrideChange('eori_consignatario', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N°..." />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">Dirección Consignatario</Label>
