@@ -48,6 +48,31 @@ COLUMN_MAPPING = {
     "CAJAS VACIAS (SI/NO)": "cajas_vacias"
 }
 
+PEDIDOS_MAPPING = {
+    "PLTA": "planta",
+    "ORDEN": "orden_beta",
+    "O/BETA": "orden_beta",
+    "PO": "po",
+    "CULTIVO": "cultivo",
+    "CLIENTE": "cliente",
+    "CONSIGNATARIO": "consignatario",
+    "RECIBIDOR": "recibidor",
+    "PORT ID ORIG": "port_id_orig",
+    "PAIS": "pais",
+    "POD": "pod",
+    "PORT ID DEST": "port_id_dest",
+    "PRESENTACION": "presentacion",
+    "VARIEDAD": "variedad",
+    "PRODUCT": "product",
+    "PESO": "peso_por_caja",
+    "INFO": "additional_info",
+    "CAJA/PLT": "caja_por_pallet",
+    "PLTS": "total_pallets",
+    "CAJAS": "total_cajas",
+    "INCOTERM": "incoterm",
+    "SEMANA ETA": "semana_eta"
+}
+
 def clean_data_value(val: str, db_column: str):
     null_and_errors = {"", "-", "N/A", "NONE", "NULL", "NAN", "#¡VALOR!", "#VALUE!", "#REF!", "#DIV/0!"}
     if val is None: return None
@@ -92,3 +117,29 @@ async def sync_posicionamiento_raw(payload: Any = Body(...), x_sync_token: str =
 @router.get("/posicionamiento/list")
 def list_posicionamiento(db: Session = Depends(get_db)):
     return db.query(Posicionamiento).order_by(Posicionamiento.FECHA_CREACION.desc()).all()
+
+@router.post("/pedidos/raw")
+async def sync_pedidos_raw(payload: Any = Body(...), x_sync_token: str = Header(None, alias="X-Sync-Token"), db: Session = Depends(get_db)):
+    if isinstance(payload, str): payload = json.loads(payload)
+    if not x_sync_token or x_sync_token != settings.SYNC_TOKEN: raise HTTPException(status_code=401)
+    
+    headers = [str(h).strip().upper() for h in payload[0]]
+    data_rows = payload[1:]
+    
+    mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in PEDIDOS_MAPPING.items() if ex_col.upper() in headers}
+    
+    for row in data_rows:
+        row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
+        if not row_data.get("orden_beta"): continue
+        
+        # Upsert basado en orden_beta
+        stmt = insert(PedidoComercial).values(**row_data)
+        update_data = {k: v for k, v in row_data.items() if k != "orden_beta" and v is not None}
+        upsert_stmt = stmt.on_conflict_do_update(
+            index_elements=[PedidoComercial.orden_beta],
+            set_=update_data
+        ) if update_data else stmt.on_conflict_do_nothing(index_elements=[PedidoComercial.orden_beta])
+        db.execute(upsert_stmt)
+    
+    db.commit()
+    return {"status": "success", "rows_processed": len(data_rows)}
