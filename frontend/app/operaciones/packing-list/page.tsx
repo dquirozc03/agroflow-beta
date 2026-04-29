@@ -916,30 +916,7 @@ export default function PackingListCustomizadosPage() {
               </button>
            </div>
         </div>
-      )}sition-all flex items-center gap-1.5 ml-auto"
-                             >
-                                <FileX className="h-3.5 w-3.5" /> Anular
-                             </button>
-                          )}
-                          {h.estado === "ACTIVO" && userRole !== "SUPERVISOR DOCUMENTARIO" && userRole !== "ADMIN" && (
-                              <span className="text-[9px] font-bold text-slate-400 uppercase">Solo Sup. Doc. o Admin</span>
-                          )}
-                       </td>
-                     </tr>
-                   ))}
-                   {historial.length === 0 && !isLoadingHistorial && (
-                     <tr>
-                        <td colSpan={7} className="p-16 text-center text-slate-400">
-                           <History className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                           <p className="font-black text-sm">No hay registros de generación en el historial</p>
-                        </td>
-                     </tr>
-                   )}
-                 </tbody>
-               </table>
-            </div>
-         </div>
-       )}
+      )}
 
        {/* MODAL DE ANULACIÓN */}
        {itemAnular && (
@@ -1028,6 +1005,6 @@ export default function PackingListCustomizadosPage() {
              </div>
           </div>
        )}
-    </div>
+    </>
   );
 }
