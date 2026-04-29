@@ -22,6 +22,7 @@ class EmisionInstruccion(Base):
     
     # Auditoría
     usuario = Column(String(100))
+    usuario_anulacion = Column(String(100), nullable=True)
     status = Column(String(20), default="ACTIVO") # ACTIVO, ANULADO
     motivo_anulacion = Column(String(255), nullable=True)
     

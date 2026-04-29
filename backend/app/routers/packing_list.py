@@ -28,9 +28,15 @@ import re
 import difflib
 from datetime import datetime
 
-# Directorio donde se guardan los Excel generados para re-descarga
-PL_STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "storage", "packing_lists")
-os.makedirs(PL_STORAGE_DIR, exist_ok=True)
+# Directorio de almacenamiento (Asegurando ruta absoluta en el workspace actual)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PL_STORAGE_DIR = os.path.join(BASE_DIR, "storage", "packing_lists")
+
+if not os.path.exists(PL_STORAGE_DIR):
+    try:
+        os.makedirs(PL_STORAGE_DIR, exist_ok=True)
+    except Exception as e:
+        logger.error(f"No se pudo crear el directorio de storage: {e}")
 
 router = APIRouter(
     prefix="/api/v1/packing-list",

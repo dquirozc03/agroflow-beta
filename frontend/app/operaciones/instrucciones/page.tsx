@@ -35,13 +35,21 @@ import {
   Clock,
   AlertCircle,
   Filter,
-  ChevronLeft
+  ChevronLeft,
+  Copy,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,14 +77,16 @@ export default function InstruccionesEmbarque() {
 
   // --- Estado para Filtros y Paginación ---
   const [filtroEstado, setFiltroEstado] = useState<"TODOS" | "ACTIVO" | "ANULADO">("TODOS");
+  const [searchTermHistorial, setSearchTermHistorial] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 7;
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  // --- Estado para Confirmación de Anulación ---
   const [isAnularDialogOpen, setIsAnularDialogOpen] = useState(false);
   const [itemToAnular, setItemToAnular] = useState<number | null>(null);
   const [isAnulando, setIsAnulando] = useState(false);
+  const [showSuccessAnular, setShowSuccessAnular] = useState(false);
+  const [motivoAnulacion, setMotivoAnulacion] = useState("CAMBIO DE BOOKING");
 
   // --- Estado para Edición Avanzada ---
   const [overrideData, setOverrideData] = useState<any>({
@@ -96,7 +106,7 @@ export default function InstruccionesEmbarque() {
     eta: "",
     cultivo: "",
     variedad: "WONDERFUL",
-    temperatura: "0.5 °C",
+    temperatura: "0.5 \u00b0C",
     ventilacion: "15 CBM",
     humedad: "OFF",
     atm: "NO APLICA",
@@ -121,7 +131,9 @@ export default function InstruccionesEmbarque() {
     direccion_planta: "",
     ubigeo_planta: "",
     region_planta: "",
-    usuario: user?.usuario || "DQUIROZ"
+    desc_en: "",
+    desc_es: "",
+    usuario: user?.usuario || "SISTEMA"
   });
 
   useEffect(() => {
@@ -173,11 +185,18 @@ export default function InstruccionesEmbarque() {
     if (filtroEstado !== "TODOS") {
       filtered = filtered.filter(item => item.status === filtroEstado);
     }
+    if (searchTermHistorial.trim() !== "") {
+      const term = searchTermHistorial.toLowerCase().trim();
+      filtered = filtered.filter(item => 
+        (item.booking || "").toLowerCase().includes(term) || 
+        (item.orden_beta || "").toLowerCase().includes(term)
+      );
+    }
     const total = Math.ceil(filtered.length / itemsPerPage);
     const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     
     return { filteredHistory: filtered, totalPages: total, paginatedHistory: paginated };
-  }, [historial, filtroEstado, currentPage]);
+  }, [historial, filtroEstado, searchTermHistorial, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -188,7 +207,7 @@ export default function InstruccionesEmbarque() {
     if (!bookingId && !isOverride) return;
 
     if (lookupData?.emision_activa) {
-      alert("Ya existe una Instrucción activa. Debe anularla en el Historial para generar una nueva.");
+      alert("Ya existe una Instrucci\u00f3n activa. Debe anularla en el Historial para generar una nueva.");
       return;
     }
 
@@ -198,8 +217,8 @@ export default function InstruccionesEmbarque() {
       const body = isOverride ? overrideData : {
         booking: bookingId,
         observaciones: observaciones,
-        emision_bl: emisionSWB ? "SWB" : "EMISIÓN EN ORIGEN",
-        usuario: user?.usuario || "DQUIROZ"
+        emision_bl: emisionSWB ? "SWB" : "EMISI\u00d3N EN ORIGEN",
+        usuario: user?.usuario || "SISTEMA"
       };
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -232,13 +251,19 @@ export default function InstruccionesEmbarque() {
     if (!itemToAnular) return;
     setIsAnulando(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/instrucciones/anular/${itemToAnular}`, {
+      const resp = await fetch(`${API_BASE_URL}/api/v1/instrucciones/anular/${itemToAnular}?usuario=${user?.usuario || "SISTEMA"}&motivo=${encodeURIComponent(motivoAnulacion)}`, {
         method: "POST"
       });
       if (resp.ok) {
+        setShowSuccessAnular(true);
         await loadHistorial();
         if (selectedBooking) await handleBookingSelect(selectedBooking);
-        setIsAnularDialogOpen(false);
+        
+        // Esperamos un momento para que el usuario vea el \u00e9xito en el modal
+        setTimeout(() => {
+          setIsAnularDialogOpen(false);
+          setShowSuccessAnular(false);
+        }, 1500);
       }
     } catch (e) {
       console.error(e);
@@ -298,7 +323,7 @@ export default function InstruccionesEmbarque() {
           eta: data.eta || "",
           cultivo: data.cultivo || "",
           variedad: data.variedad || "WONDERFUL",
-          temperatura: data.temperatura || "0.5 °C",
+          temperatura: data.temperatura || "0.5 \u00b0C",
           ventilacion: data.ventilacion || "15 CBM",
           humedad: data.humedad || "OFF",
           atm: data.atm || "NO APLICA",
@@ -321,7 +346,9 @@ export default function InstruccionesEmbarque() {
           planta_llenado: data.planta_llenado || "",
           direccion_planta: data.direccion_planta || "",
           ubigeo_planta: data.ubigeo_planta || "",
-          region_planta: data.region_planta || ""
+          region_planta: data.region_planta || "",
+          desc_en: data.desc_en || "",
+          desc_es: data.desc_es || ""
         });
       }
     } catch (e) {
@@ -332,7 +359,22 @@ export default function InstruccionesEmbarque() {
   };
 
   const handleOverrideChange = (field: string, value: any) => {
-    setOverrideData((prev: any) => ({ ...prev, [field]: value }));
+    setOverrideData((prev: any) => {
+      const newData = { ...prev, [field]: value };
+      
+      // Sincronizaci\u00f3n inteligente de Descripciones B/L
+      if (field === 'cajas' || field === 'pallets' || field === 'cultivo' || field === 'variedad') {
+        const cajas = field === 'cajas' ? value : prev.cajas;
+        const pallets = field === 'pallets' ? value : prev.pallets;
+        const cultivo = field === 'cultivo' ? value : prev.cultivo;
+        const variedad = field === 'variedad' ? value : prev.variedad;
+        
+        newData.desc_en = `${cajas} BOXES WITH FRESH ${cultivo.toUpperCase()} ${variedad.toUpperCase()} ON ${pallets} PALLETS`;
+        newData.desc_es = `${cajas} CAJAS CON ${cultivo.toUpperCase()} FRESCO ${variedad.toUpperCase()} EN ${pallets} PALLETAS`;
+      }
+      
+      return newData;
+    });
   };
 
   return (
@@ -362,7 +404,7 @@ export default function InstruccionesEmbarque() {
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <Input
-                    placeholder="Escriba el N° del Booking..."
+                    placeholder="Escriba el N\u00b0 del Booking..."
                     className="pl-12 h-14 bg-white/10 border-white/10 text-white rounded-2xl focus:bg-white/20 transition-all font-bold"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -371,74 +413,157 @@ export default function InstruccionesEmbarque() {
               </div>
               <div className="max-h-[400px] overflow-y-auto p-6 space-y-3 bg-white lc-scroll">
                 {isLoadingBookings ? (
-                  <div className="p-10 text-center animate-pulse">Cargando...</div>
+                  <div className="p-10 text-center animate-pulse font-black uppercase text-[10px] text-slate-400">Cargando...</div>
                 ) : (
-                  bookingsReal.filter(b => (b.BOOKING || b.booking || "").toLowerCase().includes(searchTerm.toLowerCase())).map((b) => {
-                    const bookingId = b.BOOKING || b.booking;
-                    const emitted = isAlreadyEmitted(bookingId);
-                    return (
-                      <button
-                        key={b.ID || b.id || bookingId}
-                        onClick={() => handleBookingSelect(b)}
-                        className="w-full p-4 rounded-2xl border border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center justify-between group text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-emerald-500">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{bookingId}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">{b.NAVE || "NAVE PENDIENTE"}</p>
-                          </div>
+                  (() => {
+                    const filtered = bookingsReal.filter(b => (b.BOOKING || b.booking || "").toLowerCase().includes(searchTerm.toLowerCase()));
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="py-20 text-center opacity-30 animate-in fade-in zoom-in duration-300">
+                          <Inbox className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                          <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-500">No se encontraron resultados</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Intente con otro n\u00famero de booking</p>
                         </div>
-                        <Badge variant="secondary" className={cn("text-[9px] font-black border-none uppercase", emitted ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
-                          {emitted ? "EMITIDO" : "PENDIENTE"}
-                        </Badge>
-                      </button>
-                    );
-                  })
+                      );
+                    }
+                    return filtered.map((b) => {
+                      const bookingId = b.BOOKING || b.booking;
+                      const emitted = isAlreadyEmitted(bookingId);
+                      return (
+                        <button
+                          key={b.ID || b.id || bookingId}
+                          onClick={() => handleBookingSelect(b)}
+                          className="w-full p-4 rounded-2xl border border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center justify-between group text-left shadow-sm hover:shadow-md"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-emerald-500 transition-colors">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{bookingId}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">{b.NAVE || "NAVE PENDIENTE"}</p>
+                                <span className="text-slate-200">\u2022</span>
+                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">{b.CULTIVO || "CULTIVO N/A"}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className={cn("text-[9px] font-black border-none uppercase px-3 py-1", emitted ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
+                            {emitted ? "EMITIDO" : "PENDIENTE"}
+                          </Badge>
+                        </button>
+                      );
+                    });
+                  })()
                 )}
               </div>
             </DialogContent>
           </Dialog>
 
-          {/* DIALOG: CONFIRMACIÓN DE ANULACIÓN */}
           <Dialog open={isAnularDialogOpen} onOpenChange={setIsAnularDialogOpen}>
-            <DialogContent className="sm:max-w-[400px] p-8 rounded-[2.5rem] bg-white border-none shadow-2xl">
-              <div className="text-center space-y-6">
-                <div className="h-20 w-20 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-sm">
-                  {isAnulando ? <Loader2 className="h-10 w-10 animate-spin" /> : <AlertTriangle className="h-10 w-10" />}
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                    {isAnulando ? "Procesando Anulación..." : "¿Confirmar Anulación?"}
-                  </h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase leading-relaxed px-4">
-                    {isAnulando 
-                      ? "Espere un momento mientras actualizamos los registros de seguridad." 
-                      : "Esta acción marcará el documento como inválido y permitirá generar uno nuevo para este booking."}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 pt-4">
-                  <Button 
-                    onClick={confirmAnular} 
-                    disabled={isAnulando}
-                    className="h-14 rounded-2xl bg-red-500 hover:bg-red-600 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 disabled:opacity-50"
-                  >
-                    {isAnulando ? "ANULANDO..." : "SÍ, ANULAR DOCUMENTO"}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setIsAnularDialogOpen(false)} 
-                    disabled={isAnulando}
-                    className="h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
-                  >
-                    CANCELAR
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+            <DialogContent className="sm:max-w-[420px] p-6 rounded-[2.5rem] bg-white border-none shadow-2xl overflow-hidden">
+                {!showSuccessAnular ? (
+                  <div className="text-center space-y-4">
+                    <div className="h-14 w-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                      {isAnulando ? <Loader2 className="h-7 w-7 animate-spin" /> : <AlertTriangle className="h-7 w-7" />}
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                        {isAnulando ? "Procesando..." : "\u00bfConfirmar Anulaci\u00f3n?"}
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase leading-tight px-4">
+                        Esta acci\u00f3n marcar\u00e1 el documento como inv\u00e1lido.
+                      </p>
+                    </div>
+
+                    {!isAnulando && (
+                      <div className="space-y-3 text-left pt-2">
+                        <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Seleccione el Motivo</Label>
+                        <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1 lc-scroll">
+                          {[
+                            { id: "CAMBIO DE BOOKING", icon: RefreshCw, color: "text-blue-500", bg: "bg-blue-50" },
+                            { id: "ERROR EN DATOS", icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50" },
+                            { id: "CAMBIO DE NAVE", icon: Ship, color: "text-indigo-500", bg: "bg-indigo-50" },
+                            { id: "DUPLICADO", icon: Copy, color: "text-purple-500", bg: "bg-purple-50" },
+                            { id: "RE-EMISI\u00d3N", icon: FileText, color: "text-emerald-500", bg: "bg-emerald-50" },
+                            { id: "OTRO", icon: MessageSquare, color: "text-slate-500", bg: "bg-slate-50" }
+                          ].map((motivo) => (
+                            <button
+                              key={motivo.id}
+                              onClick={() => setMotivoAnulacion(motivo.id)}
+                              className={cn(
+                                "w-full flex items-center p-2.5 rounded-xl border-2 transition-all gap-3 group text-left",
+                                motivoAnulacion === motivo.id 
+                                  ? "border-red-500 bg-red-50/20" 
+                                  : "border-slate-50 bg-white hover:border-slate-200 hover:bg-slate-50"
+                              )}
+                            >
+                              <div className={cn("h-8 w-8 shrink-0 rounded-lg flex items-center justify-center", motivo.bg, motivo.color)}>
+                                <motivo.icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1">
+                                <span className={cn("text-[9px] font-black uppercase tracking-tight", motivoAnulacion === motivo.id ? "text-red-600" : "text-slate-700")}>
+                                  {motivo.id}
+                                </span>
+                              </div>
+                              <div className={cn(
+                                "h-4 w-4 rounded-full border-2 flex items-center justify-center transition-all",
+                                motivoAnulacion === motivo.id ? "border-red-500 bg-red-500" : "border-slate-200"
+                              )}>
+                                {motivoAnulacion === motivo.id && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {motivoAnulacion.includes("OTRO") && (
+                          <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex items-center justify-between ml-1">
+                              <Label className="text-[9px] font-black uppercase text-slate-400">Especifique el motivo</Label>
+                              <span className="text-[8px] font-bold text-slate-300 uppercase" />
+                            </div>
+                            <Input 
+                              placeholder="Especifique el motivo..."
+                              maxLength={100}
+                              className="h-10 rounded-xl border-slate-100 font-bold text-[10px] focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
+                              onChange={(e) => setMotivoAnulacion("OTRO: " + e.target.value.toUpperCase())}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2 pt-2">
+                      <Button 
+                        onClick={confirmAnular} 
+                        disabled={isAnulando}
+                        className="h-12 rounded-2xl bg-red-500 hover:bg-red-600 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 disabled:opacity-50"
+                      >
+                        {isAnulando ? "ANULANDO..." : "S\u00cd, ANULAR DOCUMENTO"}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setIsAnularDialogOpen(false)} 
+                        disabled={isAnulando}
+                        className="h-10 rounded-2xl text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                      >
+                        CANCELAR
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 space-y-6 animate-in zoom-in duration-500">
+                    <div className="h-24 w-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                      <CheckCircle2 className="h-12 w-12 animate-bounce" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">\u00a1Anulaci\u00f3n Exitosa!</h3>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">El historial ha sido actualizado</p>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
 
           <section className="flex-1 overflow-y-auto p-10 pt-2 space-y-6 lc-scroll bg-slate-50/30">
             <div className="bg-emerald-950 rounded-[3.5rem] p-8 text-white flex items-center justify-between shadow-2xl relative overflow-hidden group">
@@ -449,7 +574,7 @@ export default function InstruccionesEmbarque() {
                 <h1 className="text-4xl font-black tracking-tighter uppercase font-['Outfit']">
                   Instrucciones de <span className="text-emerald-400">Embarque</span>
                 </h1>
-                <p className="text-[11px] font-black text-emerald-500/60 uppercase tracking-[0.4em]">Generación de documentación operativa</p>
+                <p className="text-[11px] font-black text-emerald-500/60 uppercase tracking-[0.4em]">Generaci\u00f3n de documentaci\u00f3n operativa</p>
               </div>
               <div className="flex items-center gap-6 relative z-10">
                 {selectedBooking && (
@@ -464,7 +589,7 @@ export default function InstruccionesEmbarque() {
                 <div className="h-14 w-px bg-white/10 mx-2" />
                 <div className="text-right">
                   <span className="block text-[10px] font-black uppercase text-emerald-400/80">Estado</span>
-                  <span className="block text-sm font-black uppercase">Módulo Activo</span>
+                  <span className="block text-sm font-black uppercase">M\u00f3dulo Activo</span>
                 </div>
               </div>
             </div>
@@ -474,11 +599,11 @@ export default function InstruccionesEmbarque() {
                 <TabsList className="bg-white border border-slate-100 p-1 rounded-2xl h-14 shadow-sm">
                   <TabsTrigger value="generar" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Generación
+                    Generaci\u00f3n
                   </TabsTrigger>
                   <TabsTrigger value="avanzada" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <FileEdit className="h-4 w-4 mr-2" />
-                    Edición Avanzada
+                    Edici\u00f3n Avanzada
                   </TabsTrigger>
                   <TabsTrigger value="historial" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <History className="h-4 w-4 mr-2" />
@@ -493,8 +618,8 @@ export default function InstruccionesEmbarque() {
                     <div className="h-40 w-40 bg-white rounded-[3rem] shadow-2xl flex items-center justify-center mb-10">
                       <Zap className="h-20 w-20 text-emerald-500 animate-pulse" />
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 uppercase mb-4">¡Listo para comenzar!</h2>
-                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mb-10 max-w-sm">Seleccione un despacho maestro para generar su instrucción de embarque.</p>
+                    <h2 className="text-3xl font-black text-slate-900 uppercase mb-4">\u00a1Listo para comenzar!</h2>
+                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mb-10 max-w-sm">Seleccione un despacho maestro para generar su instrucci\u00f3n de embarque.</p>
                     <Button onClick={() => setIsSelectorOpen(true)} className="h-16 px-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 group">
                       <Search className="h-5 w-5 mr-3" />
                       Seleccionar Booking
@@ -546,8 +671,8 @@ export default function InstruccionesEmbarque() {
                           <Globe className="h-6 w-6" />
                         </div>
                         <div>
-                          <Label htmlFor="swb-toggle" className="text-sm font-black uppercase text-slate-900">Emisión de SWB</Label>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{emisionSWB ? "Sea Waybill" : "Emisión en origen"}</p>
+                          <Label htmlFor="swb-toggle" className="text-sm font-black uppercase text-slate-900">Emisi\u00f3n de SWB</Label>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{emisionSWB ? "Sea Waybill" : "Emisi\u00f3n en origen"}</p>
                         </div>
                       </div>
                       <Switch id="swb-toggle" checked={emisionSWB} onCheckedChange={setEmisionSWB} className="data-[state=checked]:bg-emerald-500 scale-125" />
@@ -570,7 +695,7 @@ export default function InstruccionesEmbarque() {
                         )}
                       >
                         {isGeneratingPdf ? <Loader2 className="h-5 w-5 mr-3 animate-spin" /> : <FileText className="h-5 w-5 mr-3" />}
-                        {lookupData?.emision_activa ? "Emisión Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar IE"}
+                        {lookupData?.emision_activa ? "Emisi\u00f3n Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar IE"}
                         {!isGeneratingPdf && !lookupData?.emision_activa && <ArrowRight className="h-4 w-4 ml-4 group-hover:translate-x-1 transition-transform" />}
                       </Button>
                     </div>
@@ -586,7 +711,7 @@ export default function InstruccionesEmbarque() {
                         <Edit3 className="h-6 w-6" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-xl font-black text-slate-900 uppercase">Edición de Contingencia</h3>
+                        <h3 className="text-xl font-black text-slate-900 uppercase">Edici\u00f3n de Contingencia</h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sobreescriba cualquier dato manualmente</p>
                       </div>
                     </div>
@@ -598,17 +723,17 @@ export default function InstruccionesEmbarque() {
                         </Badge>
                       )}
                       <Badge className="bg-emerald-100 text-emerald-700 border-none px-4 py-2 rounded-full font-black uppercase text-[9px] tracking-widest">
-                        Modo Edición Forzada
+                        Modo Edici\u00f3n Forzada
                       </Badge>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* SECCIÓN 1: LOGÍSTICA */}
+                    {/* SECCI\u00d3N 1: LOG\u00cdSTICA */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Ship className="h-4 w-4 text-emerald-500" />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logística y Transporte</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Log\u00edstica y Transporte</h4>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -643,10 +768,14 @@ export default function InstruccionesEmbarque() {
                           <Label className="text-[9px] font-black uppercase ml-2">Freight (Flete)</Label>
                           <Input value={overrideData.freight} onChange={(e) => handleOverrideChange('freight', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="Ej: PREPAID BY..." />
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Cultivo</Label>
+                          <Input value={overrideData.cultivo} onChange={(e) => handleOverrideChange('cultivo', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="Ej: PALTA, ARANDANO..." />
+                        </div>
                       </div>
                     </div>
 
-                    {/* SECCIÓN 2: DOCUMENTACIÓN */}
+                    {/* SECCI\u00d3N 2: DOCUMENTACI\u00d3N */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <FileText className="h-4 w-4 text-emerald-500" />
@@ -669,10 +798,10 @@ export default function InstruccionesEmbarque() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">EORI Consignatario</Label>
-                          <Input value={overrideData.eori_consignatario} onChange={(e) => handleOverrideChange('eori_consignatario', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N°..." />
+                          <Input value={overrideData.eori_consignatario} onChange={(e) => handleOverrideChange('eori_consignatario', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N\u00b0..." />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Dirección Consignatario</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Consignatario</Label>
                           <Textarea value={overrideData.direccion_consignatario} onChange={(e) => handleOverrideChange('direccion_consignatario', e.target.value)} className="rounded-xl border-slate-100 min-h-[60px]" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -682,19 +811,99 @@ export default function InstruccionesEmbarque() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[9px] font-black uppercase ml-2">EORI Notify</Label>
-                            <Input value={overrideData.eori_notify} onChange={(e) => handleOverrideChange('eori_notify', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N°..." />
+                            <Input value={overrideData.eori_notify} onChange={(e) => handleOverrideChange('eori_notify', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N\u00b0..." />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Dirección Notify</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Notify</Label>
                           <Textarea value={overrideData.direccion_notify} onChange={(e) => handleOverrideChange('direccion_notify', e.target.value)} className="rounded-xl border-slate-100 min-h-[60px]" />
                         </div>
                       </div>
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8">
+                    {/* SECCI\u00d3N 3: DETALLES DE CARGA */}
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Zap className="h-4 w-4 text-emerald-500" />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Detalles de Carga y Pesos</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">N\u00b0 Cajas</Label>
+                          <Input value={overrideData.cajas} type="number" onChange={(e) => handleOverrideChange('cajas', parseInt(e.target.value))} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">N\u00b0 Pallets</Label>
+                          <Input value={overrideData.pallets} type="number" onChange={(e) => handleOverrideChange('pallets', parseInt(e.target.value))} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Peso Neto</Label>
+                          <Input value={overrideData.peso_neto} onChange={(e) => handleOverrideChange('peso_neto', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Peso Bruto</Label>
+                          <Input value={overrideData.peso_bruto} onChange={(e) => handleOverrideChange('peso_bruto', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Presentaci\u00f3n</Label>
+                          <Input value={overrideData.presentacion} onChange={(e) => handleOverrideChange('presentacion', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Etiquetas</Label>
+                          <Input value={overrideData.etiquetas} onChange={(e) => handleOverrideChange('etiquetas', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripci\u00f3n BL (EN)</Label>
+                        <Textarea 
+                          value={overrideData.desc_en} 
+                          readOnly 
+                          className="rounded-xl border-slate-100 bg-slate-50/50 min-h-[60px] text-slate-500 cursor-not-allowed border-dashed" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripci\u00f3n BL (ES)</Label>
+                        <Textarea 
+                          value={overrideData.desc_es} 
+                          readOnly 
+                          className="rounded-xl border-slate-100 bg-slate-50/50 min-h-[60px] text-slate-500 cursor-not-allowed border-dashed" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* SECCI\u00d3N 4: FITOSANITARIO */}
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Datos Fitosanitarios</h4>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Consignatario Fito</Label>
+                          <Input value={overrideData.consignatario_fito} onChange={(e) => handleOverrideChange('consignatario_fito', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Fito</Label>
+                          <Textarea value={overrideData.direccion_fito} onChange={(e) => handleOverrideChange('direccion_fito', e.target.value)} className="rounded-xl border-slate-100 min-h-[80px]" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[9px] font-black uppercase ml-2">Pa\u00eds Destino</Label>
+                            <Input value={overrideData.pais_destino} onChange={(e) => handleOverrideChange('pais_destino', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[9px] font-black uppercase ml-2">Variedad</Label>
+                            <Input value={overrideData.variedad} onChange={(e) => handleOverrideChange('variedad', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="pt-8 border-t border-slate-50 flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase italic">Nota: Los cambios realizados aquí solo afectan al PDF actual.</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase italic">Nota: Los cambios realizados aqu\u00ed solo afectan al PDF actual.</p>
                     <Button 
                       onClick={() => handleGeneratePdf(true)} 
                       disabled={isGeneratingPdf || lookupData?.emision_activa} 
@@ -704,7 +913,7 @@ export default function InstruccionesEmbarque() {
                       )}
                     >
                       {isGeneratingPdf ? <Loader2 className="h-5 w-5 mr-3 animate-spin" /> : <Save className="h-5 w-5 mr-3" />}
-                      {lookupData?.emision_activa ? "Emisión Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar con Cambios Manuales"}
+                      {lookupData?.emision_activa ? "Emisi\u00f3n Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar con Cambios Manuales"}
                     </Button>
                   </div>
                 </div>
@@ -724,24 +933,24 @@ export default function InstruccionesEmbarque() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex bg-slate-50 p-1 rounded-xl mr-4 border border-slate-100">
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                      <div className="relative w-full md:w-64">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input 
+                          placeholder="Buscar por Booking u Orden..." 
+                          value={searchTermHistorial}
+                          onChange={(e) => setSearchTermHistorial(e.target.value)}
+                          className="pl-11 h-12 bg-slate-50 border-slate-100 rounded-2xl text-xs font-bold focus:bg-white transition-all"
+                        />
+                      </div>
+                      <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-100">
                         {(["TODOS", "ACTIVO", "ANULADO"] as const).map((f) => (
-                          <button
-                            key={f}
-                            onClick={() => setFiltroEstado(f)}
-                            className={cn(
-                              "px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all",
-                              filtroEstado === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                            )}
-                          >
-                            {f}
-                          </button>
+                          <button key={f} onClick={() => setFiltroEstado(f)} className={cn("px-5 py-2.5 rounded-[0.85rem] text-[10px] font-black uppercase tracking-widest transition-all", filtroEstado === f ? "bg-white text-slate-950 shadow-lg shadow-slate-200/50" : "text-slate-400 hover:text-slate-600")}>{f}</button>
                         ))}
                       </div>
-                      <Button variant="ghost" onClick={loadHistorial} className="h-10 w-10 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100">
-                        <RefreshCw className={cn("h-4 w-4 text-slate-400", isLoadingHistorial && "animate-spin")} />
-                      </Button>
+                      <button onClick={loadHistorial} className="h-12 w-12 rounded-2xl hover:bg-slate-50 border border-slate-100 flex items-center justify-center transition-all group active:scale-95 shadow-sm">
+                        <RefreshCw className={cn("h-5 w-5 text-slate-400 group-hover:text-emerald-500 group-hover:rotate-180 transition-all duration-500", isLoadingHistorial && "animate-spin")} />
+                      </button>
                     </div>
                   </div>
 
@@ -781,11 +990,34 @@ export default function InstruccionesEmbarque() {
                                 </div>
                               </TableCell>
                               <TableCell className="py-6 text-center">
-                                <div className="flex items-center justify-center gap-3">
-                                  <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-[10px] font-black text-emerald-600">
-                                    {item.usuario?.charAt(0)}
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-7 w-7 rounded-full bg-emerald-50 flex items-center justify-center text-[10px] font-black text-emerald-600">
+                                      {item.usuario?.charAt(0)}
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase text-slate-600">{item.usuario}</span>
                                   </div>
-                                  <span className="text-[10px] font-black uppercase text-slate-600">{item.usuario}</span>
+                                  {item.status === "ANULADO" && (
+                                    <div className="flex flex-col items-center gap-1">
+                                       <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 whitespace-nowrap">
+                                          Anulado por: {item.usuario_anulacion || "SISTEMA"}
+                                       </span>
+                                       {item.motivo_anulacion && (
+                                          <div className="relative group/motivo">
+                                             <span className="text-[9px] font-bold text-slate-400 italic cursor-help hover:text-slate-600 transition-colors truncate max-w-[120px] block text-center">
+                                                "{item.motivo_anulacion}"
+                                             </span>
+                                             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-3 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover/motivo:opacity-100 transition-all duration-200 pointer-events-none z-[100] scale-95 group-hover/motivo:scale-100 origin-bottom">
+                                                <p className="font-black text-rose-400 uppercase tracking-widest text-[8px] mb-1.5 border-b border-white/10 pb-1.5 text-center">Motivo Completo</p>
+                                                <p className="font-bold text-[10px] leading-tight text-slate-200 text-center uppercase">
+                                                   {item.motivo_anulacion}
+                                                </p>
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900" />
+                                             </div>
+                                          </div>
+                                       )}
+                                    </div>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell className="py-6 font-black text-xs uppercase text-slate-900 text-center">{item.booking}</TableCell>
@@ -835,11 +1067,11 @@ export default function InstruccionesEmbarque() {
                     </Table>
                   </div>
 
-                  {/* Paginación AgroFlow Premium */}
+                  {/* Paginaci\u00f3n AgroFlow Premium */}
                   {totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">P\u00e1gina</span>
                           <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
                             <span className="text-sm font-bold text-emerald-700">{currentPage} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
                           </div>
