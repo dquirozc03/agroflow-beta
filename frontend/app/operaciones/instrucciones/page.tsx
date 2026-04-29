@@ -106,7 +106,7 @@ export default function InstruccionesEmbarque() {
     eta: "",
     cultivo: "",
     variedad: "WONDERFUL",
-    temperatura: "0.5 \u00b0C",
+    temperatura: "0.5 °C",
     ventilacion: "15 CBM",
     humedad: "OFF",
     atm: "NO APLICA",
@@ -259,7 +259,7 @@ export default function InstruccionesEmbarque() {
         await loadHistorial();
         if (selectedBooking) await handleBookingSelect(selectedBooking);
         
-        // Esperamos un momento para que el usuario vea el \u00e9xito en el modal
+        // Esperamos un momento para que el usuario vea el éxito en el modal
         setTimeout(() => {
           setIsAnularDialogOpen(false);
           setShowSuccessAnular(false);
@@ -469,10 +469,10 @@ export default function InstruccionesEmbarque() {
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                        {isAnulando ? "Procesando..." : "\u00bfConfirmar Anulaci\u00f3n?"}
+                        {isAnulando ? "Procesando..." : "¿Confirmar Anulación?"}
                       </h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-tight px-4">
-                        Esta acci\u00f3n marcar\u00e1 el documento como inv\u00e1lido.
+                        Esta acción marcará el documento como inválido.
                       </p>
                     </div>
 
@@ -485,7 +485,7 @@ export default function InstruccionesEmbarque() {
                             { id: "ERROR EN DATOS", icon: AlertCircle, color: "text-amber-500", bg: "bg-amber-50" },
                             { id: "CAMBIO DE NAVE", icon: Ship, color: "text-indigo-500", bg: "bg-indigo-50" },
                             { id: "DUPLICADO", icon: Copy, color: "text-purple-500", bg: "bg-purple-50" },
-                            { id: "RE-EMISI\u00d3N", icon: FileText, color: "text-emerald-500", bg: "bg-emerald-50" },
+                            { id: "RE-EMISIÓN", icon: FileText, color: "text-emerald-500", bg: "bg-emerald-50" },
                             { id: "OTRO", icon: MessageSquare, color: "text-slate-500", bg: "bg-slate-50" }
                           ].map((motivo) => (
                             <button
@@ -557,7 +557,7 @@ export default function InstruccionesEmbarque() {
                       <CheckCircle2 className="h-12 w-12 animate-bounce" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">\u00a1Anulaci\u00f3n Exitosa!</h3>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">¡Anulación Exitosa!</h3>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">El historial ha sido actualizado</p>
                     </div>
                   </div>
@@ -574,7 +574,7 @@ export default function InstruccionesEmbarque() {
                 <h1 className="text-4xl font-black tracking-tighter uppercase font-['Outfit']">
                   Instrucciones de <span className="text-emerald-400">Embarque</span>
                 </h1>
-                <p className="text-[11px] font-black text-emerald-500/60 uppercase tracking-[0.4em]">Generaci\u00f3n de documentaci\u00f3n operativa</p>
+                <p className="text-[11px] font-black text-emerald-500/60 uppercase tracking-[0.4em]">Generación de documentación operativa</p>
               </div>
               <div className="flex items-center gap-6 relative z-10">
                 {selectedBooking && (
@@ -599,11 +599,11 @@ export default function InstruccionesEmbarque() {
                 <TabsList className="bg-white border border-slate-100 p-1 rounded-2xl h-14 shadow-sm">
                   <TabsTrigger value="generar" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Generaci\u00f3n
+                    Generación
                   </TabsTrigger>
                   <TabsTrigger value="avanzada" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <FileEdit className="h-4 w-4 mr-2" />
-                    Edici\u00f3n Avanzada
+                    Edición Avanzada
                   </TabsTrigger>
                   <TabsTrigger value="historial" className="px-8 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-black uppercase text-[10px] tracking-widest">
                     <History className="h-4 w-4 mr-2" />
@@ -618,8 +618,8 @@ export default function InstruccionesEmbarque() {
                     <div className="h-40 w-40 bg-white rounded-[3rem] shadow-2xl flex items-center justify-center mb-10">
                       <Zap className="h-20 w-20 text-emerald-500 animate-pulse" />
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 uppercase mb-4">\u00a1Listo para comenzar!</h2>
-                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mb-10 max-w-sm">Seleccione un despacho maestro para generar su instrucci\u00f3n de embarque.</p>
+                    <h2 className="text-3xl font-black text-slate-900 uppercase mb-4">¡Listo para comenzar!</h2>
+                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mb-10 max-w-sm">Seleccione un despacho maestro para generar su instrucción de embarque.</p>
                     <Button onClick={() => setIsSelectorOpen(true)} className="h-16 px-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 group">
                       <Search className="h-5 w-5 mr-3" />
                       Seleccionar Booking
@@ -671,8 +671,8 @@ export default function InstruccionesEmbarque() {
                           <Globe className="h-6 w-6" />
                         </div>
                         <div>
-                          <Label htmlFor="swb-toggle" className="text-sm font-black uppercase text-slate-900">Emisi\u00f3n de SWB</Label>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{emisionSWB ? "Sea Waybill" : "Emisi\u00f3n en origen"}</p>
+                          <Label htmlFor="swb-toggle" className="text-sm font-black uppercase text-slate-900">Emisión de SWB</Label>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{emisionSWB ? "Sea Waybill" : "Emisión en origen"}</p>
                         </div>
                       </div>
                       <Switch id="swb-toggle" checked={emisionSWB} onCheckedChange={setEmisionSWB} className="data-[state=checked]:bg-emerald-500 scale-125" />
@@ -695,7 +695,7 @@ export default function InstruccionesEmbarque() {
                         )}
                       >
                         {isGeneratingPdf ? <Loader2 className="h-5 w-5 mr-3 animate-spin" /> : <FileText className="h-5 w-5 mr-3" />}
-                        {lookupData?.emision_activa ? "Emisi\u00f3n Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar IE"}
+                        {lookupData?.emision_activa ? "Emisión Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar IE"}
                         {!isGeneratingPdf && !lookupData?.emision_activa && <ArrowRight className="h-4 w-4 ml-4 group-hover:translate-x-1 transition-transform" />}
                       </Button>
                     </div>
@@ -711,7 +711,7 @@ export default function InstruccionesEmbarque() {
                         <Edit3 className="h-6 w-6" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-xl font-black text-slate-900 uppercase">Edici\u00f3n de Contingencia</h3>
+                        <h3 className="text-xl font-black text-slate-900 uppercase">Edición de Contingencia</h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sobreescriba cualquier dato manualmente</p>
                       </div>
                     </div>
@@ -723,7 +723,7 @@ export default function InstruccionesEmbarque() {
                         </Badge>
                       )}
                       <Badge className="bg-emerald-100 text-emerald-700 border-none px-4 py-2 rounded-full font-black uppercase text-[9px] tracking-widest">
-                        Modo Edici\u00f3n Forzada
+                        Modo Edición Forzada
                       </Badge>
                     </div>
                   </div>
@@ -733,7 +733,7 @@ export default function InstruccionesEmbarque() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Ship className="h-4 w-4 text-emerald-500" />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Log\u00edstica y Transporte</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logística y Transporte</h4>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -801,7 +801,7 @@ export default function InstruccionesEmbarque() {
                           <Input value={overrideData.eori_consignatario} onChange={(e) => handleOverrideChange('eori_consignatario', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N\u00b0..." />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Consignatario</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Dirección Consignatario</Label>
                           <Textarea value={overrideData.direccion_consignatario} onChange={(e) => handleOverrideChange('direccion_consignatario', e.target.value)} className="rounded-xl border-slate-100 min-h-[60px]" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -811,11 +811,11 @@ export default function InstruccionesEmbarque() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[9px] font-black uppercase ml-2">EORI Notify</Label>
-                            <Input value={overrideData.eori_notify} onChange={(e) => handleOverrideChange('eori_notify', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N\u00b0..." />
+                            <Input value={overrideData.eori_notify} onChange={(e) => handleOverrideChange('eori_notify', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="EORI N°..." />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Notify</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Dirección Notify</Label>
                           <Textarea value={overrideData.direccion_notify} onChange={(e) => handleOverrideChange('direccion_notify', e.target.value)} className="rounded-xl border-slate-100 min-h-[60px]" />
                         </div>
                       </div>
@@ -823,7 +823,7 @@ export default function InstruccionesEmbarque() {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8">
-                    {/* SECCI\u00d3N 3: DETALLES DE CARGA */}
+                    {/* SECCIÓN 3: DETALLES DE CARGA */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Zap className="h-4 w-4 text-emerald-500" />
@@ -831,11 +831,11 @@ export default function InstruccionesEmbarque() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">N\u00b0 Cajas</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">N° Cajas</Label>
                           <Input value={overrideData.cajas} type="number" onChange={(e) => handleOverrideChange('cajas', parseInt(e.target.value))} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">N\u00b0 Pallets</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">N° Pallets</Label>
                           <Input value={overrideData.pallets} type="number" onChange={(e) => handleOverrideChange('pallets', parseInt(e.target.value))} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                         <div className="space-y-2">
@@ -847,7 +847,7 @@ export default function InstruccionesEmbarque() {
                           <Input value={overrideData.peso_bruto} onChange={(e) => handleOverrideChange('peso_bruto', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Presentaci\u00f3n</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Presentación</Label>
                           <Input value={overrideData.presentacion} onChange={(e) => handleOverrideChange('presentacion', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                         <div className="space-y-2">
@@ -856,7 +856,7 @@ export default function InstruccionesEmbarque() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripci\u00f3n BL (EN)</Label>
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripción BL (EN)</Label>
                         <Textarea 
                           value={overrideData.desc_en} 
                           readOnly 
@@ -864,7 +864,7 @@ export default function InstruccionesEmbarque() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripci\u00f3n BL (ES)</Label>
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripción BL (ES)</Label>
                         <Textarea 
                           value={overrideData.desc_es} 
                           readOnly 
@@ -873,7 +873,7 @@ export default function InstruccionesEmbarque() {
                       </div>
                     </div>
 
-                    {/* SECCI\u00d3N 4: FITOSANITARIO */}
+                    {/* SECCIÓN 4: FITOSANITARIO */}
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-4">
                         <ShieldCheck className="h-4 w-4 text-emerald-500" />
@@ -885,12 +885,12 @@ export default function InstruccionesEmbarque() {
                           <Input value={overrideData.consignatario_fito} onChange={(e) => handleOverrideChange('consignatario_fito', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[9px] font-black uppercase ml-2">Direcci\u00f3n Fito</Label>
+                          <Label className="text-[9px] font-black uppercase ml-2">Dirección Fito</Label>
                           <Textarea value={overrideData.direccion_fito} onChange={(e) => handleOverrideChange('direccion_fito', e.target.value)} className="rounded-xl border-slate-100 min-h-[80px]" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[9px] font-black uppercase ml-2">Pa\u00eds Destino</Label>
+                            <Label className="text-[9px] font-black uppercase ml-2">País Destino</Label>
                             <Input value={overrideData.pais_destino} onChange={(e) => handleOverrideChange('pais_destino', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                           </div>
                           <div className="space-y-2">
@@ -903,7 +903,7 @@ export default function InstruccionesEmbarque() {
                   </div>
 
                   <div className="pt-8 border-t border-slate-50 flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase italic">Nota: Los cambios realizados aqu\u00ed solo afectan al PDF actual.</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase italic">Nota: Los cambios realizados aquí solo afectan al PDF actual.</p>
                     <Button 
                       onClick={() => handleGeneratePdf(true)} 
                       disabled={isGeneratingPdf || lookupData?.emision_activa} 
@@ -913,7 +913,7 @@ export default function InstruccionesEmbarque() {
                       )}
                     >
                       {isGeneratingPdf ? <Loader2 className="h-5 w-5 mr-3 animate-spin" /> : <Save className="h-5 w-5 mr-3" />}
-                      {lookupData?.emision_activa ? "Emisi\u00f3n Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar con Cambios Manuales"}
+                      {lookupData?.emision_activa ? "Emisión Bloqueada" : isGeneratingPdf ? "Generando..." : "Generar con Cambios Manuales"}
                     </Button>
                   </div>
                 </div>
@@ -1067,11 +1067,11 @@ export default function InstruccionesEmbarque() {
                     </Table>
                   </div>
 
-                  {/* Paginaci\u00f3n AgroFlow Premium */}
+                  {/* Paginación AgroFlow Premium */}
                   {totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/20 flex items-center justify-between font-['Outfit']">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">P\u00e1gina</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Página</span>
                           <div className="h-8 px-3 bg-white border border-slate-100 rounded-lg flex items-center justify-center shadow-sm">
                             <span className="text-sm font-bold text-emerald-700">{currentPage} <span className="text-slate-300 mx-1">/</span> {totalPages}</span>
                           </div>
