@@ -86,11 +86,11 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             EmisionInstruccion.status == "ACTIVO"
         ).first()
 
-        pos = db.query(Posicionamiento).filter(Posicionamiento.booking == booking).first()
+        pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
         if not pos:
             raise HTTPException(status_code=404, detail="Booking no encontrado en posicionamiento")
     
-        raw_orden = pos.orden_beta or ""
+        raw_orden = pos.ORDEN_BETA or ""
         match = re.search(r'\d+', raw_orden)
         normalized_orden = match.group(0) if match else raw_orden
         
@@ -100,8 +100,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             query_pedidos = db.query(PedidoComercial).filter(
                 PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
             )
-            if pos.cultivo and pos.cultivo.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
-                query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.cultivo))
+            if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
             
             pedidos = query_pedidos.all()
             pedido = pedidos[0] if pedidos else None
@@ -109,8 +109,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         if not pedido:
             return {
                 "booking": booking,
-                "orden_beta": pos.orden_beta or "PENDIENTE",
-                "cultivo": pos.cultivo or "PENDIENTE",
+                "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
+                "cultivo": pos.CULTIVO or "PENDIENTE",
                 "warning": "PEDIDO_NO_ENCONTRADO",
                 "emision_activa": emision_activa.id if emision_activa else None,
                 "cliente_nombre": None,
@@ -123,7 +123,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
     
         # Intervención Especial para OGL (Palta 4KG vs 10KG) 💎
         cliente_nombre_final = pedido_cliente_raw
-        if pedido_cliente_raw and "OGL" in pedido_cliente_raw.upper() and pos.cultivo and "PALTA" in pos.cultivo.upper():
+        if pedido_cliente_raw and "OGL" in pedido_cliente_raw.upper() and pos.CULTIVO and "PALTA" in pos.CULTIVO.upper():
             peso_kilos = float(pedidos[0].peso_por_caja or 0) if pedidos else 0
             if peso_kilos >= 10:
                 cliente_nombre_final = "OGL 10KG"
@@ -192,20 +192,20 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         peso_neto = float(total_cajas) * peso_kg
         p_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)
         
-        planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos.planta_llenado else None
+        planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos.PLANTA_LLENADO else None
         
         response = {
             "booking": booking,
-            "orden_beta": pos.orden_beta or "PENDIENTE",
-            "cultivo": pos.cultivo or "PENDIENTE",
+            "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
+            "cultivo": pos.CULTIVO or "PENDIENTE",
             "variedad": (pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"),
-            "motonave": pos.nave or "",
-            "naviera": pos.naviera or "",
-            "puerto_embarque": pos.pol or "CALLAO",
-            "puerto_destino": getattr(pos, 'POD', None) or (cliente_maestro.destino if cliente_maestro else ""),
-            "eta": pos.eta.strftime('%d/%m/%Y') if pos.eta else "",
-            "operador_logistico": getattr(pos, 'OPERADOR_LOGISTICO', "DP WORLD LOGISTICS S.R.L.") or "DP WORLD LOGISTICS S.R.L.",
-            "planta_llenado": planta_maestro.planta if planta_maestro else (pos.planta_llenado or "PLANTA BETA"),
+            "motonave": pos.NAVE or "",
+            "naviera": pos.NAVIERA or "",
+            "puerto_embarque": pos.POL or "CALLAO",
+            "puerto_destino": getattr(pos, 'DESTINO_BOOKING', None) or (cliente_maestro.destino if cliente_maestro else ""),
+            "eta": pos.ETA.strftime('%d/%m/%Y') if pos.ETA else "",
+            "operador_logistico": pos.OPERADOR_LOGISTICO or "DP WORLD LOGISTICS S.R.L.",
+            "planta_llenado": planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "PLANTA BETA"),
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
             "ubigeo_planta": planta_maestro.ubigeo if planta_maestro else "110111",
             "region_planta": f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else "",
@@ -215,15 +215,15 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "pallets": total_pallets,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
-            "temperatura": pos.temperatura or "0.5 \u00b0C",
-            "ventilacion": pos.ventilacion or "15 CBM",
-            "humedad": pos.humedad or "OFF",
-            "atm": pos.ac or "NO APLICA",
+            "temperatura": pos.TEMPERATURA or "0.5 °C",
+            "ventilacion": pos.VENTILACION or "15 CBM",
+            "humedad": pos.HUMEDAD or "OFF",
+            "atm": pos.AC or "NO APLICA",
             "oxigeno": "----",
             "co2": "----",
-            "filtros": pos.filtros or "NO",
-            "cold_treatment": pos.ct or "NO",
-            "etiquetas": pos.etiqueta_caja or "GENERICA",
+            "filtros": pos.FILTROS or "NO",
+            "cold_treatment": pos.CT or "NO",
+            "etiquetas": pos.ETIQUETA_CAJA or "GENERICA",
             "warning": None,
             "maestro": None,
             "emision_activa": emision_activa.id if emision_activa else None
