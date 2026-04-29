@@ -16,7 +16,6 @@ class EmisionPackingList(Base):
     estado = Column(String(20), default="ACTIVO", index=True) # ACTIVO, ANULADO
     motivo_anulacion = Column(String(500), nullable=True)
     usuario_anulacion = Column(String(100), nullable=True)
-    fecha_anulacion = Column(DateTime(timezone=True), nullable=True)
     archivo_nombre = Column(String(500), nullable=True)
     
     detalles = relationship("DetalleEmisionPackingList", back_populates="emision")

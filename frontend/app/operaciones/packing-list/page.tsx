@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Ship,
   ClipboardList,
@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
+import { Badge } from "@/components/ui/badge";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -98,7 +99,6 @@ interface EmisionHistorial {
   usuario: string;
   motivo_anulacion: string | null;
   usuario_anulacion: string | null;
-  fecha_anulacion: string | null;
   bookings: string[];
   ordenes: string[];
 }
@@ -455,6 +455,7 @@ export default function PackingListCustomizadosPage() {
 
   return (
     <>
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
       {/* ══ HERO ══════════════════════════════════════════ */}
       <div className="relative bg-[#022c22] rounded-[2.5rem] p-10 overflow-hidden">
         <div className="absolute top-0 right-0 opacity-5 pointer-events-none"><ClipboardList className="h-72 w-72 translate-x-16 -translate-y-8 text-emerald-300" /></div>
@@ -466,40 +467,42 @@ export default function PackingListCustomizadosPage() {
             <p className="text-sm text-emerald-100/40 font-medium max-w-md">Apila múltiples confirmaciones en un solo documento consolidado por nave.</p>
           </div>
           <div className="hidden lg:block text-right">
-             <div className="flex bg-emerald-900/50 rounded-2xl p-1 mb-2">
-                <button onClick={() => setActiveTab("generar")} className={cn("px-4 py-2 rounded-xl text-xs font-black transition-all", activeTab === "generar" ? "bg-emerald-500 text-white shadow-lg" : "text-emerald-300/70 hover:text-white")}>Generar Nuevo</button>
-                <button onClick={() => setActiveTab("historial")} className={cn("px-4 py-2 rounded-xl text-xs font-black transition-all", activeTab === "historial" ? "bg-emerald-500 text-white shadow-lg" : "text-emerald-300/70 hover:text-white")}>Historial de Emisiones</button>
+             <div className="flex bg-emerald-900/50 rounded-2xl p-1 mb-2 border border-emerald-800/50">
+                <button onClick={() => setActiveTab("generar")} className={cn("px-5 py-2.5 rounded-xl text-xs font-black transition-all uppercase tracking-widest", activeTab === "generar" ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "text-emerald-300/50 hover:text-white")}>Generación</button>
+                <button onClick={() => setActiveTab("historial")} className={cn("px-5 py-2.5 rounded-xl text-xs font-black transition-all uppercase tracking-widest", activeTab === "historial" ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "text-emerald-300/50 hover:text-white")}>Historial</button>
              </div>
              {activeTab === "generar" ? (
-               <>
-                 <p className="text-xs font-black text-white/40 uppercase tracking-widest">{selectedNave ? "Nave Seleccionada" : "Esperando selección"}</p>
-                 <p className="text-2xl font-black text-white truncate max-w-[200px] inline-block">{selectedNave?.nave || "—"}</p>
-               </>
+               <div className="mt-4 animate-in slide-in-from-right-4 duration-500">
+                 <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">{selectedNave ? "Nave Seleccionada" : "Esperando selección"}</p>
+                 <p className="text-2xl font-black text-white truncate max-w-[250px] inline-block font-['Outfit'] tracking-tight">{selectedNave?.nave || "—"}</p>
+               </div>
              ) : (
-               <p className="text-2xl font-black text-white truncate max-w-[200px] inline-block mt-4">Auditoría OGL</p>
+               <div className="mt-4 animate-in slide-in-from-right-4 duration-500">
+                  <p className="text-2xl font-black text-white truncate max-w-[250px] inline-block font-['Outfit'] tracking-tight">Auditoría Packing List</p>
+               </div>
              )}
           </div>
         </div>
       </div>
 
       {activeTab === "generar" ? (
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in duration-500">
         {/* ── COL 1: Naves ── */}
-        <div className="xl:col-span-3 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col overflow-hidden h-[600px]">
-          <div className="p-6 border-b border-slate-50 space-y-4">
+        <div className="xl:col-span-3 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm flex flex-col overflow-hidden h-[620px]">
+          <div className="p-7 border-b border-slate-50 space-y-5">
              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><Anchor className="h-4 w-4 text-emerald-500" /><h2 className="text-xs font-black uppercase tracking-widest text-slate-700">Naves</h2></div>
-                <button onClick={fetchNaves} className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-emerald-600 transition-all"><RefreshCw className={cn("h-3.5 w-3.5", isLoadingNaves && "animate-spin")} /></button>
+                <div className="flex items-center gap-2.5"><Anchor className="h-5 w-5 text-emerald-500" /><h2 className="text-xs font-black uppercase tracking-[0.15em] text-slate-700">Explorar Naves</h2></div>
+                <button onClick={fetchNaves} className="h-10 w-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all border border-transparent hover:border-emerald-100"><RefreshCw className={cn("h-4 w-4", isLoadingNaves && "animate-spin")} /></button>
              </div>
-             <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" /><input type="text" placeholder="Buscar nave..." value={searchNave} onChange={(e) => setSearchNave(e.target.value)} className="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" /></div>
+             <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" /><input type="text" placeholder="Buscar nave..." value={searchNave} onChange={(e) => setSearchNave(e.target.value)} className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/50 transition-all" /></div>
              
              {allCultivos.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   <button 
                     onClick={() => setSelectedCultivo("")}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2",
-                      selectedCultivo === "" ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
+                      "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2",
+                      selectedCultivo === "" ? "bg-[#022c22] border-[#022c22] text-white shadow-md shadow-emerald-900/20" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
                     )}
                   >
                     TODOS
@@ -509,8 +512,8 @@ export default function PackingListCustomizadosPage() {
                       key={c}
                       onClick={() => setSelectedCultivo(c)}
                       className={cn(
-                        "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase",
-                        selectedCultivo === c ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
+                        "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 uppercase",
+                        selectedCultivo === c ? "bg-[#022c22] border-[#022c22] text-white shadow-md shadow-emerald-900/20" : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200"
                       )}
                     >
                       {c}
@@ -520,96 +523,71 @@ export default function PackingListCustomizadosPage() {
              )}
 
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-1.5 lc-scroll">
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 lc-scroll">
             {filteredNaves.map((n) => (
-              <button key={n.nave} onClick={() => handleSelectNave(n)} className={cn("w-full p-4 rounded-2xl text-left transition-all border-2", selectedNave?.nave === n.nave ? "bg-emerald-500 border-emerald-500 text-white shadow-lg" : "bg-slate-50/50 border-transparent hover:border-slate-200 text-slate-700")}>
+              <button key={n.nave} onClick={() => handleSelectNave(n)} className={cn("w-full p-5 rounded-3xl text-left transition-all border-2 group", selectedNave?.nave === n.nave ? "bg-emerald-500 border-emerald-500 text-white shadow-xl shadow-emerald-500/20 scale-[1.02]" : "bg-slate-50/50 border-transparent hover:border-slate-200 text-slate-700 hover:bg-white")}>
                 <div className="flex justify-between items-start">
-                   <p className="text-xs font-black uppercase truncate max-w-[140px]">{n.nave}</p>
+                   <p className="text-xs font-black uppercase truncate max-w-[150px] font-['Outfit'] tracking-tight">{n.nave}</p>
                    {n.cultivos.length > 0 && (
-                     <span className={cn("text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter", selectedNave?.nave === n.nave ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700")}>
+                     <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest", selectedNave?.nave === n.nave ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700")}>
                         {n.cultivos.join(' / ')}
                      </span>
                    )}
                 </div>
-                <p className={cn("text-[9px] font-bold mt-1", selectedNave?.nave === n.nave ? "text-white/70" : "text-slate-400")}>{n.bookings.length} Bookings OGL</p>
+                <p className={cn("text-[10px] font-bold mt-2 flex items-center gap-1.5", selectedNave?.nave === n.nave ? "text-white/70" : "text-slate-400")}><Package className="h-3 w-3" />{n.bookings.length} Bookings OGL</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* ── COL 2: Bookings Informativos ── */}
-        <div className="xl:col-span-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col overflow-hidden h-[600px]">
-          <div className="p-5 border-b border-slate-50 space-y-4">
-             <div className="flex items-center gap-2"><Package className="h-4 w-4 text-violet-500" /><h2 className="text-xs font-black uppercase tracking-widest text-slate-700">Contenido en Nave</h2></div>
+        <div className="xl:col-span-4 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm flex flex-col overflow-hidden h-[620px]">
+          <div className="p-7 border-b border-slate-50 space-y-5">
+             <div className="flex items-center gap-2.5"><Package className="h-5 w-5 text-violet-500" /><h2 className="text-xs font-black uppercase tracking-[0.15em] text-slate-700">Contenido en Nave</h2></div>
              
              {/* Selector de Cliente Principal */}
              <div className="relative">
-                <button onClick={() => setClienteDropdownOpen(!clienteDropdownOpen)} className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                   <div className="flex items-center gap-2.5">
-                      <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center text-white text-[9px] font-black", selectedCliente.bgColor)}>{selectedCliente.label[0]}</div>
-                      <p className="text-xs font-black text-slate-800">{selectedCliente.label}</p>
+                <button onClick={() => setClienteDropdownOpen(!clienteDropdownOpen)} className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] group hover:border-emerald-300 transition-all">
+                   <div className="flex items-center gap-3">
+                      <div className={cn("h-7 w-7 rounded-xl flex items-center justify-center text-white text-[10px] font-black shadow-inner", selectedCliente.bgColor)}>{selectedCliente.label[0]}</div>
+                      <p className="text-xs font-black text-slate-800 tracking-tight">{selectedCliente.label}</p>
                    </div>
-                   <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", clienteDropdownOpen && "rotate-180")} />
+                   <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform group-hover:text-emerald-500", clienteDropdownOpen && "rotate-180")} />
                 </button>
                 {clienteDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-20">
+                  <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl z-20 py-2 animate-in fade-in slide-in-from-top-4 duration-300">
                     {CLIENTES_CONFIG.map((c) => (
-                      <button key={c.id} onClick={() => { if(c.available) { setSelectedCliente(c); setClienteDropdownOpen(false); } else toast.info("No disponible"); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-left border-b last:border-0">
-                        <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center text-white text-[10px] font-black", c.available ? c.bgColor : "bg-slate-200")}>{c.available ? c.label[0] : <Lock className="h-3 w-3" />}</div>
-                        <p className={cn("text-xs font-black", c.available ? "text-slate-800" : "text-slate-400")}>{c.label}</p>
+                      <button key={c.id} onClick={() => { if(c.available) { setSelectedCliente(c); setClienteDropdownOpen(false); } else toast.info("No disponible"); }} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 text-left transition-colors border-b last:border-0 group">
+                        <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center text-white text-[11px] font-black shadow-sm", c.available ? c.bgColor : "bg-slate-200")}>{c.available ? c.label[0] : <Lock className="h-3 w-3" />}</div>
+                        <p className={cn("text-[11px] font-black uppercase tracking-widest transition-colors", c.available ? "text-slate-800 group-hover:text-emerald-600" : "text-slate-400")}>{c.label}</p>
                       </button>
                     ))}
                   </div>
                 )}
              </div>
-
-             {/* FILTRO POR RECIBIDOR (Dinámico) 🕵️‍♂️ */}
-             {bookings.length > 0 && (
-               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Filtrar por Recibidor</label>
-                 <div className="flex flex-wrap gap-2">
-                    <button 
-                      onClick={() => setSelectedRecibidor("")}
-                      className={cn(
-                        "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2",
-                        selectedRecibidor === "" ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "bg-white border-slate-100 text-slate-400 hover:border-violet-200"
-                      )}
-                    >
-                      TODOS
-                    </button>
-                    {Array.from(new Set(bookings.map(b => b.recibidor).filter(Boolean))).map((rec) => (
-                      <button 
-                        key={rec as string}
-                        onClick={() => setSelectedRecibidor(rec as string)}
-                        className={cn(
-                          "px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 truncate max-w-[200px]",
-                          selectedRecibidor === rec ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "bg-white border-slate-100 text-slate-400 hover:border-violet-200"
-                        )}
-                      >
-                        {(rec as string).toUpperCase()}
-                      </button>
-                    ))}
-                 </div>
-               </div>
-             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 lc-scroll">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 lc-scroll bg-slate-50/20">
             {bookings.length === 0 ? (
-              <div className="py-20 text-center opacity-20"><Ship className="h-10 w-10 mx-auto text-slate-400" /><p className="text-[10px] font-black uppercase mt-2">Selecciona una nave</p></div>
-            ) : bookings
-                .filter(bk => !selectedRecibidor || bk.recibidor === selectedRecibidor)
-                .map((bk) => (
-              <div key={bk.booking} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-black text-slate-900">{bk.booking}</p>
-                  <p className="text-[9px] font-bold px-2 py-0.5 bg-white border border-slate-100 rounded-full text-slate-500">{bk.contenedor || "Sin contenedor"}</p>
+              <div className="py-32 text-center opacity-20"><Ship className="h-16 w-16 mx-auto text-slate-400 mb-4 animate-pulse" /><p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Selecciona una nave para explorar bookings</p></div>
+            ) : bookings.filter(bk => !selectedRecibidor || bk.recibidor === selectedRecibidor).map((bk) => (
+              <div key={bk.booking} className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+                <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-50">
+                   <p className="text-xs font-black text-slate-900 font-['Outfit'] tracking-tight">{bk.booking}</p>
+                   <p className="text-[9px] font-black px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-slate-500 uppercase tracking-widest">{bk.contenedor || "S/N"}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                   <p className="text-[8px] font-black text-slate-400 uppercase">Orden: <span className="text-slate-700">{bk.orden_beta}</span></p>
-                   <p className="text-[8px] font-black text-slate-400 uppercase truncate">Variedad: <span className="text-slate-700">{bk.variedad}</span></p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                   <div>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Orden Beta</p>
+                      <p className="text-[10px] font-black text-emerald-600 font-['Outfit']">{bk.orden_beta || "—"}</p>
+                   </div>
+                   <div>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Variedad</p>
+                      <p className="text-[10px] font-black text-slate-700 font-['Outfit'] truncate">{bk.variedad || "—"}</p>
+                   </div>
                 </div>
-                <div className="mt-2 text-[8px] font-bold text-violet-500 uppercase truncate opacity-70">
-                   RECIBIDOR: {bk.recibidor || "DESCONOCIDO"}
+                <div className="mt-4 pt-3 border-t border-slate-50 flex items-center gap-2">
+                   <div className="h-2 w-2 rounded-full bg-violet-400" />
+                   <p className="text-[9px] font-black text-slate-400 uppercase truncate">Recibidor: <span className="text-slate-600">{bk.recibidor || "Desconocido"}</span></p>
                 </div>
               </div>
             ))}
@@ -618,26 +596,26 @@ export default function PackingListCustomizadosPage() {
 
         {/* ── COL 3: Archivos y Acción ── */}
         <div className="xl:col-span-5 space-y-6">
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 space-y-6">
-             <div className="flex items-center gap-2 pb-2 border-b"><Upload className="h-4 w-4 text-slate-500" /><h2 className="text-xs font-black uppercase tracking-widest text-slate-700">Múltiples Confirmaciones</h2></div>
+          <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-8 space-y-8">
+             <div className="flex items-center gap-3 pb-4 border-b border-slate-50"><Upload className="h-5 w-5 text-emerald-500" /><h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-700">Múltiples Confirmaciones</h2></div>
              
              <MultiFileDropzone 
                 label="Confirmaciones de Embarque" 
-                sublabel="Sube uno o varios archivos .xlsx · El orden de apilado se respeta" 
+                sublabel="Sube archivos .xlsx · Se apilarán en el orden cargado" 
                 icon={Files} accept=".xlsx,.xls" 
                 files={filesConfirmacion} onFiles={setFilesConfirmacion} 
                 color="emerald" 
              />
 
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-2 gap-5">
                 <SingleFileDropzone 
-                  label="Termógrafos" sublabel=".xlsx opcional" icon={FileSpreadsheet} 
+                  label="Archivo Termógrafos" sublabel=".xlsx obligatorio" icon={FileSpreadsheet} 
                   accept=".xlsx,.xls" file={fileTermografos} onFile={setFileTermografos} 
                   color="violet" 
                 />
-                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col justify-center items-center text-center opacity-60">
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Órdenes</p>
-                   <p className="text-2xl font-black text-slate-800">
+                <div className="p-7 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col justify-center items-center text-center group hover:bg-emerald-50 transition-colors">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Órdenes</p>
+                   <p className="text-3xl font-black text-slate-800 font-['Outfit'] tracking-tighter">
                       {selectedNave ? (
                         selectedRecibidor 
                           ? bookings.filter(b => b.recibidor === selectedRecibidor).length
@@ -651,276 +629,192 @@ export default function PackingListCustomizadosPage() {
                 onClick={handleGenerate} 
                 disabled={genStatus === "loading" || !selectedNave || filesConfirmacion.length === 0}
                 className={cn(
-                  "w-full h-16 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95",
-                  genStatus === "loading" ? "bg-slate-200 text-slate-400" : "bg-[#022c22] text-white hover:bg-emerald-600 shadow-emerald-900/20"
+                  "w-full h-20 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all shadow-2xl active:scale-95 group overflow-hidden relative",
+                  genStatus === "loading" ? "bg-slate-100 text-slate-400" : "bg-[#022c22] text-white hover:bg-emerald-700 shadow-emerald-900/30"
                 )}
              >
-                {genStatus === "loading" ? <><Loader2 className="h-5 w-5 animate-spin"/>Procesando...</> : <><Download className="h-5 w-5" />Generar Packing List Consolidado</>}
+                {genStatus === "loading" ? <><Loader2 className="h-6 w-6 animate-spin"/>Procesando Datos...</> : <><Download className="h-6 w-6 transition-transform group-hover:-translate-y-1" />Generar Packing List Consolidado</>}
+                {genStatus !== "loading" && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
              </button>
 
           </div>
         </div>
       </div>
       ) : (
-         /* ── HISTORIAL TAB ── */
-         <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm p-8 pb-12 animate-in fade-in slide-in-from-bottom-4">
-            {/* CABECERA Y FILTROS 🔍 */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 border-b border-slate-100 pb-8">
-               <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center shadow-sm shadow-indigo-100/50"><History className="h-6 w-6 text-indigo-500" /></div>
-                  <div>
-                     <h2 className="text-2xl font-black font-['Outfit'] text-slate-800 tracking-tight">Historial de Emisiones</h2>
-                     <p className="text-sm text-slate-500 font-medium">Auditoría de Packing Lists generados y anulaciones</p>
+         /* ── HISTORIAL TAB (Sincronizado con DEV 💎) ── */
+         <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden p-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="flex flex-col md:flex-row items-center gap-4 p-6 border-b border-slate-50">
+               <div className="flex items-center gap-4 flex-1">
+                  <div className="h-14 w-14 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center shadow-inner"><Clock className="h-7 w-7" /></div>
+                  <div className="space-y-1">
+                     <h3 className="text-2xl font-black text-slate-900 uppercase font-['Outfit'] tracking-tight">Historial de Emisiones</h3>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{filteredHistorial.length} Registros encontrados</p>
                   </div>
                </div>
-
-               <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                  {/* Buscador de Historial */}
-                  <div className="relative flex-1 lg:flex-none lg:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+               <div className="flex flex-col md:flex-row items-center gap-4">
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input 
-                      type="text" 
-                      placeholder="Buscar por nave..." 
+                      placeholder="Buscar por Nave..." 
                       value={searchTermHistorial}
                       onChange={(e) => setSearchTermHistorial(e.target.value)}
-                      className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+                      className="w-full pl-11 h-12 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/50 transition-all"
                     />
                   </div>
-
-                  {/* Filtro de Estado */}
-                  <div className="flex bg-slate-100 p-1 rounded-xl">
-                    {(["TODOS", "ACTIVO", "ANULADO"] as const).map((est) => (
-                      <button
-                        key={est}
-                        onClick={() => setFiltroEstado(est)}
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                          filtroEstado === est ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                        )}
-                      >
-                        {est}
-                      </button>
-                    ))}
+                  <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-100">
+                     {(["TODOS", "ACTIVO", "ANULADO"] as const).map((f) => (
+                        <button 
+                          key={f} 
+                          onClick={() => setFiltroEstado(f)}
+                          className={cn(
+                            "px-5 py-2.5 rounded-[0.85rem] text-[10px] font-black uppercase tracking-widest transition-all",
+                            filtroEstado === f ? "bg-white text-slate-950 shadow-lg shadow-slate-200/50" : "text-slate-400 hover:text-slate-600"
+                          )}
+                        >
+                          {f}
+                        </button>
+                     ))}
                   </div>
-
-                  <button onClick={fetchHistorial} className="h-11 w-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-100/50">
-                     <RefreshCw className={cn("h-4 w-4", isLoadingHistorial && "animate-spin")} />
+                  <button onClick={fetchHistorial} className="h-12 w-12 rounded-2xl hover:bg-slate-50 border border-slate-100 flex items-center justify-center transition-all group active:scale-95 shadow-sm">
+                     <RefreshCw className={cn("h-5 w-5 text-slate-400 group-hover:text-emerald-500 group-hover:rotate-180 transition-all duration-500", isLoadingHistorial && "animate-spin")} />
                   </button>
                </div>
             </div>
 
-            <div className="overflow-x-auto -mx-8 px-8">
-               <table className="w-full text-left text-sm whitespace-nowrap border-spacing-y-3 border-separate -mt-3">
-                 <thead>
-                    <tr className="text-[10px] font-black uppercase text-slate-400 tracking-[0.15em]">
-                      <th className="pb-3 px-6">Emisión</th>
-                      <th className="pb-3 px-6">Contenido</th>
-                      <th className="pb-3 px-6">Estado / Auditoría</th>
-                      <th className="pb-3 px-6 text-right">Acción</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    {filteredHistorial.map((h) => (
-                      <tr key={h.id} className={cn(
-                        "group transition-all duration-300",
-                        h.estado === "ANULADO" ? "opacity-75 grayscale-[0.3]" : ""
-                      )}>
-                        {/* COL 1: INFO BÁSICA */}
-                        <td className="bg-white border-y border-l border-slate-100 p-6 rounded-l-[2rem] shadow-sm group-hover:shadow-md transition-shadow">
-                           <div className="flex items-start gap-4">
-                              <div className={cn(
-                                "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
-                                h.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
-                              )}>
-                                 {h.estado === "ACTIVO" ? <FileCheck2 className="h-6 w-6" /> : <FileX className="h-6 w-6" />}
+            <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                  <thead>
+                     <tr className="border-b border-slate-50">
+                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Fecha / Hora</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Usuario</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Nave</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Orden Beta</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Cliente</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Cultivo</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Estado</th>
+                        <th className="px-8 py-6 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] text-center">Acciones</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {filteredHistorial.map((h) => (
+                        <tr key={h.id} className={cn(
+                          "group hover:bg-slate-50/50 transition-all",
+                          h.estado === "ANULADO" && "bg-slate-50/30"
+                        )}>
+                           <td className="px-8 py-7 text-center">
+                              <div className="flex flex-col items-center">
+                                 <span className="font-black text-slate-900 text-sm font-['Outfit'] tracking-tight">{new Date(h.fecha).toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
+                                 <span className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-widest">{new Date(h.fecha).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit', hour12: false })}</span>
                               </div>
-                              <div className="min-w-0">
-                                 <p className="text-base font-black text-slate-800 leading-tight truncate max-w-[200px]" title={h.nave}>{h.nave}</p>
-                                 <div className="flex items-center gap-2 mt-1">
-                                    <Clock className="h-3 w-3 text-slate-400" />
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                       {new Date(h.fecha).toLocaleDateString('es-PE', { day:'2-digit', month:'short' })} · {new Date(h.fecha).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' })}
-                                    </span>
+                           </td>
+                           <td className="px-6 py-7">
+                              <div className="flex flex-col items-center gap-2">
+                                 <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                       "h-9 w-9 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md uppercase",
+                                       ["bg-emerald-500", "bg-indigo-500", "bg-violet-500", "bg-amber-500"][h.usuario.charCodeAt(0) % 4]
+                                    )}>{h.usuario[0]}</div>
+                                    <span className="font-black text-[11px] uppercase tracking-widest text-slate-700">{h.usuario}</span>
                                  </div>
-                              </div>
-                           </div>
-                        </td>
-
-                        {/* COL 2: CONTENIDO / BOOKINGS */}
-                        <td className="bg-white border-y border-slate-100 p-6 shadow-sm group-hover:shadow-md transition-shadow">
-                           <div className="flex flex-col gap-3">
-                              <div className="flex flex-wrap gap-1.5 max-w-[280px]">
-                                {h.ordenes && h.ordenes.length > 0 ? (
-                                  h.ordenes.slice(0, 4).map(ord => (
-                                    <span key={ord} className="px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-slate-600 text-[10px] font-black">
-                                       {ord}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-[10px] font-bold text-slate-300 italic">Sin órdenes</span>
-                                )}
-                                {h.ordenes && h.ordenes.length > 4 && (
-                                  <span className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black">+{h.ordenes.length - 4} más</span>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <div className="flex -space-x-2">
-                                  {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
-                                       <div className="h-full w-full bg-indigo-100 flex items-center justify-center text-[8px] font-black text-indigo-400 uppercase">BK</div>
-                                    </div>
-                                  ))}
-                                </div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{h.bookings?.length || 0} Bookings Vinculados</p>
-                              </div>
-                           </div>
-                        </td>
-
-                        {/* COL 3: ESTADO / AUDITORÍA 🕵️‍♂️ */}
-                        <td className="bg-white border-y border-slate-100 p-6 shadow-sm group-hover:shadow-md transition-shadow">
-                           <div className="flex flex-col gap-3">
-                              <div className="flex items-center gap-4">
-                                 {/* Usuario Generador */}
-                                 <div className="flex items-center gap-2 group/user relative">
-                                    <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
-                                       <User className="h-4 w-4" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                       <span className="text-[10px] font-black text-slate-800 leading-none mb-0.5">{h.usuario}</span>
-                                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Generó PL</span>
-                                    </div>
-                                 </div>
-
                                  {h.estado === "ANULADO" && (
-                                    <div className="h-4 w-[1px] bg-slate-100" />
-                                 )}
-
-                                 {/* Usuario Anulador */}
-                                 {h.estado === "ANULADO" && (
-                                    <div className="flex items-center gap-2 group/user relative">
-                                       <div className="h-8 w-8 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shadow-sm">
-                                          <ShieldCheck className="h-4 w-4" />
-                                       </div>
-                                       <div className="flex flex-col">
-                                          <span className="text-[10px] font-black text-rose-700 leading-none mb-0.5">{h.usuario_anulacion || "SISTEMA"}</span>
-                                          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter">Anuló PL</span>
-                                       </div>
-                                       
-                                       {/* TOOLTIP DE MOTIVO 💎 */}
-                                       <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-64 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover/user:opacity-100 transition-all duration-300 pointer-events-none z-[100] scale-90 group-hover/user:scale-100">
-                                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                                             <AlertTriangle className="h-3 w-3 text-rose-400" />
-                                             <p className="font-black text-rose-400 uppercase tracking-widest text-[8px]">Detalle de Anulación</p>
+                                    <div className="flex flex-col items-center gap-1 animate-in slide-in-from-top-1">
+                                       <span className="text-[8px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 whitespace-nowrap">Anulado por: {h.usuario_anulacion || "SISTEMA"}</span>
+                                       {h.motivo_anulacion && (
+                                          <div className="relative group/motivo">
+                                             <span className="text-[9px] font-bold text-slate-400 italic cursor-help hover:text-slate-600 transition-colors truncate max-w-[120px] block text-center">"{h.motivo_anulacion}"</span>
+                                             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-3 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover/motivo:opacity-100 transition-all duration-200 pointer-events-none z-[100] scale-95 group-hover/motivo:scale-100 origin-bottom">
+                                                <p className="font-black text-rose-400 uppercase tracking-widest text-[8px] mb-1.5 border-b border-white/10 pb-1.5 text-center">Motivo Completo</p>
+                                                <p className="font-bold text-[10px] leading-tight text-slate-200 text-center uppercase">{h.motivo_anulacion}</p>
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900" />
+                                             </div>
                                           </div>
-                                          <p className="font-bold text-[11px] leading-relaxed italic text-slate-200 mb-2">
-                                             "{h.motivo_anulacion || "Sin motivo especificado"}"
-                                          </p>
-                                          {h.fecha_anulacion && (
-                                            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5 opacity-50">
-                                               <Clock className="h-3 w-3" />
-                                               <span className="text-[9px] font-black uppercase">
-                                                 {new Date(h.fecha_anulacion).toLocaleString('es-PE')}
-                                               </span>
-                                            </div>
-                                          )}
-                                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-t-slate-900" />
-                                       </div>
+                                       )}
                                     </div>
                                  )}
                               </div>
-
-                              <div className="flex items-center gap-2">
-                                 {h.estado === "ACTIVO" ? (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm shadow-emerald-200">
-                                       <Zap className="h-3 w-3 fill-current" /> Activo
-                                    </div>
+                           </td>
+                           <td className="px-6 py-7 text-center">
+                              <span className="font-black text-sm text-slate-900 font-['Outfit'] tracking-tight">{h.nave}</span>
+                           </td>
+                           <td className="px-6 py-7 text-center">
+                              <div className="flex flex-wrap justify-center gap-1.5 max-w-[150px] mx-auto">
+                                 {h.ordenes && h.ordenes.length > 0 ? (
+                                    h.ordenes.slice(0, 2).map(ord => (
+                                       <span key={ord} className="px-2 py-1 bg-white border border-slate-100 rounded-lg text-emerald-600 text-[10px] font-black shadow-sm">
+                                          {ord}
+                                       </span>
+                                    ))
                                  ) : (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm shadow-rose-200">
-                                       <FileX className="h-3 w-3" /> Anulado
-                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-300 italic">—</span>
+                                 )}
+                                 {h.ordenes && h.ordenes.length > 2 && (
+                                    <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg">+{h.ordenes.length - 2}</span>
                                  )}
                               </div>
-                           </div>
-                        </td>
-
-                        {/* COL 4: ACCIONES */}
-                        <td className="bg-white border-y border-r border-slate-100 p-6 rounded-r-[2rem] shadow-sm group-hover:shadow-md transition-shadow text-right">
-                           <div className="flex items-center justify-end gap-3">
-                              {h.archivo_disponible && (
-                                <a
-                                  href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="h-11 px-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/10 active:scale-95"
-                                  title={h.archivo}
-                                >
-                                  <DownloadIcon className="h-4 w-4" />
-                                  Excel
-                                </a>
-                              )}
-
-                              {h.estado === "ACTIVO" && (userRole === "SUPERVISOR DOCUMENTARIO" || userRole === "ADMIN") && (
-                                 <button
-                                   onClick={() => {
-                                     setItemAnular(h);
-                                     setMotivoAnulacion(MOTIVOS_OPCIONES[0]);
-                                     setOtroMotivo("");
-                                     setIsMotivoDropdownOpen(false);
-                                   }}
-                                   className="h-11 w-11 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100 group/btn"
-                                   title="Anular Packing List"
-                                 >
-                                    <Trash2 className="h-5 w-5 transition-transform group-hover/btn:rotate-12" />
-                                 </button>
-                              )}
-                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                    
-                    {filteredHistorial.length === 0 && !isLoadingHistorial && (
-                      <tr>
-                         <td colSpan={4} className="p-20 text-center text-slate-400">
-                            <div className="relative inline-block mb-6">
-                               <div className="absolute inset-0 bg-indigo-100 rounded-full blur-3xl opacity-20" />
-                               <Inbox className="h-20 w-20 mx-auto relative z-10 opacity-20" />
-                            </div>
-                            <p className="font-black text-lg text-slate-600 font-['Outfit']">No se encontraron registros</p>
-                            <p className="text-sm font-medium text-slate-400 mt-2">Intenta ajustar los filtros de búsqueda</p>
-                         </td>
-                      </tr>
-                    )}
-                 </tbody>
+                           </td>
+                           <td className="px-6 py-7 text-center">
+                              <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">OGL FOOD TRADE</span>
+                           </td>
+                           <td className="px-6 py-7 text-center">
+                              <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-100 bg-white">PALTA</Badge>
+                           </td>
+                           <td className="px-6 py-7 text-center relative">
+                              <Badge className={cn(
+                                "text-[10px] font-black uppercase border-none shadow-sm px-4 py-1.5 rounded-full tracking-widest",
+                                h.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-rose-600 text-white"
+                              )}>{h.estado}</Badge>
+                           </td>
+                           <td className="px-8 py-7 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                 {h.archivo_disponible && (
+                                    <a 
+                                      href={`${API_BASE_URL}/api/v1/packing-list/${h.id}/descargar`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-100 transition-all shadow-sm hover:shadow-md"
+                                      title="Descargar"
+                                    >
+                                       <DownloadIcon className="h-5 w-5" />
+                                    </a>
+                                 )}
+                                 {h.estado === "ACTIVO" && (userRole === "SUPERVISOR DOCUMENTARIO" || userRole === "ADMIN") && (
+                                    <button 
+                                      onClick={() => {
+                                        setItemAnular(h);
+                                        setMotivoAnulacion(MOTIVOS_OPCIONES[0]);
+                                        setOtroMotivo("");
+                                        setIsMotivoDropdownOpen(false);
+                                      }}
+                                      className="h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-100 transition-all shadow-sm hover:shadow-md"
+                                      title="Anular"
+                                    >
+                                       <Trash2 className="h-5 w-5" />
+                                    </button>
+                                 )}
+                              </div>
+                           </td>
+                        </tr>
+                     ))}
+                     {filteredHistorial.length === 0 && !isLoadingHistorial && (
+                        <tr>
+                           <td colSpan={8} className="py-24 text-center">
+                              <div className="opacity-10 mb-4">
+                                 <History className="h-20 w-20 mx-auto" />
+                              </div>
+                              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">No hay registros que coincidan con el filtro</p>
+                           </td>
+                        </tr>
+                     )}
+                  </tbody>
                </table>
             </div>
          </div>
-      )}
-
-      {/* MODAL DE ÉXITO ANULACIÓN 🎊 */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-[1000] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-sm w-full text-center animate-in zoom-in-95 duration-300">
-              <div className="h-24 w-24 bg-emerald-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
-                 <CheckCircle2 className="h-12 w-12 text-emerald-600" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 font-['Outfit'] mb-3 tracking-tight">¡Anulación Exitosa!</h3>
-              <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
-                 El Packing List ha sido anulado y las órdenes asociadas han sido liberadas correctamente.
-              </p>
-              <button 
-                onClick={() => setShowSuccessModal(false)}
-                className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/10 active:scale-95"
-              >
-                 Continuar
-              </button>
-           </div>
-        </div>
-      )}
-
-       {/* MODAL DE ANULACIÓN */}
+       )}
+       </div>
+      
+       {/* ── MODAL ANULACIÓN ── */}
        {itemAnular && (
-          <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
                 <div className="p-6 bg-rose-50 border-b border-rose-100 flex justify-between items-start">
                    <div className="flex gap-4">
@@ -932,43 +826,39 @@ export default function PackingListCustomizadosPage() {
                          <p className="text-xs font-bold text-rose-600/70 mt-1 uppercase tracking-widest">{itemAnular.nave}</p>
                       </div>
                    </div>
-                   <button onClick={() => setItemAnular(null)} className="text-rose-400 hover:text-rose-600"><X className="h-5 w-5" /></button>
+                   <button onClick={() => setItemAnular(null)} className="text-rose-400 hover:text-rose-600">
+                      <X className="h-5 w-5" />
+                   </button>
                 </div>
                 <div className="p-6 space-y-6">
                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-[11px] font-bold text-slate-600 leading-relaxed">
-                         Al anular este documento, las <span className="font-black text-slate-800">{itemAnular.bookings.length} órdenes</span> que contiene se liberarán y volverán a estar disponibles para procesarse en otro Packing List.
+                         Al anular este documento, las <span className="font-black text-slate-800">{itemAnular.bookings.length} órdenes</span> que contiene se liberarán y volverán a estar disponibles.
                       </p>
                    </div>
-                   
                    <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo de Anulación</label>
-                      
-                      {/* DROPDOWN CUSTOMIZADO */}
                       <div className="relative">
                         <button 
-                           onClick={() => setIsMotivoDropdownOpen(!isMotivoDropdownOpen)}
-                           className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 flex items-center justify-between hover:border-rose-300 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all shadow-sm"
+                          onClick={() => setIsMotivoDropdownOpen(!isMotivoDropdownOpen)}
+                          className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 flex items-center justify-between hover:border-rose-300 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all shadow-sm"
                         >
                            <span>{motivoAnulacion}</span>
                            <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", isMotivoDropdownOpen && "rotate-180 text-rose-500")} />
                         </button>
-
                         {isMotivoDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2 max-h-56 overflow-y-auto rounded-2xl">
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[9999] py-1 animate-in fade-in slide-in-from-top-2 max-h-56 overflow-y-auto rounded-2xl lc-scroll">
                              {MOTIVOS_OPCIONES.map((opt) => (
                                <button 
-                                 key={opt}
-                                 onClick={() => {
-                                   setMotivoAnulacion(opt);
-                                   setIsMotivoDropdownOpen(false);
-                                   if(opt !== "Otro") setOtroMotivo("");
+                                 key={opt} 
+                                 onClick={() => { 
+                                    setMotivoAnulacion(opt); 
+                                    setIsMotivoDropdownOpen(false);
+                                    if(opt !== "Otro") setOtroMotivo("");
                                  }}
                                  className={cn(
                                    "w-full text-left px-4 py-3 text-sm font-bold transition-all border-l-2",
-                                   motivoAnulacion === opt 
-                                     ? "border-rose-500 bg-rose-50/50 text-rose-700" 
-                                     : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                   motivoAnulacion === opt ? "border-rose-500 bg-rose-50/50 text-rose-700" : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                  )}
                                >
                                  {opt}
@@ -978,29 +868,43 @@ export default function PackingListCustomizadosPage() {
                         )}
                       </div>
                    </div>
-
                    {motivoAnulacion === "Otro" && (
                       <div className="space-y-2 animate-in slide-in-from-top-2">
                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Especificar Motivo</label>
                          <input 
-                            type="text" 
-                            placeholder="Escribe el motivo..."
-                            value={otroMotivo}
-                            onChange={(e) => setOtroMotivo(e.target.value)}
-                            className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                           type="text" 
+                           placeholder="Escribe el motivo..." 
+                           value={otroMotivo}
+                           onChange={(e) => setOtroMotivo(e.target.value)}
+                           className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
                          />
                       </div>
                    )}
                 </div>
                 <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50/50 rounded-b-3xl">
                    <button onClick={() => setItemAnular(null)} className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-200/50 transition-all">Cancelar</button>
-                   <button 
-                      onClick={handleAnular}
-                      disabled={isAnulando || (motivoAnulacion === "Otro" && !otroMotivo.trim())}
-                      className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                   >
+                   <button onClick={handleAnular} disabled={isAnulando || (motivoAnulacion === "Otro" && !otroMotivo.trim())} className="flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                       {isAnulando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Anulación"}
                    </button>
+                </div>
+             </div>
+          </div>
+       )}
+
+       {/* ── MODAL ÉXITO ── */}
+       {showSuccessModal && (
+          <div className="fixed inset-0 z-[10000] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+             <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-10 flex flex-col items-center text-center">
+                   <div className="h-20 w-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6 relative">
+                      <div className="absolute inset-0 bg-emerald-200 rounded-full animate-ping opacity-20" />
+                      <CheckCircle2 className="h-10 w-10 text-emerald-500 relative z-10" />
+                   </div>
+                   <h3 className="text-2xl font-black text-slate-900 font-['Outfit'] mb-2">¡Anulado con Éxito!</h3>
+                   <p className="text-sm font-bold text-slate-500 leading-relaxed">El Packing List ha sido invalidado y todas las órdenes asociadas ya están disponibles para un nuevo proceso.</p>
+                </div>
+                <div className="p-6 bg-slate-50 border-t border-slate-100">
+                   <button onClick={() => setShowSuccessModal(false)} className="w-full h-14 rounded-2xl bg-[#022c22] text-white font-black text-sm uppercase tracking-widest hover:bg-emerald-900 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-900/20">Entendido</button>
                 </div>
              </div>
           </div>
