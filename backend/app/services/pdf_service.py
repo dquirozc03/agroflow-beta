@@ -219,16 +219,16 @@ class InstructionPDFService:
             pod_val = pedidos[0].pod if pedidos else ""
             
             cliente_buscar = cliente_nombre
-            if cliente_nombre and "OGL" in cliente_nombre.upper() and pos.cultivo and "PALTA" in pos.cultivo.upper():
+            if cliente_nombre and "OGL" in cliente_nombre.upper() and pos.CULTIVO and "PALTA" in pos.CULTIVO.upper():
                 p_k = float(pedidos[0].peso_por_caja) if pedidos and getattr(pedidos[0], 'peso_por_caja', None) else 0
                 if p_k >= 10: cliente_buscar = "OGL 10KG"
                 elif p_k > 0: cliente_buscar = "OGL 4KG"
 
-            cliente_maestro = self._match_cliente_maestro(db, cliente_buscar, pais_val, pod_val, pos.cultivo)
+            cliente_maestro = self._match_cliente_maestro(db, cliente_buscar, pais_val, pod_val, pos.CULTIVO)
             fito = cliente_maestro.fitosanitario if cliente_maestro else None
 
-            planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.planta_llenado)).first() if pos and pos.planta_llenado else None
-            planta_nombre = (planta_maestro.planta if planta_maestro else (pos.planta_llenado or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")).upper()
+            planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos and pos.PLANTA_LLENADO else None
+            planta_nombre = (planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "ICA CARRETERA PANAMERICANA SUR KM 321 - SANTIAGO - ICA - PERU")).upper()
             planta_direccion = planta_maestro.direccion if planta_maestro else ""
             planta_region = f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else ""
             planta_ubigeo = planta_maestro.ubigeo if planta_maestro else "110111"
@@ -241,8 +241,8 @@ class InstructionPDFService:
             pos_operador = pos.OPERADOR_LOGISTICO or "DP WORLD LOGISTICS S.R.L."
             pos_pol = pos.POL or "CALLAO"
             
-            f_prog = pos.fecha_llenado_reporte or pos.fecha_programada
-            h_prog = pos.hora_llenado_reporte or pos.hora_programada
+            f_prog = pos.FECHA_LLENADO_REPORTE or pos.FECHA_PROGRAMADA
+            h_prog = pos.HORA_LLENADO_REPORTE or pos.HORA_PROGRAMADA
             f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
             fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
@@ -284,7 +284,7 @@ class InstructionPDFService:
             humedad = pos.HUMEDAD or def_hum
             atm = pos.AC or def_ac
             
-            tecnologia = (pos.tipo_tecnologia or "").upper()
+            tecnologia = (pos.TIPO_TECNOLOGIA or "").upper()
             oxigeno = "NO APLICA" 
             co2 = "NO APLICA" 
             if is_palta:
@@ -383,7 +383,7 @@ class InstructionPDFService:
         ]
         pres_val = override_data.get('presentacion') if override_data else getattr(pedidos[0], 'presentacion', None) if pedidos else None
         if not pres_val or str(pres_val).strip() == "0": pres_val = f"CAJA {float(peso_kg):g} KG" if (peso_kg and float(peso_kg) > 0) else ("CAJA 4.0 KG" if "PALTA" in cultivo_key else "CAJA 3.8 KG")
-        t2_data.extend([[b_p("PRESENTACION"), b_p(pres_val)], [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas') if override_data else (pos.etiqueta_caja or "GENERICA"))], [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)], [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)], [b_p("OBSERVACIONES"), n_p(observaciones_final)]])
+        t2_data.extend([[b_p("PRESENTACION"), b_p(pres_val)], [b_p("ETIQUETAS"), b_p(override_data.get('etiquetas') if override_data else (pos.ETIQUETA_CAJA or "GENERICA"))], [b_p("PESO NETO ESTIMADO"), b_p(peso_neto_full)], [b_p("PESO BRUTO ESTIMADO"), b_p(peso_bruto_full)], [b_p("OBSERVACIONES"), n_p(observaciones_final)]])
 
         t1_styles = [('GRID', (0,0), (-1,-1), 0.5, colors.black), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('BACKGROUND', (0,0), (0,-1), bg_color), ('BACKGROUND', (0,3), (-1,3), secondary_color), ('BACKGROUND', (0,6), (-1,6), secondary_color), ('ALIGN', (1,6), (1,6), 'CENTER')]
         if is_gr: t1_styles.extend([('TEXTCOLOR', (0,3), (-1,3), colors.white), ('TEXTCOLOR', (0,6), (-1,6), colors.white)])
