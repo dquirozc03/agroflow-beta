@@ -24,6 +24,12 @@ COLUMN_MAPPING = {
     "BOOKING LIMPIO": "BOOKING",
     "BOOKING": "BOOKING",
     "RESERVA": "BOOKING",
+    "NRO BOOKING": "BOOKING",
+    "NRO. BOOKING": "BOOKING",
+    "NRO RESERVA": "BOOKING",
+    "NRO. RESERVA": "BOOKING",
+    "BOOKING ": "BOOKING",
+    "RESERVA ": "BOOKING",
     "NAVE": "NAVE",
     "ETD BOOKING": "ETD",
     "ETD": "ETD",
@@ -143,10 +149,20 @@ async def sync_posicionamiento_raw(
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN: raise HTTPException(status_code=401)
     if not payload or len(payload) < 2: return {"status": "error", "message": "Payload vacio"}
     
-    headers = [str(h).strip().upper() for h in payload[0]]
+    def clean_header(h: Any):
+        return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
+
+    excel_headers = [clean_header(h) for h in payload[0]]
+    logger.info(f"CABECERAS LIMPIAS DETECTADAS: {excel_headers}")
     data_rows = payload[1:]
     
-    mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in COLUMN_MAPPING.items() if ex_col.upper() in headers}
+    # Mapear usando la limpieza también en las llaves del mapping
+    mapping_indices = {}
+    for ex_col, db_col in COLUMN_MAPPING.items():
+        clean_target = clean_header(ex_col)
+        if clean_target in excel_headers:
+            mapping_indices[db_col] = excel_headers.index(clean_target)
+            
     logger.info(f"Mapping indices Posicionamiento: {mapping_indices}")
     
     results = {"processed": 0, "errors": [], "skipped": 0}
@@ -154,7 +170,7 @@ async def sync_posicionamiento_raw(
     for i, row in enumerate(data_rows):
         try:
             row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-            booking_id = row_data.get("booking")
+            booking_id = row_data.get("BOOKING")
             if not booking_id:
                 results["skipped"] += 1
                 continue
@@ -181,9 +197,19 @@ async def sync_pedidos_raw(
     if not x_sync_token or x_sync_token != settings.SYNC_TOKEN: raise HTTPException(status_code=401)
     if not payload or len(payload) < 2: return {"status": "error", "message": "Payload vacio"}
     
-    headers = [str(h).strip().upper() for h in payload[0]]
+    def clean_header(h: Any):
+        return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
+
+    excel_headers = [clean_header(h) for h in payload[0]]
     data_rows = payload[1:]
-    mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in PEDIDOS_MAPPING.items() if ex_col.upper() in headers}
+    
+    mapping_indices = {}
+    for ex_col, db_col in PEDIDOS_MAPPING.items():
+        clean_target = clean_header(ex_col)
+        if clean_target in excel_headers:
+            mapping_indices[db_col] = excel_headers.index(clean_target)
+
+    logger.info(f"Mapping indices Pedidos: {mapping_indices}")
 
     try:
         db.query(PedidoComercial).delete()
