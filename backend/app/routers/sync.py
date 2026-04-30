@@ -104,15 +104,28 @@ async def sync_posicionamiento_raw(payload: Any = Body(...), x_sync_token: str =
     mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in COLUMN_MAPPING.items() if ex_col.upper() in headers}
     logger.info(f"Mapping indices: {mapping_indices}")
     
-    for row in data_rows:
-        row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-        if not row_data.get("booking"): continue
-        stmt = insert(Posicionamiento).values(**row_data)
-        update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
-        upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
-        db.execute(upsert_stmt)
+    results = {"processed": 0, "errors": [], "skipped": 0, "details": []}
+    
+    for i, row in enumerate(data_rows):
+        try:
+            row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
+            booking_id = row_data.get("booking")
+            
+            if not booking_id:
+                results["skipped"] += 1
+                continue
+                
+            stmt = insert(Posicionamiento).values(**row_data)
+            update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
+            upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
+            db.execute(upsert_stmt)
+            results["processed"] += 1
+            results["details"].append({"booking": booking_id, "status": "synced"})
+        except Exception as e:
+            results["errors"].append({"row": i + 2, "error": str(e)})
+            
     db.commit()
-    return {"status": "success"}
+    return {"status": "success" if not results["errors"] else "partial_success", "summary": results}
 
 @router.get("/posicionamiento/list")
 def list_posicionamiento(db: Session = Depends(get_db)):
@@ -128,18 +141,29 @@ async def sync_pedidos_raw(payload: Any = Body(...), x_sync_token: str = Header(
     
     mapping_indices = {db_col: headers.index(ex_col.upper()) for ex_col, db_col in PEDIDOS_MAPPING.items() if ex_col.upper() in headers}
     
-    for row in data_rows:
-        row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-        if not row_data.get("orden_beta"): continue
-        
-        # Upsert basado en orden_beta
-        stmt = insert(PedidoComercial).values(**row_data)
-        update_data = {k: v for k, v in row_data.items() if k != "orden_beta" and v is not None}
-        upsert_stmt = stmt.on_conflict_do_update(
-            index_elements=[PedidoComercial.orden_beta],
-            set_=update_data
-        ) if update_data else stmt.on_conflict_do_nothing(index_elements=[PedidoComercial.orden_beta])
-        db.execute(upsert_stmt)
+    results = {"processed": 0, "errors": [], "skipped": 0, "details": []}
+    
+    for i, row in enumerate(data_rows):
+        try:
+            row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
+            orden_id = row_data.get("orden_beta")
+            
+            if not orden_id:
+                results["skipped"] += 1
+                continue
+            
+            # Upsert basado en orden_beta
+            stmt = insert(PedidoComercial).values(**row_data)
+            update_data = {k: v for k, v in row_data.items() if k != "orden_beta" and v is not None}
+            upsert_stmt = stmt.on_conflict_do_update(
+                index_elements=[PedidoComercial.orden_beta],
+                set_=update_data
+            ) if update_data else stmt.on_conflict_do_nothing(index_elements=[PedidoComercial.orden_beta])
+            db.execute(upsert_stmt)
+            results["processed"] += 1
+            results["details"].append({"orden": orden_id, "status": "synced"})
+        except Exception as e:
+            results["errors"].append({"row": i + 2, "error": str(e)})
     
     db.commit()
-    return {"status": "success", "rows_processed": len(data_rows)}
+    return {"status": "success" if not results["errors"] else "partial_success", "summary": results}
