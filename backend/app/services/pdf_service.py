@@ -201,8 +201,8 @@ class InstructionPDFService:
                 query_pedidos = db.query(PedidoComercial).filter(
                     PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
                 )
-                if pos.cultivo and pos.cultivo.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
-                    query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.cultivo))
+                if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                    query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
                 pedidos = query_pedidos.all()
 
             total_cajas = sum(p.total_cajas or 0 for p in pedidos)
