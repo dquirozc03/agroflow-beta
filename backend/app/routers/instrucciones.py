@@ -141,7 +141,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pais = pedido_pais_clean
         destino = pedido_pod_clean
         po_id = pedido.po.strip() if pedido.po else None
-        cultivo_val = (pos.cultivo or "").strip()
+        cultivo_val = (pos.CULTIVO or "").strip()
 
         # 1. Prioridad Máxima: Cliente + País + Destino + PO + Cultivo
         cliente_maestro = None
@@ -220,7 +220,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos.PLANTA_LLENADO else None
         
         response = {
-            "booking": booking,
+            "booking": pos.BOOKING,
             "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
             "cultivo": pos.CULTIVO or "PENDIENTE",
             "variedad": (pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"),
