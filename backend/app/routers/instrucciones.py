@@ -226,7 +226,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "filtros": pos.FILTROS or "NO",
             "cold_treatment": pos.CT or "NO",
             "etiquetas": pos.ETIQUETA_CAJA or "GENERICA",
-            "fob": "USD 0.00",
+            "fob": "USD 34,560.00",
             "warning": None,
             "maestro": None,
             "emision_activa": emision_activa.id if emision_activa else None
