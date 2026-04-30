@@ -112,6 +112,7 @@ class Anexo1Request(BaseModel):
     peso_neto_carga: float
     is_especial: bool = False
     num_guia: str = ""
+    guia_remision: Optional[str] = None # Alias para compatibilidad con el frontend
 
 @router.get("/lookup/{booking}")
 def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
@@ -616,10 +617,12 @@ def generate_anexo1(id: int, req: Anexo1Request, db: Session = Depends(get_db)):
             
         reg.peso_bruto = req.peso_bruto
         reg.peso_tara_contenedor = req.peso_tara_contenedor
-        reg.num_guia = req.num_guia
+        reg.peso_neto_carga = req.peso_neto_carga
+        reg.num_guia = req.num_guia or req.guia_remision
         db.commit()
         
-        file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial, guia_remision=req.num_guia)
+        final_guia = reg.num_guia
+        file_path = generate_anexo_1_pdf(db, id, is_especial=req.is_especial, guia_remision=final_guia)
         
         def iterfile():
             try:

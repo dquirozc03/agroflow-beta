@@ -97,9 +97,11 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pedido = None
         pedidos = []
         if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
+            # Búsqueda estricta por dígitos para evitar coincidencias parciales (ej. 14 no debe matchear 114)
             query_pedidos = db.query(PedidoComercial).filter(
-                PedidoComercial.orden_beta.ilike(f"%{normalized_orden}%")
+                func.regexp_replace(PedidoComercial.orden_beta, r'[^0-9]', '', 'g') == normalized_orden
             )
+            
             if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
                 query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
             
@@ -186,8 +188,9 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             ).first()
     
         from app.models.maestros import Planta
-        total_cajas = sum(int(p.total_cajas or 0) for p in pedidos)
-        total_pallets = sum(int(p.total_pallets or 0) for p in pedidos)
+        # Usamos MAX en lugar de SUM porque el Excel suele repetir el TOTAL de la orden en cada fila (variedad/presentación)
+        total_cajas = max((int(p.total_cajas or 0) for p in pedidos), default=0)
+        total_pallets = max((int(p.total_pallets or 0) for p in pedidos), default=0)
         peso_kg = float(pedidos[0].peso_por_caja or 0.0) if pedidos else 0.0
         peso_neto = float(total_cajas) * peso_kg
         p_bruto = peso_neto + (float(total_pallets) * 30.0) + (float(total_cajas) * 0.25)

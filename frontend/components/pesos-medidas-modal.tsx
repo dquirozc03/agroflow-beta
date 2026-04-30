@@ -115,7 +115,7 @@ export function PesosMedidasModal({ isOpen, onClose, registroId, onSuccess }: Pe
           peso_tara_contenedor: taraContenedor,
           peso_neto_carga: pesoBrutoProducto,
           is_especial: isSe2,
-          guia_remision: guiaRemision
+          num_guia: guiaRemision
         })
       });
 
