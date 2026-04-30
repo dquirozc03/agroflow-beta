@@ -98,27 +98,29 @@ PEDIDOS_MAPPING = {
 }
 
 def clean_data_value(val: Any, db_column: str):
-    null_and_errors = {"", "-", "N/A", "NONE", "NULL", "NAN", "#¡VALOR!", "#VALUE!", "#REF!", "#DIV/0!"}
+    null_and_errors = {"", "-", "N/A", "NONE", "NULL", "NAN", "#¡VALOR!", "#VALUE!", "#REF!", "#DIV/0!", "#N/A", "#NAME?", "#¿NOMBRE?"}
     if val is None: return None
     val_str = str(val).strip()
     if not val_str or val_str.upper() in null_and_errors: return None
     
+    col_upper = db_column.upper()
+    
     # Manejo de números
-    numeric_cols = ["peso_por_caja", "caja_por_pallet", "total_pallets", "total_cajas", "semana_eta", "cajas_vacias"]
-    if db_column in numeric_cols:
-        if db_column == "cajas_vacias":
+    numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS", "SEMANA_ETA", "CAJAS_VACIAS"]
+    if col_upper in numeric_cols:
+        if col_upper == "CAJAS_VACIAS":
             if val_str.upper() == "SI": return 1
             if val_str.upper() == "NO": return 0
         try:
             match = re.search(r'(\d+(\.\d+)?)', val_str.replace(',', ''))
             if match:
                 num = float(match.group(1))
-                return int(num) if db_column != "peso_por_caja" else num
+                return int(num) if col_upper != "PESO_POR_CAJA" else num
         except:
             return 0
 
     # Manejo de fechas
-    if db_column in ["etd", "eta", "fecha_programada"]:
+    if col_upper in ["ETD", "ETA", "FECHA_PROGRAMADA", "FECHA_LLENADO_REPORTE"]:
         try:
             # Traducción básica de meses en español a inglés para el parser
             meses_es_en = {
@@ -128,12 +130,14 @@ def clean_data_value(val: Any, db_column: str):
             temp_val = val_str.upper()
             for es, en in meses_es_en.items():
                 if es in temp_val: temp_val = temp_val.replace(es, en)
-            return parse_date(temp_val).date()
+            
+            parsed_date = parse_date(temp_val)
+            return parsed_date.date()
         except:
             return None
 
     # Manejo de horas
-    if db_column == "hora_programada":
+    if col_upper in ["HORA_PROGRAMADA", "HORA_LLENADO_REPORTE"]:
         try: return parse_date(val_str).time()
         except: return None
 
