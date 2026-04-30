@@ -62,6 +62,15 @@ class LogiCaptureRegistro(Base):
     fecha_status_update = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     usuario_registro = Column(String(100), nullable=True)
 
+    # Operativos (Nuevos campos inyectados)
+    temperatura = Column(String(50), nullable=True)
+    ventilacion = Column(String(50), nullable=True)
+    humedad = Column(String(50), nullable=True)
+    ac = Column(String(50), nullable=True)
+    tipo_tecnologia = Column(String(100), nullable=True)
+    filtros = Column(String(50), nullable=True)
+    ct = Column(String(50), nullable=True)
+
     @property
     def antiguedad_humanizada(self) -> str:
         """
