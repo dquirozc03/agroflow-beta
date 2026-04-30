@@ -51,7 +51,10 @@ COLUMN_MAPPING = {
     "FILTROS": "filtros",
     "FECHA SOLICITADA (OPERADOR)": "fecha_programada",
     "HORA SOLICITADA (OPERADOR)": "hora_programada",
-    "CAJAS VACIAS (SI/NO)": "cajas_vacias"
+    "CAJAS VACIAS (SI/NO)": "cajas_vacias",
+    "DESTINO (BOOKING)": "destino_booking",
+    "DESTINO": "destino_booking",
+    "PAIS (BOOKING)": "pais_booking"
 }
 
 # Mapeo de columnas para Pedidos Comerciales

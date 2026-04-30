@@ -34,6 +34,7 @@ class Posicionamiento(Base):
     HORA_LLENADO_REPORTE = Column("hora_llenado_reporte", Time, nullable=True)
     TIPO_TECNOLOGIA = Column("tipo_tecnologia", String(100), nullable=True)
     ETIQUETA_CAJA = Column("etiqueta_caja", String(100), nullable=True)
+    PAIS_BOOKING = Column("pais_booking", String(100), nullable=True)
     
     ESTADO = Column("estado", String(20), default="PROGRAMADO")
     FECHA_CREACION = Column("fecha_creacion", DateTime(timezone=True), server_default=func.now())

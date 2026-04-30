@@ -224,6 +224,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "filtros": pos.FILTROS or "NO",
             "cold_treatment": pos.CT or "NO",
             "etiquetas": pos.ETIQUETA_CAJA or "GENERICA",
+            "fob": "USD 0.00",
             "warning": None,
             "maestro": None,
             "emision_activa": emision_activa.id if emision_activa else None
@@ -241,7 +242,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 "destino": cliente_maestro.destino,
                 "consignatario_bl": (cliente_maestro.consignatario_bl or "").replace(";", "").strip(),
                 "direccion_consignatario": (cliente_maestro.direccion_consignatario or "").replace(";", "").strip(),
-                "po": pedido.po if pedido and getattr(pedido, 'po', None) else "",
+                "po": pedido.po if (pedido and pedido.po and str(pedido.po).strip() != "0") else "",
                 "notify_bl": (cliente_maestro.notify_bl or "").replace(";", "").strip(),
                 "direccion_notify": (cliente_maestro.direccion_notify or "").replace(";", "").strip(),
                 "fitosanitario": fito_data,

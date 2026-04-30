@@ -255,7 +255,7 @@ class InstructionPDFService:
             desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
             
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
-            fob_val = "USD 34,560.00"
+            fob_val = "USD 0.00"
             flete_val = "PREPAID" if pedidos and "CIF" in (pedidos[0].incoterm or "").upper() else "COLLECT"
             eori_consignee = cliente_maestro.eori_consignatario if cliente_maestro and getattr(cliente_maestro, 'eori_consignatario', None) else "----"
             eori_notify = cliente_maestro.eori_notify if cliente_maestro and getattr(cliente_maestro, 'eori_notify', None) else "----"
