@@ -192,10 +192,10 @@ class InstructionPDFService:
             cold_treatment = override_data.get('cold_treatment', 'NO')
             
         else:
-            pos = db.query(Posicionamiento).filter(Posicionamiento.booking == booking).first()
+            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
             if not pos: raise Exception(f"Booking {booking} no encontrado")
 
-            normalized_orden = self._normalize_orden(pos.orden_beta)
+            normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
             pedidos = []
             if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
                 query_pedidos = db.query(PedidoComercial).filter(
@@ -233,13 +233,13 @@ class InstructionPDFService:
             planta_region = f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else ""
             planta_ubigeo = planta_maestro.ubigeo if planta_maestro else "110111"
             
-            pos_booking = pos.booking or ""
-            pos_orden = pos.orden_beta or ""
-            pos_cultivo = pos.cultivo or ""
-            pos_nave = pos.nave or ""
-            pos_naviera = pos.naviera or ""
-            pos_operador = pos.operador_logistico or "DP WORLD LOGISTICS S.R.L."
-            pos_pol = pos.pol or "CALLAO"
+            pos_booking = pos.BOOKING or ""
+            pos_orden = pos.ORDEN_BETA or ""
+            pos_cultivo = pos.CULTIVO or ""
+            pos_nave = pos.NAVE or ""
+            pos_naviera = pos.NAVIERA or ""
+            pos_operador = pos.OPERADOR_LOGISTICO or "DP WORLD LOGISTICS S.R.L."
+            pos_pol = pos.POL or "CALLAO"
             
             f_prog = pos.fecha_llenado_reporte or pos.fecha_programada
             h_prog = pos.hora_llenado_reporte or pos.hora_programada
@@ -247,8 +247,8 @@ class InstructionPDFService:
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
             fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
 
-            eta_str = pos.eta.strftime('%d/%m/%Y') if pos.eta else ""
-            puerto_destino = pos.destino_booking or (pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else ""))
+            eta_str = pos.ETA.strftime('%d/%m/%Y') if pos.ETA else ""
+            puerto_destino = pos.DESTINO_BOOKING or (pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else ""))
             
             variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
             desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
@@ -279,10 +279,10 @@ class InstructionPDFService:
             def_hum = "OFF" if (is_palta or is_granada) else ""
             def_ac = "SI" if is_palta else "NO APLICA"
             
-            temperatura = pos.temperatura or def_temp
-            ventilacion = pos.ventilacion or def_vent
-            humedad = pos.humedad or def_hum
-            atm = pos.ac or def_ac
+            temperatura = pos.TEMPERATURA or def_temp
+            ventilacion = pos.VENTILACION or def_vent
+            humedad = pos.HUMEDAD or def_hum
+            atm = pos.AC or def_ac
             
             tecnologia = (pos.tipo_tecnologia or "").upper()
             oxigeno = "NO APLICA" 
@@ -293,8 +293,8 @@ class InstructionPDFService:
                 else:
                     oxigeno, co2 = "4%", "6%"
                 
-            filtros = pos.filtros or ("NO" if is_granada else ("SI" if is_palta else "NO"))
-            cold_treatment = pos.ct or "NO"
+            filtros = pos.FILTROS or ("NO" if is_granada else ("SI" if is_palta else "NO"))
+            cold_treatment = pos.CT or "NO"
 
             if is_palta and "TESCO" in (cliente_nombre or "").upper():
                 filtros = "NO (SIN FILTROS)"

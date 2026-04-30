@@ -215,6 +215,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "pallets": total_pallets,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
+            "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS",
+            "desc_es": f"{total_cajas} CAJAS CON FRESCA {pos.CULTIVO or 'PRODUCTO'} {pedidos[0].variedad if pedidos else ''} EN {total_pallets} PALETAS",
             "temperatura": pos.TEMPERATURA or "0.5 °C",
             "ventilacion": pos.VENTILACION or "15 CBM",
             "humedad": pos.HUMEDAD or "OFF",
