@@ -222,14 +222,29 @@ async def sync_pedidos_raw(
     logger.info(f"Mapping indices Pedidos: {mapping_indices}")
 
     try:
-        db.query(PedidoComercial).delete()
-        mappings = []
+        new_mappings = []
+        cultivos_en_payload = set()
+        
         for row in data_rows:
             pedido_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-            if pedido_data.get("orden_beta"): mappings.append(pedido_data)
-        if mappings: db.bulk_insert_mappings(PedidoComercial, mappings)
+            if pedido_data.get("orden_beta"):
+                new_mappings.append(pedido_data)
+                c = pedido_data.get("cultivo")
+                if c:
+                    cultivos_en_payload.add(c)
+
+        # Borrado inteligente: Solo eliminamos los cultivos que estamos subiendo ahora
+        if cultivos_en_payload:
+            db.query(PedidoComercial).filter(PedidoComercial.cultivo.in_(list(cultivos_en_payload))).delete(synchronize_session=False)
+        else:
+            # Si no hay cultivos detectados, limpieza total para evitar duplicados en reportes generales
+            db.query(PedidoComercial).delete()
+
+        if new_mappings: 
+            db.bulk_insert_mappings(PedidoComercial, new_mappings)
+            
         db.commit()
-        return {"status": "success", "summary": {"processed": len(mappings), "message": "Recarga total de pedidos exitosa"}}
+        return {"status": "success", "summary": {"processed": len(new_mappings), "cultivos_actualizados": list(cultivos_en_payload), "message": "Sincronización selectiva exitosa"}}
     except Exception as e:
         db.rollback()
         return {"status": "error", "error": str(e)}
