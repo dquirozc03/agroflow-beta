@@ -62,6 +62,7 @@ class LogiCaptureSaveRequest(BaseModel):
     # Pesos (Anexo 1)
     peso_bruto: Optional[float] = None
     peso_tara_contenedor: Optional[float] = None
+    peso_neto_carga: Optional[float] = None
     num_guia: Optional[str] = None
 
     # Operativos (Nuevos campos inyectados)
@@ -373,6 +374,7 @@ def register_logicapture_data(req: LogiCaptureSaveRequest, db: Session = Depends
         # Pesos
         peso_bruto=req.peso_bruto,
         peso_tara_contenedor=req.peso_tara_contenedor,
+        peso_neto_carga=req.peso_neto_carga,
         num_guia=req.num_guia,
         # Operativos
         temperatura=req.temperatura,

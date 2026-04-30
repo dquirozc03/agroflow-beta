@@ -97,9 +97,13 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pedido = None
         pedidos = []
         if normalized_orden and len(normalized_orden) > 1 and normalized_orden.upper() != "PENDIENTE":
-            # Búsqueda estricta por dígitos para evitar coincidencias parciales (ej. 14 no debe matchear 114)
+            # Búsqueda optimizada por índice (exacta o con padding de ceros)
             query_pedidos = db.query(PedidoComercial).filter(
-                func.regexp_replace(PedidoComercial.orden_beta, r'[^0-9]', '', 'g') == normalized_orden
+                or_(
+                    PedidoComercial.orden_beta == normalized_orden,
+                    PedidoComercial.orden_beta == f"0{normalized_orden}",
+                    PedidoComercial.orden_beta == f"00{normalized_orden}"
+                )
             )
             
             if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
