@@ -95,18 +95,22 @@ class InstructionPDFService:
             if cultivo_val: query2 = query2.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
             cliente = query2.first()
 
-        # 3. Fallback (Nombre + Pais)
+        # 3. Fallback (Nombre + Pais + Cultivo)
         if not cliente:
-            cliente = db.query(ClienteIE).filter(
+            query3 = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val),
                 func.trim(ClienteIE.pais).ilike(pais_val)
-            ).first()
+            )
+            if cultivo_val: query3 = query3.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
+            cliente = query3.first()
 
-        # 4. Fallback (Solo Nombre Legal)
+        # 4. Fallback (Solo Nombre Legal + Cultivo)
         if not cliente:
-            cliente = db.query(ClienteIE).filter(
+            query4 = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_clean_val)
-            ).first()
+            )
+            if cultivo_val: query4 = query4.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
+            cliente = query4.first()
 
         # 5. Smart Match (Fuzzy / Normalizado)
         if not cliente:
@@ -118,12 +122,13 @@ class InstructionPDFService:
                 ClienteIE.estado == "ACTIVO"
             ).first()
 
-            if not cliente:
-                cliente = db.query(ClienteIE).filter(
-                    (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
-                    (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
-                    ClienteIE.estado == "ACTIVO"
-                ).first()
+            query5 = db.query(ClienteIE).filter(
+                (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
+                (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
+                ClienteIE.estado == "ACTIVO"
+            )
+            if cultivo_val: query5 = query5.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
+            cliente = query5.first()
         
         return cliente
 

@@ -8,7 +8,7 @@ from app.models.maestros import ClienteIE, MaestroFito
 from app.models.instruccion import EmisionInstruccion
 from app.services.pdf_service import instruction_pdf_service
 from pydantic import BaseModel
-from sqlalchemy import func, desc, or_
+from sqlalchemy import func, desc, or_, literal
 from app.utils.logging import logger
 from app.utils.formatters import normalize_client_name, normalize_country_name
 from datetime import datetime, timedelta
@@ -141,14 +141,16 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pais = pedido_pais_clean
         destino = pedido_pod_clean
         po_id = pedido.po.strip() if pedido.po else None
+        cultivo_val = (pos.cultivo or "").strip()
 
-        # 1. Prioridad Máxima: Cliente + País + Destino + PO (Búsqueda flexible en lista)
+        # 1. Prioridad Máxima: Cliente + País + Destino + PO + Cultivo
         cliente_maestro = None
         if po_id:
             cliente_maestro = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
                 func.trim(ClienteIE.pais).ilike(pais),
                 func.trim(ClienteIE.destino).ilike(destino),
+                func.trim(ClienteIE.cultivo).ilike(cultivo_val),
                 ClienteIE.estado == "ACTIVO",
                 ClienteIE.po.isnot(None),
                 or_(
@@ -159,11 +161,12 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 )
             ).first()
         
-        # 2. Segunda Prioridad: Cliente + País + PO (Si el destino varía pero el PO manda)
+        # 2. Segunda Prioridad: Cliente + País + PO + Cultivo
         if not cliente_maestro and po_id:
             cliente_maestro = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
                 func.trim(ClienteIE.pais).ilike(pais),
+                func.trim(ClienteIE.cultivo).ilike(cultivo_val),
                 ClienteIE.estado == "ACTIVO",
                 ClienteIE.po.isnot(None),
                 or_(
@@ -174,21 +177,36 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 )
             ).first()
 
-        # 3. Nivel 3: Match General (Cliente + País + Destino)
+        # 3. Nivel 3: Match General (Cliente + País + Destino + Cultivo)
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
                 func.trim(ClienteIE.pais).ilike(pais),
                 func.trim(ClienteIE.destino).ilike(destino),
+                func.trim(ClienteIE.cultivo).ilike(cultivo_val),
                 ClienteIE.estado == "ACTIVO"
             ).first()
     
-        # 4. Nivel 4: Match Genérico (Cliente + País)
+        # 4. Nivel 4: Match Genérico (Cliente + País + Cultivo)
         if not cliente_maestro:
             cliente_maestro = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.nombre_legal).ilike(cliente_id),
                 func.trim(ClienteIE.pais).ilike(pais),
+                func.trim(ClienteIE.cultivo).ilike(cultivo_val),
                 ClienteIE.estado == "ACTIVO"
+            ).first()
+
+        # 5. Búsqueda Inteligente (Flexible en Nombre + Cultivo)
+        if not cliente_maestro:
+            # Quitamos palabras comunes como "HOLLAND", "USA", etc para el match flexible
+            clean_name = re.sub(r'\s+(HOLLAND|USA|PERU|UK|EUROPE|B\.V\.|LTD|INC)\.?$', '', cliente_id, flags=re.IGNORECASE)
+            cliente_maestro = db.query(ClienteIE).filter(
+                func.trim(ClienteIE.cultivo).ilike(cultivo_val),
+                ClienteIE.estado == "ACTIVO",
+                or_(
+                    ClienteIE.nombre_legal.ilike(f"%{clean_name}%"),
+                    literal(cliente_id).ilike(func.concat('%', ClienteIE.nombre_legal, '%'))
+                )
             ).first()
     
         from app.models.maestros import Planta
