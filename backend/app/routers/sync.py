@@ -57,8 +57,16 @@ COLUMN_MAPPING = {
     "PAIS (BOOKING)": "pais_booking",
     "TECNOLOGIA": "tipo_tecnologia",
     "TIPO TECNOLOGIA": "tipo_tecnologia",
+    "TIPO DE TECNOLOGIA": "tipo_tecnologia",
     "ETIQUETA": "etiqueta_caja",
-    "ETIQUETA CAJA": "etiqueta_caja"
+    "ETIQUETA CAJA": "etiqueta_caja",
+    "ETIQUETA DE CAJA": "etiqueta_caja",
+    "FECHA LLENADO": "fecha_llenado_reporte",
+    "FECHA DE LLENADO": "fecha_llenado_reporte",
+    "FECHA DE LLENADO (REPORTE)": "fecha_llenado_reporte",
+    "HORA LLENADO": "hora_llenado_reporte",
+    "HORA DE LLENADO": "hora_llenado_reporte",
+    "HORA DE LLENADO (REPORTE)": "hora_llenado_reporte"
 }
 
 # Mapeo de columnas para Pedidos Comerciales
