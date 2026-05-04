@@ -54,7 +54,11 @@ COLUMN_MAPPING = {
     "CAJAS VACIAS (SI/NO)": "cajas_vacias",
     "DESTINO (BOOKING)": "destino_booking",
     "DESTINO": "destino_booking",
-    "PAIS (BOOKING)": "pais_booking"
+    "PAIS (BOOKING)": "pais_booking",
+    "TECNOLOGIA": "tipo_tecnologia",
+    "TIPO TECNOLOGIA": "tipo_tecnologia",
+    "ETIQUETA": "etiqueta_caja",
+    "ETIQUETA CAJA": "etiqueta_caja"
 }
 
 # Mapeo de columnas para Pedidos Comerciales
