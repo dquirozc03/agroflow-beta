@@ -112,7 +112,7 @@ class InstructionPDFService:
             if cultivo_val: query4 = query4.filter(func.trim(ClienteIE.cultivo).ilike(cultivo_val))
             cliente = query4.first()
 
-        # 5. Smart Match (Fuzzy / Normalizado)
+        # 5. Smart Match (Fuzzy / Normalizado con País)
         if not cliente:
             clean_name = normalize_client_name(cliente_nombre)
             cliente = db.query(ClienteIE).filter(
@@ -122,6 +122,9 @@ class InstructionPDFService:
                 ClienteIE.estado == "ACTIVO"
             ).first()
 
+        # 6. Fallback Genérico (Sin País) - Solo si aún no hay match
+        if not cliente:
+            clean_name = normalize_client_name(cliente_nombre)
             query5 = db.query(ClienteIE).filter(
                 (func.trim(ClienteIE.nombre_legal).ilike(f"%{clean_name}%")) | 
                 (func.upper(clean_name).like(func.concat('%', func.trim(ClienteIE.nombre_legal), '%'))),
