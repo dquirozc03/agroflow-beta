@@ -213,8 +213,8 @@ class InstructionPDFService:
                     query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
                 pedidos = query_pedidos.all()
 
-            total_cajas = sum(p.total_cajas or 0 for p in pedidos)
-            total_pallets = sum(p.total_pallets or 0 for p in pedidos)
+            total_cajas = max((int(p.total_cajas or 0) for p in pedidos), default=0)
+            total_pallets = max((int(p.total_pallets or 0) for p in pedidos), default=0)
             cliente_nombre = self._clean_text(pedidos[0].cliente) if pedidos else "POR DEFINIR"
             peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
             
@@ -282,30 +282,48 @@ class InstructionPDFService:
             is_palta = "PALTA" in cultivo_upper or "AVOCADO" in cultivo_upper
             is_granada = "GRANADA" in cultivo_upper
             
-            def_temp = "6.0\u00b0C" if (is_palta or is_granada) else ""
-            def_vent = "CERRADA" if is_palta else ("15CBM" if is_granada else "")
-            def_hum = "OFF" if (is_palta or is_granada) else ""
-            def_ac = "SI" if is_palta else "NO APLICA"
+            # Parámetros según Tabla Maestra Paltas 2026 🥑
+            tecnologia = (pos.TIPO_TECNOLOGIA or "").upper()
+            oxigeno = "NO APLICA" 
+            co2 = "NO APLICA" 
             
+            if is_palta:
+                # Gases según tecnología
+                if "LIVENTUS" in tecnologia or "MAXTEND 12/8" in tecnologia: # Agregamos variante por si acaso
+                    oxigeno, co2 = "12%", "8%"
+                else:
+                    # Default AC para Paltas (Daikin, Starcool, Starcare, etc)
+                    oxigeno, co2 = "4%", "6%"
+                
+                # Excepciones de Filtros (TESCO prohíbe filtros de etileno)
+                if "TESCO" in (cliente_nombre or "").upper():
+                    filtros = "NO (CLIENTE PROHIBE FILTROS/SMARTFRESH)"
+                else:
+                    filtros = pos.FILTROS or "SI (ETILENO)"
+
+                # Parámetros Base Palta
+                def_temp = "6.0 °C"
+                def_vent = "CERRADA"
+                def_hum = "OFF"
+                def_ac = "SI"
+            elif is_granada:
+                def_temp = "6.0 °C"
+                def_vent = "15 CBM"
+                def_hum = "OFF"
+                def_ac = "NO APLICA"
+                filtros = pos.FILTROS or "NO"
+            else:
+                def_temp = ""
+                def_vent = ""
+                def_hum = ""
+                def_ac = "NO APLICA"
+                filtros = pos.FILTROS or "NO"
+                
             temperatura = pos.TEMPERATURA or def_temp
             ventilacion = pos.VENTILACION or def_vent
             humedad = pos.HUMEDAD or def_hum
             atm = pos.AC or def_ac
-            
-            tecnologia = (pos.TIPO_TECNOLOGIA or "").upper()
-            oxigeno = "NO APLICA" 
-            co2 = "NO APLICA" 
-            if is_palta:
-                if "LIVENTUS" in tecnologia:
-                    oxigeno, co2 = "12%", "8%"
-                else:
-                    oxigeno, co2 = "4%", "6%"
-                
-            filtros = pos.FILTROS or ("NO" if is_granada else ("SI" if is_palta else "NO"))
             cold_treatment = pos.CT or "NO"
-
-            if is_palta and "TESCO" in (cliente_nombre or "").upper():
-                filtros = "NO (SIN FILTROS)"
 
         cultivo_key = (pos_cultivo or "").upper()
         if "PALTA" in cultivo_key or "AVOCADO" in cultivo_key: palette = self.PALETTES["PALTA"]
