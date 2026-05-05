@@ -525,7 +525,7 @@ export default function InstruccionesEmbarque() {
                             <Input 
                               placeholder="Especifique el motivo..."
                               maxLength={100}
-                              className="h-10 rounded-xl border-slate-100 font-bold text-[10px] focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
+                              className="h-10 rounded-xl border-slate-100 bg-white text-slate-900 font-bold text-[10px] focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
                               onChange={(e) => setMotivoAnulacion("OTRO: " + e.target.value.toUpperCase())}
                             />
                           </div>
@@ -1024,7 +1024,7 @@ export default function InstruccionesEmbarque() {
                               <TableCell className="py-6 font-black text-xs uppercase text-emerald-600 text-center">{item.orden_beta}</TableCell>
                               <TableCell className="py-6 font-black text-[10px] uppercase text-slate-500 max-w-[150px] truncate text-center">{item.cliente}</TableCell>
                               <TableCell className="py-6 text-center">
-                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-100">{item.cultivo}</Badge>
+                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200 text-slate-600 bg-slate-50/50">{item.cultivo}</Badge>
                               </TableCell>
                               <TableCell className="py-6 text-center">
                                 <Badge className={cn(
