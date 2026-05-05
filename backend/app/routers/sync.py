@@ -149,7 +149,7 @@ def clean_data_value(val: Any, db_column: str):
             for es, en in meses_es_en.items():
                 if es in temp_val: temp_val = temp_val.replace(es, en)
             
-            parsed_date = parse_date(temp_val)
+            parsed_date = parse_date(temp_val, dayfirst=True)
             return parsed_date.date()
         except:
             return None
