@@ -139,6 +139,16 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         # Búsqueda Inteligente Multinivel 🧠💎
         cliente_id = cliente_nombre_final.strip()
         pais = pedido_pais_clean
+        if not pais and cliente_id:
+            upper_name = cliente_id.upper()
+            if "HOLLAND" in upper_name or "HOLANDA" in upper_name or "NETHERLANDS" in upper_name or "B.V." in upper_name:
+                pais = "HOLANDA"
+            elif "SPAIN" in upper_name or "ESPAÑA" in upper_name:
+                pais = "ESPAÑA"
+            elif "UK" in upper_name or "UNITED KINGDOM" in upper_name or "ENGLAND" in upper_name or "LTD" in upper_name:
+                pais = "INGLATERRA"
+            elif "USA" in upper_name or "LLC" in upper_name or "UNITED STATES" in upper_name:
+                pais = "ESTADOS UNIDOS"
         destino = pedido_pod_clean
         po_id = pedido.po.strip() if pedido.po else None
         cultivo_val = (pos.CULTIVO or "").strip()

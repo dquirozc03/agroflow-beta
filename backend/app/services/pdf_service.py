@@ -73,6 +73,17 @@ class InstructionPDFService:
         from sqlalchemy import func
         
         pais_val = normalize_country_name(pais)
+        if not pais_val and cliente_nombre:
+            upper_name = cliente_nombre.upper()
+            if "HOLLAND" in upper_name or "HOLANDA" in upper_name or "NETHERLANDS" in upper_name or "B.V." in upper_name:
+                pais_val = "HOLANDA"
+            elif "SPAIN" in upper_name or "ESPAÑA" in upper_name:
+                pais_val = "ESPAÑA"
+            elif "UK" in upper_name or "UNITED KINGDOM" in upper_name or "ENGLAND" in upper_name or "LTD" in upper_name:
+                pais_val = "INGLATERRA"
+            elif "USA" in upper_name or "LLC" in upper_name or "UNITED STATES" in upper_name:
+                pais_val = "ESTADOS UNIDOS"
+            
         pod_val = pod.strip() if pod else ""
         cliente_clean_val = cliente_nombre.strip()
         cultivo_val = cultivo.strip() if cultivo else ""

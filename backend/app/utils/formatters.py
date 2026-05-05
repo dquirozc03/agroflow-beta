@@ -50,7 +50,7 @@ def normalize_client_name(value: str) -> str:
     # 2. Quitar ruidos comunes (delimitados por espacios o bordes)
     noise = [
         'LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 
-        'BV', 'B.V.', 'LLC', 'EX-', 
+        'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'UK', 'LLC', 'EX-', 
         'SA DE CV', 'SAC', 'EIRL', 'SARL'
     ]
     for n in noise:
@@ -76,14 +76,17 @@ def normalize_country_name(value: str) -> str:
         "EE.UU.": "ESTADOS UNIDOS",
         "UNITED STATES": "ESTADOS UNIDOS",
         "UNITED STATES OF AMERICA": "ESTADOS UNIDOS",
-        "UK": "REINO UNIDO",
-        "U.K.": "REINO UNIDO",
-        "UNITED KINGDOM": "REINO UNIDO",
+        "UK": "INGLATERRA",
+        "U.K.": "INGLATERRA",
+        "REINO UNIDO": "INGLATERRA",
+        "UNITED KINGDOM": "INGLATERRA",
+        "ENGLAND": "INGLATERRA",
         "CANADA": "CANADÁ",
         "CANADÁ": "CANADÁ",
-        "HOLLAND": "PAISES BAJOS",
-        "NETHERLANDS": "PAISES BAJOS",
-        "THE NETHERLANDS": "PAISES BAJOS",
+        "HOLLAND": "HOLANDA",
+        "NETHERLANDS": "HOLANDA",
+        "THE NETHERLANDS": "HOLANDA",
+        "PAISES BAJOS": "HOLANDA",
         "SPAIN": "ESPAÑA",
         "ESPAA": "ESPAÑA",
         "TURKEY": "TURQUIA",
