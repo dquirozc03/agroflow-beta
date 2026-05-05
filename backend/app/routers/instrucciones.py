@@ -198,8 +198,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
 
         # 5. Búsqueda Inteligente (Flexible en Nombre + Cultivo + País)
         if not cliente_maestro:
-            # Quitamos palabras comunes como "HOLLAND", "USA", etc para el match flexible
-            clean_name = re.sub(r'\s+(HOLLAND|USA|PERU|UK|EUROPE|B\.V\.|LTD|INC)\.?$', '', cliente_id, flags=re.IGNORECASE)
+            # Quitamos palabras comunes corporativas pero MANTENEMOS los países para no mezclar ramas (ej. Holland vs España)
+            clean_name = re.sub(r'\s+(B\.V\.|LTD|INC|GMBH|S\.A\.|S\.R\.L\.|CORP|LLC)\.?$', '', cliente_id, flags=re.IGNORECASE)
             cliente_maestro = db.query(ClienteIE).filter(
                 func.trim(ClienteIE.pais).ilike(pais),
                 func.trim(ClienteIE.cultivo).ilike(cultivo_val),

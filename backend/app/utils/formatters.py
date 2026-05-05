@@ -50,7 +50,7 @@ def normalize_client_name(value: str) -> str:
     # 2. Quitar ruidos comunes (delimitados por espacios o bordes)
     noise = [
         'LTD', 'INC', 'S.A.', 'S.R.L.', 'GMBH', 'SA', 'CORP', 
-        'BV', 'B.V.', 'HOLLAND', 'EUROPE', 'USA', 'LLC', 'EX-', 
+        'BV', 'B.V.', 'LLC', 'EX-', 
         'SA DE CV', 'SAC', 'EIRL', 'SARL'
     ]
     for n in noise:
