@@ -525,7 +525,7 @@ export default function InstruccionesEmbarque() {
                             <Input 
                               placeholder="Especifique el motivo..."
                               maxLength={100}
-                              className="h-10 rounded-xl border-slate-100 bg-white text-slate-900 font-bold text-[10px] focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
+                              className="h-10 rounded-xl border-slate-200 bg-white text-slate-900 font-bold text-[10px] focus-visible:ring-1 focus-visible:ring-red-500 focus-visible:border-red-500 outline-none transition-all shadow-sm"
                               onChange={(e) => setMotivoAnulacion("OTRO: " + e.target.value.toUpperCase())}
                             />
                           </div>
@@ -957,7 +957,7 @@ export default function InstruccionesEmbarque() {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="bg-slate-50/50">
-                        <TableRow>
+                        <TableRow className="hover:bg-transparent data-[state=selected]:bg-transparent">
                           <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-500 py-6 text-center">Fecha / Hora</TableHead>
                           <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-500 py-6 text-center">Usuario</TableHead>
                           <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-500 py-6 text-center">Booking</TableHead>
