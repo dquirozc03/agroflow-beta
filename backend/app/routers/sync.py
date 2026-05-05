@@ -267,7 +267,15 @@ async def sync_pedidos_raw(
             db.bulk_insert_mappings(PedidoComercial, new_mappings)
             
         db.commit()
-        return {"status": "success", "summary": {"processed": len(new_mappings), "cultivos_actualizados": list(cultivos_en_payload), "message": "Sincronización selectiva exitosa"}}
+        return {
+            "status": "success", 
+            "summary": {
+                "processed": len(new_mappings), 
+                "columnas_detectadas": list(mapping_indices.keys()),
+                "cultivos_actualizados": list(cultivos_en_payload), 
+                "message": "Sincronización selectiva exitosa"
+            }
+        }
     except Exception as e:
         db.rollback()
         return {"status": "error", "error": str(e)}
