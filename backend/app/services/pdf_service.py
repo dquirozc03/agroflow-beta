@@ -213,8 +213,8 @@ class InstructionPDFService:
                     query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
                 pedidos = query_pedidos.all()
 
-            total_cajas = max((int(p.total_cajas or 0) for p in pedidos), default=0)
-            total_pallets = max((int(p.total_pallets or 0) for p in pedidos), default=0)
+            total_cajas = sum((int(p.total_cajas or 0) for p in pedidos))
+            total_pallets = sum((int(p.total_pallets or 0) for p in pedidos))
             cliente_nombre = self._clean_text(pedidos[0].cliente) if pedidos else "POR DEFINIR"
             peso_kg = pedidos[0].peso_por_caja or Decimal("0") if pedidos else Decimal("0")
             
