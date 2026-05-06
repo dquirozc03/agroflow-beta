@@ -80,6 +80,8 @@ PEDIDOS_MAPPING = {
     "O/BETA FINAL": "orden_beta",
     "PO": "po",
     "CULTIVO": "cultivo",
+    "PRODUCT": "cultivo",
+    "FRUTA": "cultivo",
     "CLIENTE GENERAL": "cliente",
     "CLIENTE": "cliente",
     "CONSIGNATARIO": "consignatario",
@@ -259,10 +261,7 @@ async def sync_pedidos_raw(
         # Borrado inteligente: Solo eliminamos los cultivos que estamos subiendo ahora
         if cultivos_en_payload:
             db.query(PedidoComercial).filter(PedidoComercial.cultivo.in_(list(cultivos_en_payload))).delete(synchronize_session=False)
-        else:
-            # Si no hay cultivos detectados, limpieza total para evitar duplicados en reportes generales
-            db.query(PedidoComercial).delete()
-
+        
         if new_mappings: 
             db.bulk_insert_mappings(PedidoComercial, new_mappings)
             

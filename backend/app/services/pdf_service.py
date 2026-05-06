@@ -234,8 +234,8 @@ class InstructionPDFService:
             peso_neto_full = f"{peso_neto:,.3f} KG"
             peso_bruto_full = f"{p_bruto:,.3f} KG"
 
-            pais_val = pedidos[0].pais if pedidos else ""
-            pod_val = pedidos[0].pod if pedidos else ""
+            pais_val = normalize_country_name(pos.PAIS_BOOKING) if pos.PAIS_BOOKING else (pedidos[0].pais if pedidos else "")
+            pod_val = pos.DESTINO_BOOKING.strip() if pos.DESTINO_BOOKING else (pedidos[0].pod if pedidos else "")
             
             cliente_buscar = cliente_nombre
             if cliente_nombre and "OGL" in cliente_nombre.upper() and pos.CULTIVO and "PALTA" in pos.CULTIVO.upper():

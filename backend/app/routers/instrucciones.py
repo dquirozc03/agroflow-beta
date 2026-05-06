@@ -138,7 +138,11 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
 
         # Búsqueda Inteligente Multinivel 🧠💎
         cliente_id = cliente_nombre_final.strip()
-        pais = pedido_pais_clean
+        
+        # Prioridad: Posicionamiento (Booking) > Cuadro de Pedidos
+        pais_booking_clean = normalize_country_name(pos.PAIS_BOOKING) if pos.PAIS_BOOKING else None
+        pais = pais_booking_clean if pais_booking_clean else pedido_pais_clean
+        
         if not pais and cliente_id:
             upper_name = cliente_id.upper()
             if "HOLLAND" in upper_name or "HOLANDA" in upper_name or "NETHERLANDS" in upper_name or "B.V." in upper_name:
@@ -149,7 +153,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
                 pais = "INGLATERRA"
             elif "USA" in upper_name or "LLC" in upper_name or "UNITED STATES" in upper_name:
                 pais = "ESTADOS UNIDOS"
-        destino = pedido_pod_clean
+        
+        destino = pos.DESTINO_BOOKING.strip() if pos.DESTINO_BOOKING else pedido_pod_clean
         po_id = pedido.po.strip() if pedido.po else None
         cultivo_val = (pos.CULTIVO or "").strip()
 
