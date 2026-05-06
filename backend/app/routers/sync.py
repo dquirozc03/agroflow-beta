@@ -296,23 +296,50 @@ async def sync_reportes_embarques_raw(
         if isinstance(payload[0], dict):
             # Modo Objetos
             for row in payload:
-                bkg = str(row.get("BOOKING") or row.get("RESERVA") or "").strip().upper()
-                nave = str(row.get("NAVE") or row.get("NAVE ARRIBO") or "").strip().upper()
-                if bkg: mappings.append({"booking": bkg, "nave_arribo": nave})
+                row_lower = {k.strip().lower(): v for k, v in row.items()}
+                bkg_val = str(row_lower.get("booking") or row_lower.get("reserva") or row_lower.get("nro booking") or "").strip().upper()
+                if bkg_val in ["NONE", "NAN", ""]: continue
+                
+                nave = str(
+                    row_lower.get("nave de arribo") or 
+                    row_lower.get("nave_arribo") or 
+                    row_lower.get("nave_de_arribo") or 
+                    row_lower.get("navedearribo") or 
+                    ""
+                ).strip().upper()
+                
+                if nave in ["NONE", "NAN", ""]:
+                    nave = str(row_lower.get("nave") or "").strip().upper()
+                if nave in ["NONE", "NAN"]: nave = ""
+                
+                if bkg_val: mappings.append({"booking": bkg_val, "nave_arribo": nave})
         else:
             # Modo Legado (Array de Arrays)
             headers = [str(h).strip().upper() for h in payload[0]]
             data = payload[1:]
             idx_bkg = -1
             idx_nave = -1
+            idx_nave_arribo = -1
             for i, h in enumerate(headers):
                 if "BOOKING" in h or "RESERVA" in h: idx_bkg = i
-                if "NAVE" in h: idx_nave = i
+                elif "ARRIBO" in h: idx_nave_arribo = i
+                elif "NAVE" in h: idx_nave = i
+                
             if idx_bkg != -1:
                 for row in data:
                     if idx_bkg < len(row):
                         bkg = str(row[idx_bkg]).strip().upper()
-                        nave = str(row[idx_nave]).strip().upper() if idx_nave != -1 and idx_nave < len(row) else None
+                        if bkg in ["NONE", "NAN", ""]: continue
+                        
+                        nave = ""
+                        if idx_nave_arribo != -1 and idx_nave_arribo < len(row):
+                            val = str(row[idx_nave_arribo]).strip().upper()
+                            if val not in ["NONE", "NAN", ""]: nave = val
+                            
+                        if not nave and idx_nave != -1 and idx_nave < len(row):
+                            val = str(row[idx_nave]).strip().upper()
+                            if val not in ["NONE", "NAN", ""]: nave = val
+                            
                         if bkg: mappings.append({"booking": bkg, "nave_arribo": nave})
 
     try:

@@ -246,6 +246,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         
         planta_maestro = db.query(Planta).filter(Planta.planta.ilike(pos.PLANTA_LLENADO)).first() if pos.PLANTA_LLENADO else None
         
+        atm_val = pos.AC or ("SI" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "NO APLICA")
+        
         response = {
             "booking": pos.BOOKING,
             "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
@@ -272,9 +274,9 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "temperatura": pos.TEMPERATURA or ("6.0 °C" if (pos.CULTIVO and ("GRANADA" in pos.CULTIVO.upper() or "PALTA" in pos.CULTIVO.upper())) else "0.5 °C"),
             "ventilacion": pos.VENTILACION or ("CERRADA" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else ("15 CBM" if (pos.CULTIVO and "GRANADA" in pos.CULTIVO.upper()) else "15 CBM")),
             "humedad": pos.HUMEDAD or "OFF",
-            "atm": pos.AC or ("SI" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "NO APLICA"),
-            "oxigeno": ("12%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper() and pos.TIPO_TECNOLOGIA and "LIVENTUS" in pos.TIPO_TECNOLOGIA.upper()) else ("4%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "----")),
-            "co2": ("8%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper() and pos.TIPO_TECNOLOGIA and "LIVENTUS" in pos.TIPO_TECNOLOGIA.upper()) else ("6%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "----")),
+            "atm": atm_val,
+            "oxigeno": "NO APLICA" if str(atm_val).strip().upper() in ["NO", "NO APLICA", "FALSE"] else ("12%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper() and pos.TIPO_TECNOLOGIA and "LIVENTUS" in pos.TIPO_TECNOLOGIA.upper()) else ("4%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "----")),
+            "co2": "NO APLICA" if str(atm_val).strip().upper() in ["NO", "NO APLICA", "FALSE"] else ("8%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper() and pos.TIPO_TECNOLOGIA and "LIVENTUS" in pos.TIPO_TECNOLOGIA.upper()) else ("6%" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "----")),
             "filtros": ("NO (PROHIBIDO)" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper() and cliente_maestro and "TESCO" in (cliente_maestro.nombre_legal or "").upper()) else (pos.FILTROS or ("SI (ETILENO)" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "NO"))),
             "cold_treatment": pos.CT or "NO",
             "etiquetas": pos.ETIQUETA_CAJA or "GENERICA",

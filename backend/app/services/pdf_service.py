@@ -298,9 +298,13 @@ class InstructionPDFService:
             oxigeno = "NO APLICA" 
             co2 = "NO APLICA" 
             
+            atm_val = pos.AC or ("SI" if is_palta else "NO APLICA")
+            
             if is_palta:
-                # Gases según tecnología
-                if "LIVENTUS" in tecnologia or "MAXTEND 12/8" in tecnologia: # Agregamos variante por si acaso
+                # Gases según tecnología y AC
+                if str(atm_val).strip().upper() in ["NO", "NO APLICA", "FALSE"]:
+                    oxigeno, co2 = "NO APLICA", "NO APLICA"
+                elif "LIVENTUS" in tecnologia or "MAXTEND 12/8" in tecnologia: # Agregamos variante por si acaso
                     oxigeno, co2 = "12%", "8%"
                 else:
                     # Default AC para Paltas (Daikin, Starcool, Starcare, etc)
@@ -333,7 +337,7 @@ class InstructionPDFService:
             temperatura = pos.TEMPERATURA or def_temp
             ventilacion = pos.VENTILACION or def_vent
             humedad = pos.HUMEDAD or def_hum
-            atm = pos.AC or def_ac
+            atm = atm_val
             cold_treatment = pos.CT or "NO"
 
         cultivo_key = (pos_cultivo or "").upper()
