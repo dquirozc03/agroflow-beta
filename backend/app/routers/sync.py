@@ -98,9 +98,11 @@ PEDIDOS_MAPPING = {
     "PAS": "pais",  # In case 'Í' gets stripped by regex
     "PAIS DESTINO": "pais",
     "PAIS FINAL": "pais",
+    "PAIS DE ENTRADA": "pais",
     "POD": "pod",
     "DESTINO": "pod",
     "PUERTO DESTINO": "pod",
+    "ENTRADA (PUERTO/AEROPORTU": "pod",
     "POD ID DESTINO": "port_id_dest",
     "PORT ID DEST": "port_id_dest",
     "PORT ID DESTINO": "port_id_dest",
