@@ -343,8 +343,15 @@ async def sync_reportes_embarques_raw(
                         if bkg: mappings.append({"booking": bkg, "nave_arribo": nave})
 
     try:
-        db.query(ReporteEmbarques).delete()
-        if mappings: db.bulk_insert_mappings(ReporteEmbarques, mappings)
+        if mappings:
+            # Borrado inteligente: Solo borramos los bookings que estamos actualizando
+            # para no afectar la data de otros archivos Excel si hay múltiples
+            bookings_in_payload = [m["booking"] for m in mappings if "booking" in m]
+            if bookings_in_payload:
+                db.query(ReporteEmbarques).filter(ReporteEmbarques.booking.in_(bookings_in_payload)).delete(synchronize_session=False)
+            
+            db.bulk_insert_mappings(ReporteEmbarques, mappings)
+            
         db.commit()
         return {"status": "success", "summary": {"processed": len(mappings), "message": "Reporte de embarques actualizado"}}
     except Exception as e:
