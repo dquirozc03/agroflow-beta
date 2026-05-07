@@ -365,13 +365,16 @@ async def generate_packing_list_ogl(
                 orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
                 if orden_numeric:
                     # Usamos ilike para manejar variantes: "BG001", "001", "CO001", etc.
-                    pedido = db.query(PedidoComercial).filter(
+                    query_pedido = db.query(PedidoComercial).filter(
                         or_(
                             PedidoComercial.orden_beta == orden_numeric,
                             PedidoComercial.orden_beta.ilike(f"%{orden_numeric}")
                         ),
                         PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-                    ).first()
+                    )
+                    if pos.CULTIVO:
+                        query_pedido = query_pedido.filter(PedidoComercial.cultivo.ilike(f"%{pos.CULTIVO.strip()}%"))
+                    pedido = query_pedido.first()
             
             if not pedido: continue
 
@@ -685,7 +688,17 @@ async def generate_packing_list_ogl(
                 ws.cell(row=fila_e, column=17).value = item["proceso"]
                 ws.cell(row=fila_e, column=18).value = item["lote_ogl"]
                 ws.cell(row=fila_e, column=19).value = "Complejo Agroindustrial"
-                if "ICA" in planta_llenado_up: ws.cell(row=fila_e, column=20).value = "7751043044355"
+                
+                # GLN por Planta de Llenado
+                if "ICA" in planta_llenado_up:
+                    ws.cell(row=fila_e, column=20).value = "7751043044355"
+                elif "JAYANCA" in planta_llenado_up:
+                    ws.cell(row=fila_e, column=20).value = "7751043046953"
+                elif "OLMOS" in planta_llenado_up:
+                    ws.cell(row=fila_e, column=20).value = "7751043045680"
+                else:
+                    ws.cell(row=fila_e, column=20).value = ""
+                    
                 ws.cell(row=fila_e, column=21).value = pedido.caja_por_pallet if pedido else ""
                 ws.cell(row=fila_e, column=22).value = item["cajas"]
                 ws.cell(row=fila_e, column=23).value = "COMPLEJO AGROINDUSTRIAL BETA S.A."
