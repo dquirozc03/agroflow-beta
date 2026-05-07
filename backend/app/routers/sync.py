@@ -127,7 +127,9 @@ PEDIDOS_MAPPING = {
     "CAJAS": "total_cajas",
     "INCOTERM": "incoterm",
     "TIPO PRECIO": "tipo_precio",
-    "SEMANA ETA": "semana_eta"
+    "TIPO DE PRECIO": "tipo_precio",
+    "SEMANA ETA": "semana_eta",
+    "SEMANA ETA PROGRAMA COMERCIAL": "semana_eta"
 }
 
 def clean_data_value(val: Any, db_column: str):
