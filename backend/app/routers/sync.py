@@ -297,7 +297,18 @@ async def sync_reportes_embarques_raw(
             # Modo Objetos
             for row in payload:
                 row_lower = {k.strip().lower(): v for k, v in row.items()}
-                bkg_val = str(row_lower.get("booking") or row_lower.get("reserva") or row_lower.get("nro booking") or "").strip().upper()
+                # Buscar bkg_val por llaves conocidas
+                bkg_val = str(row_lower.get("booking") or row_lower.get("reserva") or row_lower.get("nro booking") or row_lower.get("n° b/l") or "").strip().upper()
+                
+                # Si no lo encuentra, buscar en TODOS los valores de la fila algo que parezca un booking
+                if bkg_val in ["NONE", "NAN", ""]:
+                    for v in row.values():
+                        if v and isinstance(v, str):
+                            v_up = v.strip().upper()
+                            if v_up.startswith("EBKG") or v_up.startswith("MBM"):
+                                bkg_val = v_up
+                                break
+                
                 if bkg_val in ["NONE", "NAN", ""]: continue
                 
                 nave = str(
