@@ -529,7 +529,39 @@ async def generate_packing_list_ogl(
         
         # WK ID logic
         pl_id = f"WK{ahora.isocalendar()[1]}1"
-        if primer_pos and primer_pos.ETA:
+        if primer_pedido and getattr(primer_pedido, "semana_eta", None):
+            semana_eta = int(primer_pedido.semana_eta)
+            pedidos_semana = db.query(PedidoComercial).filter(
+                PedidoComercial.semana_eta == semana_eta,
+                PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
+            ).all()
+            
+            ordenes_semana = set(strip_orden_beta(p.orden_beta) for p in pedidos_semana if p.orden_beta)
+            
+            pos_todas = db.query(Posicionamiento).filter(Posicionamiento.ORDEN_BETA.isnot(None)).all()
+            pos_semana = [p for p in pos_todas if strip_orden_beta(p.ORDEN_BETA) in ordenes_semana]
+            
+            nave_etas = {}
+            for p in pos_semana:
+                if not p.NAVE: continue
+                rep = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == p.BOOKING).first()
+                n_name = (rep.nave_arribo if rep and rep.nave_arribo else p.NAVE).strip().upper()
+                etd_val = p.ETD if p.ETD else p.ETA
+                if etd_val:
+                    if n_name not in nave_etas or etd_val < nave_etas[n_name]:
+                        nave_etas[n_name] = etd_val
+
+            if nave_clean not in nave_etas:
+                nave_etas[nave_clean] = primer_pos.ETD if (primer_pos and primer_pos.ETD) else ahora.date()
+            naves_ordenadas = sorted(nave_etas.items(), key=lambda x: (x[1], x[0]))
+            correlativo = 1
+            for i, (n_name, _) in enumerate(naves_ordenadas):
+                if n_name == nave_clean:
+                    correlativo = i + 1
+                    break
+            pl_id = f"WK{str(semana_eta).zfill(2)}{correlativo}"
+            
+        elif primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
             anio_eta = primer_pos.ETA.year
             pos_semana = db.query(Posicionamiento).filter(
