@@ -345,6 +345,14 @@ async def sync_reportes_embarques_raw(
 
     try:
         if mappings:
+            # --- DEBUG LOGGING ---
+            import sys
+            print(f"DEBUG: Recibiendo {len(mappings)} mappings del Excel", file=sys.stderr)
+            for m in mappings:
+                if m.get("booking") in ["EBKG16698011", "EBKG16698031"]:
+                    print(f"DEBUG: Booking {m['booking']} -> Nave de arribo enviada: '{m.get('nave_arribo')}'", file=sys.stderr)
+            # ---------------------
+            
             # Borrado inteligente: Solo borramos los bookings que estamos actualizando
             # para no afectar la data de otros archivos Excel si hay múltiples
             bookings_in_payload = [m["booking"] for m in mappings if "booking" in m]
