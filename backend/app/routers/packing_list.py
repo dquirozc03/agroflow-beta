@@ -98,7 +98,7 @@ TEMPLATE_PATH = os.path.join(
 # ---------------------------------------------------------------------------
 # Helper: Detectar si dos nombres de nave son la misma (Smart Match)
 # ---------------------------------------------------------------------------
-def is_same_ship(name1: str, name2: str, threshold: float = 0.75) -> bool:
+def is_same_ship(name1: str, name2: str, threshold: float = 0.95) -> bool:
     if not name1 or not name2: return False
     if name1 == "SIN NAVE" or name2 == "SIN NAVE": return False
     
@@ -108,12 +108,8 @@ def is_same_ship(name1: str, name2: str, threshold: float = 0.75) -> bool:
     # 1. Identidad exacta normalizada
     if n1 == n2: return True
     
-    # 2. Match por prefijo (Nombre del Barco)
-    min_len = min(len(n1), len(n2))
-    if min_len >= 10 and n1[:10] == n2[:10]:
-        return True
-
-    # 3. Similitud difusa
+    # 2. Similitud difusa con umbral alto para no confundir voyages diferentes
+    # (ej. NX616A vs NX612R son la misma nave pero viajes distintos → NO es lo mismo)
     return difflib.SequenceMatcher(None, n1, n2).ratio() >= threshold
 
 # ---------------------------------------------------------------------------
