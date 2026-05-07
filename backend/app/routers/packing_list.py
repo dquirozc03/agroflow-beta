@@ -172,9 +172,14 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         ord_num = strip_orden_beta(pos.ORDEN_BETA)
         if not ord_num: continue
         
-        # Buscar pedido: primero clave compuesta (num + cultivo), luego solo num
         cultivo_pos = (pos.CULTIVO or "").strip().upper()
-        pedido_ogl = pedidos_map.get((ord_num, cultivo_pos)) or pedidos_map.get(ord_num)
+        # Si el posicionamiento tiene cultivo, exigimos match exacto (num+cultivo)
+        # para evitar que bookings de otros clientes con el mismo num se cuenten como OGL
+        if cultivo_pos:
+            pedido_ogl = pedidos_map.get((ord_num, cultivo_pos))
+        else:
+            # Sin cultivo en posicionamiento: fallback al primer OGL con ese num
+            pedido_ogl = pedidos_map.get(ord_num)
         if not pedido_ogl: continue
         
         # Determinar Nave Final (Reporte > Posicionamiento)
@@ -279,9 +284,13 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
         ord_num = strip_orden_beta(pos.ORDEN_BETA)
         if not ord_num: continue
         
-        # Buscar pedido: clave compuesta primero, luego fallback solo num
         cultivo_pos = (pos.CULTIVO or "").strip().upper()
-        pedido = pedidos_map.get((ord_num, cultivo_pos)) or pedidos_map.get(ord_num)
+        # Si el posicionamiento tiene cultivo, exigimos match exacto (num+cultivo)
+        # para no mezclar bookings de otros clientes que coincidan en número
+        if cultivo_pos:
+            pedido = pedidos_map.get((ord_num, cultivo_pos))
+        else:
+            pedido = pedidos_map.get(ord_num)
         if not pedido: continue
         cont, dam = cont_map.get(pos.BOOKING, (None, None))
 
