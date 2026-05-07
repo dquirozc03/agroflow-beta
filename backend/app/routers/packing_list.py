@@ -144,17 +144,20 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         ~Posicionamiento.BOOKING.in_(blocked_sq)
     ).all()
 
-    # Traer todos los pedidos OGL para el cruce en memoria (mucho más rápido que N queries)
     pedidos_ogl = db.query(PedidoComercial).filter(
         PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
     ).all()
     
-    # Mapa de orden_beta_num -> pedido
+    # Mapa clave compuesta: (num_stripped, cultivo) para evitar colisión BG017 vs BP017
     pedidos_map = {}
     for p in pedidos_ogl:
         ord_num = strip_orden_beta(p.orden_beta)
         if ord_num:
-            pedidos_map[ord_num] = p
+            cultivo_key = (p.cultivo or "").strip().upper()
+            pedidos_map[(ord_num, cultivo_key)] = p
+            # También guardamos solo el num como fallback
+            if ord_num not in pedidos_map:
+                pedidos_map[ord_num] = p
 
     # Traer todos los reportes para la nave final
     reportes = db.query(ReporteEmbarques.booking, ReporteEmbarques.nave_arribo).all()
@@ -167,9 +170,12 @@ def listar_naves_ogl(db: Session = Depends(get_db)):
         if not pos.ORDEN_BETA: continue
         
         ord_num = strip_orden_beta(pos.ORDEN_BETA)
-        if not ord_num or ord_num not in pedidos_map: continue
+        if not ord_num: continue
         
-        pedido_ogl = pedidos_map[ord_num]
+        # Buscar pedido: primero clave compuesta (num + cultivo), luego solo num
+        cultivo_pos = (pos.CULTIVO or "").strip().upper()
+        pedido_ogl = pedidos_map.get((ord_num, cultivo_pos)) or pedidos_map.get(ord_num)
+        if not pedido_ogl: continue
         
         # Determinar Nave Final (Reporte > Posicionamiento)
         nave_final = reporte_naves.get(b).strip().upper() if reporte_naves.get(b) else None
@@ -247,7 +253,15 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
 
     # 4. Enriquecimiento Optimizado
     pedidos_ogl = db.query(PedidoComercial).filter(PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")).all()
-    pedidos_map = {strip_orden_beta(p.orden_beta): p for p in pedidos_ogl if strip_orden_beta(p.orden_beta)}
+    # Mapa clave compuesta: (num_stripped, cultivo) para evitar colisión BG vs BP
+    pedidos_map = {}
+    for p in pedidos_ogl:
+        k = strip_orden_beta(p.orden_beta)
+        if k:
+            cultivo_key = (p.cultivo or "").strip().upper()
+            pedidos_map[(k, cultivo_key)] = p
+            if k not in pedidos_map:
+                pedidos_map[k] = p
     
     pos_details = db.query(Posicionamiento).filter(
         Posicionamiento.BOOKING.in_(bookings_actuales),
@@ -263,9 +277,12 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
     resultado = []
     for pos in pos_details:
         ord_num = strip_orden_beta(pos.ORDEN_BETA)
-        if not ord_num or ord_num not in pedidos_map: continue
+        if not ord_num: continue
         
-        pedido = pedidos_map[ord_num]
+        # Buscar pedido: clave compuesta primero, luego fallback solo num
+        cultivo_pos = (pos.CULTIVO or "").strip().upper()
+        pedido = pedidos_map.get((ord_num, cultivo_pos)) or pedidos_map.get(ord_num)
+        if not pedido: continue
         cont, dam = cont_map.get(pos.BOOKING, (None, None))
 
         resultado.append({
@@ -338,8 +355,12 @@ async def generate_packing_list_ogl(
             if pos.ORDEN_BETA:
                 orden_numeric = strip_orden_beta(pos.ORDEN_BETA)
                 if orden_numeric:
+                    # Usamos ilike para manejar variantes: "BG001", "001", "CO001", etc.
                     pedido = db.query(PedidoComercial).filter(
-                        PedidoComercial.orden_beta == orden_numeric,
+                        or_(
+                            PedidoComercial.orden_beta == orden_numeric,
+                            PedidoComercial.orden_beta.ilike(f"%{orden_numeric}")
+                        ),
                         PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
                     ).first()
             

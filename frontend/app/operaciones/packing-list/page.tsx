@@ -591,6 +591,45 @@ export default function PackingListCustomizadosPage() {
                 )}
              </div>
           </div>
+
+           {/* Filtro de Recibidor - Aparece cuando hay múltiples recibidores en la nave */}
+           {bookings.length > 0 && (() => {
+             const recibidores = Array.from(new Set(bookings.map(b => b.recibidor).filter(Boolean))) as string[];
+             if (recibidores.length <= 1) return null;
+             return (
+               <div className="px-7 pb-4 border-b border-slate-50">
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Filtrar por Recibidor</p>
+                 <div className="flex flex-wrap gap-1.5">
+                   <button
+                     onClick={() => setSelectedRecibidor("")}
+                     className={cn(
+                       "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase tracking-widest",
+                       selectedRecibidor === ""
+                         ? "bg-[#022c22] border-[#022c22] text-white shadow-md"
+                         : "bg-white border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600"
+                     )}
+                   >
+                     TODOS
+                   </button>
+                   {recibidores.map((r) => (
+                     <button
+                       key={r}
+                       onClick={() => setSelectedRecibidor(r === selectedRecibidor ? "" : r)}
+                       className={cn(
+                         "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase tracking-widest",
+                         selectedRecibidor === r
+                           ? "bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/20"
+                           : "bg-white border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600"
+                       )}
+                       title={r}
+                     >
+                       {r.split(" ")[0]}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+             );
+           })()}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 lc-scroll bg-slate-50/20">
             {bookings.length === 0 ? (
               <div className="py-32 text-center opacity-20"><Ship className="h-16 w-16 mx-auto text-slate-400 mb-4 animate-pulse" /><p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Selecciona una nave para explorar bookings</p></div>
