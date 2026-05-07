@@ -801,18 +801,15 @@ export default function PackingListCustomizadosPage() {
                               <span className="font-black text-sm text-slate-900 font-['Outfit'] tracking-tight">{h.nave}</span>
                            </td>
                            <td className="px-6 py-7 text-center">
-                              <div className="flex flex-wrap justify-center gap-1.5 max-w-[150px] mx-auto">
+                              <div className="flex flex-wrap justify-center gap-1.5 mx-auto">
                                  {h.ordenes && h.ordenes.length > 0 ? (
-                                    h.ordenes.slice(0, 2).map(ord => (
+                                    h.ordenes.map(ord => (
                                        <span key={ord} className="px-2 py-1 bg-white border border-slate-100 rounded-lg text-emerald-600 text-[10px] font-black shadow-sm">
                                           {ord}
                                        </span>
                                     ))
                                  ) : (
                                     <span className="text-[10px] font-bold text-slate-300 italic">—</span>
-                                 )}
-                                 {h.ordenes && h.ordenes.length > 2 && (
-                                    <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg">+{h.ordenes.length - 2}</span>
                                  )}
                               </div>
                            </td>

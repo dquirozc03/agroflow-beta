@@ -531,14 +531,21 @@ async def generate_packing_list_ogl(
         pl_id = f"WK{ahora.isocalendar()[1]}1"
         if primer_pedido and getattr(primer_pedido, "semana_eta", None):
             semana_eta = int(primer_pedido.semana_eta)
-            pedidos_semana = db.query(PedidoComercial).filter(
+            query_pedidos = db.query(PedidoComercial).filter(
                 PedidoComercial.semana_eta == semana_eta,
                 PedidoComercial.cliente.ilike(f"%{OGL_KEYWORD}%")
-            ).all()
+            )
+            if primer_pedido.cultivo:
+                query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(f"%{primer_pedido.cultivo}%"))
+            pedidos_semana = query_pedidos.all()
             
             ordenes_semana = set(strip_orden_beta(p.orden_beta) for p in pedidos_semana if p.orden_beta)
             
-            pos_todas = db.query(Posicionamiento).filter(Posicionamiento.ORDEN_BETA.isnot(None)).all()
+            query_pos = db.query(Posicionamiento).filter(Posicionamiento.ORDEN_BETA.isnot(None))
+            if primer_pos and primer_pos.CULTIVO:
+                query_pos = query_pos.filter(Posicionamiento.CULTIVO.ilike(f"%{primer_pos.CULTIVO}%"))
+            pos_todas = query_pos.all()
+            
             pos_semana = [p for p in pos_todas if strip_orden_beta(p.ORDEN_BETA) in ordenes_semana]
             
             nave_etas = {}
