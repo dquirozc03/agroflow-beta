@@ -303,6 +303,7 @@ async def sync_reportes_embarques_raw(
                 nave = str(
                     row_lower.get("nave de arribo") or 
                     row_lower.get("nave_arribo") or 
+                    row_lower.get("nave arribo") or
                     row_lower.get("nave_de_arribo") or 
                     row_lower.get("navedearribo") or 
                     ""
