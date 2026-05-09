@@ -402,7 +402,7 @@ def generate_pdf_override(req: AdminOverrideRequest, db: Session = Depends(get_d
 
 @router.get("/historial", response_model=List[dict])
 def get_historial(db: Session = Depends(get_db)):
-    emisiones = db.query(EmisionInstruccion).order_by(desc(EmisionInstruccion.fecha_emision)).limit(100).all()
+    emisiones = db.query(EmisionInstruccion).order_by(desc(EmisionInstruccion.fecha_emision)).limit(1000).all()
     # Ajustar a UTC-5 para Perú
     return [
         {

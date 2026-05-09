@@ -70,7 +70,7 @@ export default function InstruccionesEmbarque() {
   const [observaciones, setObservaciones] = useState("");
   const [bookingsReal, setBookingsReal] = useState<any[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
-  const [emisionSWB, setEmisionSWB] = useState(true);
+  const [emisionType, setEmisionType] = useState<"SWB" | "ORIGEN" | "DESTINO">("SWB");
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [historial, setHistorial] = useState<any[]>([]);
   const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
@@ -217,7 +217,7 @@ export default function InstruccionesEmbarque() {
       const body = isOverride ? overrideData : {
         booking: bookingId,
         observaciones: observaciones,
-        emision_bl: emisionSWB ? "SWB" : "EMISI\u00d3N EN ORIGEN",
+        emision_bl: emisionType === "SWB" ? "SWB" : emisionType === "ORIGEN" ? "EMISI\u00d3N EN ORIGEN" : "EMISI\u00d3N EN DESTINO",
         usuario: user?.usuario || "SISTEMA"
       };
 
@@ -667,15 +667,34 @@ export default function InstruccionesEmbarque() {
 
                     <div className="flex items-center justify-between p-8 bg-emerald-50/30 rounded-[2.5rem] border border-emerald-100/50">
                       <div className="flex items-center gap-5">
-                        <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm", emisionSWB ? "bg-emerald-500 text-white" : "bg-white text-slate-400")}>
+                        <div className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm bg-emerald-500 text-white">
                           <Globe className="h-6 w-6" />
                         </div>
                         <div>
-                          <Label htmlFor="swb-toggle" className="text-sm font-black uppercase text-slate-900">Emisión de SWB</Label>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{emisionSWB ? "Sea Waybill" : "Emisión en origen"}</p>
+                          <Label className="text-sm font-black uppercase text-slate-900">Tipo de Emisión</Label>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Seleccione cómo se emitirá el BL</p>
                         </div>
                       </div>
-                      <Switch id="swb-toggle" checked={emisionSWB} onCheckedChange={setEmisionSWB} className="data-[state=checked]:bg-emerald-500 scale-125" />
+                      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
+                        <button
+                          onClick={() => setEmisionType("SWB")}
+                          className={cn("px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all", emisionType === "SWB" ? "bg-emerald-500 text-white shadow-md" : "text-slate-400 hover:bg-slate-50")}
+                        >
+                          SWB
+                        </button>
+                        <button
+                          onClick={() => setEmisionType("ORIGEN")}
+                          className={cn("px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all", emisionType === "ORIGEN" ? "bg-emerald-500 text-white shadow-md" : "text-slate-400 hover:bg-slate-50")}
+                        >
+                          Origen
+                        </button>
+                        <button
+                          onClick={() => setEmisionType("DESTINO")}
+                          className={cn("px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all", emisionType === "DESTINO" ? "bg-emerald-500 text-white shadow-md" : "text-slate-400 hover:bg-slate-50")}
+                        >
+                          Destino
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-4">
