@@ -842,13 +842,10 @@ async def generate_packing_list_ogl(
         output.seek(0)
         
         # Validaciones Finales
+        # NOTA: Las validaciones de Cajas/Peso Bruto solo aplican para Granada,
+        # donde los contenedores tienen un número fijo de cajas estándar.
+        # Para Palta (LOOSE), los valores varían por naturaleza del producto y no se validan.
         warnings = []
-        if tipo_emision == "PALTA_10KG":
-            if int(total_cajas_acum) != 2400: warnings.append(f"ALERTA: Cajas ({int(total_cajas_acum)}) != 2400.")
-            if round(total_gross_acum, 2) != 26328.00: warnings.append(f"ALERTA: Peso Bruto ({round(total_gross_acum, 2)}) != 26328.")
-        elif tipo_emision == "PALTA_4KG":
-            if int(total_cajas_acum) != 5280: warnings.append(f"ALERTA: Cajas ({int(total_cajas_acum)}) != 5280.")
-            if round(total_gross_acum, 2) != 22704.00: warnings.append(f"ALERTA: Peso Bruto ({round(total_gross_acum, 2)}) != 22704.")
         
         safe_nave = re.sub(r'[\\/*?:"<>|]', "_", nave_clean).replace(' ', '_')
         filename = f"Packing List_OGL_MAESTRO_{safe_nave}_{pl_id}.xlsx"
