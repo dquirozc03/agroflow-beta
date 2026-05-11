@@ -369,6 +369,56 @@ async def generate_packing_list_ogl(
         if not bookings_set:
             raise HTTPException(status_code=404, detail=f"No se encontraron bookings para la nave '{nave}'")
 
+        # PRE-SCAN de confirmaciones para saber qué bookings/órdenes están en los archivos
+        # Esto evita que bookings viejos (de PLs anulados) se cuelen cuando el usuario solo sube 4 archivos
+        bookings_en_archivos: set = set()
+        ordenes_en_archivos: set = set()
+        for conf_file in confirmaciones:
+            try:
+                content_scan = await conf_file.read()
+                await conf_file.seek(0)  # reset para que se pueda leer de nuevo
+                df_scan_raw = pd.read_excel(io.BytesIO(content_scan), engine="openpyxl", header=None)
+                header_index_scan = 0
+                for i in range(min(20, len(df_scan_raw))):
+                    row_values = [str(x).upper() for x in df_scan_raw.iloc[i].values]
+                    if any("PALLET" in val or "HU" in val for val in row_values):
+                        header_index_scan = i
+                        break
+                df_scan = pd.read_excel(io.BytesIO(content_scan), engine="openpyxl", header=header_index_scan)
+                df_scan.columns = df_scan.columns.str.strip().str.upper()
+                # Buscar columna BOOKING
+                for col in df_scan.columns:
+                    if "BOOKING" in col or "DESPACHO" in col:
+                        for v in df_scan[col].dropna():
+                            val = str(v).strip().upper()
+                            if val and val != "NAN":
+                                bookings_en_archivos.add(val)
+                # Buscar columna ORDEN BETA
+                for col in df_scan.columns:
+                    if "ORDEN" in col:
+                        for v in df_scan[col].dropna():
+                            n = strip_orden_beta(str(v))
+                            if n:
+                                ordenes_en_archivos.add(n)
+            except Exception as e:
+                logger.warning(f"Pre-scan fallo para {conf_file.filename}: {e}")
+
+        # Si encontramos bookings en los archivos, restringimos bookings_set a esos
+        if bookings_en_archivos:
+            bookings_set = bookings_set.intersection(bookings_en_archivos)
+        elif ordenes_en_archivos:
+            # Fallback: filtrar por número de orden
+            bk_filtrados = set()
+            for bk in bookings_set:
+                pos_chk = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == bk).first()
+                if pos_chk and strip_orden_beta(pos_chk.ORDEN_BETA) in ordenes_en_archivos:
+                    bk_filtrados.add(bk)
+            if bk_filtrados:
+                bookings_set = bk_filtrados
+
+        if not bookings_set:
+            raise HTTPException(status_code=404, detail="No se encontraron bookings OGL para consolidar con los archivos subidos")
+
         booking_data_map: Dict[str, Dict] = {}
         primer_pedido = None
         primer_pos = None
@@ -572,18 +622,22 @@ async def generate_packing_list_ogl(
             for p in pos_semana:
                 if not p.NAVE: continue
                 rep = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == p.BOOKING).first()
-                n_name = (rep.nave_arribo if rep and rep.nave_arribo else p.NAVE).strip().upper()
+                n_name_raw = (rep.nave_arribo if rep and rep.nave_arribo else p.NAVE).strip().upper()
+                # Normalizar slash para unificar "ALBEMARLE ISLAND / SR26015" con "ALBEMARLE ISLAND SR26015"
+                n_name = n_name_raw.replace(" / ", " ").replace("/", " ")
                 etd_val = p.ETD if p.ETD else p.ETA
                 if etd_val:
                     if n_name not in nave_etas or etd_val < nave_etas[n_name]:
                         nave_etas[n_name] = etd_val
 
-            if nave_clean not in nave_etas:
-                nave_etas[nave_clean] = primer_pos.ETD if (primer_pos and primer_pos.ETD) else ahora.date()
+            # Normalizar nave_clean también para la comparación
+            nave_clean_norm = nave_clean.replace(" / ", " ").replace("/", " ")
+            if nave_clean_norm not in nave_etas:
+                nave_etas[nave_clean_norm] = primer_pos.ETD if (primer_pos and primer_pos.ETD) else ahora.date()
             naves_ordenadas = sorted(nave_etas.items(), key=lambda x: (x[1], x[0]))
             correlativo = 1
             for i, (n_name, _) in enumerate(naves_ordenadas):
-                if n_name == nave_clean:
+                if n_name == nave_clean_norm:
                     correlativo = i + 1
                     break
             pl_id = f"WK{str(semana_eta).zfill(2)}{correlativo}"
