@@ -699,8 +699,42 @@ async def generate_packing_list_ogl(
             else:
                 safe_write(ws, "C11", primer_pedido.recibidor or "")
             safe_write(ws, "C12", primer_pedido.port_id_orig or "")
-            safe_write(ws, "C14", primer_pedido.port_id_dest or "")
-            safe_write(ws, "C15", primer_pedido.pod or "")
+            
+            # Arrival Port: usar destino_booking del posicionamiento (más actualizado que cuadro de pedidos)
+            ARRIVAL_PORT_CODES = {
+                "ROTTERDAM":      "NLRTM",
+                "LONDON":         "GBLGP",
+                "ALGECIRAS":      "ESALG",
+                "THESSALONIKI":   "GRSKG",
+                "PHILADELPHIA":   "USPHL",
+                "LOS ANGELES":    "USLAX",
+                "LOS ÁNGELES":    "USLAX",
+                "SAVANNAH":       "USSAV",
+                "NEW ORLEANS":    "USMSY",
+                "OAKLAND":        "USOAK",
+                "MIAMI":          "PortMiami",
+                "QUETZAL":        "GTPRQ",
+                "MERSIN":         "TRMER",
+                "VLISSINGEN":     "NLVLI",
+            }
+            # Prioridad: destino_booking del posicionamiento → pod del pedido
+            arrival_port_raw = ""
+            if primer_pos and primer_pos.DESTINO_BOOKING:
+                arrival_port_raw = primer_pos.DESTINO_BOOKING.strip()
+            elif primer_pedido.pod:
+                arrival_port_raw = primer_pedido.pod.strip()
+            
+            arrival_port_upper = arrival_port_raw.upper()
+            arrival_port_id = ""
+            for key, code in ARRIVAL_PORT_CODES.items():
+                if key in arrival_port_upper:
+                    arrival_port_id = code
+                    break
+            if not arrival_port_id:
+                arrival_port_id = primer_pedido.port_id_dest or ""
+            
+            safe_write(ws, "C14", arrival_port_id)
+            safe_write(ws, "C15", arrival_port_raw)
         
         if primer_pos:
             safe_write(ws, "C13", primer_pos.POL or "")
