@@ -326,15 +326,24 @@ async def generate_packing_list_ogl(
 ):
     try:
         nave_clean = nave.strip().upper()
+        # Normalizar variantes con slash: "ALBEMARLE ISLAND / SR26015" == "ALBEMARLE ISLAND SR26015"
+        nave_normalized = nave_clean.replace(" / ", " ").replace("/", " ")
         
         # 1. Obtener bookings (Reporte > Posicionamiento)
+        # Buscar coincidencia exacta Y la variante con/sin slash
         bookings_reporte = db.query(ReporteEmbarques.booking).filter(
-            func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_clean
+            or_(
+                func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_clean,
+                func.upper(func.replace(func.replace(func.trim(ReporteEmbarques.nave_arribo), " / ", " "), "/", " ")) == nave_normalized
+            )
         ).all()
         bookings_reporte_set = {r.booking for r in bookings_reporte if r.booking}
 
         bookings_pos = db.query(Posicionamiento.BOOKING).filter(
-            func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean
+            or_(
+                func.upper(func.trim(Posicionamiento.NAVE)) == nave_clean,
+                func.upper(func.replace(func.replace(func.trim(Posicionamiento.NAVE), " / ", " "), "/", " ")) == nave_normalized
+            )
         ).all()
         bookings_pos_set = {r.BOOKING for r in bookings_pos if r.BOOKING}
 
@@ -344,7 +353,7 @@ async def generate_packing_list_ogl(
             otra_nave = db.query(ReporteEmbarques).filter(
                 ReporteEmbarques.booking == b,
                 ReporteEmbarques.nave_arribo != None,
-                func.upper(func.trim(ReporteEmbarques.nave_arribo)) != nave_clean
+                func.upper(func.replace(func.replace(func.trim(ReporteEmbarques.nave_arribo), " / ", " "), "/", " ")) != nave_normalized
             ).first()
             if not otra_nave:
                 bookings_set.add(b)
