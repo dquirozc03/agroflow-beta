@@ -227,20 +227,28 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
     Optimizado para evitar el problema N+1.
     """
     nave_upper = nave.strip().upper()
+    # Normalizar variantes con slash: "ALBEMARLE ISLAND / SR26015" == "ALBEMARLE ISLAND SR26015"
+    nave_normalized = nave_upper.replace(" / ", " ").replace("/", " ")
     
     # Subquery de bloqueos
     blocked_sq = db.query(DetalleEmisionPackingList.booking).join(
         EmisionPackingList, DetalleEmisionPackingList.emision_id == EmisionPackingList.id
     ).filter(EmisionPackingList.estado == "ACTIVO").subquery()
 
-    # 1. Bookings confirmados en esta nave por el reporte
+    # 1. Bookings confirmados en esta nave por el reporte (con y sin slash)
     bk_reporte = {r.booking for r in db.query(ReporteEmbarques.booking).filter(
-        func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_upper
+        or_(
+            func.upper(func.trim(ReporteEmbarques.nave_arribo)) == nave_upper,
+            func.upper(func.replace(func.replace(func.trim(ReporteEmbarques.nave_arribo), " / ", " "), "/", " ")) == nave_normalized
+        )
     ).all() if r.booking}
 
-    # 2. Bookings que dicen estar aquí en posicionamiento
+    # 2. Bookings que dicen estar aquí en posicionamiento (con y sin slash)
     bk_pos_data = db.query(Posicionamiento).filter(
-        func.upper(func.trim(Posicionamiento.NAVE)) == nave_upper
+        or_(
+            func.upper(func.trim(Posicionamiento.NAVE)) == nave_upper,
+            func.upper(func.replace(func.replace(func.trim(Posicionamiento.NAVE), " / ", " "), "/", " ")) == nave_normalized
+        )
     ).all()
     bk_pos = {p.BOOKING for p in bk_pos_data if p.BOOKING}
 
@@ -251,7 +259,7 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
         movido = db.query(ReporteEmbarques).filter(
             ReporteEmbarques.booking == b,
             ReporteEmbarques.nave_arribo != None,
-            func.upper(func.trim(ReporteEmbarques.nave_arribo)) != nave_upper
+            func.upper(func.replace(func.replace(func.trim(ReporteEmbarques.nave_arribo), " / ", " "), "/", " ")) != nave_normalized
         ).first()
         if not movido:
             bookings_actuales.add(b)
