@@ -640,7 +640,31 @@ async def generate_packing_list_ogl(
                 if n_name == nave_clean_norm:
                     correlativo = i + 1
                     break
-            pl_id = f"WK{str(semana_eta).zfill(2)}{correlativo}"
+            
+            # Ajustar correlativo sumando PLs activos ya emitidos esta semana+cultivo
+            # Ejemplo: si WK222 ya fue emitido, el siguiente PL debe ser WK223
+            pl_prefix = f"WK{str(semana_eta).zfill(2)}"
+            cultivo_check = (primer_pedido.cultivo or "").strip().upper()
+            emisiones_semana = db.query(EmisionPackingList).filter(
+                EmisionPackingList.estado == "ACTIVO",
+                EmisionPackingList.pl_id.like(f"{pl_prefix}%") if hasattr(EmisionPackingList, "pl_id") else True
+            ).all()
+            # Contar PLs activos cuyo WK ID empieza con el mismo prefijo de semana
+            ids_usados = set()
+            for em in emisiones_semana:
+                em_id = getattr(em, "pl_id", None) or getattr(em, "archivo_nombre", "")
+                # Extraer el WK del nombre del archivo si no hay campo pl_id
+                import re as _re
+                m = _re.search(r'WK(\d+)', em_id or "")
+                if m:
+                    full_wk = m.group(0)  # e.g. "WK222"
+                    if full_wk.startswith(pl_prefix):
+                        ids_usados.add(full_wk)
+            # El correlativo final es el primer número libre
+            final_correlativo = correlativo
+            while f"{pl_prefix}{final_correlativo}" in ids_usados:
+                final_correlativo += 1
+            pl_id = f"WK{str(semana_eta).zfill(2)}{final_correlativo}"
             
         elif primer_pos and primer_pos.ETA:
             semana_eta = primer_pos.ETA.isocalendar()[1]
