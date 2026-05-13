@@ -266,7 +266,7 @@ class InstructionPDFService:
             h_str = h_prog.strftime('%H:%M') if h_prog else ""
             fecha_llenado = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
 
-            eta_str = pos.ETA.strftime('%d/%m/%Y') if pos.ETA else ""
+            eta_str = pos.ETD.strftime('%d/%m/%Y') if pos.ETD else ""
             puerto_destino = pos.DESTINO_BOOKING or (pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else ""))
             
             variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
@@ -412,7 +412,7 @@ class InstructionPDFService:
             t1_data.append([b_p("DATOS REFERENCIALES"), format_desc(f"EORI CONSIGNE: {eori_consignee}", f"EORI NOTIFY: {eori_notify}")])
         t1_data.extend([[b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)], [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")], [b_p("MOTONAVE"), n_p(pos_nave or "")], [b_p("BOOKING No."), b_p(pos_booking or "")], [b_p("FREIGHT"), n_p(flete_val)]])
         if po_val and po_val.strip() and po_val.strip() != "0": t1_data.append([b_p("PO"), b_p(po_val.strip())])
-        t1_data.extend([[b_p("EMISION B/L"), n_p(emision_bl)], [b_p("PUERTO EMBARQUE"), n_p(pos_pol)], [b_p("ETA"), n_p(eta_str)], [b_p("PUERTO DESTINO"), n_p(puerto_destino)], [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")], [b_p("PRODUCTO"), n_p(pos_cultivo or "GRANADAS")], [b_p("VARIEDAD"), n_p(variedad)], [b_p("TEMPERATURA"), n_p(temperatura)], [b_p("VENTILACION"), n_p(ventilacion)], [b_p("HUMEDAD"), n_p(humedad)], [b_p("ATMOSFERA CONTROLADA"), n_p(atm)], [b_p("OXIGENO"), n_p(oxigeno)], [b_p("CO2"), n_p(co2)]])
+        t1_data.extend([[b_p("EMISION B/L"), n_p(emision_bl)], [b_p("PUERTO EMBARQUE"), n_p(pos_pol)], [b_p("ETD"), n_p(eta_str)], [b_p("PUERTO DESTINO"), n_p(puerto_destino)], [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")], [b_p("PRODUCTO"), n_p(pos_cultivo or "GRANADAS")], [b_p("VARIEDAD"), n_p(variedad)], [b_p("TEMPERATURA"), n_p(temperatura)], [b_p("VENTILACION"), n_p(ventilacion)], [b_p("HUMEDAD"), n_p(humedad)], [b_p("ATMOSFERA CONTROLADA"), n_p(atm)], [b_p("OXIGENO"), n_p(oxigeno)], [b_p("CO2"), n_p(co2)]])
         if not ("PALTA" in cultivo_key or "AVOCADO" in cultivo_key): t1_data.append([b_p("FILTROS"), b_p(filtros)])
         t1_data.extend([[b_p("COLD TREAMENT"), b_p(cold_treatment)], [b_p("CANTIDAD"), n_p(f"{total_cajas} CAJAS APROX.")], [b_p("VALOR FOB APROXIMADO"), n_p(fob_val)]])
 
