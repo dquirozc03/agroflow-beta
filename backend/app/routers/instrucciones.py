@@ -248,6 +248,14 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         
         atm_val = pos.AC or ("SI" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else "NO APLICA")
         
+        pres_val = (pedido.presentacion or "").upper() if pedido else ""
+        cliente_upper = (cliente_nombre_final or "").upper()
+        pallet_suffix = ""
+        if "WALMART" in cliente_upper and "17 KG" in pres_val:
+            pallet_suffix = " CHEP B4840A"
+        elif "TESCO" in cliente_upper and "10 KG" in pres_val:
+            pallet_suffix = " CHEP B1210A"
+
         response = {
             "booking": pos.BOOKING,
             "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
@@ -257,7 +265,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "naviera": pos.NAVIERA or "",
             "puerto_embarque": pos.POL or "CALLAO",
             "puerto_destino": getattr(pos, 'DESTINO_BOOKING', None) or (cliente_maestro.destino if cliente_maestro else ""),
-            "eta": pos.ETA.strftime('%d/%m/%Y') if pos.ETA else "",
+            "eta": pos.ETD.strftime('%d/%m/%Y') if pos.ETD else "",
             "operador_logistico": pos.OPERADOR_LOGISTICO or "DP WORLD LOGISTICS S.R.L.",
             "planta_llenado": planta_maestro.planta if planta_maestro else (pos.PLANTA_LLENADO or "PLANTA BETA"),
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
@@ -269,8 +277,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "pallets": total_pallets,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
-            "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS",
-            "desc_es": f"{total_cajas} CAJAS CON FRESCA {pos.CULTIVO or 'PRODUCTO'} {pedidos[0].variedad if pedidos else ''} EN {total_pallets} PALETAS",
+            "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS{pallet_suffix}",
+            "desc_es": f"{total_cajas} CAJAS CON FRESCA {pos.CULTIVO or 'PRODUCTO'} {pedidos[0].variedad if pedidos else ''} EN {total_pallets} PALETAS{pallet_suffix}",
             "temperatura": pos.TEMPERATURA or ("6.0 °C" if (pos.CULTIVO and ("GRANADA" in pos.CULTIVO.upper() or "PALTA" in pos.CULTIVO.upper())) else "0.5 °C"),
             "ventilacion": pos.VENTILACION or ("CERRADA" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else ("15 CBM" if (pos.CULTIVO and "GRANADA" in pos.CULTIVO.upper()) else "15 CBM")),
             "humedad": pos.HUMEDAD or "OFF",

@@ -201,14 +201,15 @@ class InstructionPDFService:
             eori_consignee = override_data.get("eori_consignatario", "----")
             eori_notify = override_data.get("eori_notify", "----")
             
-            temperatura = override_data.get('temperatura', '6.0\u00b0C')
-            ventilacion = override_data.get('ventilacion', '15CBM')
-            humedad = override_data.get('humedad', 'OFF')
-            atm = override_data.get('atm', 'NO APLICA')
-            oxigeno = override_data.get('oxigeno', 'NO APLICA')
-            co2 = override_data.get('co2', 'NO APLICA')
-            filtros = override_data.get('filtros', 'NO')
-            cold_treatment = override_data.get('cold_treatment', 'NO')
+            # Usar exactamente lo que el usuario editó — sin defaults hardcodeados
+            temperatura = override_data.get('temperatura') or ''
+            ventilacion = override_data.get('ventilacion') or ''
+            humedad = override_data.get('humedad') or ''
+            atm = override_data.get('atm') or ''
+            oxigeno = override_data.get('oxigeno') or ''
+            co2 = override_data.get('co2') or ''
+            filtros = override_data.get('filtros') or ''
+            cold_treatment = override_data.get('cold_treatment') or ''
             
         else:
             pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
@@ -270,8 +271,17 @@ class InstructionPDFService:
             puerto_destino = pos.DESTINO_BOOKING or (pedidos[0].pod if pedidos and getattr(pedidos[0], 'pod', None) else (cliente_maestro.destino if cliente_maestro else ""))
             
             variedad = pedidos[0].variedad if pedidos and hasattr(pedidos[0], 'variedad') else "WONDERFUL"
-            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
-            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
+            pres_val = (getattr(pedidos[0], 'presentacion', "") if pedidos else "").upper()
+            cliente_upper = (cliente_nombre or "").upper()
+            
+            pallet_suffix = ""
+            if "WALMART" in cliente_upper and "17 KG" in pres_val:
+                pallet_suffix = " CHEP B4840A"
+            elif "TESCO" in cliente_upper and "10 KG" in pres_val:
+                pallet_suffix = " CHEP B1210A"
+                
+            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS{pallet_suffix}"
+            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS{pallet_suffix}"
             
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
