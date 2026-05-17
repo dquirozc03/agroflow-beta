@@ -279,6 +279,8 @@ class InstructionPDFService:
                 pallet_suffix = " CHEP B4840A"
             elif "TESCO" in cliente_upper and "10 KG" in pres_val:
                 pallet_suffix = " CHEP B1210A"
+            elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
+                pallet_suffix = " CHEP B4840A"
                 
             desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS{pallet_suffix}"
             desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS{pallet_suffix}"

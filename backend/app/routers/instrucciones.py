@@ -255,6 +255,8 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             pallet_suffix = " CHEP B4840A"
         elif "TESCO" in cliente_upper and "10 KG" in pres_val:
             pallet_suffix = " CHEP B1210A"
+        elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
+            pallet_suffix = " CHEP B4840A"
 
         response = {
             "booking": pos.BOOKING,
