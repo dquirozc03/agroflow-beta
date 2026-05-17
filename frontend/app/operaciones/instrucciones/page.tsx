@@ -875,19 +875,19 @@ export default function InstruccionesEmbarque() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripción BL (EN)</Label>
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (EN)</Label>
                         <Textarea 
                           value={overrideData.desc_en} 
-                          readOnly 
-                          className="rounded-xl border-slate-100 bg-slate-50/50 min-h-[60px] text-slate-500 cursor-not-allowed border-dashed" 
+                          onChange={(e) => handleOverrideChange('desc_en', e.target.value)}
+                          className="rounded-xl border-slate-100 min-h-[60px]" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Vista Previa Descripción BL (ES)</Label>
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (ES)</Label>
                         <Textarea 
                           value={overrideData.desc_es} 
-                          readOnly 
-                          className="rounded-xl border-slate-100 bg-slate-50/50 min-h-[60px] text-slate-500 cursor-not-allowed border-dashed" 
+                          onChange={(e) => handleOverrideChange('desc_es', e.target.value)}
+                          className="rounded-xl border-slate-100 min-h-[60px]" 
                         />
                       </div>
                     </div>
@@ -916,6 +916,50 @@ export default function InstruccionesEmbarque() {
                             <Label className="text-[9px] font-black uppercase ml-2">Variedad</Label>
                             <Input value={overrideData.variedad} onChange={(e) => handleOverrideChange('variedad', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECCIÓN 5: PARÁMETROS DE CONSERVACIÓN */}
+                  <div className="grid grid-cols-1 lg:grid-cols-1 gap-12 pt-8">
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Thermometer className="h-4 w-4 text-emerald-500" />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Parámetros de Conservación</h4>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Temperatura</Label>
+                          <Input value={overrideData.temperatura} onChange={(e) => handleOverrideChange('temperatura', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Ventilación</Label>
+                          <Input value={overrideData.ventilacion} onChange={(e) => handleOverrideChange('ventilacion', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Humedad</Label>
+                          <Input value={overrideData.humedad} onChange={(e) => handleOverrideChange('humedad', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">ATM Controlada</Label>
+                          <Input value={overrideData.atm} onChange={(e) => handleOverrideChange('atm', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Oxígeno (O2)</Label>
+                          <Input value={overrideData.oxigeno} onChange={(e) => handleOverrideChange('oxigeno', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Dióxido de Carbono (CO2)</Label>
+                          <Input value={overrideData.co2} onChange={(e) => handleOverrideChange('co2', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Filtros (Etileno)</Label>
+                          <Input value={overrideData.filtros} onChange={(e) => handleOverrideChange('filtros', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Cold Treatment</Label>
+                          <Input value={overrideData.cold_treatment} onChange={(e) => handleOverrideChange('cold_treatment', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                       </div>
                     </div>

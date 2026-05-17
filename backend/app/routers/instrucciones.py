@@ -275,6 +275,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "incoterm": pedido.incoterm if pedido else "",
             "cajas": total_cajas,
             "pallets": total_pallets,
+            "presentacion": pres_val,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
             "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS{pallet_suffix}",
