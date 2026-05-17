@@ -75,6 +75,8 @@ class AdminOverrideRequest(BaseModel):
     freight: Optional[str] = "PREPAID"
     eori_consignatario: Optional[str] = ""
     eori_notify: Optional[str] = ""
+    desc_en: Optional[str] = ""
+    desc_es: Optional[str] = ""
     usuario: Optional[str] = "SISTEMA"
 
 @router.get("/lookup/{booking}")

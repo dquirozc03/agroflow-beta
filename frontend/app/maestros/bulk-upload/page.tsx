@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getStoredToken } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/constants";
 
 export default function BulkUploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -42,12 +43,21 @@ export default function BulkUploadPage() {
     formData.append("file", file);
 
     try {
-      const data = await apiRequest<any>("/maestros/bulk-upload", {
+      const token = getStoredToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/maestros/bulk-upload`, {
         method: "POST",
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: formData,
-        // No pasamos Content-Type para que el navegador ponga el boundary correcto
       });
 
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.detail || `Error del servidor: ${res.status}`);
+      }
+
+      const data = await res.json();
       setResult(data);
     } catch (error: any) {
       toast.error(error.message || "Error al subir el archivo");
