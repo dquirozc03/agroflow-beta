@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from app.database import get_db
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 import io
 from fastapi.responses import StreamingResponse
@@ -161,6 +161,13 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
     if not driver:
         raise HTTPException(status_code=404, detail=f"Chofer con DNI {clean_dni_val} no registrado")
         
+    hoy = date.today()
+    licencia_vencida = False
+    venc_lic_str = None
+    if driver.vencimiento_licencia:
+        licencia_vencida = driver.vencimiento_licencia < hoy
+        venc_lic_str = driver.vencimiento_licencia.isoformat()
+        
     return {
         "dni": driver.dni,
         "nombres": driver.nombres,
@@ -168,7 +175,9 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
         "apellido_materno": driver.apellido_materno,
         "licencia": driver.licencia,
         "nombre_operativo": driver.nombre_operativo,
-        "estado": driver.estado
+        "estado": driver.estado,
+        "vencimiento_licencia": venc_lic_str,
+        "licencia_vencida": licencia_vencida
     }
 
 @router.get("/vehicle/{placa}")
@@ -180,6 +189,19 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_val} no registrado")
         
+    hoy = date.today()
+    tarjeta_circulacion_vencida = False
+    venc_tarjeta_str = None
+    if vehicle.vencimiento_tarjeta_circulacion:
+        tarjeta_circulacion_vencida = vehicle.vencimiento_tarjeta_circulacion < hoy
+        venc_tarjeta_str = vehicle.vencimiento_tarjeta_circulacion.isoformat()
+        
+    soat_vencido = False
+    venc_soat_str = None
+    if vehicle.vencimiento_soat:
+        soat_vencido = vehicle.vencimiento_soat < hoy
+        venc_soat_str = vehicle.vencimiento_soat.isoformat()
+        
     return {
         "placa": vehicle.placa_tracto,
         "marca": vehicle.marca,
@@ -189,7 +211,11 @@ def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
         "partida_registral": vehicle.transportista.partida_registral if vehicle.transportista else None,
         "configuracion_vehicular": vehicle.certificado_vehicular_tracto,
         "peso_neto": vehicle.peso_neto_tracto,
-        "numero_ejes": vehicle.numero_ejes
+        "numero_ejes": vehicle.numero_ejes,
+        "vencimiento_tarjeta_circulacion": venc_tarjeta_str,
+        "tarjeta_circulacion_vencida": tarjeta_circulacion_vencida,
+        "vencimiento_soat": venc_soat_str,
+        "soat_vencido": soat_vencido
     }
 
 @router.get("/check_unique")
@@ -240,11 +266,28 @@ def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     if not trailer:
         raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")
         
+    hoy = date.today()
+    tarjeta_circulacion_vencida = False
+    venc_tarjeta_str = None
+    if trailer.vencimiento_tarjeta_circulacion:
+        tarjeta_circulacion_vencida = trailer.vencimiento_tarjeta_circulacion < hoy
+        venc_tarjeta_str = trailer.vencimiento_tarjeta_circulacion.isoformat()
+        
+    soat_vencido = False
+    venc_soat_str = None
+    if trailer.vencimiento_soat:
+        soat_vencido = trailer.vencimiento_soat < hoy
+        venc_soat_str = trailer.vencimiento_soat.isoformat()
+        
     return {
         "placa": trailer.placa_carreta,
         "configuracion_vehicular": trailer.certificado_vehicular_carreta,
         "peso_neto": trailer.peso_neto_carreta,
-        "numero_ejes": trailer.numero_ejes
+        "numero_ejes": trailer.numero_ejes,
+        "vencimiento_tarjeta_circulacion": venc_tarjeta_str,
+        "tarjeta_circulacion_vencida": tarjeta_circulacion_vencida,
+        "vencimiento_soat": venc_soat_str,
+        "soat_vencido": soat_vencido
     }
 
 @router.get("/drivers/search")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, condecimal
+from datetime import date
 from decimal import Decimal
 
 from app.database import get_db
@@ -27,6 +28,8 @@ class TractoCreate(VehiculoBase):
     largo_tracto: Optional[Decimal] = None
     ancho_tracto: Optional[Decimal] = None
     alto_tracto: Optional[Decimal] = None
+    vencimiento_tarjeta_circulacion: Optional[date] = None
+    vencimiento_soat: Optional[date] = None
 
 class CarretaCreate(VehiculoBase):
     placa_carreta: str
@@ -35,6 +38,8 @@ class CarretaCreate(VehiculoBase):
     largo_carreta: Optional[Decimal] = None
     ancho_carreta: Optional[Decimal] = None
     alto_carreta: Optional[Decimal] = None
+    vencimiento_tarjeta_circulacion: Optional[date] = None
+    vencimiento_soat: Optional[date] = None
 
 class TransportistaMinimal(BaseModel):
     id: int

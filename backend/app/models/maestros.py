@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -34,6 +34,10 @@ class VehiculoTracto(Base):
     alto_tracto = Column(Numeric(10, 2), nullable=True)
     numero_ejes = Column(Integer, nullable=True)
     peso_neto_tracto = Column(Numeric(10, 2), nullable=True)
+    
+    vencimiento_tarjeta_circulacion = Column(Date, nullable=True)
+    vencimiento_soat = Column(Date, nullable=True)
+    
     estado = Column(String(20), default="ACTIVO")
 
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
@@ -55,6 +59,10 @@ class VehiculoCarreta(Base):
     alto_carreta = Column(Numeric(10, 2), nullable=True)
     numero_ejes = Column(Integer, nullable=True)
     peso_neto_carreta = Column(Numeric(10, 2), nullable=True)
+    
+    vencimiento_tarjeta_circulacion = Column(Date, nullable=True)
+    vencimiento_soat = Column(Date, nullable=True)
+    
     estado = Column(String(20), default="ACTIVO")
 
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
@@ -72,6 +80,7 @@ class Chofer(Base):
     apellido_paterno = Column(String(100), nullable=False)
     apellido_materno = Column(String(100), nullable=True)
     licencia = Column(String(50), nullable=True)
+    vencimiento_licencia = Column(Date, nullable=True)
     estado = Column(String(20), default="ACTIVO")
     
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())

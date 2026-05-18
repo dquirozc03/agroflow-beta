@@ -287,6 +287,9 @@ export default function LogiCaptureV2Page() {
   const [isLoadingVehiculo, setIsLoadingVehiculo] = useState(false);
   const [isLoadingChofer, setIsLoadingChofer] = useState(false);
   const [isChoferInhabilitado, setIsChoferInhabilitado] = useState(false);
+  const [licenciaAlert, setLicenciaAlert] = useState<string | null>(null);
+  const [tractoAlerts, setTractoAlerts] = useState<string[]>([]);
+  const [carretaAlerts, setCarretaAlerts] = useState<string[]>([]);
   const [isLoadingCarreta, setIsLoadingCarreta] = useState(false);
   const [transportMode, setTransportMode] = useState<"maritimo" | "terrestre" | "aereo">("maritimo");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -412,6 +415,16 @@ export default function LogiCaptureV2Page() {
       setIsChoferInhabilitado(false);
     }
 
+    if (field === "dni") {
+      setLicenciaAlert(null);
+    }
+    if (field === "placaTracto") {
+      setTractoAlerts([]);
+    }
+    if (field === "placaCarreta") {
+      setCarretaAlerts([]);
+    }
+
     // Limpiar error específico al editar
     if (fieldErrors[field]) {
       setFieldErrors(prev => {
@@ -425,9 +438,13 @@ export default function LogiCaptureV2Page() {
 
   const handleVehiculoBlur = async () => {
     const placa = (formData.placaTracto || "").trim().toUpperCase().replace(/-/g, "");
-    if (!placa) return;
+    if (!placa) {
+      setTractoAlerts([]);
+      return;
+    }
 
     setIsLoadingVehiculo(true);
+    setTractoAlerts([]);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/vehicle/${placa}`);
       if (!response.ok) throw new Error("Placa no registrada en maestros");
@@ -443,8 +460,23 @@ export default function LogiCaptureV2Page() {
         partidaRegistral: data.partida_registral,
         ruc_transportista: data.ruc_transportista
       }));
-      setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista}` }));
-      setValidatedFields(prev => [...new Set([...prev, "placaTracto"])]);
+
+      const newAlerts: string[] = [];
+      if (data.tarjeta_circulacion_vencida) {
+        newAlerts.push(`⚠️ TARJETA DE CIRCULACIÓN VENCIDA — Placa ${placa} (${data.vencimiento_tarjeta_circulacion || "S/F"})`);
+      }
+      if (data.soat_vencido) {
+        newAlerts.push(`⚠️ SOAT TRACTO VENCIDO — Placa ${placa} (${data.vencimiento_soat || "S/F"})`);
+      }
+      setTractoAlerts(newAlerts);
+
+      if (newAlerts.length > 0) {
+        setFieldErrors(prev => ({ ...prev, empresa_info: `⚠️ DOCUMENTACIÓN VENCIDA EN TRACTO` }));
+        setValidatedFields(prev => prev.filter(f => f !== "placaTracto"));
+      } else {
+        setFieldErrors(prev => ({ ...prev, empresa_info: `TRANSPORTISTA: ${data.transportista}` }));
+        setValidatedFields(prev => [...new Set([...prev, "placaTracto"])]);
+      }
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaTracto: error.message || "Placa no registrada en maestros" }));
       updateField("empresa", "");
@@ -455,10 +487,14 @@ export default function LogiCaptureV2Page() {
 
   const handleChoferBlur = async () => {
     const dni = (formData.dni || "").trim();
-    if (!dni) return;
+    if (!dni) {
+      setLicenciaAlert(null);
+      return;
+    }
 
     setIsLoadingChofer(true);
     setIsChoferInhabilitado(false);
+    setLicenciaAlert(null);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/driver/${dni}`);
       if (!response.ok) throw new Error("DNI no registrado en el sistema de maestros");
@@ -474,11 +510,18 @@ export default function LogiCaptureV2Page() {
         licenciaChofer: data.licencia
       }));
 
+      const nombreCompleto = data.nombre_operativo || `${data.nombres || ""} ${data.apellido_paterno || ""}`.trim();
+
       if (inhabilitado) {
-        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CONDUCTOR INHABILITADO: ${data.nombre_operativo || data.nombres}` }));
+        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ CONDUCTOR INHABILITADO: ${nombreCompleto}` }));
+        setValidatedFields(prev => prev.filter(f => f !== "dni"));
+      } else if (data.licencia_vencida) {
+        const fechaVenc = data.vencimiento_licencia || "FECHA DESCONOCIDA";
+        setLicenciaAlert(`⚠️ LICENCIA DE CONDUCIR VENCIDA — ${nombreCompleto} (${fechaVenc})`);
+        setFieldErrors(prev => ({ ...prev, dni_info: `⚠️ LICENCIA VENCIDA (${fechaVenc})` }));
         setValidatedFields(prev => prev.filter(f => f !== "dni"));
       } else {
-        setFieldErrors(prev => ({ ...prev, dni_info: `CONDUCTOR: ${data.nombre_operativo || data.nombres}` }));
+        setFieldErrors(prev => ({ ...prev, dni_info: `CONDUCTOR: ${nombreCompleto}` }));
         setValidatedFields(prev => [...new Set([...prev, "dni"])]);
       }
     } catch (error: any) {
@@ -554,9 +597,13 @@ export default function LogiCaptureV2Page() {
 
   const handleCarretaBlur = async () => {
     const placa = (formData.placaCarreta || "").trim().toUpperCase().replace(/-/g, "");
-    if (!placa) return;
+    if (!placa) {
+      setCarretaAlerts([]);
+      return;
+    }
 
     setIsLoadingCarreta(true);
+    setCarretaAlerts([]);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/logicapture/trailer/${placa}`);
       if (!response.ok) throw new Error("Carreta no registrada en maestros");
@@ -567,7 +614,21 @@ export default function LogiCaptureV2Page() {
         ...prev,
         cert_carreta: data.configuracion_vehicular
       }));
-      setValidatedFields(prev => [...new Set([...prev, "placaCarreta"])]);
+
+      const newAlerts: string[] = [];
+      if (data.tarjeta_circulacion_vencida) {
+        newAlerts.push(`⚠️ TARJETA DE CIRCULACIÓN VENCIDA — Carreta ${placa} (${data.vencimiento_tarjeta_circulacion || "S/F"})`);
+      }
+      if (data.soat_vencido) {
+        newAlerts.push(`⚠️ SOAT CARRETA VENCIDO — Carreta ${placa} (${data.vencimiento_soat || "S/F"})`);
+      }
+      setCarretaAlerts(newAlerts);
+
+      if (newAlerts.length > 0) {
+        setValidatedFields(prev => prev.filter(f => f !== "placaCarreta"));
+      } else {
+        setValidatedFields(prev => [...new Set([...prev, "placaCarreta"])]);
+      }
     } catch (error: any) {
       setFieldErrors(prev => ({ ...prev, placaCarreta: error.message || "Carreta no registrada en maestros" }));
     } finally {
@@ -612,6 +673,12 @@ export default function LogiCaptureV2Page() {
     if (isChoferInhabilitado) {
       toast.error("ERROR CRÍTICO: No se puede registrar un despacho con un conductor INHABILITADO.");
       setServerError("BLOQUEO DE SEGURIDAD: El conductor seleccionado se encuentra inhabilitado en los registros maestros.");
+      return;
+    }
+
+    if (licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0) {
+      toast.error("ERROR CRÍTICO: Documentación Vencida");
+      setServerError("BLOQUEO DE SEGURIDAD: Se ha detectado documentación vencida (Licencia, SOAT o Tarjeta de Circulación). Actualice los datos antes de continuar.");
       return;
     }
     setServerError(null);
@@ -682,6 +749,9 @@ export default function LogiCaptureV2Page() {
     setBookingError(false);
     setIsBookingBlocked(false);
     setServerError(null);
+    setLicenciaAlert(null);
+    setTractoAlerts([]);
+    setCarretaAlerts([]);
     localStorage.removeItem("logicapture_draft");
     toast.success("Formulario Limpiado", {
       description: "El formulario y los borradores han sido borrados.",
@@ -754,6 +824,46 @@ export default function LogiCaptureV2Page() {
                 </button>
               </div>
             </div>
+
+            {/* PANEL DE ALERTAS OPERATIVAS (DOCUMENTOS VENCIDOS) */}
+            {(licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0) && (
+              <div className="bg-rose-50 border-2 border-rose-200 rounded-[2.5rem] p-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-3 h-full bg-rose-500" />
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 shadow-inner shrink-0">
+                    <AlertTriangle className="h-6 w-6 animate-bounce" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-rose-950 uppercase tracking-[0.2em] leading-tight">
+                      ¡ALERTA OPERATIVA! — DOCUMENTOS VENCIDOS
+                    </h3>
+                    <p className="text-xs text-rose-700/80 font-bold uppercase tracking-wider mt-1">
+                      Se ha bloqueado la grabación del despacho. Por favor actualice la información del conductor o vehículo en los catálogos maestros.
+                    </p>
+                  </div>
+                </div>
+                <div className="pl-16 space-y-3 pt-2">
+                  {licenciaAlert && (
+                    <div className="text-sm font-bold text-rose-900 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                      <span>{licenciaAlert}</span>
+                    </div>
+                  )}
+                  {tractoAlerts.map((alert, idx) => (
+                    <div key={idx} className="text-sm font-bold text-rose-900 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                      <span>{alert}</span>
+                    </div>
+                  ))}
+                  {carretaAlerts.map((alert, idx) => (
+                    <div key={idx} className="text-sm font-bold text-rose-900 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                      <span>{alert}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Fila 0: Inteligencia Operativa (OCR Hub Unificado) Carlos Edition */}
             <div className="bg-gradient-to-br from-[#022c22] to-slate-900 rounded-[2.5rem] p-1 shadow-2xl shadow-emerald-900/20 group overflow-hidden relative">
@@ -1090,18 +1200,26 @@ export default function LogiCaptureV2Page() {
                     </button>
                     <button
                       onClick={handleSave}
-                      disabled={isSearching || isChoferInhabilitado || isBookingBlocked}
+                      disabled={isSearching || isChoferInhabilitado || isBookingBlocked || !!licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0}
                       className={cn(
                         "relative group/btn flex items-center gap-3 px-8 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-all duration-500",
                         isSearching
                           ? "bg-slate-100 text-slate-400 cursor-wait"
-                          : isBookingBlocked
+                          : (isBookingBlocked || isChoferInhabilitado || !!licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0)
                             ? "bg-rose-950 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed"
                             : "bg-emerald-950 text-emerald-50 hover:bg-emerald-900 shadow-2xl shadow-emerald-950/20 active:scale-95 border border-emerald-900"
                       )}
                     >
-                      {isSearching ? "Sincronizando..." : isChoferInhabilitado ? "Bloqueado" : isBookingBlocked ? "Booking Duplicado" : "Guardar Registro"}
-                      {!isSearching && !isChoferInhabilitado && !isBookingBlocked && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                      {isSearching 
+                        ? "Sincronizando..." 
+                        : isChoferInhabilitado 
+                          ? "Bloqueado" 
+                          : isBookingBlocked 
+                            ? "Booking Duplicado" 
+                            : (!!licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0)
+                              ? "Doc. Vencido (Bloqueado)"
+                              : "Guardar Registro"}
+                      {!isSearching && !isChoferInhabilitado && !isBookingBlocked && !licenciaAlert && tractoAlerts.length === 0 && carretaAlerts.length === 0 && <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
                     </button>
                   </div>
                 </div>

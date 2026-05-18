@@ -47,6 +47,8 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
     largo: "",
     ancho: "",
     alto: "",
+    vencimiento_tarjeta_circulacion: "",
+    vencimiento_soat: "",
     estado: "ACTIVO"
   });
   
@@ -70,6 +72,8 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
           largo: editingData.largo_tracto || editingData.largo_carreta || "",
           ancho: editingData.ancho_tracto || editingData.ancho_carreta || "",
           alto: editingData.alto_tracto || editingData.alto_carreta || "",
+          vencimiento_tarjeta_circulacion: editingData.vencimiento_tarjeta_circulacion || "",
+          vencimiento_soat: editingData.vencimiento_soat || "",
           estado: editingData.estado || "ACTIVO"
         });
         // Sincronizar nombre en el buscador
@@ -88,6 +92,8 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
            largo: "",
            ancho: "",
            alto: "",
+           vencimiento_tarjeta_circulacion: "",
+           vencimiento_soat: "",
            estado: "ACTIVO"
         });
       }
@@ -174,6 +180,8 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
        body.largo_tracto = parseFloat(formData.largo) || 0;
        body.ancho_tracto = parseFloat(formData.ancho) || 0;
        body.alto_tracto = parseFloat(formData.alto) || 0;
+       body.vencimiento_tarjeta_circulacion = formData.vencimiento_tarjeta_circulacion || null;
+       body.vencimiento_soat = formData.vencimiento_soat || null;
     } else {
        body.placa_carreta = formData.placa;
        body.peso_neto_carreta = parseFloat(formData.peso_neto) || 0;
@@ -181,6 +189,8 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
        body.largo_carreta = parseFloat(formData.largo) || 0;
        body.ancho_carreta = parseFloat(formData.ancho) || 0;
        body.alto_carreta = parseFloat(formData.alto) || 0;
+       body.vencimiento_tarjeta_circulacion = formData.vencimiento_tarjeta_circulacion || null;
+       body.vencimiento_soat = formData.vencimiento_soat || null;
     }
 
     const endpoint = type === "tractos" ? "tractos" : "carretas";
@@ -214,6 +224,10 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
       setIsSubmitting(false);
     }
   };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isTarjetaExpirada = !!(formData.vencimiento_tarjeta_circulacion && formData.vencimiento_tarjeta_circulacion < todayStr);
+  const isSoatExpirado = !!(formData.vencimiento_soat && formData.vencimiento_soat < todayStr);
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
@@ -435,6 +449,44 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
                           className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
                         />
                      </div>
+                  </div>
+               </div>
+
+               {/* Campos de Vencimiento */}
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                     <label className={cn(
+                       "text-[10px] font-black uppercase tracking-widest pl-1 transition-colors",
+                       isTarjetaExpirada ? "text-rose-500 font-extrabold" : "text-slate-400"
+                     )}>
+                       Venc. Tarjeta {isTarjetaExpirada && "— ¡EXPIRADO!"}
+                     </label>
+                     <input 
+                       type="date"
+                       value={formData.vencimiento_tarjeta_circulacion}
+                       onChange={e => setFormData({...formData, vencimiento_tarjeta_circulacion: e.target.value})}
+                       className={cn(
+                         "w-full h-12 px-4 border rounded-xl focus:outline-none focus:ring-2 transition-all font-bold text-xs",
+                         isTarjetaExpirada ? "bg-rose-50 border-rose-200 text-rose-700 focus:ring-rose-500/20" : "bg-slate-50 border-slate-100 text-slate-800 focus:ring-emerald-500/20"
+                       )}
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     <label className={cn(
+                       "text-[10px] font-black uppercase tracking-widest pl-1 transition-colors",
+                       isSoatExpirado ? "text-rose-500 font-extrabold" : "text-slate-400"
+                     )}>
+                       Venc. SOAT {isSoatExpirado && "— ¡EXPIRADO!"}
+                     </label>
+                     <input 
+                       type="date"
+                       value={formData.vencimiento_soat}
+                       onChange={e => setFormData({...formData, vencimiento_soat: e.target.value})}
+                       className={cn(
+                         "w-full h-12 px-4 border rounded-xl focus:outline-none focus:ring-2 transition-all font-bold text-xs",
+                         isSoatExpirado ? "bg-rose-50 border-rose-200 text-rose-700 focus:ring-rose-500/20" : "bg-slate-50 border-slate-100 text-slate-800 focus:ring-emerald-500/20"
+                       )}
+                     />
                   </div>
                </div>
 

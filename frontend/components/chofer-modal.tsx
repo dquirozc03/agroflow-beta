@@ -33,6 +33,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
     apellido_paterno: "",
     apellido_materno: "",
     licencia: "",
+    vencimiento_licencia: "",
     estado: "ACTIVO"
   });
   
@@ -49,6 +50,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
           apellido_paterno: editingData.apellido_paterno || "",
           apellido_materno: editingData.apellido_materno || "",
           licencia: editingData.licencia || "",
+          vencimiento_licencia: editingData.vencimiento_licencia || "",
           estado: editingData.estado || "ACTIVO"
         });
       } else {
@@ -58,6 +60,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
            apellido_paterno: "",
            apellido_materno: "",
            licencia: "",
+           vencimiento_licencia: "",
            estado: "ACTIVO"
         });
       }
@@ -170,6 +173,9 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
     const apeMatInic = formData.apellido_materno ? `${formData.apellido_materno.trim()[0].toUpperCase()}.` : "";
     return `${primerNombre} ${apePat} ${apeMatInic}`.trim();
   };
+  
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isLicenciaExpirada = !!(formData.vencimiento_licencia && formData.vencimiento_licencia < todayStr);
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
@@ -308,9 +314,7 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                          className="w-full h-14 pl-11 pr-4 bg-[#F8FAFC] border-none rounded-2xl focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold text-sm"
                        />
                     </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Apellido Paterno</label>
                        <input 
@@ -331,6 +335,25 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                        />
                     </div>
                  </div>
+
+                 {/* Vencimiento de Licencia */}
+                 <div className="space-y-2">
+                    <label className={cn(
+                      "text-[10px] font-black uppercase tracking-widest pl-1 transition-colors",
+                      isLicenciaExpirada ? "text-rose-500 font-extrabold" : "text-slate-400"
+                    )}>
+                      Vencimiento de Licencia {isLicenciaExpirada && "— ¡LICENCIA EXPIRADA!"}
+                    </label>
+                    <input 
+                      type="date"
+                      value={formData.vencimiento_licencia}
+                      onChange={e => setFormData({...formData, vencimiento_licencia: e.target.value})}
+                      className={cn(
+                        "w-full h-14 px-5 border-none rounded-2xl focus:ring-2 transition-all font-bold text-sm",
+                        isLicenciaExpirada ? "bg-rose-50 text-rose-700 focus:ring-rose-500/20" : "bg-[#F8FAFC] text-slate-800 focus:ring-emerald-500/20"
+                      )}
+                    />
+                 </div>     </div>
               </div>
 
               {/* Alias Operativo Preview */}
