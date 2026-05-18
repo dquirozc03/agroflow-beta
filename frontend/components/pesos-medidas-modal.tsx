@@ -195,157 +195,77 @@ export function PesosMedidasModal({ isOpen, onClose, registroId, onSuccess }: Pe
               </div>
             )}
 
-            {/* Dynamically calculate permitted maximum weight and config label */}
-            {(() => {
-              let pesoMaxPermitido = 48000;
-              let configLabel = "T3/S3";
-              if (tractoEjes === 3 && carretaEjes === 2) {
-                if (isSe2) {
-                  pesoMaxPermitido = 47000;
-                  configLabel = "T3/Se2";
-                } else {
-                  pesoMaxPermitido = 43000;
-                  configLabel = "T3/S2";
-                }
-              } else if (tractoEjes === 3 && carretaEjes === 3) {
-                pesoMaxPermitido = 48000;
-                configLabel = "T3/S3";
-              } else {
-                pesoMaxPermitido = 48000;
-                configLabel = `T${tractoEjes}S${carretaEjes}`;
-              }
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Tara Contenedor (KG)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={taraContenedor}
+                    onChange={(e) => setTaraContenedor(e.target.value === "" ? "" : Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Peso Bruto del Producto (KG)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={pesoBrutoProducto}
+                    onChange={(e) => setPesoBrutoProducto(e.target.value === "" ? "" : Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Guía de Remisión
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Ej: 001-00012345"
+                    value={guiaRemision}
+                    onChange={(e) => setGuiaRemision(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg uppercase"
+                  />
+                </div>
+              </div>
 
-              const isOverweight = pesoBrutoTotal > pesoMaxPermitido;
-
-              return (
-                <>
-                  {/* Warning Alert when overweight */}
-                  {isOverweight && (
-                    <div className="bg-red-50 border border-red-200 rounded-3xl p-5 flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="h-10 w-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 shrink-0 shadow-sm">
-                        <AlertCircle className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-red-800 uppercase tracking-widest leading-none mb-1">
-                          ¡ATENCIÓN: Exceso de Peso!
-                        </p>
-                        <p className="text-xs font-bold text-red-600 leading-normal">
-                          El Peso Bruto Total Transportado ({pesoBrutoTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG) supera el Peso Bruto Vehicular Máximo Permitido ({pesoMaxPermitido.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG) para la configuración {configLabel}. Por favor verifique y ajuste los pesos.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      {/* Grid for Tara Tracto and Tara Carreta */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            Tara Tracto (KG)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={taraTracto}
-                            onChange={(e) => setTaraTracto(e.target.value === "" ? 0 : Number(e.target.value))}
-                            onFocus={(e) => e.target.select()}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            Tara Carreta (KG)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={taraCarreta}
-                            onChange={(e) => setTaraCarreta(e.target.value === "" ? 0 : Number(e.target.value))}
-                            onFocus={(e) => e.target.select()}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Grid for Tara Contenedor and Peso de Carga */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            Tara Contenedor (KG)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={taraContenedor}
-                            onChange={(e) => setTaraContenedor(e.target.value === "" ? "" : Number(e.target.value))}
-                            onFocus={(e) => e.target.select()}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            Peso de la Carga (KG)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={pesoBrutoProducto}
-                            onChange={(e) => setPesoBrutoProducto(e.target.value === "" ? "" : Number(e.target.value))}
-                            onFocus={(e) => e.target.select()}
-                            className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                          Guía de Remisión
-                        </Label>
-                        <Input
-                          type="text"
-                          placeholder="Ej: 001-00012345"
-                          value={guiaRemision}
-                          onChange={(e) => setGuiaRemision(e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          className="h-14 bg-slate-50 border-slate-100 rounded-xl font-bold text-lg uppercase"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="bg-[#022c22] rounded-[2rem] p-6 text-white flex flex-col justify-between shadow-xl">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center opacity-80 border-b border-white/5 pb-2">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300">Tara Tracto ({data?.placa_tracto})</span>
-                          <span className="text-sm font-black">{taraTracto.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
-                        </div>
-                        <div className="flex justify-between items-center opacity-80 border-b border-white/5 pb-2">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300">Tara Carreta ({data?.placa_carreta})</span>
-                          <span className="text-sm font-black">{taraCarreta.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
-                        </div>
-                        <div className="flex justify-between items-center opacity-80 border-b border-white/5 pb-2">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300">Tara Contenedor</span>
-                          <span className="text-sm font-black">{(Number(taraContenedor) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
-                        </div>
-                        <div className="flex justify-between items-center opacity-80 pb-1">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300">Peso de la Carga</span>
-                          <span className="text-sm font-black">{(Number(pesoBrutoProducto) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 rounded-2xl bg-white/5 border border-white/10 mt-2">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">Configuración MTC</span>
-                          <span className="text-xs font-black text-emerald-400">
-                            {configLabel} ({pesoMaxPermitido / 1000}T Máx)
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-8 pt-4 border-t border-emerald-500/30">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300/50 mb-1">Peso Bruto Total</p>
-                        <p className="text-4xl font-black text-white tracking-tighter">
-                          {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(pesoBrutoTotal)} <span className="text-sm opacity-50">KG</span>
-                        </p>
-                      </div>
-                    </div>
+              <div className="bg-[#022c22] rounded-[2rem] p-6 text-white flex flex-col justify-between shadow-xl">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center opacity-40">
+                    <span className="text-[8px] font-black uppercase tracking-widest">Tara Tracto ({data?.placa_tracto})</span>
+                    <span className="text-xs font-bold">{taraTracto.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
                   </div>
-                </>
-              );
-            })()}
+                  <div className="flex justify-between items-center opacity-40">
+                    <span className="text-[8px] font-black uppercase tracking-widest">Tara Carreta ({data?.placa_carreta})</span>
+                    <span className="text-xs font-bold">{taraCarreta.toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
+                  </div>
+                  <div className="flex justify-between items-center opacity-40">
+                    <span className="text-[8px] font-black uppercase tracking-widest">Tara Contenedor</span>
+                    <span className="text-xs font-bold">{(Number(taraContenedor) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} KG</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded-lg bg-white/5 border border-white/10 mt-1">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">Configuración MTC</span>
+                    <span className="text-[10px] font-black text-emerald-400">
+                      {tractoEjes === 3 && carretaEjes === 2 ? (isSe2 ? "T3/Se2 (47T)" : "T3/S2 (43T)") :
+                        tractoEjes === 3 && carretaEjes === 3 ? "T3/S3 (48T)" : "DETECTANDO ejes..."}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-emerald-500/30">
+                  <p className="text-4xl font-black text-white tracking-tighter">
+                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(pesoBrutoTotal)} <span className="text-sm opacity-50">KG</span>
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <Button onClick={handleDownload} disabled={loading || !registroId} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all">
               {loading ? <RefreshCw className="h-6 w-6 animate-spin mr-3" /> : <FileDown className="h-5 w-5 mr-3" />}
