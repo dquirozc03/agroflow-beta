@@ -131,6 +131,7 @@ export default function InstruccionesEmbarque() {
     direccion_planta: "",
     ubigeo_planta: "",
     region_planta: "",
+    operador_logistico: "",
     desc_en: "",
     desc_es: "",
     datos_para_bl: "",
@@ -348,6 +349,7 @@ export default function InstruccionesEmbarque() {
           direccion_planta: data.direccion_planta || "",
           ubigeo_planta: data.ubigeo_planta || "",
           region_planta: data.region_planta || "",
+          operador_logistico: data.operador_logistico || "DP WORLD LOGISTICS S.R.L.",
           desc_en: data.desc_en || "",
           desc_es: data.desc_es || "",
           datos_para_bl: data.datos_para_bl || ""
@@ -816,6 +818,10 @@ export default function InstruccionesEmbarque() {
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">Cultivo</Label>
                           <Input value={overrideData.cultivo} onChange={(e) => handleOverrideChange('cultivo', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="Ej: PALTA, ARANDANO..." />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label className="text-[9px] font-black uppercase ml-2">Operador Logístico</Label>
+                          <Input value={overrideData.operador_logistico} onChange={(e) => handleOverrideChange('operador_logistico', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="Ej: DP WORLD LOGISTICS S.R.L." />
                         </div>
                       </div>
                     </div>
