@@ -155,6 +155,9 @@ class InstructionPDFService:
         return text.replace('\n', '<br/>')
 
     def generate_instruction_pdf(self, booking: str, db: Session, observaciones: str = "", override_data: Optional[dict] = None, emision_bl: str = "SWB"):
+        # 1. Obtencion de datos (Modificado para soportar OVERRIDE de Admin 💎)
+        pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
+        
         if override_data:
             # Override Data Transformation
             override_data['direccion_notify'] = self._format_multiline(override_data.get('direccion_notify', ''))
@@ -194,12 +197,15 @@ class InstructionPDFService:
             planta_direccion = override_data.get("direccion_planta", "")
             planta_region = override_data.get("region_planta", "")
             planta_ubigeo = override_data.get("ubigeo_planta", "110111")
-            # Calcular la fecha/hora original por si no viene en override_data
-            f_prog = pos.FECHA_LLENADO_REPORTE or pos.FECHA_PROGRAMADA
-            h_prog = pos.HORA_LLENADO_REPORTE or pos.HORA_PROGRAMADA
-            f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
-            h_str = h_prog.strftime('%H:%M') if h_prog else ""
-            default_fecha = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
+            # Calcular la fecha/hora original por si no viene en override_data (ahora 'pos' sí existe)
+            default_fecha = ""
+            if pos:
+                f_prog = pos.FECHA_LLENADO_REPORTE or pos.FECHA_PROGRAMADA
+                h_prog = pos.HORA_LLENADO_REPORTE or pos.HORA_PROGRAMADA
+                f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
+                h_str = h_prog.strftime('%H:%M') if h_prog else ""
+                default_fecha = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
+                
             fecha_llenado = override_data.get("fecha_llenado") or default_fecha
             
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
@@ -219,7 +225,6 @@ class InstructionPDFService:
             cold_treatment = override_data.get('cold_treatment') or ''
             
         else:
-            pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == booking).first()
             if not pos: raise Exception(f"Booking {booking} no encontrado")
 
             normalized_orden = self._normalize_orden(pos.ORDEN_BETA)
