@@ -263,7 +263,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
 
         datos_para_bl = ""
         if pallet_suffix:
-            datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS CHEP{pallet_suffix}"
+            datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS{pallet_suffix}"
 
         response = {
             "booking": pos.BOOKING,

@@ -287,7 +287,7 @@ class InstructionPDFService:
             desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
             datos_para_bl = ""
             if pallet_suffix:
-                datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS CHEP{pallet_suffix}"
+                datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS{pallet_suffix}"
             
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
