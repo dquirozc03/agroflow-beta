@@ -194,7 +194,13 @@ class InstructionPDFService:
             planta_direccion = override_data.get("direccion_planta", "")
             planta_region = override_data.get("region_planta", "")
             planta_ubigeo = override_data.get("ubigeo_planta", "110111")
-            fecha_llenado = override_data.get("fecha_llenado", "")
+            # Calcular la fecha/hora original por si no viene en override_data
+            f_prog = pos.FECHA_LLENADO_REPORTE or pos.FECHA_PROGRAMADA
+            h_prog = pos.HORA_LLENADO_REPORTE or pos.HORA_PROGRAMADA
+            f_str = f_prog.strftime('%d/%m/%Y') if f_prog else ""
+            h_str = h_prog.strftime('%H:%M') if h_prog else ""
+            default_fecha = f"{f_str} - {h_str}" if (f_str and h_str) else (f_str or h_str or "")
+            fecha_llenado = override_data.get("fecha_llenado") or default_fecha
             
             observaciones_final = override_data.get("observaciones", "SIN OBSERVACIONES ADICIONALES.")
             fob_val = override_data.get("fob", "USD 0.00")
