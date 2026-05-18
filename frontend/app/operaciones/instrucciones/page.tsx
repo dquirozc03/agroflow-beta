@@ -382,7 +382,7 @@ export default function InstruccionesEmbarque() {
         let pallet_suffix = "";
         if (cliente_upper.includes("WALMART") && pres_upper.includes("17 KG")) {
           pallet_suffix = " CHEP B4840A";
-        } else if (cliente_upper.includes("TESCO") && pres_upper.includes("10 KG")) {
+        } else if ((cliente_upper.includes("TESCO") || cliente_upper.includes("WESTFALIA")) && pres_upper.includes("10 KG")) {
           pallet_suffix = " CHEP B1210A";
         } else if (cliente_upper.includes("SBROCCO") && pres_upper.includes("15 KG")) {
           pallet_suffix = " CHEP B4840A";
@@ -784,6 +784,10 @@ export default function InstruccionesEmbarque() {
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">Orden Beta</Label>
                           <Input value={overrideData.orden_beta} onChange={(e) => handleOverrideChange('orden_beta', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label className="text-[9px] font-black uppercase ml-2 text-emerald-600 font-bold">Cliente</Label>
+                          <Input value={overrideData.cliente_nombre} onChange={(e) => handleOverrideChange('cliente_nombre', e.target.value)} className="rounded-xl border-slate-100 font-bold" placeholder="TESCO, WALMART, SBROCCO, etc." />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[9px] font-black uppercase ml-2">Motonave</Label>
