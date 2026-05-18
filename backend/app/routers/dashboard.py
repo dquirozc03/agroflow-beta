@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.database import get_db
 from app.schemas.dashboard import DashboardSummaryResponse
 from app.models.logicapture import LogiCaptureRegistro
 from app.models.posicionamiento import Posicionamiento
 from app.models.packing_list import EmisionPackingList
 from app.models.maestros import Transportista, Chofer, VehiculoTracto, VehiculoCarreta
+from app.models.embarque import ControlEmbarque
 from sqlalchemy import or_
 from zoneinfo import ZoneInfo
 
@@ -237,4 +238,117 @@ def get_dashboard_metadata(db: Session = Depends(get_db)):
     return {
         "plantas": sorted([p[0] for p in plantas if p[0]]),
         "cultivos": sorted([c[0] for c in cultivos if c[0]])
+    }
+
+@router.get("/embarques-semana")
+def get_embarques_semana(
+    q: Optional[str] = None,
+    booking: Optional[str] = None,
+    orden_beta: Optional[str] = None,
+    planta: Optional[str] = None,
+    cultivo: Optional[str] = None,
+    fecha_inicio: Optional[date] = None,
+    fecha_fin: Optional[date] = None,
+    db: Session = Depends(get_db)
+):
+    hoy = datetime.now(LIMA_TZ).date()
+    
+    # Calcular semana actual (WK ISO)
+    semana_actual = hoy.isocalendar()[1]
+    
+    # Fechas por defecto (Lunes a Domingo de la semana actual)
+    if not fecha_inicio:
+        fecha_inicio = hoy - timedelta(days=hoy.weekday())
+    if not fecha_fin:
+        fecha_fin = fecha_inicio + timedelta(days=6)
+        
+    query = db.query(Posicionamiento, ControlEmbarque).outerjoin(
+        ControlEmbarque, Posicionamiento.BOOKING == ControlEmbarque.booking
+    )
+    
+    # Aplicar filtros directos
+    if q:
+        query = query.filter(
+            or_(
+                Posicionamiento.BOOKING.ilike(f"%{q}%"),
+                Posicionamiento.ORDEN_BETA.ilike(f"%{q}%")
+            )
+        )
+    if booking:
+        query = query.filter(Posicionamiento.BOOKING.ilike(f"%{booking}%"))
+    if orden_beta:
+        query = query.filter(Posicionamiento.ORDEN_BETA.ilike(f"%{orden_beta}%"))
+    if planta:
+        query = query.filter(Posicionamiento.PLANTA_LLENADO == planta)
+    if cultivo:
+        query = query.filter(Posicionamiento.CULTIVO == cultivo)
+    
+    # Lógica de fechas
+    if not q and not booking and not orden_beta:
+        query = query.filter(
+            Posicionamiento.FECHA_LLENADO_REPORTE >= fecha_inicio,
+            Posicionamiento.FECHA_LLENADO_REPORTE <= fecha_fin
+        )
+    elif fecha_inicio and fecha_fin:
+         query = query.filter(
+            Posicionamiento.FECHA_LLENADO_REPORTE >= fecha_inicio,
+            Posicionamiento.FECHA_LLENADO_REPORTE <= fecha_fin
+        )
+
+    # Ordenar por fecha y hora de reporte para mejor visualización en la tabla
+    query = query.order_by(Posicionamiento.FECHA_LLENADO_REPORTE.desc().nullslast(), Posicionamiento.HORA_LLENADO_REPORTE.desc().nullslast())
+
+    resultados = query.all()
+    
+    # Extraer los bookings para chequear si ya fueron procesados en LogiCapture
+    bookings_en_pantalla = [pos.BOOKING for pos, _ in resultados if pos.BOOKING]
+    
+    # Buscar qué bookings de esta vista ya están procesados
+    procesados = []
+    if bookings_en_pantalla:
+        procesados_query = db.query(LogiCaptureRegistro.booking).filter(
+            LogiCaptureRegistro.booking.in_(bookings_en_pantalla),
+            LogiCaptureRegistro.status == "PROCESADO"
+        ).distinct().all()
+        procesados = [p[0] for p in procesados_query]
+
+    embarques = []
+    
+    for pos, ce in resultados:
+        falta_dam = not ce or not ce.dam
+        falta_contenedor = not ce or not ce.contenedor
+        es_embarcado = pos.BOOKING in procesados
+        
+        if es_embarcado:
+            estado = "EMBARCADO"
+        elif falta_dam and falta_contenedor:
+            estado = "FALTAN DATOS"
+        elif falta_dam:
+            estado = "FALTA DAM"
+        elif falta_contenedor:
+            estado = "FALTA CONTENEDOR"
+        else:
+            estado = "COMPLETO"
+            
+        embarques.append({
+            "booking": pos.BOOKING,
+            "orden_beta": pos.ORDEN_BETA,
+            "fecha_posicionamiento": pos.FECHA_LLENADO_REPORTE,
+            "hora_posicionamiento": pos.HORA_LLENADO_REPORTE.strftime("%H:%M") if pos.HORA_LLENADO_REPORTE else None,
+            "operador": pos.OPERADOR_LOGISTICO,
+            "planta": pos.PLANTA_LLENADO,
+            "cultivo": pos.CULTIVO,
+            "dam": ce.dam if ce else None,
+            "contenedor": ce.contenedor if ce else None,
+            "falta_dam": falta_dam,
+            "falta_contenedor": falta_contenedor,
+            "estado": estado
+        })
+        
+    return {
+        "semana_actual": semana_actual,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "total_registros": len(embarques),
+        "embarques": embarques
     }

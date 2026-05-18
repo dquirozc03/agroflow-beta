@@ -17,6 +17,7 @@ import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { EmbarquesSemana } from "@/components/embarques-semana";
 import {
   BarChart,
   Bar,
@@ -72,6 +73,7 @@ export default function AgroHubDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [metadata, setMetadata] = useState<any>({ plantas: [], cultivos: [] });
   const [filters, setFilters] = useState({ planta: "", cultivo: "" });
+  const [activeTab, setActiveTab] = useState<"resumen" | "embarques">("resumen");
 
   // Fetch Metadata (Plants/Crops)
   useEffect(() => {
@@ -129,8 +131,28 @@ export default function AgroHubDashboardPage() {
         <main className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
           <div className="max-w-[1500px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             
-            {/* FILTER BAR */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200/60 shadow-sm">
+            {/* TAB SELECTOR & FILTER BAR */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-4 bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-slate-200/60 shadow-sm">
+               <div className="flex bg-white rounded-2xl p-1.5 border border-slate-100 shadow-sm w-full xl:w-auto">
+                 <button 
+                   onClick={() => setActiveTab("resumen")}
+                   className={cn(
+                     "flex-1 xl:flex-none px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300",
+                     activeTab === "resumen" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                   )}
+                 >
+                   Resumen General
+                 </button>
+                 <button 
+                   onClick={() => setActiveTab("embarques")}
+                   className={cn(
+                     "flex-1 xl:flex-none px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300",
+                     activeTab === "embarques" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                   )}
+                 >
+                   Embarques de la Semana
+                 </button>
+               </div>
                <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-200">
                      <Filter className="h-5 w-5 text-white" />
@@ -141,7 +163,7 @@ export default function AgroHubDashboardPage() {
                   </div>
                </div>
 
-               <div className="flex flex-wrap items-center gap-3">
+               <div className="flex flex-nowrap items-center gap-3">
                   <div className="flex items-center gap-2">
                      <Select 
                         value={filters.planta || "all"} 
@@ -205,6 +227,9 @@ export default function AgroHubDashboardPage() {
                   )}
                </div>
             </div>
+
+            {activeTab === "resumen" ? (
+              <>
             {/* ROW 1: KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                <StatCard 
@@ -382,6 +407,9 @@ export default function AgroHubDashboardPage() {
               </div>
 
             </div>
+            ) : (
+              <EmbarquesSemana filters={filters} />
+            )}
 
           </div>
         </main>

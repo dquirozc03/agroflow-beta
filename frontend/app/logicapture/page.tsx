@@ -296,6 +296,15 @@ export default function LogiCaptureV2Page() {
   const [successTitle, setSuccessTitle] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
   const [isBookingBlocked, setIsBookingBlocked] = useState(false);
+  const [showAlertsToast, setShowAlertsToast] = useState(true);
+
+  useEffect(() => {
+    if (licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0) {
+      setShowAlertsToast(true);
+    } else {
+      setShowAlertsToast(false);
+    }
+  }, [licenciaAlert, tractoAlerts, carretaAlerts]);
 
   const handleLookup = async () => {
     const cleanBooking = formData.booking.trim().toUpperCase();
@@ -764,6 +773,35 @@ export default function LogiCaptureV2Page() {
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f8fa]">
       <AppSidebar />
 
+      {/* Panel Fijo de Alertas de Documentos Vencidos */}
+      {showAlertsToast && (licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0) && (
+        <div className="fixed bottom-6 right-6 z-[150] max-w-md w-full animate-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-rose-950 border border-rose-800 rounded-2xl p-4 shadow-2xl shadow-rose-950/50">
+            <div className="flex items-start gap-3">
+              <div className="h-8 w-8 bg-rose-800 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                <AlertTriangle className="h-4 w-4 text-rose-300 animate-pulse" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="text-[10px] font-black text-rose-300 uppercase tracking-[0.2em]">⛔ BLOQUEO DE SEGURIDAD — Documentos Vencidos</p>
+                {licenciaAlert && (
+                  <p className="text-xs font-bold text-rose-200">{licenciaAlert}</p>
+                )}
+                {tractoAlerts.map((alerta, i) => (
+                  <p key={i} className="text-xs font-bold text-rose-200">{alerta}</p>
+                ))}
+                {carretaAlerts.map((alerta, i) => (
+                  <p key={i} className="text-xs font-bold text-rose-200">{alerta}</p>
+                ))}
+                <p className="text-[10px] text-rose-400 font-medium mt-1">Actualice los documentos en Maestros antes de proceder.</p>
+              </div>
+              <button onClick={() => setShowAlertsToast(false)} className="text-rose-500 hover:text-rose-300 transition-colors shrink-0">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AppHeader />
         <main ref={mainRef} className="flex-1 overflow-y-auto p-10 lc-scroll pt-2">
@@ -824,46 +862,6 @@ export default function LogiCaptureV2Page() {
                 </button>
               </div>
             </div>
-
-            {/* PANEL DE ALERTAS OPERATIVAS (DOCUMENTOS VENCIDOS) */}
-            {(licenciaAlert || tractoAlerts.length > 0 || carretaAlerts.length > 0) && (
-              <div className="bg-rose-50 border-2 border-rose-200 rounded-[2.5rem] p-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-3 h-full bg-rose-500" />
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 shadow-inner shrink-0">
-                    <AlertTriangle className="h-6 w-6 animate-bounce" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-rose-950 uppercase tracking-[0.2em] leading-tight">
-                      ¡ALERTA OPERATIVA! — DOCUMENTOS VENCIDOS
-                    </h3>
-                    <p className="text-xs text-rose-700/80 font-bold uppercase tracking-wider mt-1">
-                      Se ha bloqueado la grabación del despacho. Por favor actualice la información del conductor o vehículo en los catálogos maestros.
-                    </p>
-                  </div>
-                </div>
-                <div className="pl-16 space-y-3 pt-2">
-                  {licenciaAlert && (
-                    <div className="text-sm font-bold text-rose-900 flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
-                      <span>{licenciaAlert}</span>
-                    </div>
-                  )}
-                  {tractoAlerts.map((alert, idx) => (
-                    <div key={idx} className="text-sm font-bold text-rose-900 flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
-                      <span>{alert}</span>
-                    </div>
-                  ))}
-                  {carretaAlerts.map((alert, idx) => (
-                    <div key={idx} className="text-sm font-bold text-rose-900 flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
-                      <span>{alert}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Fila 0: Inteligencia Operativa (OCR Hub Unificado) Carlos Edition */}
             <div className="bg-gradient-to-br from-[#022c22] to-slate-900 rounded-[2.5rem] p-1 shadow-2xl shadow-emerald-900/20 group overflow-hidden relative">
