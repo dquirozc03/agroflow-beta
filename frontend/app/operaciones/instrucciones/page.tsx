@@ -133,6 +133,7 @@ export default function InstruccionesEmbarque() {
     region_planta: "",
     desc_en: "",
     desc_es: "",
+    datos_para_bl: "",
     usuario: user?.usuario || "SISTEMA"
   });
 
@@ -348,7 +349,8 @@ export default function InstruccionesEmbarque() {
           ubigeo_planta: data.ubigeo_planta || "",
           region_planta: data.region_planta || "",
           desc_en: data.desc_en || "",
-          desc_es: data.desc_es || ""
+          desc_es: data.desc_es || "",
+          datos_para_bl: data.datos_para_bl || ""
         });
       }
     } catch (e) {
@@ -362,15 +364,35 @@ export default function InstruccionesEmbarque() {
     setOverrideData((prev: any) => {
       const newData = { ...prev, [field]: value };
       
-      // Sincronización inteligente de Descripciones B/L
-      if (field === 'cajas' || field === 'pallets' || field === 'cultivo' || field === 'variedad') {
+      // Sincronización inteligente de Descripciones B/L y Datos para BL
+      if (field === 'cajas' || field === 'pallets' || field === 'cultivo' || field === 'variedad' || field === 'presentacion' || field === 'cliente_nombre') {
         const cajas = field === 'cajas' ? value : prev.cajas;
         const pallets = field === 'pallets' ? value : prev.pallets;
         const cultivo = field === 'cultivo' ? value : prev.cultivo;
         const variedad = field === 'variedad' ? value : prev.variedad;
+        const presentacion = field === 'presentacion' ? value : prev.presentacion;
+        const cliente = field === 'cliente_nombre' ? value : prev.cliente_nombre;
         
         newData.desc_en = `${cajas} BOXES WITH FRESH ${cultivo.toUpperCase()} ${variedad.toUpperCase()} ON ${pallets} PALLETS`;
-        newData.desc_es = `${cajas} CAJAS CON ${cultivo.toUpperCase()} FRESCO ${variedad.toUpperCase()} EN ${pallets} PALLETAS`;
+        newData.desc_es = `${cajas} CAJAS CON ${cultivo.toUpperCase()} FRESCA ${variedad.toUpperCase()} EN ${pallets} PALETAS`;
+
+        // Recalcular datos_para_bl si aplica
+        const cliente_upper = (cliente || "").toUpperCase();
+        const pres_upper = (presentacion || "").toUpperCase();
+        let pallet_suffix = "";
+        if (cliente_upper.includes("WALMART") && pres_upper.includes("17 KG")) {
+          pallet_suffix = " CHEP B4840A";
+        } else if (cliente_upper.includes("TESCO") && pres_upper.includes("10 KG")) {
+          pallet_suffix = " CHEP B1210A";
+        } else if (cliente_upper.includes("SBROCCO") && pres_upper.includes("15 KG")) {
+          pallet_suffix = " CHEP B4840A";
+        }
+
+        if (pallet_suffix) {
+          newData.datos_para_bl = `SE EMBARCA ${cajas} CAJAS EN ${pallets} PALLETS CHEP${pallet_suffix}`;
+        } else {
+          newData.datos_para_bl = "";
+        }
       }
       
       return newData;
@@ -874,22 +896,32 @@ export default function InstruccionesEmbarque() {
                           <Input value={overrideData.etiquetas} onChange={(e) => handleOverrideChange('etiquetas', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (EN)</Label>
+                       <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (EN) [BLOQUEADO]</Label>
                         <Textarea 
                           value={overrideData.desc_en} 
-                          onChange={(e) => handleOverrideChange('desc_en', e.target.value)}
-                          className="rounded-xl border-slate-100 min-h-[60px]" 
+                          disabled={true}
+                          className="rounded-xl border-slate-100 min-h-[60px] bg-slate-50 text-slate-400 cursor-not-allowed font-medium" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (ES)</Label>
+                        <Label className="text-[9px] font-black uppercase ml-2 text-slate-400">Descripción BL (ES) [BLOQUEADO]</Label>
                         <Textarea 
                           value={overrideData.desc_es} 
-                          onChange={(e) => handleOverrideChange('desc_es', e.target.value)}
-                          className="rounded-xl border-slate-100 min-h-[60px]" 
+                          disabled={true}
+                          className="rounded-xl border-slate-100 min-h-[60px] bg-slate-50 text-slate-400 cursor-not-allowed font-medium" 
                         />
                       </div>
+                      {overrideData.datos_para_bl && (
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase ml-2 text-rose-500 font-extrabold tracking-widest">Datos para BL (Solo CHEP)</Label>
+                          <Textarea 
+                            value={overrideData.datos_para_bl} 
+                            onChange={(e) => handleOverrideChange('datos_para_bl', e.target.value)}
+                            className="rounded-xl border-rose-200 bg-rose-50/20 text-rose-950 font-bold min-h-[60px] focus:ring-2 focus:ring-rose-500/20" 
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* SECCIÓN 4: FITOSANITARIO */}

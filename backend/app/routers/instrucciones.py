@@ -77,6 +77,7 @@ class AdminOverrideRequest(BaseModel):
     eori_notify: Optional[str] = ""
     desc_en: Optional[str] = ""
     desc_es: Optional[str] = ""
+    datos_para_bl: Optional[str] = ""
     usuario: Optional[str] = "SISTEMA"
 
 @router.get("/lookup/{booking}")
@@ -260,6 +261,10 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
             pallet_suffix = " CHEP B4840A"
 
+        datos_para_bl = ""
+        if pallet_suffix:
+            datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS CHEP{pallet_suffix}"
+
         response = {
             "booking": pos.BOOKING,
             "orden_beta": pos.ORDEN_BETA or "PENDIENTE",
@@ -282,8 +287,9 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "presentacion": pres_val,
             "peso_neto": f"{peso_neto:,.3f} KG",
             "peso_bruto": f"{p_bruto:,.3f} KG",
-            "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS{pallet_suffix}",
-            "desc_es": f"{total_cajas} CAJAS CON FRESCA {pos.CULTIVO or 'PRODUCTO'} {pedidos[0].variedad if pedidos else ''} EN {total_pallets} PALETAS{pallet_suffix}",
+            "desc_en": f"{total_cajas} BOXES WITH FRESH {pos.CULTIVO or 'PRODUCT'} {pedidos[0].variedad if pedidos else ''} ON {total_pallets} PALLETS",
+            "desc_es": f"{total_cajas} CAJAS CON FRESCA {pos.CULTIVO or 'PRODUCTO'} {pedidos[0].variedad if pedidos else ''} EN {total_pallets} PALETAS",
+            "datos_para_bl": datos_para_bl,
             "temperatura": pos.TEMPERATURA or ("6.0 °C" if (pos.CULTIVO and ("GRANADA" in pos.CULTIVO.upper() or "PALTA" in pos.CULTIVO.upper())) else "0.5 °C"),
             "ventilacion": pos.VENTILACION or ("CERRADA" if (pos.CULTIVO and "PALTA" in pos.CULTIVO.upper()) else ("15 CBM" if (pos.CULTIVO and "GRANADA" in pos.CULTIVO.upper()) else "15 CBM")),
             "humedad": pos.HUMEDAD or "OFF",

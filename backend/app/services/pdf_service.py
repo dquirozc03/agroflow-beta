@@ -188,6 +188,7 @@ class InstructionPDFService:
             
             desc_en = override_data.get("desc_en") or f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
             desc_es = override_data.get("desc_es") or f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
+            datos_para_bl = override_data.get("datos_para_bl") or ""
             
             planta_nombre = override_data.get("planta_llenado", "PLANTA BETA").upper()
             planta_direccion = override_data.get("direccion_planta", "")
@@ -282,8 +283,11 @@ class InstructionPDFService:
             elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
                 pallet_suffix = " CHEP B4840A"
                 
-            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS{pallet_suffix}"
-            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS{pallet_suffix}"
+            desc_en = f"{total_cajas} BOXES WITH FRESH {pos_cultivo} {variedad} ON {total_pallets} PALLETS"
+            desc_es = f"{total_cajas} CAJAS CON FRESCA {pos_cultivo} {variedad} EN {total_pallets} PALETAS"
+            datos_para_bl = ""
+            if pallet_suffix:
+                datos_para_bl = f"SE EMBARCA {total_cajas} CAJAS EN {total_pallets} PALLETS CHEP{pallet_suffix}"
             
             observaciones_final = observaciones or "SIN OBSERVACIONES ADICIONALES."
             fob_val = "USD 34,560.00"
@@ -422,7 +426,10 @@ class InstructionPDFService:
         ]
         if (eori_consignee and eori_consignee != "----") or (eori_notify and eori_notify != "----"):
             t1_data.append([b_p("DATOS REFERENCIALES"), format_desc(f"EORI CONSIGNE: {eori_consignee}", f"EORI NOTIFY: {eori_notify}")])
-        t1_data.extend([[b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)], [b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")], [b_p("MOTONAVE"), n_p(pos_nave or "")], [b_p("BOOKING No."), b_p(pos_booking or "")], [b_p("FREIGHT"), n_p(flete_val)]])
+        t1_data.extend([[b_p("DESCRIPCION EN EL B/L"), format_desc(desc_en, desc_es)]])
+        if datos_para_bl:
+            t1_data.append([b_p("DATOS PARA BL"), b_p(datos_para_bl)])
+        t1_data.extend([[b_p("AGENCIA NAVIERA"), n_p(pos_naviera or "")], [b_p("MOTONAVE"), n_p(pos_nave or "")], [b_p("BOOKING No."), b_p(pos_booking or "")], [b_p("FREIGHT"), n_p(flete_val)]])
         if po_val and po_val.strip() and po_val.strip() != "0": t1_data.append([b_p("PO"), b_p(po_val.strip())])
         t1_data.extend([[b_p("EMISION B/L"), n_p(emision_bl)], [b_p("PUERTO EMBARQUE"), n_p(pos_pol)], [b_p("ETD"), n_p(eta_str)], [b_p("PUERTO DESTINO"), n_p(puerto_destino)], [b_p("CANTIDAD DE CONTENEDORES"), n_p("01")], [b_p("PRODUCTO"), n_p(pos_cultivo or "GRANADAS")], [b_p("VARIEDAD"), n_p(variedad)], [b_p("TEMPERATURA"), n_p(temperatura)], [b_p("VENTILACION"), n_p(ventilacion)], [b_p("HUMEDAD"), n_p(humedad)], [b_p("ATMOSFERA CONTROLADA"), n_p(atm)], [b_p("OXIGENO"), n_p(oxigeno)], [b_p("CO2"), n_p(co2)]])
         if not ("PALTA" in cultivo_key or "AVOCADO" in cultivo_key): t1_data.append([b_p("FILTROS"), b_p(filtros)])
