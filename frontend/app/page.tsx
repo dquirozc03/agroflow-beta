@@ -407,9 +407,10 @@ export default function AgroHubDashboardPage() {
               </div>
 
             </div>
-            ) : (
-              <EmbarquesSemana filters={filters} />
-            )}
+              </>
+             ) : (
+               <EmbarquesSemana filters={filters} />
+             )}
 
           </div>
         </main>
