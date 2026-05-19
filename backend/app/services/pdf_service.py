@@ -172,7 +172,7 @@ class InstructionPDFService:
             pos_cultivo = override_data.get("cultivo")
             pos_nave = override_data.get("motonave")
             pos_naviera = override_data.get("naviera")
-            pos_operador = override_data.get("operador_logistico")
+            pos_operador = override_data.get("operador_logistico") or (pos.OPERADOR_LOGISTICO if pos else "DP WORLD LOGISTICS S.R.L.")
             pos_pol = override_data.get("puerto_embarque")
             
             total_cajas = override_data.get("cajas", 0)

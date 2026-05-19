@@ -65,7 +65,7 @@ class AdminOverrideRequest(BaseModel):
     observaciones: str
     embarcador: Optional[str] = "COMPLEJO AGROINDUSTRIAL BETA S.A."
     direccion_embarcador: Optional[str] = "CAL. LEOPOLDO CARRILLO NRO. 160 ICA - CHINCHA - CHINCHA ALTA – PERU"
-    operador_logistico: Optional[str] = "DP WORLD LOGISTICS S.R.L."
+    operador_logistico: Optional[str] = None
     planta_llenado: Optional[str] = None
     direccion_planta: Optional[str] = None
     ubigeo_planta: Optional[str] = None
