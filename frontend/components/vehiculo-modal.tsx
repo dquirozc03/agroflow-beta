@@ -102,7 +102,7 @@ export function VehiculoModal({ isOpen, onClose, onSuccess, editingData, type }:
 
   const fetchTransportistas = async () => {
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas?size=100`);
+      const resp = await fetch(`${API_BASE_URL}/api/v1/maestros/transportistas?size=1000`);
       if (resp.ok) {
         const data = await resp.json();
         setTransportistas(data.items || []);
