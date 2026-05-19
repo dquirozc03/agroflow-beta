@@ -421,7 +421,8 @@ export default function InstruccionesEmbarque() {
                     <Search className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight">Buscador de Bookings</h2>
+                    <DialogTitle className="text-xl font-black uppercase tracking-tight">Buscador de Bookings</DialogTitle>
+                    <DialogDescription className="sr-only">Buscador de bookings para la generación de instrucciones de embarque.</DialogDescription>
                     <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Seleccione un booking</p>
                   </div>
                 </div>
@@ -492,9 +493,10 @@ export default function InstruccionesEmbarque() {
                       {isAnulando ? <Loader2 className="h-7 w-7 animate-spin" /> : <AlertTriangle className="h-7 w-7" />}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                      <DialogTitle className="text-lg font-black text-slate-900 uppercase tracking-tight">
                         {isAnulando ? "Procesando..." : "¿Confirmar Anulación?"}
-                      </h3>
+                      </DialogTitle>
+                      <DialogDescription className="sr-only">Confirmación para anular la instrucción de embarque.</DialogDescription>
                       <p className="text-[10px] font-bold text-slate-400 uppercase leading-tight px-4">
                         Esta acción marcará el documento como inválido.
                       </p>
