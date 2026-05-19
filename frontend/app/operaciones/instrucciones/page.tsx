@@ -352,7 +352,8 @@ export default function InstruccionesEmbarque() {
           operador_logistico: data.operador_logistico || "DP WORLD LOGISTICS S.R.L.",
           desc_en: data.desc_en || "",
           desc_es: data.desc_es || "",
-          datos_para_bl: data.datos_para_bl || ""
+          datos_para_bl: data.datos_para_bl || "",
+          observaciones: observaciones || "SIN OBSERVACIONES ADICIONALES."
         });
       }
     } catch (e) {
@@ -1004,6 +1005,23 @@ export default function InstruccionesEmbarque() {
                           <Input value={overrideData.cold_treatment} onChange={(e) => handleOverrideChange('cold_treatment', e.target.value)} className="rounded-xl border-slate-100 font-bold" />
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* SECCIÓN 6: OBSERVACIONES ADICIONALES */}
+                  <div className="pt-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <FileText className="h-4 w-4 text-emerald-500" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Observaciones del Reporte</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase ml-2">Observaciones en el PDF</Label>
+                      <Textarea 
+                        value={overrideData.observaciones} 
+                        onChange={(e) => handleOverrideChange('observaciones', e.target.value)}
+                        className="rounded-xl border-slate-100 min-h-[80px]" 
+                        placeholder="Ej: SIN OBSERVACIONES ADICIONALES."
+                      />
                     </div>
                   </div>
 
