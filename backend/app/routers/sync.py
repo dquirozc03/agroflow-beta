@@ -139,9 +139,12 @@ def clean_data_value(val: Any, db_column: str):
     if not val_str or val_str.upper() in null_and_errors: return None
     
     col_upper = db_column.upper()
+    numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS", "SEMANA_ETA", "CAJAS_VACIAS"]
+
+    if val_str == "0" and col_upper not in numeric_cols:
+        return None
     
     # Manejo de números
-    numeric_cols = ["PESO_POR_CAJA", "CAJA_POR_PALLET", "TOTAL_PALLETS", "TOTAL_CAJAS", "SEMANA_ETA", "CAJAS_VACIAS"]
     if col_upper in numeric_cols:
         if col_upper == "CAJAS_VACIAS":
             if val_str.upper() == "SI": return 1
@@ -191,37 +194,62 @@ async def sync_posicionamiento_raw(
     def clean_header(h: Any):
         return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
 
-    excel_headers = [clean_header(h) for h in payload[0]]
-    logger.info(f"CABECERAS LIMPIAS DETECTADAS: {excel_headers}")
-    data_rows = payload[1:]
-    
-    # Mapear usando la limpieza también en las llaves del mapping
-    mapping_indices = {}
-    for ex_col, db_col in COLUMN_MAPPING.items():
-        clean_target = clean_header(ex_col)
-        if clean_target in excel_headers:
-            mapping_indices[db_col] = excel_headers.index(clean_target)
-            
-    logger.info(f"Mapping indices Posicionamiento: {mapping_indices}")
-    
     results = {"processed": 0, "errors": [], "skipped": 0}
     
-    for i, row in enumerate(data_rows):
-        try:
-            row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-            booking_id = row_data.get("booking")
-            if not booking_id:
-                results["skipped"] += 1
-                continue
+    if isinstance(payload, list) and len(payload) > 0 and isinstance(payload[0], dict):
+        # Modo Objetos
+        for i, row in enumerate(payload):
+            try:
+                row_data = {}
+                for orig_key, val in row.items():
+                    c_header = clean_header(orig_key)
+                    for ex_col, db_col in COLUMN_MAPPING.items():
+                        if clean_header(ex_col) == c_header:
+                            row_data[db_col] = clean_data_value(val, db_col)
+                            break
+                booking_id = row_data.get("booking")
+                if not booking_id:
+                    results["skipped"] += 1
+                    continue
+                    
+                stmt = insert(Posicionamiento).values(**row_data)
+                update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
+                upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
+                db.execute(upsert_stmt)
+                results["processed"] += 1
+            except Exception as e:
+                db.rollback()
+                results["errors"].append({"row": i + 2, "error": str(e)})
+    else:
+        # Modo Legado (Array de Arrays)
+        excel_headers = [clean_header(h) for h in payload[0]]
+        logger.info(f"CABECERAS LIMPIAS DETECTADAS: {excel_headers}")
+        data_rows = payload[1:]
+        
+        mapping_indices = {}
+        for ex_col, db_col in COLUMN_MAPPING.items():
+            clean_target = clean_header(ex_col)
+            if clean_target in excel_headers:
+                mapping_indices[db_col] = excel_headers.index(clean_target)
                 
-            stmt = insert(Posicionamiento).values(**row_data)
-            update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
-            upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
-            db.execute(upsert_stmt)
-            results["processed"] += 1
-        except Exception as e:
-            db.rollback()
-            results["errors"].append({"row": i + 2, "error": str(e)})
+        logger.info(f"Mapping indices Posicionamiento: {mapping_indices}")
+        
+        for i, row in enumerate(data_rows):
+            try:
+                row_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
+                booking_id = row_data.get("booking")
+                if not booking_id:
+                    results["skipped"] += 1
+                    continue
+                    
+                stmt = insert(Posicionamiento).values(**row_data)
+                update_data = {k: v for k, v in row_data.items() if k != "booking" and v is not None}
+                upsert_stmt = stmt.on_conflict_do_update(index_elements=[Posicionamiento.BOOKING], set_=update_data) if update_data else stmt.on_conflict_do_nothing(index_elements=[Posicionamiento.BOOKING])
+                db.execute(upsert_stmt)
+                results["processed"] += 1
+            except Exception as e:
+                db.rollback()
+                results["errors"].append({"row": i + 2, "error": str(e)})
             
     db.commit()
     return {"status": "success" if not results["errors"] else "partial_success", "summary": results}
@@ -239,28 +267,44 @@ async def sync_pedidos_raw(
     def clean_header(h: Any):
         return re.sub(r'[^A-Z0-9]', '', str(h).upper()) if h else ""
 
-    excel_headers = [clean_header(h) for h in payload[0]]
-    data_rows = payload[1:]
-    
-    mapping_indices = {}
-    for ex_col, db_col in PEDIDOS_MAPPING.items():
-        clean_target = clean_header(ex_col)
-        if clean_target in excel_headers:
-            mapping_indices[db_col] = excel_headers.index(clean_target)
-
-    logger.info(f"Mapping indices Pedidos: {mapping_indices}")
-
     try:
         new_mappings = []
         cultivos_en_payload = set()
-        
-        for row in data_rows:
-            pedido_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
-            if pedido_data.get("orden_beta"):
-                new_mappings.append(pedido_data)
-                c = pedido_data.get("cultivo")
-                if c:
-                    cultivos_en_payload.add(c)
+
+        if isinstance(payload, list) and len(payload) > 0 and isinstance(payload[0], dict):
+            # Modo Objetos
+            for row in payload:
+                pedido_data = {}
+                for orig_key, val in row.items():
+                    c_header = clean_header(orig_key)
+                    for ex_col, db_col in PEDIDOS_MAPPING.items():
+                        if clean_header(ex_col) == c_header:
+                            pedido_data[db_col] = clean_data_value(val, db_col)
+                            break
+                if pedido_data.get("orden_beta"):
+                    new_mappings.append(pedido_data)
+                    c = pedido_data.get("cultivo")
+                    if c: cultivos_en_payload.add(c)
+        else:
+            # Modo Legado (Array de Arrays)
+            excel_headers = [clean_header(h) for h in payload[0]]
+            data_rows = payload[1:]
+            
+            mapping_indices = {}
+            for ex_col, db_col in PEDIDOS_MAPPING.items():
+                clean_target = clean_header(ex_col)
+                if clean_target in excel_headers:
+                    mapping_indices[db_col] = excel_headers.index(clean_target)
+
+            logger.info(f"Mapping indices Pedidos: {mapping_indices}")
+
+            for row in data_rows:
+                pedido_data = {db_col: clean_data_value(row[idx], db_col) for db_col, idx in mapping_indices.items() if idx < len(row)}
+                if pedido_data.get("orden_beta"):
+                    new_mappings.append(pedido_data)
+                    c = pedido_data.get("cultivo")
+                    if c:
+                        cultivos_en_payload.add(c)
 
         # Borrado inteligente: Solo eliminamos los cultivos que estamos subiendo ahora
         if cultivos_en_payload:
