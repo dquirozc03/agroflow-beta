@@ -123,7 +123,10 @@ def list_tractos(
 @router.post("/tractos", response_model=TractoResponse)
 def create_tracto(data: TractoCreate, db: Session = Depends(get_db)):
     # Validar duplicado
-    existing = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == data.placa_tracto.upper()).first()
+    from app.routers.maestros import clean_plate
+    clean_new_plate = clean_plate(data.placa_tracto)
+    all_tractos = db.query(VehiculoTracto).all()
+    existing = next((v for v in all_tractos if clean_plate(v.placa_tracto) == clean_new_plate), None)
     if existing:
         raise HTTPException(status_code=400, detail=f"La placa {data.placa_tracto} ya está registrada")
     
@@ -187,7 +190,10 @@ def list_carretas(
 @router.post("/carretas", response_model=CarretaResponse)
 def create_carreta(data: CarretaCreate, db: Session = Depends(get_db)):
     # Validar duplicado
-    existing = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == data.placa_carreta.upper()).first()
+    from app.routers.maestros import clean_plate
+    clean_new_plate = clean_plate(data.placa_carreta)
+    all_carretas = db.query(VehiculoCarreta).all()
+    existing = next((v for v in all_carretas if clean_plate(v.placa_carreta) == clean_new_plate), None)
     if existing:
         raise HTTPException(status_code=400, detail=f"La placa {data.placa_carreta} ya está registrada")
     

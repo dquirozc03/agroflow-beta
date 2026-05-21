@@ -184,7 +184,8 @@ def get_driver_data(dni: str, db: Session = Depends(get_db)):
 def get_vehicle_data(placa: str, db: Session = Depends(get_db)):
     """Busca vehículo y su transportista por placa."""
     clean_placa_val = clean_plate(placa)
-    vehicle = db.query(VehiculoTracto).filter(VehiculoTracto.placa_tracto == clean_placa_val).first()
+    all_vehicles = db.query(VehiculoTracto).all()
+    vehicle = next((v for v in all_vehicles if clean_plate(v.placa_tracto) == clean_placa_val), None)
     
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Vehículo con Placa {clean_placa_val} no registrado")
@@ -261,7 +262,8 @@ def check_data_unique(field: str, value: str, treatment_buque: bool = False, db:
 def get_trailer_data(placa: str, db: Session = Depends(get_db)):
     """Busca carreta en maestros por placa."""
     clean_placa = clean_plate(placa)
-    trailer = db.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta == clean_placa).first()
+    all_trailers = db.query(VehiculoCarreta).all()
+    trailer = next((t for t in all_trailers if clean_plate(t.placa_carreta) == clean_placa), None)
     
     if not trailer:
         raise HTTPException(status_code=404, detail=f"Carreta con Placa {clean_placa} no registrada")

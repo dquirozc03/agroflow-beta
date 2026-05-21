@@ -404,7 +404,18 @@ class InstructionPDFService:
         
         c_txt = override_data.get("consignatario_bl") if override_data else ((cliente_maestro.consignatario_bl or cliente_maestro.nombre_legal) if cliente_maestro else cliente_nombre)
         p_txt = puerto_destino
-        pa_txt = override_data.get("pais_destino") if override_data else (cliente_maestro.pais if cliente_maestro else '')
+        
+        final_pais_destino = ""
+        if override_data and override_data.get("pais_destino"):
+            final_pais_destino = override_data.get("pais_destino")
+        elif pos and getattr(pos, "PAIS_BOOKING", None):
+            final_pais_destino = pos.PAIS_BOOKING
+        elif pedidos and getattr(pedidos[0], 'pais', None):
+            final_pais_destino = pedidos[0].pais
+        elif cliente_maestro and getattr(cliente_maestro, 'pais', None):
+            final_pais_destino = cliente_maestro.pais
+
+        pa_txt = final_pais_destino
         subtitle_txt = " - ".join([p for p in [c_txt, p_txt, pa_txt] if p])
         titulo_html = f"INSTRUCCIONES DE EMBARQUE<br/>{subtitle_txt}<br/>{pos_cultivo or ''}"
         header_row.append(Paragraph(f"<b>{titulo_html}</b>", ParagraphStyle('Centered', fontSize=self.SIZE_HEADER, leading=13, alignment=1, fontName=self.FONT_BOLD)))
@@ -449,7 +460,7 @@ class InstructionPDFService:
         t2_data = [
             [Paragraph("<b>DATOS PARA CERTIFICADO FITOSANITARIO</b>", ParagraphStyle('Centered', fontSize=self.SIZE_FITO, leading=9, alignment=1, fontName=self.FONT_BOLD, textColor=colors.white if is_gr else colors.black)), ""],
             [b_p("CONSIGNATARIO<br/>DIRECCI\u00d3N"), format_desc(f"<b>{_safe(override_data.get('consignatario_fito') if override_data else (fito.consignatario_fito if fito else ''))}</b>", (override_data.get('direccion_fito', '') if override_data else self._format_multiline(fito.direccion_fito if fito else "")))],
-            [b_p("PAIS DE DESTINO"), b_p(override_data.get('pais_destino') if override_data else (pedidos[0].pais if pedidos else (cliente_maestro.pais if cliente_maestro else "")))],
+            [b_p("PAIS DE DESTINO"), b_p(final_pais_destino or "")],
             [b_p("PUNTO DE LLEGADA"), b_p(puerto_destino)]
         ]
         pres_val = override_data.get('presentacion') if override_data else getattr(pedidos[0], 'presentacion', None) if pedidos else None

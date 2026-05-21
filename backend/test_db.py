@@ -1,17 +1,18 @@
 import sys
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 import os
-sys.path.insert(0, os.path.abspath("/Users/dquiroz/Workspace/AgroFlow_Personal/agroflow-beta/backend"))
-from app.database import SessionLocal
-from app.models import ReporteEmbarques, Posicionamiento
+from dotenv import load_dotenv
 
-db = SessionLocal()
-bkg = "EBKG16698011"
-re = db.query(ReporteEmbarques).filter(ReporteEmbarques.booking == bkg).first()
-if re:
-    print(f"ReporteEmbarques: {re.booking} -> {re.nave_arribo}")
-else:
-    print("NO ESTA EN ReporteEmbarques")
+load_dotenv('/Users/dquiroz/Workspace/AgroFlow_Personal/agroflow-beta/backend/.env.local')
 
-pos = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == bkg).first()
-if pos:
-    print(f"Posicionamiento: {pos.BOOKING} -> NAVE: {pos.NAVE}")
+engine = create_engine(os.environ["DATABASE_URL"])
+Session = sessionmaker(bind=engine)
+session = Session()
+
+from app.models.maestros import VehiculoCarreta
+
+carretas = session.query(VehiculoCarreta).filter(VehiculoCarreta.placa_carreta.ilike('%TFC%')).all()
+for c in carretas:
+    print(f"ID: {c.id}, Placa: '{c.placa_carreta}'")
