@@ -306,10 +306,20 @@ async def sync_pedidos_raw(
                     if c:
                         cultivos_en_payload.add(c)
 
-        # Borrado inteligente: Solo eliminamos los cultivos que estamos subiendo ahora
-        if cultivos_en_payload:
-            db.query(PedidoComercial).filter(PedidoComercial.cultivo.in_(list(cultivos_en_payload))).delete(synchronize_session=False)
-        
+        # Borrado inteligente: Solo eliminamos la combinación exacta de Cultivo y Planta que estamos subiendo
+        # Esto permite subir múltiples Excels del mismo cultivo (ej. Palta Ica y Palta Litardo) sin que se borren entre sí.
+        filtros_cultivo_planta = set()
+        for m in new_mappings:
+            c = m.get("cultivo")
+            p = m.get("planta")
+            if c and p:
+                filtros_cultivo_planta.add((str(c).strip(), str(p).strip()))
+                
+        for c, p in filtros_cultivo_planta:
+            db.query(PedidoComercial).filter(
+                PedidoComercial.cultivo == c,
+                PedidoComercial.planta == p
+            ).delete(synchronize_session=False)
         if new_mappings: 
             db.bulk_insert_mappings(PedidoComercial, new_mappings)
             
