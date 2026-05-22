@@ -235,6 +235,10 @@ class InstructionPDFService:
                 )
                 if pos.CULTIVO and pos.CULTIVO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
                     query_pedidos = query_pedidos.filter(PedidoComercial.cultivo.ilike(pos.CULTIVO))
+                    
+                if pos.PLANTA_LLENADO and pos.PLANTA_LLENADO.strip().upper() not in ["", "PENDIENTE", "N/A", "-"]:
+                    query_pedidos = query_pedidos.filter(PedidoComercial.planta.ilike(pos.PLANTA_LLENADO))
+                    
                 pedidos = query_pedidos.all()
 
             total_cajas = sum((int(p.total_cajas or 0) for p in pedidos))
