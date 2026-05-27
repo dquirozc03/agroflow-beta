@@ -17,6 +17,7 @@ class EmisionPackingList(Base):
     motivo_anulacion = Column(String(500), nullable=True)
     usuario_anulacion = Column(String(100), nullable=True)
     archivo_nombre = Column(String(500), nullable=True)
+    cultivo = Column(String(50), nullable=True)
     
     detalles = relationship("DetalleEmisionPackingList", back_populates="emision")
 

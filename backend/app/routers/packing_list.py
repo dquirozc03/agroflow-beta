@@ -603,6 +603,7 @@ async def generate_packing_list_ogl(
         ahora = get_peru_time()
         
         # WK ID logic
+        cultivo_check = (primer_pedido.cultivo or "").strip().upper() if primer_pedido else ""
         pl_id = f"WK{ahora.isocalendar()[1]}1"
         if primer_pedido and getattr(primer_pedido, "semana_eta", None):
             semana_eta = int(primer_pedido.semana_eta)
@@ -649,7 +650,6 @@ async def generate_packing_list_ogl(
             # Ajustar correlativo sumando PLs activos ya emitidos esta semana+cultivo
             # Ejemplo: si WK222 ya fue emitido, el siguiente PL debe ser WK223
             pl_prefix = f"WK{str(semana_eta).zfill(2)}"
-            cultivo_check = (primer_pedido.cultivo or "").strip().upper()
             emisiones_semana = db.query(EmisionPackingList).filter(
                 EmisionPackingList.estado == "ACTIVO",
                 EmisionPackingList.pl_id.like(f"{pl_prefix}%") if hasattr(EmisionPackingList, "pl_id") else True
@@ -657,6 +657,18 @@ async def generate_packing_list_ogl(
             # Contar PLs activos cuyo WK ID empieza con el mismo prefijo de semana
             ids_usados = set()
             for em in emisiones_semana:
+                em_cultivo = getattr(em, "cultivo", None)
+                if not em_cultivo:
+                    # Backward compatibility para registros antiguos
+                    detalle = db.query(DetalleEmisionPackingList).filter(DetalleEmisionPackingList.emision_id == em.id).first()
+                    if detalle:
+                        pos_bk = db.query(Posicionamiento).filter(Posicionamiento.BOOKING == detalle.booking).first()
+                        if pos_bk and pos_bk.CULTIVO:
+                            em_cultivo = pos_bk.CULTIVO.strip().upper()
+                
+                if em_cultivo and cultivo_check and em_cultivo != cultivo_check:
+                    continue # Ignorar emisiones de otros cultivos
+                
                 em_id = getattr(em, "pl_id", None) or getattr(em, "archivo_nombre", "")
                 # Extraer el WK del nombre del archivo si no hay campo pl_id
                 import re as _re
@@ -885,7 +897,7 @@ async def generate_packing_list_ogl(
         # Auditoría
         try:
             nombre_usuario = current_user.usuario.upper() if current_user else "SISTEMA"
-            nueva_emision = EmisionPackingList(usuario=nombre_usuario, nave=nave_clean, estado="ACTIVO", archivo_nombre=filename)
+            nueva_emision = EmisionPackingList(usuario=nombre_usuario, nave=nave_clean, estado="ACTIVO", archivo_nombre=filename, cultivo=cultivo_check)
             db.add(nueva_emision); db.flush()
             for bk_id in bookings_set:
                 db.add(DetalleEmisionPackingList(emision_id=nueva_emision.id, booking=bk_id))
