@@ -71,6 +71,7 @@ interface BookingOGL {
   recibidor: string | null;
   cliente: string | null;
   semana_eta: number | null;
+  cultivo: string | null;
 }
 
 type GenerationStatus = "idle" | "loading" | "success" | "error";
@@ -675,7 +676,7 @@ export default function PackingListCustomizadosPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-3 lc-scroll bg-slate-50/20">
             {bookings.length === 0 ? (
               <div className="py-32 text-center opacity-20"><Ship className="h-16 w-16 mx-auto text-slate-400 mb-4 animate-pulse" /><p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Selecciona una nave para explorar bookings</p></div>
-            ) : bookings.filter(bk => (!selectedRecibidor || bk.recibidor === selectedRecibidor) && (!selectedSemanaEta || bk.semana_eta === selectedSemanaEta)).map((bk) => (
+            ) : bookings.filter(bk => (!selectedRecibidor || bk.recibidor === selectedRecibidor) && (!selectedSemanaEta || bk.semana_eta === selectedSemanaEta) && (!selectedCultivo || (bk.cultivo && bk.cultivo.toUpperCase().includes(selectedCultivo.toUpperCase())))).map((bk) => (
               <div key={bk.booking} className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-50">
                    <p className="text-xs font-black text-slate-900 font-['Outfit'] tracking-tight">{bk.booking}</p>
@@ -723,7 +724,7 @@ export default function PackingListCustomizadosPage() {
                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Órdenes</p>
                    <p className="text-3xl font-black text-slate-800 font-['Outfit'] tracking-tighter">
                       {selectedNave ? (
-                        bookings.filter(b => (!selectedRecibidor || b.recibidor === selectedRecibidor) && (!selectedSemanaEta || b.semana_eta === selectedSemanaEta)).length
+                        bookings.filter(b => (!selectedRecibidor || b.recibidor === selectedRecibidor) && (!selectedSemanaEta || b.semana_eta === selectedSemanaEta) && (!selectedCultivo || (b.cultivo && b.cultivo.toUpperCase().includes(selectedCultivo.toUpperCase())))).length
                       ) : "—"}
                     </p>
                 </div>

@@ -317,6 +317,7 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
             "recibidor":     pedido.recibidor,
             "cliente":       pedido.cliente,
             "semana_eta":    pedido.semana_eta,
+            "cultivo":       pedido.cultivo,
         })
 
     return sorted(resultado, key=lambda x: x["booking"])
