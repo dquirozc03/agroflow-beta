@@ -346,7 +346,8 @@ export function ChoferModal({ isOpen, onClose, onSuccess, editingData }: ChoferM
                     </label>
                     <input 
                       type="date"
-                      value={formData.vencimiento_licencia}
+                      key={`date-${isOpen ? 'open' : 'closed'}-${editingData?.id || 'new'}`}
+                      defaultValue={formData.vencimiento_licencia}
                       onChange={e => setFormData({...formData, vencimiento_licencia: e.target.value})}
                       className={cn(
                         "w-full h-14 px-5 border-none rounded-2xl focus:ring-2 transition-all font-bold text-sm",
