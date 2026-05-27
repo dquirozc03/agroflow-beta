@@ -316,6 +316,7 @@ def listar_bookings_ogl(nave: str, db: Session = Depends(get_db)):
             "consignatario": pedido.consignatario,
             "recibidor":     pedido.recibidor,
             "cliente":       pedido.cliente,
+            "semana_eta":    pedido.semana_eta,
         })
 
     return sorted(resultado, key=lambda x: x["booking"])
@@ -330,6 +331,7 @@ async def generate_packing_list_ogl(
     confirmaciones: List[UploadFile] = File(...),
     termografos: Optional[UploadFile] = File(None),
     recibidor: Optional[str] = Form(None),
+    semana_eta: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     try:
@@ -449,6 +451,9 @@ async def generate_packing_list_ogl(
                 ped_recibidor = str(getattr(pedido, "recibidor", "") or "").strip().upper()
                 if ped_recibidor != recibidor.strip().upper():
                     continue
+
+            if semana_eta is not None and getattr(pedido, "semana_eta", None) != semana_eta:
+                continue
 
             emb = db.query(ControlEmbarque).filter(ControlEmbarque.booking == booking).first()
             contenedor_fmt = format_container_ogl(emb.contenedor if emb else "")

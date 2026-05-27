@@ -70,6 +70,7 @@ interface BookingOGL {
   consignatario: string | null;
   recibidor: string | null;
   cliente: string | null;
+  semana_eta: number | null;
 }
 
 type GenerationStatus = "idle" | "loading" | "success" | "error";
@@ -258,6 +259,7 @@ export default function PackingListCustomizadosPage() {
   const [selectedCliente, setSelectedCliente] = useState<ClienteConfig>(CLIENTES_CONFIG[0]);
   const [clienteDropdownOpen, setClienteDropdownOpen] = useState(false);
   const [selectedRecibidor, setSelectedRecibidor] = useState<string>("");
+  const [selectedSemanaEta, setSelectedSemanaEta] = useState<number | null>(null);
 
   // Múltiples archivos para Confirmación
   const [filesConfirmacion, setFilesConfirmacion] = useState<File[]>([]);
@@ -304,6 +306,7 @@ export default function PackingListCustomizadosPage() {
     setSelectedNave(nave);
     setBookings([]);
     setSelectedRecibidor("");
+    setSelectedSemanaEta(null);
     setFilesConfirmacion([]);
     setFileTermografos(null);
     setGenStatus("idle");
@@ -331,6 +334,7 @@ export default function PackingListCustomizadosPage() {
       const formData = new FormData();
       formData.append("nave", selectedNave.nave);
       if (selectedRecibidor) formData.append("recibidor", selectedRecibidor);
+      if (selectedSemanaEta !== null) formData.append("semana_eta", selectedSemanaEta.toString());
       // Adjuntar TODOS los archivos de confirmación
       filesConfirmacion.forEach((f) => formData.append("confirmaciones", f));
       if (fileTermografos) formData.append("termografos", fileTermografos);
@@ -630,10 +634,48 @@ export default function PackingListCustomizadosPage() {
                </div>
              );
            })()}
+
+           {/* Filtro de Semana ETA */}
+           {bookings.length > 0 && (() => {
+             const semanas = Array.from(new Set(bookings.map(b => b.semana_eta).filter(s => s !== null && s !== undefined))) as number[];
+             if (semanas.length <= 1) return null;
+             return (
+               <div className="px-7 pb-4 border-b border-slate-50">
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">Filtrar por Semana ETA Comercial</p>
+                 <div className="flex flex-wrap gap-1.5">
+                   <button
+                     onClick={() => setSelectedSemanaEta(null)}
+                     className={cn(
+                       "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase tracking-widest",
+                       selectedSemanaEta === null
+                         ? "bg-[#022c22] border-[#022c22] text-white shadow-md"
+                         : "bg-white border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600"
+                     )}
+                   >
+                     TODAS
+                   </button>
+                   {semanas.sort().map((s) => (
+                     <button
+                       key={s}
+                       onClick={() => setSelectedSemanaEta(s === selectedSemanaEta ? null : s)}
+                       className={cn(
+                         "px-3 py-1.5 rounded-xl text-[9px] font-black transition-all border-2 uppercase tracking-widest",
+                         selectedSemanaEta === s
+                           ? "bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-500/20"
+                           : "bg-white border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600"
+                       )}
+                     >
+                       SEMANA {s}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+             );
+           })()}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 lc-scroll bg-slate-50/20">
             {bookings.length === 0 ? (
               <div className="py-32 text-center opacity-20"><Ship className="h-16 w-16 mx-auto text-slate-400 mb-4 animate-pulse" /><p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Selecciona una nave para explorar bookings</p></div>
-            ) : bookings.filter(bk => !selectedRecibidor || bk.recibidor === selectedRecibidor).map((bk) => (
+            ) : bookings.filter(bk => (!selectedRecibidor || bk.recibidor === selectedRecibidor) && (!selectedSemanaEta || bk.semana_eta === selectedSemanaEta)).map((bk) => (
               <div key={bk.booking} className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-50">
                    <p className="text-xs font-black text-slate-900 font-['Outfit'] tracking-tight">{bk.booking}</p>
@@ -681,9 +723,7 @@ export default function PackingListCustomizadosPage() {
                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Órdenes</p>
                    <p className="text-3xl font-black text-slate-800 font-['Outfit'] tracking-tighter">
                       {selectedNave ? (
-                        selectedRecibidor 
-                          ? bookings.filter(b => b.recibidor === selectedRecibidor).length
-                          : bookings.length
+                        bookings.filter(b => (!selectedRecibidor || b.recibidor === selectedRecibidor) && (!selectedSemanaEta || b.semana_eta === selectedSemanaEta)).length
                       ) : "—"}
                     </p>
                 </div>
