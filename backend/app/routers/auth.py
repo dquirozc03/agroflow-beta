@@ -46,6 +46,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
             nombre=user.nombre,
             rol=user.rol,
             requiere_cambio_password=getattr(user, "requiere_cambio_password", False),
+            permisos=user.permisos,
         )
     except HTTPException as he:
         # Errores normales (contraseña mal, etc) se pasan tal cual
