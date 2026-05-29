@@ -76,7 +76,23 @@ export function UsuarioModal({ isOpen, onClose, onSuccess, editingData }: Usuari
         rol: editingData.rol || "OPERATIVO",
         password: "", // No se edita password aquí normalmente
         activo: editingData.activo ?? true,
-        permisos: editingData.permisos || {
+        permisos: editingData.permisos ? {
+          ...editingData.permisos,
+          g_dashboard: editingData.permisos?.g_dashboard ?? true,
+          lc_registro: editingData.permisos?.lc_registro ?? editingData.permisos?.logicapture ?? true,
+          lc_bandeja: editingData.permisos?.lc_bandeja ?? editingData.permisos?.logicapture ?? true,
+          op_instrucciones: editingData.permisos?.op_instrucciones ?? editingData.permisos?.operaciones ?? true,
+          op_packing_list: editingData.permisos?.op_packing_list ?? editingData.permisos?.operaciones ?? true,
+          m_bulk: editingData.permisos?.m_bulk ?? editingData.permisos?.maestros ?? true,
+          m_contenedores: editingData.permisos?.m_contenedores ?? editingData.permisos?.maestros ?? true,
+          m_transportistas: editingData.permisos?.m_transportistas ?? editingData.permisos?.maestros ?? true,
+          m_vehiculos: editingData.permisos?.m_vehiculos ?? editingData.permisos?.maestros ?? true,
+          m_choferes: editingData.permisos?.m_choferes ?? editingData.permisos?.maestros ?? true,
+          m_clientes_ie: editingData.permisos?.m_clientes_ie ?? editingData.permisos?.maestros ?? true,
+          m_plantas: editingData.permisos?.m_plantas ?? editingData.permisos?.maestros ?? true,
+          sys_usuarios: editingData.permisos?.sys_usuarios ?? editingData.permisos?.sistema ?? false,
+          sys_roles: editingData.permisos?.sys_roles ?? editingData.permisos?.sistema ?? false,
+        } : {
           g_dashboard: true,
           lc_registro: true, lc_bandeja: true,
           op_instrucciones: true, op_packing_list: true,
