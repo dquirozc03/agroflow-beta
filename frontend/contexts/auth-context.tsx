@@ -80,6 +80,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Carga optimista desde localStorage para evitar el parpadeo de la Sidebar
+    const storedUser = loadStoredUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+
     const tryAuth = (): Promise<void> =>
       apiMe()
         .then((me) => {
