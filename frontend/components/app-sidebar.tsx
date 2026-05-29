@@ -45,10 +45,10 @@ export function AppSidebar({ className }: { className?: string }) {
     const isAdmin = (user?.rol as string) === "ADMIN";
     
     // Visibilidad por sección: Visible si al menos un hijo es visible o es ADMIN
-    const hasLogi = isAdmin || !!(p.lc_registro || p.lc_bandeja);
-    const hasOper = isAdmin || !!(p.op_instrucciones || p.op_packing_list);
-    const hasMaestros = isAdmin || !!(p.m_bulk || p.m_contenedores || p.m_transportistas || p.m_vehiculos || p.m_choferes || p.m_clientes_ie || p.m_plantas);
-    const hasSys = isAdmin || !!(p.sys_usuarios || p.sys_roles);
+    const hasLogi = isAdmin || !!(p.lc_registro || p.lc_bandeja || p.logicapture);
+    const hasOper = isAdmin || !!(p.op_instrucciones || p.op_packing_list || p.operaciones);
+    const hasMaestros = isAdmin || !!(p.m_bulk || p.m_contenedores || p.m_transportistas || p.m_vehiculos || p.m_choferes || p.m_clientes_ie || p.m_plantas || p.maestros);
+    const hasSys = isAdmin || !!(p.sys_usuarios || p.sys_roles || p.sistema);
 
     const allSections = [
       {
@@ -64,8 +64,8 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "LogiCapture",
         visible: hasLogi,
         items: [
-          { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture", visible: isAdmin || !!p.lc_registro },
-          { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja", visible: isAdmin || !!p.lc_bandeja },
+          { name: "Formulario Registro", icon: Scan, href: "/logicapture", active: pathname === "/logicapture", visible: isAdmin || !!(p.lc_registro ?? p.logicapture) },
+          { name: "Bandeja de Datos", icon: History, href: "/logicapture/bandeja", active: pathname === "/logicapture/bandeja", visible: isAdmin || !!(p.lc_bandeja ?? p.logicapture) },
         ].filter(i => i.visible)
       },
       {
@@ -73,8 +73,8 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "Gestión Operativa",
         visible: hasOper,
         items: [
-          { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones", visible: isAdmin || !!p.op_instrucciones },
-          { name: "Packing List Customizados", icon: ClipboardList, href: "/operaciones/packing-list", active: pathname.startsWith("/operaciones/packing-list"), visible: isAdmin || !!p.op_packing_list },
+          { name: "Instrucciones de Embarque", icon: FileBarChart, href: "/operaciones/instrucciones", active: pathname === "/operaciones/instrucciones", visible: isAdmin || !!(p.op_instrucciones ?? p.operaciones) },
+          { name: "Packing List Customizados", icon: ClipboardList, href: "/operaciones/packing-list", active: pathname.startsWith("/operaciones/packing-list"), visible: isAdmin || !!(p.op_packing_list ?? p.operaciones) },
         ].filter(i => i.visible)
       },
       {
@@ -82,13 +82,13 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "Datos Maestros",
         visible: hasMaestros,
         items: [
-          { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload", visible: isAdmin || !!p.m_bulk },
-          { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams", visible: isAdmin || !!p.m_contenedores },
-          { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas", visible: isAdmin || !!p.m_transportistas },
-          { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos", visible: isAdmin || !!p.m_vehiculos },
-          { name: "Conductores", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes", visible: isAdmin || !!p.m_choferes },
-          { name: "Plantas / Sedes", icon: Factory, href: "/maestros/plantas", active: pathname === "/maestros/plantas", visible: isAdmin || !!p.m_plantas },
-          { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie", visible: isAdmin || !!p.m_clientes_ie },
+          { name: "Carga Masiva (Excel)", icon: FileUp, href: "/maestros/bulk-upload", active: pathname === "/maestros/bulk-upload", visible: isAdmin || !!(p.m_bulk ?? p.maestros) },
+          { name: "Contenedores y Dam's", icon: Package, href: "/maestros/contenedores-dams", active: pathname === "/maestros/contenedores-dams", visible: isAdmin || !!(p.m_contenedores ?? p.maestros) },
+          { name: "Transportistas", icon: Truck, href: "/maestros/transportistas", active: pathname === "/maestros/transportistas", visible: isAdmin || !!(p.m_transportistas ?? p.maestros) },
+          { name: "Vehículos", icon: Tractor, href: "/maestros/vehiculos", active: pathname === "/maestros/vehiculos", visible: isAdmin || !!(p.m_vehiculos ?? p.maestros) },
+          { name: "Conductores", icon: Users, href: "/maestros/choferes", active: pathname === "/maestros/choferes", visible: isAdmin || !!(p.m_choferes ?? p.maestros) },
+          { name: "Plantas / Sedes", icon: Factory, href: "/maestros/plantas", active: pathname === "/maestros/plantas", visible: isAdmin || !!(p.m_plantas ?? p.maestros) },
+          { name: "Clientes IE", icon: Map, href: "/maestros/clientes-ie", active: pathname === "/maestros/clientes-ie", visible: isAdmin || !!(p.m_clientes_ie ?? p.maestros) },
         ].filter(i => i.visible)
       },
       {
@@ -96,8 +96,8 @@ export function AppSidebar({ className }: { className?: string }) {
         label: "Sistema",
         visible: hasSys,
         items: [
-          { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios", visible: isAdmin || !!p.sys_usuarios },
-          { name: "Master Roles", icon: ShieldCheck, href: "/configuracion/roles", active: pathname === "/configuracion/roles", visible: isAdmin || !!p.sys_roles },
+          { name: "Usuarios", icon: UserRound, href: "/configuracion/usuarios", active: pathname === "/configuracion/usuarios", visible: isAdmin || !!(p.sys_usuarios ?? p.sistema) },
+          { name: "Master Roles", icon: ShieldCheck, href: "/configuracion/roles", active: pathname === "/configuracion/roles", visible: isAdmin || !!(p.sys_roles ?? p.sistema) },
           { name: "Configuración", icon: Settings, href: "#", active: false, visible: isAdmin },
         ].filter(i => i.visible)
       }
