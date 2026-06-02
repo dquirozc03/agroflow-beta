@@ -205,7 +205,9 @@ async def sync_posicionamiento_raw(
                     c_header = clean_header(orig_key)
                     for ex_col, db_col in COLUMN_MAPPING.items():
                         if clean_header(ex_col) == c_header:
-                            row_data[db_col] = clean_data_value(val, db_col)
+                            # Solo asignamos si no existe, respetando la prioridad del mapeo
+                            if db_col not in row_data:
+                                row_data[db_col] = clean_data_value(val, db_col)
                             break
                 booking_id = row_data.get("booking")
                 if not booking_id:
@@ -229,7 +231,8 @@ async def sync_posicionamiento_raw(
         mapping_indices = {}
         for ex_col, db_col in COLUMN_MAPPING.items():
             clean_target = clean_header(ex_col)
-            if clean_target in excel_headers:
+            # Solo guardamos el índice si la columna en BD aún no tiene una columna superior asignada
+            if clean_target in excel_headers and db_col not in mapping_indices:
                 mapping_indices[db_col] = excel_headers.index(clean_target)
                 
         logger.info(f"Mapping indices Posicionamiento: {mapping_indices}")
@@ -279,7 +282,8 @@ async def sync_pedidos_raw(
                     c_header = clean_header(orig_key)
                     for ex_col, db_col in PEDIDOS_MAPPING.items():
                         if clean_header(ex_col) == c_header:
-                            pedido_data[db_col] = clean_data_value(val, db_col)
+                            if db_col not in pedido_data:
+                                pedido_data[db_col] = clean_data_value(val, db_col)
                             break
                 if pedido_data.get("orden_beta"):
                     new_mappings.append(pedido_data)
@@ -293,7 +297,7 @@ async def sync_pedidos_raw(
             mapping_indices = {}
             for ex_col, db_col in PEDIDOS_MAPPING.items():
                 clean_target = clean_header(ex_col)
-                if clean_target in excel_headers:
+                if clean_target in excel_headers and db_col not in mapping_indices:
                     mapping_indices[db_col] = excel_headers.index(clean_target)
 
             logger.info(f"Mapping indices Pedidos: {mapping_indices}")
