@@ -71,7 +71,6 @@ COLUMN_MAPPING = {
 
 # Mapeo de columnas para Pedidos Comerciales
 PEDIDOS_MAPPING = {
-    "ZONA": "planta",
     "PLANTA": "planta",
     "PLTA": "planta",
     "ORDEN": "orden_beta",
