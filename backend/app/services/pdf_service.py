@@ -488,6 +488,6 @@ class InstructionPDFService:
         doc.build(elements)
         pdf_bytes = buffer.getvalue()
         buffer.close()
-        return {"pdf_bytes": pdf_bytes, "orden_beta": pos_orden, "cliente_nombre": c_txt, "cultivo": pos_cultivo or "N/A"}
+        return {"pdf_bytes": pdf_bytes, "orden_beta": pos_orden, "cliente_nombre": cliente_nombre, "cultivo": pos_cultivo or "N/A"}
 
 instruction_pdf_service = InstructionPDFService()
