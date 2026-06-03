@@ -384,7 +384,7 @@ export default function InstruccionesEmbarque() {
         let pallet_suffix = "";
         if (cliente_upper.includes("WALMART") && pres_upper.includes("17 KG")) {
           pallet_suffix = " CHEP B4840A";
-        } else if ((cliente_upper.includes("TESCO") || cliente_upper.includes("WESTFALIA")) && pres_upper.includes("10 KG")) {
+        } else if (cliente_upper.includes("TESCO") && pres_upper.includes("10 KG")) {
           pallet_suffix = " CHEP B1210A";
         } else if (cliente_upper.includes("SBROCCO") && pres_upper.includes("15 KG")) {
           pallet_suffix = " CHEP B4840A";
