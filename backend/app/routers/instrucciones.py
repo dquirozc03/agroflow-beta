@@ -259,7 +259,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
         pallet_suffix = ""
         if "WALMART" in cliente_upper and "17 KG" in pres_val:
             pallet_suffix = " CHEP B4840A"
-        elif ("TESCO" in cliente_upper or "WESTFALIA" in cliente_upper) and "10 KG" in pres_val:
+        elif "TESCO" in cliente_upper and "10 KG" in pres_val:
             pallet_suffix = " CHEP B1210A"
         elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
             pallet_suffix = " CHEP B4840A"
@@ -283,7 +283,7 @@ def lookup_booking_data(booking: str, db: Session = Depends(get_db)):
             "direccion_planta": planta_maestro.direccion if planta_maestro else "",
             "ubigeo_planta": planta_maestro.ubigeo if planta_maestro else "110111",
             "region_planta": f"{planta_maestro.distrito} - {planta_maestro.provincia} - {planta_maestro.departamento} - PERU".upper() if (planta_maestro and planta_maestro.distrito) else "",
-            "cliente_nombre": (cliente_maestro.consignatario_bl or pedido_cliente_raw) if (cliente_maestro and cliente_maestro.consignatario_bl) else (pedido_cliente_raw if pedido_cliente_raw else "POR DEFINIR"),
+            "cliente_nombre": cliente_nombre_final if cliente_nombre_final else "POR DEFINIR",
             "incoterm": pedido.incoterm if pedido else "",
             "cajas": total_cajas,
             "pallets": total_pallets,
