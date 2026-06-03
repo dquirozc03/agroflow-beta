@@ -293,7 +293,7 @@ class InstructionPDFService:
             pallet_suffix = ""
             if "WALMART" in cliente_upper and "17 KG" in pres_val:
                 pallet_suffix = " CHEP B4840A"
-            elif ("TESCO" in cliente_upper or "WESTFALIA" in cliente_upper) and "10 KG" in pres_val:
+            elif "TESCO" in cliente_upper and "10 KG" in pres_val:
                 pallet_suffix = " CHEP B1210A"
             elif "SBROCCO" in cliente_upper and "15 KG" in pres_val:
                 pallet_suffix = " CHEP B4840A"
